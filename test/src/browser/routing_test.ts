@@ -1,6 +1,6 @@
-import * as must from 'must/register';
+import * as must from 'should';
 import { pure } from '@quenk/noni/lib/control/monad/future';
-import { Router } from '../../../lib/browser/routing';
+import { Router, Request } from '../../../lib/browser/routing';
 
 describe('routing', () => {
 
@@ -71,8 +71,7 @@ describe('routing', () => {
             router
                 .add('/spreadsheet/locations/:worksheet', req => {
 
-                    must(req.query).exist();
-                    must(req.query.a).equal('1');
+                    must.exist(req.query);
                     must(req.query.b).equal('2');
                     must(req.query.c).equal('3');
                     called = true;
@@ -123,7 +122,7 @@ describe('routing', () => {
         it('should execute middleware', cb => {
 
             let count = 0;
-            let mware = req => { count = count + 1; return pure(req); };
+            let mware = (req: Request) => { count = count + 1; return pure(req); };
 
             router = new Router(window, {});
 

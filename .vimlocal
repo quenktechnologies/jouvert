@@ -1,0 +1,1 @@
+autocmd BufWritePost,FileWritePost *.ts :VimuxRunCommand "clear; make"

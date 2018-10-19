@@ -116,7 +116,7 @@ export class Router {
             mware
                 .reduce((p, c) => p.chain(c), ft)
                 .chain(handler)
-                .fork(console.error, console.log);
+            .fork(console.error, ()=>{});
 
         }
 

@@ -16,9 +16,9 @@ test/public: test/public/test.js
 test/public/test.js: test/build/run.js
 	./node_modules/.bin/browserify test/build/run.js > $@
 
-test/build/run.js: $(shell find test/src -type f) lib
+test/build/run.js: $(shell find test/unit -type f) lib
 	@rm -R test/build || true
-	@cp -R test/src test/build
+	@cp -R test/unit test/build
 	./node_modules/.bin/tsc -p test/build
 	cd test/build && \
 	find . -name \*_test.js | \

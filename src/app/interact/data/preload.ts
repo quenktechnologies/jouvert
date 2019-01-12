@@ -1,5 +1,5 @@
 import { Constructor } from '@quenk/noni/lib/data/type/constructor';
-import { CaseClass } from '@quenk/potoo/lib/actor/resident/case';
+import { Case } from '@quenk/potoo/lib/actor/resident/case';
 import { Loadable } from './loadable';
 
 /**
@@ -38,7 +38,7 @@ export interface Preload<L, MLoading> extends Loadable<L, MLoading> {
  *
  * Invokes the Interacts preload() and hooks before transitioning to loading.
  */
-export class LoadCase<L, MLoading> extends CaseClass<L> {
+export class LoadCase<L, MLoading> extends Case<L> {
 
     constructor(
         public pattern: Constructor<L>,

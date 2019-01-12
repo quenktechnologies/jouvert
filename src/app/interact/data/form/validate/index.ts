@@ -1,6 +1,6 @@
 import { Value } from '@quenk/noni/lib/data/json';
 import { Constructor } from '@quenk/noni/lib/data/type/constructor';
-import { CaseClass } from '@quenk/potoo/lib/actor/resident/case';
+import { Case } from '@quenk/potoo/lib/actor/resident/case';
 import { Result } from '@quenk/preconditions/lib/result';
 import { Failure } from '@quenk/preconditions/lib/result/failure';
 import { Request, Form } from '../';
@@ -67,7 +67,7 @@ export interface Validate<E extends InputEvent, R extends Request, MResumed>
  * Inspects an InputEvent applying the appropriate hook just before resuming.
  */
 export class InputCase<E extends InputEvent, R extends Request, MResumed>
-    extends CaseClass<E> {
+    extends Case<E> {
 
     constructor(
         public pattern: Constructor<E>,

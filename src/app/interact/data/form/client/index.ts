@@ -1,5 +1,5 @@
 import { Constructor } from '@quenk/noni/lib/data/type/constructor';
-import { CaseClass } from '@quenk/potoo/lib/actor/resident/case';
+import { Case } from '@quenk/potoo/lib/actor/resident/case';
 import { Resumable } from '../../../resumable';
 import { Request } from '../';
 import { Editable } from './editable';
@@ -59,7 +59,7 @@ export interface SavedListener<S, R, MResumed> extends Resumable<R, MResumed> {
  * transitions to the edit behaviour.
  */
 export class RequestCase<T extends Request, MEditing>
-    extends CaseClass<T> {
+    extends Case<T> {
 
     constructor(
         public pattern: Constructor<T>,
@@ -81,7 +81,7 @@ export class RequestCase<T extends Request, MEditing>
  * active display server, continues editing.
  */
 export class ContentCase<C, T extends Request, MEditing>
-    extends CaseClass<C> {
+    extends Case<C> {
 
     constructor(
         public pattern: Constructor<C>,
@@ -102,7 +102,7 @@ export class ContentCase<C, T extends Request, MEditing>
  *
  * Dispatches the afterFormAborted hook and transitions to resuming.
  */
-export class AbortCase<C, R, MResumed> extends CaseClass<C> {
+export class AbortCase<C, R, MResumed> extends Case<C> {
 
     constructor(
         public pattern: Constructor<C>,
@@ -123,7 +123,7 @@ export class AbortCase<C, R, MResumed> extends CaseClass<C> {
  *
  * Dispatches the afterFormAborted hook and transitions to resuming.
  */
-export class SaveCase<S, R, MResumed> extends CaseClass<S> {
+export class SaveCase<S, R, MResumed> extends Case<S> {
 
     constructor(
         public pattern: Constructor<S>,

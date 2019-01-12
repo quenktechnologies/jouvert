@@ -1,5 +1,5 @@
 import { Constructor } from '@quenk/noni/lib/data/type/constructor';
-import { CaseClass } from '@quenk/potoo/lib/actor/resident/case';
+import { Case } from '@quenk/potoo/lib/actor/resident/case';
 import { Suspendable } from '../../suspendable';
 import { Request } from './';
 
@@ -42,7 +42,7 @@ export interface Abort<C, R extends Request, MSuspended>
  * AbortCase invokes the beforeAbort hook and suspends the Form.
  */
 export class AbortCase<C, R extends Request, MSuspended>
-    extends CaseClass<C> {
+    extends Case<C> {
 
     constructor(
         public pattern: Constructor<C>,

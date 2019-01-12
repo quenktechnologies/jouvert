@@ -1,6 +1,6 @@
 import { Constructor } from '@quenk/noni/lib/data/type/constructor';
 import { Address } from '@quenk/potoo/lib/actor/address';
-import { CaseClass } from '@quenk/potoo/lib/actor/resident/case';
+import { Case } from '@quenk/potoo/lib/actor/resident/case';
 import { Resumable } from '../../resumable';
 import { Resume } from '../../';
 import { Inputtable } from './inputtable';
@@ -81,7 +81,7 @@ export interface EditListener<R extends Request, MResumed>
 /**
  * CreateCase invokes the beforeEdit hook before transitioning to resuming()
  */
-export class CreateCase<R extends Request, MResumed> extends CaseClass<R> {
+export class CreateCase<R extends Request, MResumed> extends Case<R> {
 
     constructor(
         public pattern: Constructor<R>,
@@ -99,7 +99,7 @@ export class CreateCase<R extends Request, MResumed> extends CaseClass<R> {
 /**
  * EditCase invokes the beforeEdit hook before transitioning to resume().
  */
-export class EditCase<R extends Request, MResumed> extends CaseClass<R> {
+export class EditCase<R extends Request, MResumed> extends Case<R> {
 
     constructor(
         public pattern: Constructor<R>,
@@ -117,7 +117,7 @@ export class EditCase<R extends Request, MResumed> extends CaseClass<R> {
 /**
  * InputCase applies the onInput hook and continues resuming.
  */
-export class InputCase<E, R extends Request, MResumed> extends CaseClass<E> {
+export class InputCase<E, R extends Request, MResumed> extends Case<E> {
 
     constructor(
         public pattern: Constructor<E>,

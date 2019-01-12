@@ -16,7 +16,7 @@
 /** imports */
 import { Address } from '@quenk/potoo/lib/actor/address';
 import { Constructor } from '@quenk/noni/lib/data/type/constructor';
-import { CaseClass as Case } from '@quenk/potoo/lib/actor/resident/case';
+import { Case as Case } from '@quenk/potoo/lib/actor/resident/case';
 import { Suspendable } from './suspendable';
 import { Resumable } from './resumable';
 

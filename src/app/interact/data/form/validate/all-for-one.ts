@@ -1,7 +1,7 @@
 import { Object } from '@quenk/noni/lib/data/json';
 import { Constructor } from '@quenk/noni/lib/data/type/constructor';
 import { Result } from '@quenk/preconditions/lib/result';
-import { CaseClass } from '@quenk/potoo/lib/actor/resident/case';
+import { Case } from '@quenk/potoo/lib/actor/resident/case';
 import { Request } from '../';
 import { Validate, InputEvent } from './';
 
@@ -46,7 +46,7 @@ export interface AllForOne
  */
 export class InputCase
     <D extends Object, E extends InputEvent, R extends Request, MResumed>
-    extends CaseClass<E> {
+    extends Case<E> {
 
     constructor(
         public pattern: Constructor<E>,

@@ -1,5 +1,5 @@
 import { Constructor } from '@quenk/noni/lib/data/type/constructor';
-import { CaseClass } from '@quenk/potoo/lib/actor/resident/case';
+import { Case } from '@quenk/potoo/lib/actor/resident/case';
 import { Resumable } from '../../resumable';
 
 /**
@@ -42,7 +42,7 @@ export interface Realtime<E, R, MResumed>
 /**
  * SearchCase invokes the search method before resuming.
  */
-export class SearchCase<E, R, MResumed> extends CaseClass<E>  {
+export class SearchCase<E, R, MResumed> extends Case<E>  {
 
     constructor(
         public pattern: Constructor<E>,

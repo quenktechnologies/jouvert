@@ -1,5 +1,5 @@
 import { Constructor } from '@quenk/noni/lib/data/type/constructor';
-import { CaseClass } from '@quenk/potoo/lib/actor/resident/case';
+import { Case } from '@quenk/potoo/lib/actor/resident/case';
 import { Resumable } from '../../resumable';
 
 /**
@@ -38,7 +38,7 @@ export interface Filtered<A, R, MResumed>
  * SetFilterCase updates the Filtered's internal Filter table
  * and continues resuming.
  */
-export class SetFilterCase<A, R, MResumed> extends CaseClass<A> {
+export class SetFilterCase<A, R, MResumed> extends Case<A> {
 
     constructor(
         public pattern: Constructor<A>,
@@ -58,7 +58,7 @@ export class SetFilterCase<A, R, MResumed> extends CaseClass<A> {
  * RemoveFilterCase removes a filter from the Filtered's internal table
  * and continues resuming.
  */
-export class RemoveFilterCase<A, R, MResumed> extends CaseClass<A> {
+export class RemoveFilterCase<A, R, MResumed> extends Case<A> {
 
     constructor(
         public pattern: Constructor<A>,
@@ -78,7 +78,7 @@ export class RemoveFilterCase<A, R, MResumed> extends CaseClass<A> {
  * ClearFiltersCase removes all filter from the Filtered's internal table
  * and continues resuming.
  */
-export class ClearFiltersCase<A, R, MResumed> extends CaseClass<A> {
+export class ClearFiltersCase<A, R, MResumed> extends Case<A> {
 
     constructor(
         public pattern: Constructor<A>,

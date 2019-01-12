@@ -5,7 +5,7 @@
 
 /** imports */
 import { Constructor } from '@quenk/noni/lib/data/type/constructor';
-import { CaseClass } from '@quenk/potoo/lib/actor/resident/case';
+import { Case } from '@quenk/potoo/lib/actor/resident/case';
 import { Resumable } from '../resumable';
 
 /**
@@ -94,7 +94,7 @@ export interface ServerErrorListener<A, R, MResumed> extends Resumable<R, MResum
 /**
  * OkCase dispatches the afterOk hook and resumes.
  */
-export class OkCase<A, R, MResumed> extends CaseClass<A> {
+export class OkCase<A, R, MResumed> extends Case<A> {
 
     constructor(
         public pattern: Constructor<A>,
@@ -113,7 +113,7 @@ export class OkCase<A, R, MResumed> extends CaseClass<A> {
 /**
  * CreatedCase dispatches the afterCreated hook and resumes.
  */
-export class CreatedCase<A, R, MResumed> extends CaseClass<A> {
+export class CreatedCase<A, R, MResumed> extends Case<A> {
 
     constructor(
         public pattern: Constructor<A>,
@@ -132,7 +132,7 @@ export class CreatedCase<A, R, MResumed> extends CaseClass<A> {
 /**
  * NoContentCase dispatches the afterNoContent hook and resumes.
  */
-export class NoContentCase<A, R, MResumed> extends CaseClass<A> {
+export class NoContentCase<A, R, MResumed> extends Case<A> {
 
     constructor(
         public pattern: Constructor<A>,
@@ -151,7 +151,7 @@ export class NoContentCase<A, R, MResumed> extends CaseClass<A> {
 /**
  * ForbiddenCase dispatches the afterForbbidden hook and resumes.
  */
-export class ForbiddenCase<A, R, MResumed> extends CaseClass<A> {
+export class ForbiddenCase<A, R, MResumed> extends Case<A> {
 
     constructor(
         public pattern: Constructor<A>,
@@ -170,7 +170,7 @@ export class ForbiddenCase<A, R, MResumed> extends CaseClass<A> {
 /**
  * UnauthorizedCase dispatches the afterUnauthorized hook and resumes.
  */
-export class UnauthorizedCase<A, R, MResumed> extends CaseClass<A> {
+export class UnauthorizedCase<A, R, MResumed> extends Case<A> {
 
     constructor(
         public pattern: Constructor<A>,
@@ -189,7 +189,7 @@ export class UnauthorizedCase<A, R, MResumed> extends CaseClass<A> {
 /**
  * NotFoundCase dispatches the afterNotFound hook and resumes.
  */
-export class NotFoundCase<A, R, MResumed> extends CaseClass<A> {
+export class NotFoundCase<A, R, MResumed> extends Case<A> {
 
     constructor(
         public pattern: Constructor<A>,
@@ -208,7 +208,7 @@ export class NotFoundCase<A, R, MResumed> extends CaseClass<A> {
 /**
  * ServerErrorCase dispatches the afterServerError hook and resumes.
  */
-export class ServerErrorCase<A, R, MResumed> extends CaseClass<A> {
+export class ServerErrorCase<A, R, MResumed> extends Case<A> {
 
     constructor(
         public pattern: Constructor<A>,

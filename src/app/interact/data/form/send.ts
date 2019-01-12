@@ -1,5 +1,5 @@
 import { Constructor } from '@quenk/noni/lib/data/type/constructor';
-import { CaseClass } from '@quenk/potoo/lib/actor/resident/case';
+import { Case } from '@quenk/potoo/lib/actor/resident/case';
 import { Sendable } from './sendable';
 
 /**
@@ -18,7 +18,7 @@ export interface Send<S, MSaving> extends Sendable<S, MSaving> {
 /**
  * SendCase applies the beforeSend hook and transitions to saving.
  */
-export class SendCase<S, MSaving> extends CaseClass<S> {
+export class SendCase<S, MSaving> extends Case<S> {
 
     constructor(
         public pattern: Constructor<S>,

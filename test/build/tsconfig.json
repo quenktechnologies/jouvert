@@ -4,15 +4,15 @@
         "lib": ["ES2015", "DOM"],
         "module": "commonjs",
         "target": "es5",
-        "rootDir": "../../",
+        "rootDir": ".",
         "moduleResolution": "node",
         "allowUnreachableCode": true,
         "noUnusedParameters": true,
         "noUnusedLocals": true,
         "sourceMap": true,
-        "declaration": true,
+        "strict": true,
         "types": ["node", "mocha"],
         "typeRoots": ["node_modules/@types"]
     },
-    "exclude": ["src", "node_modules"]
+    "exclude": ["lib", "node_modules"]
 }

@@ -1,13 +1,17 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-var must = require("must/register");
+var must = require("should");
 var future_1 = require("@quenk/noni/lib/control/monad/future");
-var routing_1 = require("../../../lib/browser/routing");
+var hash_1 = require("../../../../../lib/browser/window/routing/hash");
+var noop = function () { };
 describe('routing', function () {
+    afterEach(function () {
+        window.location.hash = '';
+    });
     describe('Router', function () {
         var router;
         it('should activate a route', function (cb) {
-            router = new routing_1.Router(window, {});
+            router = new hash_1.Router(window, noop, noop, {});
             var called = false;
             router
                 .add('/search/:collection', function (req) {
@@ -24,7 +28,7 @@ describe('routing', function () {
         });
         it('should recognise # as /', function (cb) {
             var called = false;
-            router = new routing_1.Router(window, {});
+            router = new hash_1.Router(window, noop, noop, {});
             router
                 .add('/', function () {
                 called = true;
@@ -39,11 +43,10 @@ describe('routing', function () {
         });
         it('must parse path parameters variables', function (cb) {
             var called = false;
-            router = new routing_1.Router(window, {});
+            router = new hash_1.Router(window, noop, noop, {});
             router
                 .add('/spreadsheet/locations/:worksheet', function (req) {
-                must(req.query).exist();
-                must(req.query.a).equal('1');
+                must.exist(req.query);
                 must(req.query.b).equal('2');
                 must(req.query.c).equal('3');
                 called = true;
@@ -58,7 +61,7 @@ describe('routing', function () {
         });
         it('should recognise "" as /', function (cb) {
             var called = false;
-            router = new routing_1.Router(window, {});
+            router = new hash_1.Router(window, noop, noop, {});
             router
                 .add('/', function () {
                 called = true;
@@ -74,11 +77,11 @@ describe('routing', function () {
         it('should execute middleware', function (cb) {
             var count = 0;
             var mware = function (req) { count = count + 1; return future_1.pure(req); };
-            router = new routing_1.Router(window, {});
+            router = new hash_1.Router(window, noop, noop, {});
             router
-                .useWith('/search', mware)
-                .use(mware)
-                .use(mware)
+                .use('/search', mware)
+                .use('/search', mware)
+                .use('/search', mware)
                 .add('/search', function () {
                 count = count + 1;
                 return future_1.pure(undefined);
@@ -92,7 +95,7 @@ describe('routing', function () {
         });
         it('should invoke the 404 if not present', function (cb) {
             var called = false;
-            router = new routing_1.Router(window, {});
+            router = new hash_1.Router(window, noop, noop, {});
             router
                 .add('404', function () {
                 called = true;
@@ -107,4 +110,4 @@ describe('routing', function () {
         });
     });
 });
-//# sourceMappingURL=routing_test.js.map
+//# sourceMappingURL=hash_test.js.map

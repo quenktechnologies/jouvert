@@ -1,30 +1,39 @@
 import * as qs from 'qs';
 import * as toRegex from 'path-to-regexp';
 import { Value, Object as JObject } from '@quenk/noni/lib/data/json';
-import { Future, pure } from '@quenk/noni/lib/control/monad/future';
-import { map, reduce } from '@quenk/noni/lib/data/record';
+import { pure } from '@quenk/noni/lib/control/monad/future';
+import { reduce } from '@quenk/noni/lib/data/record';
 import { Key } from 'path-to-regexp';
+import { Router as IRouter, Handler as IHandler, Filter as IFilter } from './';
 
 const EVENT_HASH_CHANGED = 'hashchange';
 
 /**
- * Middleware contains an Action meant to mutate a Request before it
- * is terminated.
+ * OnError callback.
  */
-export type Middleware = (req: Request) => Future<Request>;
+export type OnError = (e: Error) => void;
 
 /**
- * Handler contains an Action meant to terminate a chain of Actions.
+ * OnSuccess callback.
  */
-export type Handler = (req: Request) => Future<void>;
+export type OnSuccess<V> = (v: V) => void;
 
+/**
+ * Filter type.
+ */
+export type Filter = IFilter<Request>;
+
+/**
+ * Handler type.
+ */
+export type Handler<V> = IHandler<Request, V>;
 
 /**
  * Routes table.
  */
-export interface Routes {
+export interface Routes<V> {
 
-    [key: string]: [Middleware[], Handler]
+    [key: string]: [Filter[], Handler<V>]
 
 }
 
@@ -42,7 +51,11 @@ export class Request {
     /**
      * create a new Request object
      */
-    static create(path: string, query: string, keys: Object[], results: Value[]): Request {
+    static create(
+        path: string,
+        query: string,
+        keys: Object[],
+        results: Value[]): Request {
 
         let params: JObject = Object.create(null);
 
@@ -58,25 +71,28 @@ export class Request {
  * Cache used internally by the Router.
  * @private
  */
-export class Cache {
+export class Cache<V> {
 
     constructor(
         public regex: RegExp,
         public keys: Key[],
-        public middleware: Middleware[],
-        public handler: Handler) { }
+        public filters: Filter[],
+        public handler: Handler<V>) { }
 
 }
 
 /**
- * Router provides an API for changing application state 
- * based on the value of the window.location.hash property.
+ * Router implementation based on the value of window.location.hash.
  */
-export class Router {
+export class Router<V> implements IRouter<Request, V> {
 
-    constructor(public window: Window, public routes: Routes) { }
+    constructor(
+        public window: Window,
+        public onError: OnError,
+        public onSuccess: OnSuccess<V>,
+        public routes: Routes<V>) { }
 
-    cache: Cache[] = [];
+    cache: Cache<V>[] = [];
 
     keys: Object[] = [];
 
@@ -84,8 +100,8 @@ export class Router {
 
         let [path, query] = takeHash(this.window);
         let cache = this.cache;
-        let mware: Middleware[] = [];
-        let handler: Handler = () => pure(<void>undefined);
+        let mware: Filter[] = [];
+        let handler: Handler<V> = () => pure(<any>undefined);
         let keys: Object[] = [];
         let r: any = null;
         let count = 0;
@@ -94,7 +110,7 @@ export class Router {
 
             r = cache[count].regex.exec(path);
             keys = cache[count].keys;
-            mware = cache[count].middleware
+            mware = cache[count].filters
             handler = cache[count].handler;
             count = count + 1;
 
@@ -116,7 +132,7 @@ export class Router {
             mware
                 .reduce((p, c) => p.chain(c), ft)
                 .chain(handler)
-            .fork(console.error, ()=>{});
+                .fork(console.error, () => { });
 
         }
 
@@ -125,7 +141,7 @@ export class Router {
     /**
      * add a Handler to the route table for a specific path.
      */
-    add(path: string, handler: Handler): Router {
+    add(path: string, handler: Handler<V>): Router<V> {
 
         if (this.routes.hasOwnProperty(path)) {
 
@@ -141,22 +157,7 @@ export class Router {
 
     }
 
-    /**
-     * use queues up middleware to be used for each already
-     * configured route path.
-     */
-    use(mware: Middleware): Router {
-
-        this.routes = map(this.routes, ([m, handler]: [Middleware[], Handler]) =>
-            [m.concat(mware), handler]);
-        return this;
-
-    }
-
-    /**
-     * useWith queues up middleware for a specific route path.
-     */
-    useWith(path: string, mware: Middleware): Router {
+    use(path: string, mware: Filter): Router<V> {
 
         if (this.routes.hasOwnProperty(path)) {
 
@@ -164,7 +165,7 @@ export class Router {
 
         } else {
 
-            this.routes[path] = [[mware], () => pure(<void>undefined)];
+            this.routes[path] = [[mware], () => pure(<any>undefined)];
 
         }
 
@@ -176,7 +177,7 @@ export class Router {
      * run activates routing by installing a hook into the supplied
      * window.
      */
-    run(): Router {
+    run(): Router<V> {
 
         this.cache = compile(this.routes);
         this.window.addEventListener(EVENT_HASH_CHANGED, this);
@@ -184,10 +185,7 @@ export class Router {
 
     }
 
-    /**
-     * stop routing.
-     */
-    stop(): Router {
+    stop(): Router<V> {
 
         this.window.removeEventListener(EVENT_HASH_CHANGED, this);
         return this;
@@ -212,8 +210,8 @@ export const takeHash = (w: Window) =>
 /**
  * compile a Routes map into a Cache for faster route matching.
  */
-export const compile = (r: Routes): Cache[] =>
-    reduce(r, [], (p: Cache[], c: [Middleware[], Handler], path: string) => {
+export const compile = <V>(r: Routes<V>): Cache<V>[] =>
+    reduce(r, [], (p: Cache<V>[], c: [Filter[], Handler<V>], path: string) => {
 
         let keys: Key[] = [];
         return p.concat(new Cache(toRegex(path, keys), keys, c[0], c[1]));

@@ -7,14 +7,14 @@ import {
     UnauthorizedCase,
     NotFoundCase,
     ServerErrorCase
-} from '../../../../../../lib/app/interact/http';
+} from '../../../../../../lib/app/actor/interact/http';
 import { InteractImpl } from '../fixtures/interact';
 
 class Response { body = 1; }
 
 class Resume { display = '?' }
 
-class HttpInteract extends InteractImpl<Resume, void, void > {
+class HttpInteract extends InteractImpl<Resume, void, void> {
 
     afterOk(_: Response) {
 

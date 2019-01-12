@@ -6,7 +6,7 @@ import {
     CreateCase,
     EditCase,
     InputCase
-} from '../../../../../../../lib/app/interact/data/form';
+} from '../../../../../../../lib/app/actor/interact/data/form';
 import { ActorImpl } from '../../../fixtures/actor';
 
 class Request { display = '?'; form = '?'; client = '?' }
@@ -83,7 +83,7 @@ describe('app/interact/data/form', () => {
 
         it('should invoke the onInput hook', () => {
 
-          let t = new Request();
+            let t = new Request();
             let m = new FormImpl();
             let c = new InputCase(Event, t, m);
 

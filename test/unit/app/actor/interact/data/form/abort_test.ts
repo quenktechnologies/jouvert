@@ -2,7 +2,7 @@ import { must } from '@quenk/must';
 import {
     Abort,
     AbortCase
-} from '../../../../../../../lib/app/interact/data/form/abort';
+} from '../../../../../../../lib/app/actor/interact/data/form/abort';
 import { ActorImpl } from '../../../fixtures/actor';
 
 class Request { display = '?'; form = '?'; client = '?' }

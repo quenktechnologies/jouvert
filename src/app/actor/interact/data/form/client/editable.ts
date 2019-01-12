@@ -1,5 +1,5 @@
 import { Case } from '@quenk/potoo/lib/actor/resident/case';
-import { Actor } from '../../../../actor';
+import { Actor } from '../../../..';
 
 /**
  * Editable indicates an actor has a behaviour for editing via some Form

@@ -1,10 +1,16 @@
 import * as must from 'should';
 import { pure } from '@quenk/noni/lib/control/monad/future';
-import { Router, Request } from '../../../../../lib/browser/routing/hash';
+import { Router, Request } from '../../../../../lib/browser/window/routing/hash';
 
 const noop = () => { }
 
 describe('routing', () => {
+
+  afterEach(()=> {
+
+    window.location.hash = '';
+
+  });
 
     describe('Router', () => {
 
@@ -98,7 +104,7 @@ describe('routing', () => {
 
             let called = false;
 
-            router = new Router(window, noop, noop,{});
+            router = new Router(window, noop, noop, {});
 
             router
                 .add('/', () => {
@@ -130,8 +136,8 @@ describe('routing', () => {
 
             router
                 .use('/search', mware)
-            .use('/search', mware)
-            .use('/search', mware)
+                .use('/search', mware)
+                .use('/search', mware)
                 .add('/search', () => {
 
                     count = count + 1;

@@ -4,7 +4,7 @@ import { gt } from '@quenk/preconditions/lib/number';
 import {
     Validate,
     InputCase,
-} from '../../../../../../../../lib/app/interact/data/form/validate';
+} from '../../../../../../../../lib/app/actor/interact/data/form/validate';
 import { ActorImpl } from '../../../../fixtures/actor';
 
 class Request { display = '?'; form = '?'; client = '?' }
@@ -20,11 +20,11 @@ class ValidateImpl extends ActorImpl implements Validate<Event, Request, void>{
 
     }
 
-  onInput(_:Event) {
+    onInput(_: Event) {
 
-    return this.__record('onInput', [_]);
+        return this.__record('onInput', [_]);
 
-  }
+    }
 
     afterFieldValid(name: string, value: number, e: Event) {
 

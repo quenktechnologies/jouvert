@@ -1,8 +1,8 @@
-import { Interact } from '../../../../../../lib/app/interact';
+import { Interact } from '../../../../../../lib/app/actor/interact';
 import { ActorImpl } from '../../fixtures/actor';
 
-export class InteractImpl<R,  MSuspended, MResumed> extends ActorImpl
-    implements Interact<R,  MSuspended, MResumed>  {
+export class InteractImpl<R, MSuspended, MResumed> extends ActorImpl
+    implements Interact<R, MSuspended, MResumed>  {
 
     beforeResume(_: R) {
 
@@ -27,7 +27,7 @@ export class InteractImpl<R,  MSuspended, MResumed> extends ActorImpl
 
     suspend() {
 
-      this.__record('suspend', []);
+        this.__record('suspend', []);
         return [];
 
     }

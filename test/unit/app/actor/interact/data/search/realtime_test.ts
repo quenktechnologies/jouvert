@@ -2,7 +2,7 @@ import { must } from '@quenk/must';
 import {
     Realtime,
     SearchCase
-} from '../../../../../../../lib/app/interact/data/search/realtime';
+} from '../../../../../../../lib/app/actor/interact/data/search/realtime';
 import { ActorImpl } from '../../../fixtures/actor';
 
 class Resume { display = '?'; }
@@ -39,7 +39,7 @@ describe('app/interact/data/search/realtime', () => {
 
             c.match(new Exec());
             must(m.__test.invokes.order()).equate([
-               'search', 'resume', 'select'
+                'search', 'resume', 'select'
             ]);
 
         });

@@ -1,7 +1,7 @@
 import { must } from '@quenk/must';
 import { ActorImpl } from '../fixtures/actor';
-import { Interact } from '../../../../../lib/app/interact';
-import { ResumeCase, SuspendCase } from '../../../../../lib/app/interact';
+import { Interact } from '../../../../../lib/app/actor/interact';
+import { ResumeCase, SuspendCase } from '../../../../../lib/app/actor/interact';
 
 class Resume {
 

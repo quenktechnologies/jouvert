@@ -1,5 +1,8 @@
 import { must } from '@quenk/must';
-import { Preload, LoadCase } from '../../../../../../lib/app/interact/data/preload';
+import { 
+  Preload,
+  LoadCase } 
+from '../../../../../../lib/app/actor/interact/data/preload';
 import { ActorImpl } from '../../fixtures/actor';
 
 class Load { display = '?'; }
@@ -40,7 +43,7 @@ describe('app/interact/data/preload', () => {
 
             c.match(new Load());
             must(m.__test.invokes.order()).equate([
-               'beforePreload', 'preload', 'load', 'select'
+                'beforePreload', 'preload', 'load', 'select'
             ]);
 
         });

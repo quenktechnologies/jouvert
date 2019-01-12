@@ -8,7 +8,7 @@ import {
     ContentCase,
     AbortCase,
     SaveCase
-} from '../../../../../../../../lib/app/interact/data/form/client';
+} from '../../../../../../../../lib/app/actor/interact/data/form/client';
 import { ActorImpl } from '../../../../fixtures/actor';
 
 class Request { display = '?'; form = '?'; client = '?' }

@@ -2,7 +2,7 @@ import { must } from '@quenk/must';
 import {
     Send,
     SendCase
-} from '../../../../../../../lib/app/interact/data/form/send';
+} from '../../../../../../../lib/app/actor/interact/data/form/send';
 import { ActorImpl } from '../../../fixtures/actor';
 
 class Save { yes = true }
@@ -17,8 +17,8 @@ class SendImpl extends ActorImpl implements Send<Save, void> {
 
     send(_: Save) {
 
-         this.__record('send', [_]);
-      return [];
+        this.__record('send', [_]);
+        return [];
 
     }
 

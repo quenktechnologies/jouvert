@@ -4,7 +4,7 @@ import {
     SetFilterCase,
     RemoveFilterCase,
     ClearFiltersCase
-} from '../../../../../../../lib/app/interact/data/search/filtered';
+} from '../../../../../../../lib/app/actor/interact/data/search/filtered';
 import { ActorImpl } from '../../../fixtures/actor';
 
 class Resume { display = '?'; }

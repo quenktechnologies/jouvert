@@ -1,5 +1,5 @@
 import { Case } from '@quenk/potoo/lib/actor/resident/case';
-import {Actor} from '../actor';
+import {Actor} from '../../actor';
 
 /**
  * Resumable indicates an Interact has a behaviour for being

@@ -1,24 +1,40 @@
 import * as must from 'should';
 import { pure } from '@quenk/noni/lib/control/monad/future';
-import { Router, Request } from '../../../../../lib/browser/window/routing/hash';
+import { noop } from '@quenk/noni/lib/data/function';
+import {
+    Default,
+    Router,
+    Request
+}
+    from '../../../../../lib/browser/window/router/hash';
 
-const noop = () => { }
+class RouterImpl extends Router {
 
-describe('routing', () => {
+    hadErr = false;
 
-  afterEach(()=> {
+    hadNotFound = false;
 
-    window.location.hash = '';
+    onError = () => { this.hadErr = true; return pure(noop()) }
 
-  });
+    onNotFound = () => { this.hadNotFound = true; return pure(noop()) }
 
-    describe('Router', () => {
+}
 
-        let router: Router<void>;
+describe('router', () => {
+
+    afterEach(() => {
+
+        window.location.hash = '';
+
+    });
+
+    describe('Default', () => {
+
+        let router: Default;
 
         it('should activate a route', cb => {
 
-            router = new Router(window, noop, noop, {});
+            router = new Default(window, {});
             let called = false;
 
             router
@@ -30,7 +46,7 @@ describe('routing', () => {
                     return pure(<void>undefined);
 
                 })
-                .run();
+                .start();
 
             window.location.hash = '#/search/samples';
 
@@ -47,7 +63,7 @@ describe('routing', () => {
 
             let called = false;
 
-            router = new Router(window, noop, noop, {});
+            router = new Default(window, {});
 
             router
                 .add('/', () => {
@@ -56,7 +72,7 @@ describe('routing', () => {
                     return pure(<void>undefined);
 
                 })
-                .run();
+                .start();
 
             window.location.hash = '#';
 
@@ -74,7 +90,7 @@ describe('routing', () => {
 
             let called = false;
 
-            router = new Router(window, noop, noop, {});
+            router = new Default(window, {});
 
             router
                 .add('/spreadsheet/locations/:worksheet', req => {
@@ -87,7 +103,7 @@ describe('routing', () => {
                     return pure(<void>undefined);
 
                 })
-                .run();
+                .start();
 
             window.location.hash = '#/spreadsheet/locations/1?a=1&b=2&c=3';
 
@@ -104,7 +120,7 @@ describe('routing', () => {
 
             let called = false;
 
-            router = new Router(window, noop, noop, {});
+            router = new Default(window, {});
 
             router
                 .add('/', () => {
@@ -114,7 +130,7 @@ describe('routing', () => {
                     return pure(<void>undefined);
 
                 })
-                .run();
+                .start();
 
             window.location.hash = '';
 
@@ -132,7 +148,7 @@ describe('routing', () => {
             let count = 0;
             let mware = (req: Request) => { count = count + 1; return pure(req); };
 
-            router = new Router(window, noop, noop, {});
+            router = new Default(window, {});
 
             router
                 .use('/search', mware)
@@ -144,7 +160,7 @@ describe('routing', () => {
                     return pure(<void>undefined);
 
                 })
-                .run();
+                .start();
 
             window.location.hash = 'search';
 
@@ -157,26 +173,22 @@ describe('routing', () => {
 
         })
 
+
+    });
+
+    describe('Router', () => {
+
         it('should invoke the 404 if not present', cb => {
 
-            let called = false;
+            let router = new RouterImpl(window, {});
 
-            router = new Router(window, noop, noop, {});
-
-            router
-                .add('404', () => {
-
-                    called = true;
-                    return pure(<void>undefined);
-
-                })
-                .run();
+            router.start();
 
             window.location.hash = 'waldo';
 
             setTimeout(() => {
 
-                must(called).equal(true);
+                must(router.hadNotFound).equal(true);
                 cb();
 
             }, 1000);

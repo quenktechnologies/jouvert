@@ -9,15 +9,18 @@ import {
 
 describe('router', () => {
 
-    afterEach(() => {
-
-        window.location.hash = '';
-
-    });
-
     describe('Router', () => {
 
         let router: Router;
+
+        afterEach(() => {
+
+            if (router)
+                router.stop();
+
+            window.location.hash = '';
+
+        });
 
         it('should activate a route', cb => {
 
@@ -160,17 +163,12 @@ describe('router', () => {
 
         })
 
-
-    });
-
-    describe('Router', () => {
-
         it('should invoke the 404 if not present', cb => {
 
             let hadNotFound = false;
             let onErr = () => { return pure(noop()) }
             let onNotFound = () => { hadNotFound = true; return pure(noop()) }
-            let router = new Router(window, {}, onNotFound, onErr);
+            router = new Router(window, {}, onNotFound, onErr);
 
             router.start();
 

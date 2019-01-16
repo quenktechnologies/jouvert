@@ -10,14 +10,14 @@ import { Key } from 'path-to-regexp';
 const EVENT_HASH_CHANGED = 'hashchange';
 
 /**
- * OnError callback.
+ * OnError type.
  */
-export type OnError = (e: Error) => void;
+export type OnError = (e: Error) => Future<void>;
 
 /**
- * OnSuccess callback.
+ * OnNotFound type.
  */
-export type OnSuccess<V> = (v: V) => void;
+export type OnNotFound = (path: string) => Future<void>;
 
 /**
  * Filter type.
@@ -86,17 +86,17 @@ export class Cache {
 /**
  * Router implementation based on the value of window.location.hash.
  */
-export abstract class AbstractRouter implements router.Router<Request> {
+export class Router implements router.Router<Request> {
 
-    constructor(public window: Window, public routes: Routes = {}) { }
+  constructor(
+    public window: Window, 
+    public routes: Routes = {},
+    public onError:OnError = (e: Error) =>raise(e),
+    public onNotFound:OnNotFound = () => pure(noop())) { }
 
     cache: Cache[] = [];
 
     keys: Object[] = [];
-
-    abstract onError: (e: Error) => Future<void>;
-
-    abstract onNotFound: (url: string) => Future<void>;
 
     handleEvent(_: Event): void {
 
@@ -139,7 +139,7 @@ export abstract class AbstractRouter implements router.Router<Request> {
     /**
      * add a Handler to the route table for a specific path.
      */
-    add(path: string, handler: Handler): AbstractRouter {
+    add(path: string, handler: Handler): Router {
 
         if (this.routes.hasOwnProperty(path)) {
 
@@ -155,7 +155,7 @@ export abstract class AbstractRouter implements router.Router<Request> {
 
     }
 
-    use(path: string, mware: Filter): AbstractRouter {
+    use(path: string, mware: Filter): Router {
 
         if (this.routes.hasOwnProperty(path)) {
 
@@ -175,7 +175,7 @@ export abstract class AbstractRouter implements router.Router<Request> {
      * start activates routing by installing a hook into the supplied
      * window.
      */
-    start(): AbstractRouter {
+    start(): Router {
 
         this.cache = compile(this.routes);
         this.window.addEventListener(EVENT_HASH_CHANGED, this);
@@ -183,23 +183,12 @@ export abstract class AbstractRouter implements router.Router<Request> {
 
     }
 
-    stop(): AbstractRouter {
+    stop(): Router {
 
         this.window.removeEventListener(EVENT_HASH_CHANGED, this);
         return this;
 
     }
-
-}
-
-/**
- * Router has router implementation.
- */
-export class Router extends AbstractRouter {
-
-    onError = (e: Error) => <Future<void>>raise(e);
-
-    onNotFound = () => pure(noop());
 
 }
 

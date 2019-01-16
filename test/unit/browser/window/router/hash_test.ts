@@ -3,22 +3,9 @@ import { pure } from '@quenk/noni/lib/control/monad/future';
 import { noop } from '@quenk/noni/lib/data/function';
 import {
     Router,
-    AbstractRouter,
     Request
 }
     from '../../../../../lib/browser/window/router/hash';
-
-class RouterImpl extends AbstractRouter {
-
-    hadErr = false;
-
-    hadNotFound = false;
-
-    onError = () => { this.hadErr = true; return pure(noop()) }
-
-    onNotFound = () => { this.hadNotFound = true; return pure(noop()) }
-
-}
 
 describe('router', () => {
 
@@ -180,7 +167,10 @@ describe('router', () => {
 
         it('should invoke the 404 if not present', cb => {
 
-            let router = new RouterImpl(window, {});
+            let hadNotFound = false;
+            let onErr = () => { return pure(noop()) }
+            let onNotFound = () => { hadNotFound = true; return pure(noop()) }
+            let router = new Router(window, {}, onErr, onNotFound);
 
             router.start();
 
@@ -188,7 +178,7 @@ describe('router', () => {
 
             setTimeout(() => {
 
-                must(router.hadNotFound).equal(true);
+                must(hadNotFound).equal(true);
                 cb();
 
             }, 1000);

@@ -1,10 +1,11 @@
 import * as qs from 'qs';
 import * as toRegex from 'path-to-regexp';
+import * as router from './';
 import { Value, Object as JObject } from '@quenk/noni/lib/data/json';
-import { pure } from '@quenk/noni/lib/control/monad/future';
+import { noop } from '@quenk/noni/lib/data/function';
+import { Future, pure, raise } from '@quenk/noni/lib/control/monad/future';
 import { reduce } from '@quenk/noni/lib/data/record';
 import { Key } from 'path-to-regexp';
-import { Router as IRouter, Handler as IHandler, Filter as IFilter } from './';
 
 const EVENT_HASH_CHANGED = 'hashchange';
 
@@ -21,19 +22,19 @@ export type OnSuccess<V> = (v: V) => void;
 /**
  * Filter type.
  */
-export type Filter = IFilter<Request>;
+export type Filter = router.Filter<Request>;
 
 /**
  * Handler type.
  */
-export type Handler<V> = IHandler<Request, V>;
+export type Handler = router.Handler<Request>;
 
 /**
  * Routes table.
  */
-export interface Routes<V> {
+export interface Routes {
 
-    [key: string]: [Filter[], Handler<V>]
+    [key: string]: [Filter[], Handler]
 
 }
 
@@ -59,7 +60,8 @@ export class Request {
 
         let params: JObject = Object.create(null);
 
-        keys.forEach((key: any, index) => params[<string>key.name] = results[index + 1]);
+        keys.forEach((key: any, index) =>
+            params[<string>key.name] = results[index + 1]);
 
         return new Request(path, qs.parse(query), params);
 
@@ -71,37 +73,37 @@ export class Request {
  * Cache used internally by the Router.
  * @private
  */
-export class Cache<V> {
+export class Cache {
 
     constructor(
         public regex: RegExp,
         public keys: Key[],
         public filters: Filter[],
-        public handler: Handler<V>) { }
+        public handler: Handler) { }
 
 }
 
 /**
  * Router implementation based on the value of window.location.hash.
  */
-export class Router<V> implements IRouter<Request, V> {
+export abstract class Router implements router.Router<Request> {
 
-    constructor(
-        public window: Window,
-        public onError: OnError,
-        public onSuccess: OnSuccess<V>,
-        public routes: Routes<V>) { }
+    constructor(public window: Window, public routes: Routes = {}) { }
 
-    cache: Cache<V>[] = [];
+    cache: Cache[] = [];
 
     keys: Object[] = [];
+
+    abstract onError: (e: Error) => Future<void>;
+
+    abstract onNotFound: (url: string) => Future<void>;
 
     handleEvent(_: Event): void {
 
         let [path, query] = takeHash(this.window);
         let cache = this.cache;
         let mware: Filter[] = [];
-        let handler: Handler<V> = () => pure(<any>undefined);
+        let handler: Handler = () => pure(<any>undefined);
         let keys: Object[] = [];
         let r: any = null;
         let count = 0;
@@ -116,15 +118,6 @@ export class Router<V> implements IRouter<Request, V> {
 
         }
 
-        if ((r == null) && (this.routes.hasOwnProperty('404'))) {
-
-            r = [];
-            keys = [];
-            mware = this.routes['404'][0];
-            handler = this.routes['404'][1];
-
-        }
-
         if (r != null) {
 
             let ft = pure(Request.create(path, query, keys, r));
@@ -132,7 +125,12 @@ export class Router<V> implements IRouter<Request, V> {
             mware
                 .reduce((p, c) => p.chain(c), ft)
                 .chain(handler)
-                .fork(console.error, () => { });
+                .catch(this.onError)
+                .fork(console.error, noop);
+
+        } else {
+
+            this.onNotFound(path).fork(console.error, noop);
 
         }
 
@@ -141,7 +139,7 @@ export class Router<V> implements IRouter<Request, V> {
     /**
      * add a Handler to the route table for a specific path.
      */
-    add(path: string, handler: Handler<V>): Router<V> {
+    add(path: string, handler: Handler): Router {
 
         if (this.routes.hasOwnProperty(path)) {
 
@@ -157,7 +155,7 @@ export class Router<V> implements IRouter<Request, V> {
 
     }
 
-    use(path: string, mware: Filter): Router<V> {
+    use(path: string, mware: Filter): Router {
 
         if (this.routes.hasOwnProperty(path)) {
 
@@ -174,10 +172,10 @@ export class Router<V> implements IRouter<Request, V> {
     }
 
     /**
-     * run activates routing by installing a hook into the supplied
+     * start activates routing by installing a hook into the supplied
      * window.
      */
-    run(): Router<V> {
+    start(): Router {
 
         this.cache = compile(this.routes);
         this.window.addEventListener(EVENT_HASH_CHANGED, this);
@@ -185,12 +183,23 @@ export class Router<V> implements IRouter<Request, V> {
 
     }
 
-    stop(): Router<V> {
+    stop(): Router {
 
         this.window.removeEventListener(EVENT_HASH_CHANGED, this);
         return this;
 
     }
+
+}
+
+/**
+ * Default has router implementation.
+ */
+export class Default extends Router {
+
+    onError = (e: Error) => <Future<void>>raise(e);
+
+    onNotFound = () => pure(noop());
 
 }
 
@@ -210,8 +219,8 @@ export const takeHash = (w: Window) =>
 /**
  * compile a Routes map into a Cache for faster route matching.
  */
-export const compile = <V>(r: Routes<V>): Cache<V>[] =>
-    reduce(r, [], (p: Cache<V>[], c: [Filter[], Handler<V>], path: string) => {
+export const compile = (r: Routes): Cache[] =>
+    reduce(r, [], (p: Cache[], c: [Filter[], Handler], path: string) => {
 
         let keys: Key[] = [];
         return p.concat(new Cache(toRegex(path, keys), keys, c[0], c[1]));

@@ -170,7 +170,7 @@ describe('router', () => {
             let hadNotFound = false;
             let onErr = () => { return pure(noop()) }
             let onNotFound = () => { hadNotFound = true; return pure(noop()) }
-            let router = new Router(window, {}, onErr, onNotFound);
+            let router = new Router(window, {}, onNotFound, onErr);
 
             router.start();
 

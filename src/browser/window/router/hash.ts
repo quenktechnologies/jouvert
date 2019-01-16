@@ -88,11 +88,11 @@ export class Cache {
  */
 export class Router implements router.Router<Request> {
 
-  constructor(
-    public window: Window, 
-    public routes: Routes = {},
-    public onError:OnError = (e: Error) =>raise(e),
-    public onNotFound:OnNotFound = () => pure(noop())) { }
+    constructor(
+        public window: Window,
+        public routes: Routes = {},
+        public onNotFound: OnNotFound = () => pure(noop()),
+        public onError: OnError = (e: Error) => raise(e)) { }
 
     cache: Cache[] = [];
 

@@ -86,7 +86,7 @@ export class Cache {
 /**
  * Router implementation based on the value of window.location.hash.
  */
-export abstract class Router implements router.Router<Request> {
+export abstract class AbstractRouter implements router.Router<Request> {
 
     constructor(public window: Window, public routes: Routes = {}) { }
 
@@ -139,7 +139,7 @@ export abstract class Router implements router.Router<Request> {
     /**
      * add a Handler to the route table for a specific path.
      */
-    add(path: string, handler: Handler): Router {
+    add(path: string, handler: Handler): AbstractRouter {
 
         if (this.routes.hasOwnProperty(path)) {
 
@@ -155,7 +155,7 @@ export abstract class Router implements router.Router<Request> {
 
     }
 
-    use(path: string, mware: Filter): Router {
+    use(path: string, mware: Filter): AbstractRouter {
 
         if (this.routes.hasOwnProperty(path)) {
 
@@ -175,7 +175,7 @@ export abstract class Router implements router.Router<Request> {
      * start activates routing by installing a hook into the supplied
      * window.
      */
-    start(): Router {
+    start(): AbstractRouter {
 
         this.cache = compile(this.routes);
         this.window.addEventListener(EVENT_HASH_CHANGED, this);
@@ -183,7 +183,7 @@ export abstract class Router implements router.Router<Request> {
 
     }
 
-    stop(): Router {
+    stop(): AbstractRouter {
 
         this.window.removeEventListener(EVENT_HASH_CHANGED, this);
         return this;
@@ -193,9 +193,9 @@ export abstract class Router implements router.Router<Request> {
 }
 
 /**
- * Default has router implementation.
+ * Router has router implementation.
  */
-export class Default extends Router {
+export class Router extends AbstractRouter {
 
     onError = (e: Error) => <Future<void>>raise(e);
 

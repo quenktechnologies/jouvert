@@ -2,13 +2,13 @@ import * as must from 'should';
 import { pure } from '@quenk/noni/lib/control/monad/future';
 import { noop } from '@quenk/noni/lib/data/function';
 import {
-    Default,
     Router,
+    AbstractRouter,
     Request
 }
     from '../../../../../lib/browser/window/router/hash';
 
-class RouterImpl extends Router {
+class RouterImpl extends AbstractRouter {
 
     hadErr = false;
 
@@ -28,13 +28,13 @@ describe('router', () => {
 
     });
 
-    describe('Default', () => {
+    describe('Router', () => {
 
-        let router: Default;
+        let router: Router;
 
         it('should activate a route', cb => {
 
-            router = new Default(window, {});
+            router = new Router(window, {});
             let called = false;
 
             router
@@ -63,7 +63,7 @@ describe('router', () => {
 
             let called = false;
 
-            router = new Default(window, {});
+            router = new Router(window, {});
 
             router
                 .add('/', () => {
@@ -90,7 +90,7 @@ describe('router', () => {
 
             let called = false;
 
-            router = new Default(window, {});
+            router = new Router(window, {});
 
             router
                 .add('/spreadsheet/locations/:worksheet', req => {
@@ -120,7 +120,7 @@ describe('router', () => {
 
             let called = false;
 
-            router = new Default(window, {});
+            router = new Router(window, {});
 
             router
                 .add('/', () => {
@@ -148,7 +148,7 @@ describe('router', () => {
             let count = 0;
             let mware = (req: Request) => { count = count + 1; return pure(req); };
 
-            router = new Default(window, {});
+            router = new Router(window, {});
 
             router
                 .use('/search', mware)

@@ -8,8 +8,8 @@ import {
     ContinueCase,
     ExpireListener,
     ExpireCase,
-    Forwarder,
-    ForwardCase
+    MessageListener,
+    MessageCase
 
 } from '../../../../../lib/app/actor/runtime/scheduler';
 import { ActorImpl } from '../fixtures/actor';
@@ -18,18 +18,24 @@ type MDispatching = Ack | Exp | Cont;
 
 class Request { src = '?' }
 
-class Ack { value = 12 }
+class Parent { constructor(public actor: string) { } }
 
-class Exp { ts = 100 }
+class Ack extends Parent { ack = 'yes' }
 
-class Cont { retry = false }
+class Exp extends Parent { ts = 100 }
+
+class Cont extends Parent { retry = false }
+
+class Message extends Parent { value = 12 }
 
 class Sched extends ActorImpl
     implements Scheduler<Request, MDispatching, void>,
-    AckListener<Ack, void>,
-    ContinueListener<Cont, void>,
-    ExpireListener<Exp, void>,
-    Forwarder<Date, void> {
+    AckListener<Ack, MDispatching>,
+    ContinueListener<Cont, MDispatching>,
+    ExpireListener<Exp, MDispatching>,
+    MessageListener<Message, MDispatching> {
+
+    current = 'x';
 
     beforeWait(_: Request) {
 
@@ -37,9 +43,9 @@ class Sched extends ActorImpl
 
     }
 
-    wait(_: Request) {
+    waiting(_: Request) {
 
-        this.__record('wait', [_]);
+        this.__record('waiting', [_]);
         return [];
 
     }
@@ -62,15 +68,15 @@ class Sched extends ActorImpl
 
     }
 
-    afterMessage(_: Date) {
+    afterMessage(_: Message) {
 
         return this.__record('afterMessage', [_]);
 
     }
 
-    schedule() {
+    scheduling() {
 
-        this.__record('schedule', []);
+        this.__record('scheduling', []);
         return [];
 
     }
@@ -81,7 +87,7 @@ describe('scheduler', () => {
 
     describe('ScheduleCase', () => {
 
-        it('should transition to wait()', () => {
+        it('should transition to waiting()', () => {
 
             let s = new Sched();
             let c = new ScheduleCase(Request, s);
@@ -89,7 +95,7 @@ describe('scheduler', () => {
             c.match(new Request());
             must(s.__test.invokes.order()).equate([
 
-                'beforeWait', 'wait', 'select'
+                'beforeWait', 'waiting', 'select'
 
             ]);
 
@@ -99,15 +105,15 @@ describe('scheduler', () => {
 
     describe('AckCase', () => {
 
-        it('should transition to schedule()', () => {
+        it('should transition to scheduling()', () => {
 
             let s = new Sched();
             let c = new AckCase(Ack, s);
 
-            c.match(new Ack());
+            c.match(new Ack('x'));
             must(s.__test.invokes.order()).equate([
 
-                'afterAck', 'schedule', 'select'
+                'afterAck', 'scheduling', 'select'
 
             ]);
 
@@ -117,33 +123,34 @@ describe('scheduler', () => {
 
     describe('ContinueCase', () => {
 
-        it('should transition to schedule()', () => {
+        it('should transition to scheduling()', () => {
 
             let s = new Sched();
             let c = new ContinueCase(Cont, s);
 
-            c.match(new Cont());
+            c.match(new Cont('x'));
             must(s.__test.invokes.order()).equate([
 
-                'afterContinue', 'schedule', 'select'
+                'afterContinue', 'scheduling', 'select'
 
             ]);
 
         });
+
 
     });
 
     describe('ExpireCase', () => {
 
-        it('should transition to schedule()', () => {
+        it('should transition to scheduling()', () => {
 
             let s = new Sched();
             let c = new ExpireCase(Exp, s);
 
-            c.match(new Exp());
+            c.match(new Exp('x'));
             must(s.__test.invokes.order()).equate([
 
-                'afterExpire', 'schedule', 'select'
+                'afterExpire', 'scheduling', 'select'
 
             ]);
 
@@ -151,17 +158,17 @@ describe('scheduler', () => {
 
     });
 
-    describe('ForwardCase', () => {
+    describe('MessageCase', () => {
 
-        it('should transition to schedule()', () => {
+        it('should transition to scheduling()', () => {
 
             let s = new Sched();
-            let c = new ForwardCase(Date, s);
+            let c = new MessageCase(Message, s);
 
-            c.match(new Date());
+            c.match(new Message('x'));
             must(s.__test.invokes.order()).equate([
 
-                'afterMessage', 'schedule', 'select'
+                'afterMessage', 'scheduling', 'select'
 
             ]);
 

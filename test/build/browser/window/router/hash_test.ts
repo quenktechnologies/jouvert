@@ -1,25 +1,31 @@
 import * as must from 'should';
 import { pure } from '@quenk/noni/lib/control/monad/future';
-import { Router, Request } from '../../../../../lib/browser/window/routing/hash';
+import { noop } from '@quenk/noni/lib/data/function';
+import {
+    Router,
+    Request
+}
+    from '../../../../../lib/browser/window/router/hash';
 
-const noop = () => { }
-
-describe('routing', () => {
-
-  afterEach(()=> {
-
-    window.location.hash = '';
-
-  });
+describe('router', () => {
 
     describe('Router', () => {
 
-        let router: Router<void>;
+        let router: Router;
+
+        afterEach(() => {
+
+            if (router)
+                router.stop();
+
+            window.location.hash = '';
+
+        });
 
         it('should activate a route', cb => {
 
-            router = new Router(window, noop, noop, {});
             let called = false;
+            router = new Router(window, {});
 
             router
                 .add('/search/:collection', req => {
@@ -30,7 +36,7 @@ describe('routing', () => {
                     return pure(<void>undefined);
 
                 })
-                .run();
+                .start();
 
             window.location.hash = '#/search/samples';
 
@@ -47,7 +53,7 @@ describe('routing', () => {
 
             let called = false;
 
-            router = new Router(window, noop, noop, {});
+            router = new Router(window, {});
 
             router
                 .add('/', () => {
@@ -56,7 +62,7 @@ describe('routing', () => {
                     return pure(<void>undefined);
 
                 })
-                .run();
+                .start();
 
             window.location.hash = '#';
 
@@ -74,7 +80,7 @@ describe('routing', () => {
 
             let called = false;
 
-            router = new Router(window, noop, noop, {});
+            router = new Router(window, {});
 
             router
                 .add('/spreadsheet/locations/:worksheet', req => {
@@ -87,7 +93,7 @@ describe('routing', () => {
                     return pure(<void>undefined);
 
                 })
-                .run();
+                .start();
 
             window.location.hash = '#/spreadsheet/locations/1?a=1&b=2&c=3';
 
@@ -104,7 +110,7 @@ describe('routing', () => {
 
             let called = false;
 
-            router = new Router(window, noop, noop, {});
+            router = new Router(window, {});
 
             router
                 .add('/', () => {
@@ -114,7 +120,7 @@ describe('routing', () => {
                     return pure(<void>undefined);
 
                 })
-                .run();
+                .start();
 
             window.location.hash = '';
 
@@ -132,7 +138,7 @@ describe('routing', () => {
             let count = 0;
             let mware = (req: Request) => { count = count + 1; return pure(req); };
 
-            router = new Router(window, noop, noop, {});
+            router = new Router(window, {});
 
             router
                 .use('/search', mware)
@@ -144,7 +150,7 @@ describe('routing', () => {
                     return pure(<void>undefined);
 
                 })
-                .run();
+                .start();
 
             window.location.hash = 'search';
 
@@ -159,24 +165,18 @@ describe('routing', () => {
 
         it('should invoke the 404 if not present', cb => {
 
-            let called = false;
+            let hadNotFound = false;
+            let onErr = () => { return pure(noop()) }
+            let onNotFound = () => { hadNotFound = true; return pure(noop()) }
+            router = new Router(window, {}, onNotFound, onErr);
 
-            router = new Router(window, noop, noop, {});
-
-            router
-                .add('404', () => {
-
-                    called = true;
-                    return pure(<void>undefined);
-
-                })
-                .run();
+            router.start();
 
             window.location.hash = 'waldo';
 
             setTimeout(() => {
 
-                must(called).equal(true);
+                must(hadNotFound).equal(true);
                 cb();
 
             }, 1000);

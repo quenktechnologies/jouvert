@@ -2,24 +2,26 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 var must = require("should");
 var future_1 = require("@quenk/noni/lib/control/monad/future");
-var hash_1 = require("../../../../../lib/browser/window/routing/hash");
-var noop = function () { };
-describe('routing', function () {
-    afterEach(function () {
-        window.location.hash = '';
-    });
+var function_1 = require("@quenk/noni/lib/data/function");
+var hash_1 = require("../../../../../lib/browser/window/router/hash");
+describe('router', function () {
     describe('Router', function () {
         var router;
+        afterEach(function () {
+            if (router)
+                router.stop();
+            window.location.hash = '';
+        });
         it('should activate a route', function (cb) {
-            router = new hash_1.Router(window, noop, noop, {});
             var called = false;
+            router = new hash_1.Router(window, {});
             router
                 .add('/search/:collection', function (req) {
                 called = true;
                 must(req.params.collection).equal('samples');
                 return future_1.pure(undefined);
             })
-                .run();
+                .start();
             window.location.hash = '#/search/samples';
             setTimeout(function () {
                 must(called).equal(true);
@@ -28,13 +30,13 @@ describe('routing', function () {
         });
         it('should recognise # as /', function (cb) {
             var called = false;
-            router = new hash_1.Router(window, noop, noop, {});
+            router = new hash_1.Router(window, {});
             router
                 .add('/', function () {
                 called = true;
                 return future_1.pure(undefined);
             })
-                .run();
+                .start();
             window.location.hash = '#';
             setTimeout(function () {
                 must(called).equal(true);
@@ -43,7 +45,7 @@ describe('routing', function () {
         });
         it('must parse path parameters variables', function (cb) {
             var called = false;
-            router = new hash_1.Router(window, noop, noop, {});
+            router = new hash_1.Router(window, {});
             router
                 .add('/spreadsheet/locations/:worksheet', function (req) {
                 must.exist(req.query);
@@ -52,7 +54,7 @@ describe('routing', function () {
                 called = true;
                 return future_1.pure(undefined);
             })
-                .run();
+                .start();
             window.location.hash = '#/spreadsheet/locations/1?a=1&b=2&c=3';
             setTimeout(function () {
                 must(called).equal(true);
@@ -61,13 +63,13 @@ describe('routing', function () {
         });
         it('should recognise "" as /', function (cb) {
             var called = false;
-            router = new hash_1.Router(window, noop, noop, {});
+            router = new hash_1.Router(window, {});
             router
                 .add('/', function () {
                 called = true;
                 return future_1.pure(undefined);
             })
-                .run();
+                .start();
             window.location.hash = '';
             setTimeout(function () {
                 must(called).equal(true);
@@ -77,7 +79,7 @@ describe('routing', function () {
         it('should execute middleware', function (cb) {
             var count = 0;
             var mware = function (req) { count = count + 1; return future_1.pure(req); };
-            router = new hash_1.Router(window, noop, noop, {});
+            router = new hash_1.Router(window, {});
             router
                 .use('/search', mware)
                 .use('/search', mware)
@@ -86,7 +88,7 @@ describe('routing', function () {
                 count = count + 1;
                 return future_1.pure(undefined);
             })
-                .run();
+                .start();
             window.location.hash = 'search';
             setTimeout(function () {
                 must(count).equal(4);
@@ -94,17 +96,14 @@ describe('routing', function () {
             }, 1000);
         });
         it('should invoke the 404 if not present', function (cb) {
-            var called = false;
-            router = new hash_1.Router(window, noop, noop, {});
-            router
-                .add('404', function () {
-                called = true;
-                return future_1.pure(undefined);
-            })
-                .run();
+            var hadNotFound = false;
+            var onErr = function () { return future_1.pure(function_1.noop()); };
+            var onNotFound = function () { hadNotFound = true; return future_1.pure(function_1.noop()); };
+            router = new hash_1.Router(window, {}, onNotFound, onErr);
+            router.start();
             window.location.hash = 'waldo';
             setTimeout(function () {
-                must(called).equal(true);
+                must(hadNotFound).equal(true);
                 cb();
             }, 1000);
         });

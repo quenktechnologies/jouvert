@@ -24,8 +24,8 @@ describe('router', () => {
 
         it('should activate a route', cb => {
 
-            router = new Router(window, {});
             let called = false;
+            router = new Router(window, {});
 
             router
                 .add('/search/:collection', req => {

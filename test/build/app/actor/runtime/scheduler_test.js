@@ -22,34 +22,60 @@ var Request = /** @class */ (function () {
     }
     return Request;
 }());
-var Ack = /** @class */ (function () {
+var Parent = /** @class */ (function () {
+    function Parent(actor) {
+        this.actor = actor;
+    }
+    return Parent;
+}());
+var Ack = /** @class */ (function (_super) {
+    __extends(Ack, _super);
     function Ack() {
-        this.value = 12;
+        var _this = _super !== null && _super.apply(this, arguments) || this;
+        _this.ack = 'yes';
+        return _this;
     }
     return Ack;
-}());
-var Exp = /** @class */ (function () {
+}(Parent));
+var Exp = /** @class */ (function (_super) {
+    __extends(Exp, _super);
     function Exp() {
-        this.ts = 100;
+        var _this = _super !== null && _super.apply(this, arguments) || this;
+        _this.ts = 100;
+        return _this;
     }
     return Exp;
-}());
-var Cont = /** @class */ (function () {
+}(Parent));
+var Cont = /** @class */ (function (_super) {
+    __extends(Cont, _super);
     function Cont() {
-        this.retry = false;
+        var _this = _super !== null && _super.apply(this, arguments) || this;
+        _this.retry = false;
+        return _this;
     }
     return Cont;
-}());
+}(Parent));
+var Message = /** @class */ (function (_super) {
+    __extends(Message, _super);
+    function Message() {
+        var _this = _super !== null && _super.apply(this, arguments) || this;
+        _this.value = 12;
+        return _this;
+    }
+    return Message;
+}(Parent));
 var Sched = /** @class */ (function (_super) {
     __extends(Sched, _super);
     function Sched() {
-        return _super !== null && _super.apply(this, arguments) || this;
+        var _this = _super !== null && _super.apply(this, arguments) || this;
+        _this.current = 'x';
+        return _this;
     }
     Sched.prototype.beforeWait = function (_) {
         return this.__record('beforeWait', [_]);
     };
-    Sched.prototype.wait = function (_) {
-        this.__record('wait', [_]);
+    Sched.prototype.waiting = function (_) {
+        this.__record('waiting', [_]);
         return [];
     };
     Sched.prototype.afterAck = function (_) {
@@ -64,60 +90,60 @@ var Sched = /** @class */ (function (_super) {
     Sched.prototype.afterMessage = function (_) {
         return this.__record('afterMessage', [_]);
     };
-    Sched.prototype.schedule = function () {
-        this.__record('schedule', []);
+    Sched.prototype.scheduling = function () {
+        this.__record('scheduling', []);
         return [];
     };
     return Sched;
 }(actor_1.ActorImpl));
 describe('scheduler', function () {
     describe('ScheduleCase', function () {
-        it('should transition to wait()', function () {
+        it('should transition to waiting()', function () {
             var s = new Sched();
             var c = new scheduler_1.ScheduleCase(Request, s);
             c.match(new Request());
             must_1.must(s.__test.invokes.order()).equate([
-                'beforeWait', 'wait', 'select'
+                'beforeWait', 'waiting', 'select'
             ]);
         });
     });
     describe('AckCase', function () {
-        it('should transition to schedule()', function () {
+        it('should transition to scheduling()', function () {
             var s = new Sched();
             var c = new scheduler_1.AckCase(Ack, s);
-            c.match(new Ack());
+            c.match(new Ack('x'));
             must_1.must(s.__test.invokes.order()).equate([
-                'afterAck', 'schedule', 'select'
+                'afterAck', 'scheduling', 'select'
             ]);
         });
     });
     describe('ContinueCase', function () {
-        it('should transition to schedule()', function () {
+        it('should transition to scheduling()', function () {
             var s = new Sched();
             var c = new scheduler_1.ContinueCase(Cont, s);
-            c.match(new Cont());
+            c.match(new Cont('x'));
             must_1.must(s.__test.invokes.order()).equate([
-                'afterContinue', 'schedule', 'select'
+                'afterContinue', 'scheduling', 'select'
             ]);
         });
     });
     describe('ExpireCase', function () {
-        it('should transition to schedule()', function () {
+        it('should transition to scheduling()', function () {
             var s = new Sched();
             var c = new scheduler_1.ExpireCase(Exp, s);
-            c.match(new Exp());
+            c.match(new Exp('x'));
             must_1.must(s.__test.invokes.order()).equate([
-                'afterExpire', 'schedule', 'select'
+                'afterExpire', 'scheduling', 'select'
             ]);
         });
     });
-    describe('ForwardCase', function () {
-        it('should transition to schedule()', function () {
+    describe('MessageCase', function () {
+        it('should transition to scheduling()', function () {
             var s = new Sched();
-            var c = new scheduler_1.ForwardCase(Date, s);
-            c.match(new Date());
+            var c = new scheduler_1.MessageCase(Message, s);
+            c.match(new Message('x'));
             must_1.must(s.__test.invokes.order()).equate([
-                'afterMessage', 'schedule', 'select'
+                'afterMessage', 'scheduling', 'select'
             ]);
         });
     });

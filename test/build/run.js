@@ -10,3 +10,4 @@ require("./app/actor/interact/data/preload_test.js");
 require("./app/actor/interact/index_test.js");
 require("./app/actor/interact/http/index_test.js");
 require("./app/actor/runtime/scheduler_test.js");
+require("./app/actor/api/router_test.js");

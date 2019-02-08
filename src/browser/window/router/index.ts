@@ -11,44 +11,51 @@ export type Route = string;
 export type Filter<R> = (req: R) => Future<R>;
 
 /**
- * Handler represents the action taken when a route is activated.
- *
- * The value returned from a handler may be used by a Router 
- * to perform some action such as render DOM content.
+ * Handler is the action taken to terminate a request.
  */
-export type Handler<R, V> = (req: R) => Future<V>;
+export type Handler<R> = (r: R) => Future<void>;
 
 /**
- * Router describes an interface used for changing application
- * state based on user requests.
+ * Router is an interface for changing application state based on user requests.
  *
- * This interface does not put a constraint on what a user Request
- * looks like. Instead it is left up to Router implementations to 
- * satisfy the type <R>.
- *
- * The type <V> represents the value returned by a [Handler].
- * What this value is and used for is also left up to the implementing class.
+ * Each request is enscapulated by the type <R> that is constrained by
+ * the Router implementation.
  */
-export interface Router<R, V> {
+export interface Router<R> {
+
+  /**
+   * onError hook.
+   */
+    onError: (e: Error) => Future<void>;
+
+  /**
+   * onNotFound hook.
+   */
+    onNotFound: (url: string) => Future<void>;
 
     /**
      * add a Handler to the internal route table.
      */
-    add(path: Route, handler: Handler<R, V>): Router<R, V>;
+    add(path: Route, handler: Handler<R>): Router<R>;
 
     /**
      * use a Filter for a specific path.
      */
-    use(path: Route, mware: Filter<R>): Router<R, V>;
+    use(path: Route, mware: Filter<R>): Router<R>;
+
+  /**
+   * clear all routes from the Router.
+   */
+  clear(): void;
 
     /**
-     * run the Router.
+     * start the Router.
      */
-    run(): Router<R, V>;
+    start(): Router<R>;
 
     /**
      * stop the Router.
      */
-    stop(): Router<R, V>;
+    stop(): Router<R>;
 
 }

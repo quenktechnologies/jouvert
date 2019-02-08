@@ -3,111 +3,166 @@ import { Case } from '@quenk/potoo/lib/actor/resident/case';
 import { Actor } from '../';
 
 /**
- * Waitable
+ * Waiting
  */
-export interface Waitable<T, M> extends Actor {
+export interface Waiting<T, M> extends Actor {
 
-    beforeWait(t: T): Waitable<T, M>
-
-    wait(t: T): Case<M>[]
+    waiting(t: T): Case<M>[]
 
 }
 
 /**
- * Dispatchable
+ * Schedulable
  */
-export interface Dispatchable<M> extends Actor {
+export interface Schedulable<M> extends Actor {
 
-    schedule(): Case<M>[]
+    scheduling(): Case<M>[]
 
 }
 
 /**
- * Scheduler coordinates the streaming of messages to a single actor from 
- * multiple actors, one at a time.
+ * Scheduler coordinates the streaming of messages to a single actor 
+ * destination from multiple actors one at a time.
+ * 
+ * The apis provided here assume that the currently schedule actor will send
+ * messages intended for the destination to the Scheduler. The Scheduler will
+ * then forward those messages via the MessageListener interface.
  *
- * A Scheduler allows only one actor to stream at a time and will attempt
- * to stop that actor before switching to another.
+ * Before allowing another actor to stream, a Scheduler attempts to stop
+ * the current one. This is implemented in the "beforeWait" hook.
  *
- * This behaviour is expected to be implemented by sending the appropriate
- * message to the currently scheduled actor in the "beforeWait" just before
- * the actor goes into waiting.
+ * The actor being stopped is expected to respond with an acknowledgment 
+ * message which instructs the Scheduler to complete the switch over.
  *
- * While waiting the active actor can respond with a Ack message or Continue
- * if it does not want to yield right now.
+ * Additional interfaces are provided for timing the acknowledgement response 
+ * as well as aborting the request completely.
  *
- * A case also exists for "expiring" the wait so that it is not indefinite.
- *
- * Expected behaviour matrix
- *               scheduling               waiting
- * scheduling                             <Schedule>       
- * waiting       <Ack>|<Continue>|Expire                
+ * Target behaviour matrix:
+ *               scheduling                  waiting
+ * scheduling                                <Schedule>       
+ * waiting          <Ack>|<Continue>|<Expire>                
  */
-export interface Scheduler<T, MDispatching, MWaiting>
-    extends Dispatchable<MDispatching>, Waitable<T, MWaiting> { }
-
-/**
- * Forwarder
- */
-export interface Forwarder<T, M> extends Dispatchable<M> {
+export interface Scheduler<T, MScheduling, MWaiting>
+    extends Schedulable<MScheduling>, Waiting<T, MWaiting> {
 
     /**
-     * afterMessage hook
+     * beforeWait hook.
      */
-    afterMessage(m: T): Forwarder<T, M>
+    beforeWait(t: T): Scheduler<T, MScheduling, MWaiting>
+
+}
+
+/**
+ * Timesout allows the Scheduler to limit the amount of time waited
+ * for an actor to yield control.
+ *
+ */
+export interface Timesout<T, MScheduling, MWaiting>
+    extends Scheduler<T, MScheduling, MWaiting> {
+
+    /**
+     * beforeTimer hook for starting the timer.
+     */
+    beforeTimer(t:T): Timesout<T, MScheduling, MWaiting>
 
 }
 
 /**
  * AckListener
+ *
+ * Implement this interface to process the acknowldgement from the current
+ * actor.
  */
-export interface AckListener<A, M> extends Dispatchable<M> {
+export interface AckListener<A, MScheduling> extends Schedulable<MScheduling> {
 
     /**
      * afterAck hook
      */
-    afterAck(a: A): AckListener<A, M>
+    afterAck(a: A): AckListener<A, MScheduling>
 
 }
 
 /**
  * ContinueListener
+ *
+ * Implement this interface to process a request for continuation
+ * from the current actor.
  */
-export interface ContinueListener<C, M> extends Dispatchable<M> {
+export interface ContinueListener<C, MScheduling> extends Schedulable<MScheduling> {
 
     /**
      * afterContinue hook
      */
-    afterContinue(c: C): ContinueListener<C, M>
+    afterContinue(c: C): ContinueListener<C, MScheduling>
 
 }
 
 /**
  * ExpireListener
+ *
+ * This interface can be implemented to detect time has run out
+ * for the controlling actor to respond.
  */
-export interface ExpireListener<E, M> extends Dispatchable<M> {
+export interface ExpireListener<E, MScheduling> extends Schedulable<MScheduling> {
 
     /**
      * afterExpire hook
      */
-    afterExpire(e: E): ExpireListener<E, M>
+    afterExpire(e: E): ExpireListener<E, MScheduling>
+
+}
+
+/**
+ * MessageListener
+ *
+ * Implement this interface to forward messages to the destination
+ * actor.
+ */
+export interface MessageListener<A, MScheduling> extends Schedulable<MScheduling> {
+
+    /**
+     * afterMessage hook.
+     */
+    afterMessage(m: A): MessageListener<A, MScheduling>
 
 }
 
 /**
  * ScheduleCase invokes the beforeWait hook then transitions
  * to waiting.
+ *
+ * Use the beforeWait to turn off the currently scheduled actor.
  */
-export class ScheduleCase<S, MWaiting> extends Case<S> {
+export class ScheduleCase<T, MSuspended, MWaiting> extends Case<T> {
 
     constructor(
-        public pattern: Constructor<S>,
-        public waitable: Waitable<S, MWaiting>) {
+        public pattern: Constructor<T>,
+        public scheduler: Scheduler<T, MSuspended, MWaiting>) {
 
-        super(pattern, (s: S) =>
-            waitable
-                .beforeWait(s)
-                .select(waitable.wait(s)));
+        super(pattern, (t: T) =>
+            scheduler
+                .beforeWait(t)
+                .select(scheduler.waiting(t)));
+
+    }
+
+}
+
+/**
+ * TimedScheduleCase is like ScheduleCase except it instructs
+ * the Timesout to start counting down the time taken for a respon.
+ */
+export class TimedScheduleCase<T, MScheduling, MWaiting> extends Case<T> {
+
+    constructor(
+        public pattern: Constructor<T>,
+        public timesout: Timesout<T, MScheduling, MWaiting>) {
+
+        super(pattern, (t: T) =>
+            timesout
+                .beforeTimer(t)
+                .beforeWait(t)
+                .select(timesout.waiting(t)));
 
     }
 
@@ -117,16 +172,16 @@ export class ScheduleCase<S, MWaiting> extends Case<S> {
  * AckCase invokes the afterAck hook then transitions to 
  * dispatching.
  */
-export class AckCase<A, M> extends Case<A> {
+export class AckCase<A, MScheduling> extends Case<A> {
 
     constructor(
         public pattern: Constructor<A>,
-        public listener: AckListener<A, M>) {
+        public listener: AckListener<A, MScheduling>) {
 
         super(pattern, (a: A) =>
             listener
                 .afterAck(a)
-                .select(listener.schedule()));
+                .select(listener.scheduling()));
 
     }
 
@@ -136,16 +191,16 @@ export class AckCase<A, M> extends Case<A> {
  * ContinueCase invokes the afterContinue hook then transitions
  * to dispatching.
  */
-export class ContinueCase<C, M> extends Case<C> {
+export class ContinueCase<C, MScheduling> extends Case<C> {
 
     constructor(
         public pattern: Constructor<C>,
-        public listener: ContinueListener<C, M>) {
+        public listener: ContinueListener<C, MScheduling>) {
 
         super(pattern, (c: C) =>
             listener
                 .afterContinue(c)
-                .select(listener.schedule()));
+                .select(listener.scheduling()));
 
     }
 
@@ -154,35 +209,35 @@ export class ContinueCase<C, M> extends Case<C> {
 /**
  * ExpireCase invokes the afterExpire hook then transitions to dispatching.
  */
-export class ExpireCase<E, M> extends Case<E> {
+export class ExpireCase<E, MScheduling> extends Case<E> {
 
     constructor(
         public pattern: Constructor<E>,
-        public listener: ExpireListener<E, M>) {
+        public listener: ExpireListener<E, MScheduling>) {
 
         super(pattern, (e: E) =>
             listener
                 .afterExpire(e)
-                .select(listener.schedule()));
+                .select(listener.scheduling()));
 
     }
 
 }
 
 /**
- * ForwardCase invokes the afterMessage hook then transitions to
+ * MessageCase invokes the afterMessage hook then transitions to
  * dispatching.
  */
-export class ForwardCase<T, M> extends Case<T> {
+export class MessageCase<A, MScheduling> extends Case<A> {
 
     constructor(
-        public pattern: Constructor<T>,
-        public forwarder: Forwarder<T, M>) {
+        public pattern: Constructor<A>,
+        public listener: MessageListener<A, MScheduling>) {
 
-        super(pattern, (t: T) =>
-            forwarder
-                .afterMessage(t)
-                .select(forwarder.schedule()));
+        super(pattern, (m: A) =>
+            listener
+                .afterMessage(m)
+                .select(listener.scheduling()));
 
     }
 

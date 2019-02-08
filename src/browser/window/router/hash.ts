@@ -103,7 +103,7 @@ export class Router implements router.Router<Request> {
         let [path, query] = takeHash(this.window);
         let cache = this.cache;
         let mware: Filter[] = [];
-        let handler: Handler = () => pure(<any>undefined);
+        let handler: Handler = () => pure(<void>undefined);
         let keys: Object[] = [];
         let r: any = null;
         let count = 0;
@@ -151,6 +151,8 @@ export class Router implements router.Router<Request> {
 
         }
 
+        this.cache = compile(this.routes);
+
         return this;
 
     }
@@ -167,7 +169,16 @@ export class Router implements router.Router<Request> {
 
         }
 
+        this.cache = compile(this.routes);
+
         return this;
+
+    }
+
+    clear() {
+
+        this.cache = [];
+        this.routes = {};
 
     }
 
@@ -177,7 +188,6 @@ export class Router implements router.Router<Request> {
      */
     start(): Router {
 
-        this.cache = compile(this.routes);
         this.window.addEventListener(EVENT_HASH_CHANGED, this);
         return this;
 

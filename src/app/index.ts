@@ -37,9 +37,8 @@ export abstract class JApp extends AbstractSystem<Context> implements App {
         r: Runtime<Context, JApp>,
         t: Template): Context {
 
-          return a.init(newContext(a, <Runtime<Context, System<Context>>>r, t));
+        return a.init(newContext(a, <Runtime<Context, System<Context>>>r, t));
 
     }
 
 }
-

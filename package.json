@@ -1,7 +1,7 @@
 {
   "name": "@quenk/jouvert",
   "version": "0.0.1",
-  "description": "",
+  "description": "SPA framework.",
   "author": [
     "Quenk Technologies Limited <info@quenk.com> (https://quenk.com)"
   ],
@@ -21,7 +21,7 @@
   },
   "dependencies": {
     "@quenk/noni": "^1.15.1",
-    "@quenk/potoo": "^1.16.1",
+    "@quenk/potoo": "^2.1.0",
     "@quenk/preconditions": "^5.2.2",
     "@quenk/test": "^2.1.0",
     "@quenk/wml": "^0.16.3",

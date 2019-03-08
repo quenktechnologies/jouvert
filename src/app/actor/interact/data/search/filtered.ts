@@ -1,6 +1,6 @@
 import { Constructor } from '@quenk/noni/lib/data/type/constructor';
 import { Case } from '@quenk/potoo/lib/actor/resident/case';
-import { Resumable } from '../../resumable';
+import { Resumes } from '../../resumes';
 
 /**
  * ResumedMessages type.
@@ -15,7 +15,7 @@ export type ResumedMessages<A, MResumed>
  * of a filtered search.
  */
 export interface Filtered<A, R, MResumed>
-    extends Resumable<R, ResumedMessages<A, MResumed>> {
+    extends Resumes<R, ResumedMessages<A, MResumed>> {
 
     /**
      * setFilter

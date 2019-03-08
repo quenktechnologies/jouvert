@@ -6,12 +6,12 @@
 /** imports */
 import { Constructor } from '@quenk/noni/lib/data/type/constructor';
 import { Case } from '@quenk/potoo/lib/actor/resident/case';
-import { Resumable } from '../resumable';
+import { Resumes } from '../resumes';
 
 /**
  * OkListener
  */
-export interface OkListener<A, R, MResumed> extends Resumable<R, MResumed> {
+export interface OkListener<A, R, MResumed> extends Resumes<R, MResumed> {
     /**
      * afterOk hook.
      */
@@ -22,7 +22,7 @@ export interface OkListener<A, R, MResumed> extends Resumable<R, MResumed> {
 /**
  * CreatedListener
  */
-export interface CreatedListener<A, R, MResumed> extends Resumable<R, MResumed> {
+export interface CreatedListener<A, R, MResumed> extends Resumes<R, MResumed> {
 
     /**
      * afterCreated hook.
@@ -34,7 +34,7 @@ export interface CreatedListener<A, R, MResumed> extends Resumable<R, MResumed> 
 /**
  * NoContentListener
  */
-export interface NoContentListener<A, R, MResumed> extends Resumable<R, MResumed> {
+export interface NoContentListener<A, R, MResumed> extends Resumes<R, MResumed> {
 
     /**
      * afterNoContent hook.
@@ -46,7 +46,7 @@ export interface NoContentListener<A, R, MResumed> extends Resumable<R, MResumed
 /**
  * ForbiddenListener
  */
-export interface ForbiddenListener<A, R, MResumed> extends Resumable<R, MResumed> {
+export interface ForbiddenListener<A, R, MResumed> extends Resumes<R, MResumed> {
 
     /**
      * afterForbidden hook.
@@ -58,7 +58,7 @@ export interface ForbiddenListener<A, R, MResumed> extends Resumable<R, MResumed
 /**
  * UnauthorizedListener
  */
-export interface UnauthorizedListener<A, R, MResumed> extends Resumable<R, MResumed> {
+export interface UnauthorizedListener<A, R, MResumed> extends Resumes<R, MResumed> {
 
     /**
      * afterUnauthorized hook.
@@ -70,7 +70,7 @@ export interface UnauthorizedListener<A, R, MResumed> extends Resumable<R, MResu
 /**
  * NotFoundListener
  */
-export interface NotFoundListener<A, R, MResumed> extends Resumable<R, MResumed> {
+export interface NotFoundListener<A, R, MResumed> extends Resumes<R, MResumed> {
 
     /**
      * afterNotFound hook.
@@ -82,7 +82,7 @@ export interface NotFoundListener<A, R, MResumed> extends Resumable<R, MResumed>
 /**
  * ServerErrorListener
  */
-export interface ServerErrorListener<A, R, MResumed> extends Resumable<R, MResumed> {
+export interface ServerErrorListener<A, R, MResumed> extends Resumes<R, MResumed> {
 
     /**
      * afterServerError hook.

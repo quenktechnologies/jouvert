@@ -1,9 +1,9 @@
-import { Resumable } from '../../resumable';
+import { Resumes } from '../../resumes';
 
 /**
  * Inputtable interface for Interacts that allow user input
  */
-export interface Inputtable<E, R, MResumed> extends Resumable<R, MResumed> {
+export interface Inputtable<E, R, MResumed> extends Resumes<R, MResumed> {
 
     /**
      * onInput handler.

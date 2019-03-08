@@ -1,6 +1,6 @@
 import { Constructor } from '@quenk/noni/lib/data/type/constructor';
 import { Case } from '@quenk/potoo/lib/actor/resident/case';
-import { Suspendable } from '../../suspendable';
+import { Suspends } from '../../suspends';
 import { Request } from './';
 
 /**
@@ -29,7 +29,7 @@ export type ResumedMessage<E, C, M>
  * @param <MSuspended> - Type of messages handled while aborted (suspended).
  */
 export interface Abort<C, R extends Request, MSuspended>
-    extends Suspendable<MSuspended> {
+    extends Suspends<MSuspended> {
 
     /**
      * beforeAbort hook

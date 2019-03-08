@@ -17,8 +17,8 @@
 import { Address } from '@quenk/potoo/lib/actor/address';
 import { Constructor } from '@quenk/noni/lib/data/type/constructor';
 import { Case as Case } from '@quenk/potoo/lib/actor/resident/case';
-import { Suspendable } from './suspendable';
-import { Resumable } from './resumable';
+import { BeforeSuspends, Suspends } from './suspends';
+import { BeforeResumes, Resumes } from './resumes';
 
 /**
  * ResumedMessages type.
@@ -79,21 +79,15 @@ export interface Suspend {
  * @param <MResumed>   - Type of messages handled while resumed.
  */
 export interface Interact<R, MSuspended, MResumed>
-    extends Suspendable<MSuspended>, Resumable<R, ResumedMessages<R, MResumed>> {
+    extends
+    BeforeSuspends,
+    Suspends<MSuspended>,
+    BeforeResumes<R>,
+    Resumes<R, ResumedMessages<R, MResumed>> {
 
-    /**
-     * beforeResume hook.
-     *
-     * This should be invoked before transitioning to the Resume behaviour.
-     */
     beforeResume(r: R): Interact<R, MSuspended, MResumed>
 
-    /**
-     * beforeSuspend hook.
-     *
-     * This should be invoked before transitioning to the Suspend behaviour.
-     */
-    beforeSuspend(): Interact<R, MSuspended, MResumed>
+        beforeSuspend(): Interact<R, MSuspended, MResumed>
 
 }
 

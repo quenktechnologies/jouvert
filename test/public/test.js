@@ -18,15 +18,15 @@ var record_1 = require("@quenk/noni/lib/data/record");
 var maybe_1 = require("@quenk/noni/lib/data/maybe");
 var future_1 = require("@quenk/noni/lib/control/monad/future");
 var case_1 = require("@quenk/potoo/lib/actor/resident/case");
-var scheduler_1 = require("../../actor/runtime/scheduler");
-var __1 = require("../");
+var __1 = require("../../");
+var _1 = require("./");
 exports.SUPERVISOR_ID = 'current';
 /**
  * Resume is sent to an actor to indicate it has control.
  */
 var Resume = /** @class */ (function () {
-    function Resume(path, actor, display, request) {
-        this.path = path;
+    function Resume(route, actor, display, request) {
+        this.route = route;
         this.actor = actor;
         this.display = display;
         this.request = request;
@@ -67,8 +67,8 @@ exports.Cont = Cont;
  * Exp is used internally for when a timely response it not received.
  */
 var Exp = /** @class */ (function () {
-    function Exp(path) {
-        this.path = path;
+    function Exp(route) {
+        this.route = route;
     }
     return Exp;
 }());
@@ -120,8 +120,8 @@ var AckProxy = /** @class */ (function (_super) {
         _this.instance = instance;
         return _this;
     }
-    AckProxy.prototype.scheduling = function () {
-        return this.instance.scheduling();
+    AckProxy.prototype.routing = function () {
+        return this.instance.routing();
     };
     AckProxy.prototype.afterAck = function (_) {
         var _this = this;
@@ -151,12 +151,12 @@ var ExpProxy = /** @class */ (function (_super) {
         _this.instance = instance;
         return _this;
     }
-    ExpProxy.prototype.scheduling = function () {
-        return this.instance.scheduling();
+    ExpProxy.prototype.routing = function () {
+        return this.instance.routing();
     };
     ExpProxy.prototype.afterExpire = function (_a) {
         var _this = this;
-        var path = _a.path;
+        var route = _a.route;
         var routes = this.instance.routes;
         if (this.instance.current.isJust()) {
             var addr = this.instance.current.get();
@@ -172,14 +172,14 @@ var ExpProxy = /** @class */ (function (_super) {
                 create: function (h) { return new Supervisor(_this.next, _this.display, _this.self(), h); }
             });
         }
-        this.instance.routes = record_1.exclude(routes, path);
+        this.instance.routes = record_1.exclude(routes, route);
         return this;
     };
     return ExpProxy;
 }(__1.Proxy));
 exports.ExpProxy = ExpProxy;
 /**
- * Router provides an actor that allows controller style actors to stream
+ * DisplayRouter provides an actor that allows controller style actors to stream
  * content to a display in response to user requests.
  *
  * In order to be a compliant with a Router, a controller actor must:
@@ -192,30 +192,26 @@ exports.ExpProxy = ExpProxy;
  * the actor resulting in the real router implementation's onError function being
  * called each time the user requests the route.
  */
-var Router = /** @class */ (function (_super) {
-    __extends(Router, _super);
-    function Router(display, routes, router, timeLimit, current, system) {
+var DisplayRouter = /** @class */ (function (_super) {
+    __extends(DisplayRouter, _super);
+    function DisplayRouter(display, routes, router, timeout, current, system) {
         var _this = _super.call(this, system) || this;
         _this.display = display;
         _this.routes = routes;
         _this.router = router;
-        _this.timeLimit = timeLimit;
+        _this.timeout = timeout;
         _this.current = current;
         _this.system = system;
         return _this;
     }
-    Router.prototype.scheduling = function () {
-        return exports.whenScheduling(this);
-    };
-    Router.prototype.waiting = function (t) {
-        return exports.whenWaiting(this, t);
-    };
-    Router.prototype.beforeTimer = function (t) {
-        var _this = this;
-        setTimeout(function () { return _this.tell(_this.self(), new Exp(t.path)); }, this.timeLimit);
+    DisplayRouter.prototype.beforeRouting = function () {
         return this;
     };
-    Router.prototype.beforeWait = function (_) {
+    DisplayRouter.prototype.routing = function () {
+        return exports.whenRouting(this);
+    };
+    DisplayRouter.prototype.beforeAwaiting = function (t) {
+        var _this = this;
         if (this.current.isJust()) {
             var addr = this.current.get();
             this.tell(addr, new Suspend(addr));
@@ -223,45 +219,168 @@ var Router = /** @class */ (function (_super) {
         else {
             this.tell(this.self(), new Ack());
         }
+        this
+            .timeout
+            .map(function (n) {
+            setTimeout(function () { return _this.tell(_this.self(), new Exp(t.route)); }, n);
+        });
         return this;
     };
-    Router.prototype.afterContinue = function (_) {
+    DisplayRouter.prototype.awaiting = function (t) {
+        return exports.whenAwaiting(this, t);
+    };
+    DisplayRouter.prototype.afterContinue = function (_) {
         return this;
     };
-    Router.prototype.run = function () {
+    DisplayRouter.prototype.run = function () {
         var _this = this;
-        this.routes = record_1.map(this.routes, function (actor, path) {
-            _this.router.add(path, function (r) {
-                if (_this.routes.hasOwnProperty(path)) {
-                    return future_1.pure(void _this.tell(_this.self(), new Resume(path, actor, _this.self() + "/" + exports.SUPERVISOR_ID, r)));
+        this.routes = record_1.map(this.routes, function (actor, route) {
+            _this.router.add(route, function (r) {
+                if (_this.routes.hasOwnProperty(route)) {
+                    var display = _this.self() + "/" + exports.SUPERVISOR_ID;
+                    return future_1.pure(void _this.tell(_this.self(), new Resume(route, _this.self(), display, r)));
                 }
                 else {
-                    return _this.router.onError(new Error(path + ": not responding!"));
+                    return _this.router.onError(new Error(route + ": not responding!"));
                 }
             });
             return actor;
         });
-        this.select(this.scheduling());
+        this.select(this.routing());
     };
-    return Router;
+    return DisplayRouter;
 }(__1.Mutable));
-exports.Router = Router;
+exports.DisplayRouter = DisplayRouter;
 /**
- * whenScheduling behaviour.
+ * whenRouting behaviour.
  */
-exports.whenScheduling = function (r) { return [
-    new scheduler_1.TimedScheduleCase(Resume, r)
+exports.whenRouting = function (r) { return [
+    new _1.DispatchCase(Resume, r)
 ]; };
 /**
- * whenWaiting behaviour.
+ * whenAwaiting behaviour.
  */
-exports.whenWaiting = function (r, t) { return [
-    new scheduler_1.AckCase(Ack, new AckProxy(t, r.display, r)),
-    new scheduler_1.ContinueCase(Cont, r),
-    new scheduler_1.ExpireCase(Exp, new ExpProxy(t, r.display, r))
+exports.whenAwaiting = function (r, t) { return [
+    new _1.AckCase(Ack, new AckProxy(t, r.display, r)),
+    new _1.ContinueCase(Cont, r),
+    new _1.ExpireCase(Exp, new ExpProxy(t, r.display, r))
 ]; };
 
-},{"../":2,"../../actor/runtime/scheduler":13,"@quenk/noni/lib/control/monad/future":17,"@quenk/noni/lib/data/maybe":22,"@quenk/noni/lib/data/record":23,"@quenk/potoo/lib/actor/resident/case":73}],2:[function(require,module,exports){
+},{"../../":3,"./":2,"@quenk/noni/lib/control/monad/future":18,"@quenk/noni/lib/data/maybe":23,"@quenk/noni/lib/data/record":24,"@quenk/potoo/lib/actor/resident/case":31}],2:[function(require,module,exports){
+"use strict";
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+        return extendStatics(d, b);
+    };
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
+Object.defineProperty(exports, "__esModule", { value: true });
+var case_1 = require("@quenk/potoo/lib/actor/resident/case");
+/**
+ * DispatchCase invokes the beforeAwait hook then transitions
+ * to awaiting.
+ *
+ * Use the beforeAwait to turn off the currently scheduled actor.
+ */
+var DispatchCase = /** @class */ (function (_super) {
+    __extends(DispatchCase, _super);
+    function DispatchCase(pattern, listener) {
+        var _this = _super.call(this, pattern, function (t) {
+            return listener
+                .beforeAwaiting(t)
+                .select(listener.awaiting(t));
+        }) || this;
+        _this.pattern = pattern;
+        _this.listener = listener;
+        return _this;
+    }
+    return DispatchCase;
+}(case_1.Case));
+exports.DispatchCase = DispatchCase;
+/**
+ * AckCase invokes the afterAck hook then transitions to
+ * dispatching.
+ */
+var AckCase = /** @class */ (function (_super) {
+    __extends(AckCase, _super);
+    function AckCase(pattern, listener) {
+        var _this = _super.call(this, pattern, function (a) {
+            return listener
+                .afterAck(a)
+                .select(listener.routing());
+        }) || this;
+        _this.pattern = pattern;
+        _this.listener = listener;
+        return _this;
+    }
+    return AckCase;
+}(case_1.Case));
+exports.AckCase = AckCase;
+/**
+ * ContinueCase invokes the afterContinue hook then transitions
+ * to dispatching.
+ */
+var ContinueCase = /** @class */ (function (_super) {
+    __extends(ContinueCase, _super);
+    function ContinueCase(pattern, listener) {
+        var _this = _super.call(this, pattern, function (c) {
+            return listener
+                .afterContinue(c)
+                .select(listener.routing());
+        }) || this;
+        _this.pattern = pattern;
+        _this.listener = listener;
+        return _this;
+    }
+    return ContinueCase;
+}(case_1.Case));
+exports.ContinueCase = ContinueCase;
+/**
+ * ExpireCase invokes the afterExpire hook then transitions to dispatching.
+ */
+var ExpireCase = /** @class */ (function (_super) {
+    __extends(ExpireCase, _super);
+    function ExpireCase(pattern, listener) {
+        var _this = _super.call(this, pattern, function (e) {
+            return listener
+                .afterExpire(e)
+                .select(listener.routing());
+        }) || this;
+        _this.pattern = pattern;
+        _this.listener = listener;
+        return _this;
+    }
+    return ExpireCase;
+}(case_1.Case));
+exports.ExpireCase = ExpireCase;
+/**
+ * MessageCase invokes the afterMessage hook then transitions to
+ * dispatching.
+ */
+var MessageCase = /** @class */ (function (_super) {
+    __extends(MessageCase, _super);
+    function MessageCase(pattern, listener) {
+        var _this = _super.call(this, pattern, function (m) {
+            return listener
+                .afterMessage(m)
+                .select(listener.routing());
+        }) || this;
+        _this.pattern = pattern;
+        _this.listener = listener;
+        return _this;
+    }
+    return MessageCase;
+}(case_1.Case));
+exports.MessageCase = MessageCase;
+
+},{"@quenk/potoo/lib/actor/resident/case":31}],3:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -327,7 +446,7 @@ var Proxy = /** @class */ (function () {
 }());
 exports.Proxy = Proxy;
 
-},{"@quenk/potoo/lib/actor/resident":74}],3:[function(require,module,exports){
+},{"@quenk/potoo/lib/actor/resident":32}],4:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -365,7 +484,7 @@ var AbortCase = /** @class */ (function (_super) {
 }(case_1.Case));
 exports.AbortCase = AbortCase;
 
-},{"@quenk/potoo/lib/actor/resident/case":73}],4:[function(require,module,exports){
+},{"@quenk/potoo/lib/actor/resident/case":31}],5:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -466,7 +585,7 @@ var SaveCase = /** @class */ (function (_super) {
 }(case_1.Case));
 exports.SaveCase = SaveCase;
 
-},{"@quenk/potoo/lib/actor/resident/case":73}],5:[function(require,module,exports){
+},{"@quenk/potoo/lib/actor/resident/case":31}],6:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -539,7 +658,7 @@ var InputCase = /** @class */ (function (_super) {
 }(case_1.Case));
 exports.InputCase = InputCase;
 
-},{"@quenk/potoo/lib/actor/resident/case":73}],6:[function(require,module,exports){
+},{"@quenk/potoo/lib/actor/resident/case":31}],7:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -575,7 +694,7 @@ var SendCase = /** @class */ (function (_super) {
 }(case_1.Case));
 exports.SendCase = SendCase;
 
-},{"@quenk/potoo/lib/actor/resident/case":73}],7:[function(require,module,exports){
+},{"@quenk/potoo/lib/actor/resident/case":31}],8:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -616,7 +735,7 @@ var InputCase = /** @class */ (function (_super) {
 }(case_1.Case));
 exports.InputCase = InputCase;
 
-},{"@quenk/potoo/lib/actor/resident/case":73}],8:[function(require,module,exports){
+},{"@quenk/potoo/lib/actor/resident/case":31}],9:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -655,7 +774,7 @@ var LoadCase = /** @class */ (function (_super) {
 }(case_1.Case));
 exports.LoadCase = LoadCase;
 
-},{"@quenk/potoo/lib/actor/resident/case":73}],9:[function(require,module,exports){
+},{"@quenk/potoo/lib/actor/resident/case":31}],10:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -733,7 +852,7 @@ var ClearFiltersCase = /** @class */ (function (_super) {
 }(case_1.Case));
 exports.ClearFiltersCase = ClearFiltersCase;
 
-},{"@quenk/potoo/lib/actor/resident/case":73}],10:[function(require,module,exports){
+},{"@quenk/potoo/lib/actor/resident/case":31}],11:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -770,7 +889,7 @@ var SearchCase = /** @class */ (function (_super) {
 }(case_1.Case));
 exports.SearchCase = SearchCase;
 
-},{"@quenk/potoo/lib/actor/resident/case":73}],11:[function(require,module,exports){
+},{"@quenk/potoo/lib/actor/resident/case":31}],12:[function(require,module,exports){
 "use strict";
 /**
  * This module provides interfaces that can be implemented for Interacts
@@ -925,7 +1044,7 @@ var ServerErrorCase = /** @class */ (function (_super) {
 }(case_1.Case));
 exports.ServerErrorCase = ServerErrorCase;
 
-},{"@quenk/potoo/lib/actor/resident/case":73}],12:[function(require,module,exports){
+},{"@quenk/potoo/lib/actor/resident/case":31}],13:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -983,7 +1102,7 @@ var SuspendCase = /** @class */ (function (_super) {
 }(case_1.Case));
 exports.SuspendCase = SuspendCase;
 
-},{"@quenk/potoo/lib/actor/resident/case":73}],13:[function(require,module,exports){
+},{"@quenk/potoo/lib/actor/resident/case":31}],14:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -999,133 +1118,9 @@ var __extends = (this && this.__extends) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-var case_1 = require("@quenk/potoo/lib/actor/resident/case");
-/**
- * ScheduleCase invokes the beforeWait hook then transitions
- * to waiting.
- *
- * Use the beforeWait to turn off the currently scheduled actor.
- */
-var ScheduleCase = /** @class */ (function (_super) {
-    __extends(ScheduleCase, _super);
-    function ScheduleCase(pattern, scheduler) {
-        var _this = _super.call(this, pattern, function (t) {
-            return scheduler
-                .beforeWait(t)
-                .select(scheduler.waiting(t));
-        }) || this;
-        _this.pattern = pattern;
-        _this.scheduler = scheduler;
-        return _this;
-    }
-    return ScheduleCase;
-}(case_1.Case));
-exports.ScheduleCase = ScheduleCase;
-/**
- * TimedScheduleCase is like ScheduleCase except it instructs
- * the Timesout to start counting down the time taken for a respon.
- */
-var TimedScheduleCase = /** @class */ (function (_super) {
-    __extends(TimedScheduleCase, _super);
-    function TimedScheduleCase(pattern, timesout) {
-        var _this = _super.call(this, pattern, function (t) {
-            return timesout
-                .beforeTimer(t)
-                .beforeWait(t)
-                .select(timesout.waiting(t));
-        }) || this;
-        _this.pattern = pattern;
-        _this.timesout = timesout;
-        return _this;
-    }
-    return TimedScheduleCase;
-}(case_1.Case));
-exports.TimedScheduleCase = TimedScheduleCase;
-/**
- * AckCase invokes the afterAck hook then transitions to
- * dispatching.
- */
-var AckCase = /** @class */ (function (_super) {
-    __extends(AckCase, _super);
-    function AckCase(pattern, listener) {
-        var _this = _super.call(this, pattern, function (a) {
-            return listener
-                .afterAck(a)
-                .select(listener.scheduling());
-        }) || this;
-        _this.pattern = pattern;
-        _this.listener = listener;
-        return _this;
-    }
-    return AckCase;
-}(case_1.Case));
-exports.AckCase = AckCase;
-/**
- * ContinueCase invokes the afterContinue hook then transitions
- * to dispatching.
- */
-var ContinueCase = /** @class */ (function (_super) {
-    __extends(ContinueCase, _super);
-    function ContinueCase(pattern, listener) {
-        var _this = _super.call(this, pattern, function (c) {
-            return listener
-                .afterContinue(c)
-                .select(listener.scheduling());
-        }) || this;
-        _this.pattern = pattern;
-        _this.listener = listener;
-        return _this;
-    }
-    return ContinueCase;
-}(case_1.Case));
-exports.ContinueCase = ContinueCase;
-/**
- * ExpireCase invokes the afterExpire hook then transitions to dispatching.
- */
-var ExpireCase = /** @class */ (function (_super) {
-    __extends(ExpireCase, _super);
-    function ExpireCase(pattern, listener) {
-        var _this = _super.call(this, pattern, function (e) {
-            return listener
-                .afterExpire(e)
-                .select(listener.scheduling());
-        }) || this;
-        _this.pattern = pattern;
-        _this.listener = listener;
-        return _this;
-    }
-    return ExpireCase;
-}(case_1.Case));
-exports.ExpireCase = ExpireCase;
-/**
- * MessageCase invokes the afterMessage hook then transitions to
- * dispatching.
- */
-var MessageCase = /** @class */ (function (_super) {
-    __extends(MessageCase, _super);
-    function MessageCase(pattern, listener) {
-        var _this = _super.call(this, pattern, function (m) {
-            return listener
-                .afterMessage(m)
-                .select(listener.scheduling());
-        }) || this;
-        _this.pattern = pattern;
-        _this.listener = listener;
-        return _this;
-    }
-    return MessageCase;
-}(case_1.Case));
-exports.MessageCase = MessageCase;
-
-},{"@quenk/potoo/lib/actor/resident/case":73}],14:[function(require,module,exports){
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-var qs = require("qs");
-var toRegex = require("path-to-regexp");
 var function_1 = require("@quenk/noni/lib/data/function");
 var future_1 = require("@quenk/noni/lib/control/monad/future");
-var record_1 = require("@quenk/noni/lib/data/record");
-var EVENT_HASH_CHANGED = 'hashchange';
+var _1 = require("./");
 /**
  * Request represents a change in the browser's hash triggered
  * by the user.
@@ -1136,19 +1131,47 @@ var Request = /** @class */ (function () {
         this.query = query;
         this.params = params;
     }
-    /**
-     * create a new Request object
-     */
-    Request.create = function (path, query, keys, results) {
-        var params = Object.create(null);
-        keys.forEach(function (key, index) {
-            return params[key.name] = results[index + 1];
-        });
-        return new Request(path, qs.parse(query), params);
-    };
     return Request;
 }());
 exports.Request = Request;
+/**
+ * DefaultHashRouter  implementation.
+ */
+var DefaultHashRouter = /** @class */ (function (_super) {
+    __extends(DefaultHashRouter, _super);
+    function DefaultHashRouter(window, routes, error, notFound) {
+        if (routes === void 0) { routes = {}; }
+        if (error === void 0) { error = function (e) { return future_1.raise(e); }; }
+        if (notFound === void 0) { notFound = function () { return future_1.pure(function_1.noop()); }; }
+        var _this = _super.call(this, window, routes) || this;
+        _this.window = window;
+        _this.routes = routes;
+        _this.error = error;
+        _this.notFound = notFound;
+        return _this;
+    }
+    DefaultHashRouter.prototype.createRequest = function (path, query, params) {
+        return future_1.pure(new Request(path, query, params));
+    };
+    DefaultHashRouter.prototype.onError = function (e) {
+        return this.error(e);
+    };
+    DefaultHashRouter.prototype.onNotFound = function (path) {
+        return this.notFound(path);
+    };
+    return DefaultHashRouter;
+}(_1.HashRouter));
+exports.DefaultHashRouter = DefaultHashRouter;
+
+},{"./":15,"@quenk/noni/lib/control/monad/future":18,"@quenk/noni/lib/data/function":22}],15:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+var qs = require("qs");
+var toRegex = require("path-to-regexp");
+var function_1 = require("@quenk/noni/lib/data/function");
+var future_1 = require("@quenk/noni/lib/control/monad/future");
+var record_1 = require("@quenk/noni/lib/data/record");
+var EVENT_HASH_CHANGED = 'hashchange';
 /**
  * Cache used internally by the Router.
  * @private
@@ -1164,21 +1187,17 @@ var Cache = /** @class */ (function () {
 }());
 exports.Cache = Cache;
 /**
- * Router implementation based on the value of window.location.hash.
+ * HashRouter implementation based on the value of window.location.hash.
  */
-var Router = /** @class */ (function () {
-    function Router(window, routes, onNotFound, onError) {
+var HashRouter = /** @class */ (function () {
+    function HashRouter(window, routes) {
         if (routes === void 0) { routes = {}; }
-        if (onNotFound === void 0) { onNotFound = function () { return future_1.pure(function_1.noop()); }; }
-        if (onError === void 0) { onError = function (e) { return future_1.raise(e); }; }
         this.window = window;
         this.routes = routes;
-        this.onNotFound = onNotFound;
-        this.onError = onError;
         this.cache = [];
         this.keys = [];
     }
-    Router.prototype.handleEvent = function (_) {
+    HashRouter.prototype.handleEvent = function (_) {
         var _a = exports.takeHash(this.window), path = _a[0], query = _a[1];
         var cache = this.cache;
         var mware = [];
@@ -1194,7 +1213,7 @@ var Router = /** @class */ (function () {
             count = count + 1;
         }
         if (r != null) {
-            var ft = future_1.pure(Request.create(path, query, keys, r));
+            var ft = this.createRequest(path, qs.parse(query), parseParams(keys, r));
             mware
                 .reduce(function (p, c) { return p.chain(c); }, ft)
                 .chain(handler)
@@ -1208,7 +1227,7 @@ var Router = /** @class */ (function () {
     /**
      * add a Handler to the route table for a specific path.
      */
-    Router.prototype.add = function (path, handler) {
+    HashRouter.prototype.add = function (path, handler) {
         if (this.routes.hasOwnProperty(path)) {
             this.routes[path][1] = handler;
         }
@@ -1218,7 +1237,7 @@ var Router = /** @class */ (function () {
         this.cache = exports.compile(this.routes);
         return this;
     };
-    Router.prototype.use = function (path, mware) {
+    HashRouter.prototype.use = function (path, mware) {
         if (this.routes.hasOwnProperty(path)) {
             this.routes[path][0].push(mware);
         }
@@ -1228,7 +1247,7 @@ var Router = /** @class */ (function () {
         this.cache = exports.compile(this.routes);
         return this;
     };
-    Router.prototype.clear = function () {
+    HashRouter.prototype.clear = function () {
         this.cache = [];
         this.routes = {};
     };
@@ -1236,17 +1255,24 @@ var Router = /** @class */ (function () {
      * start activates routing by installing a hook into the supplied
      * window.
      */
-    Router.prototype.start = function () {
+    HashRouter.prototype.start = function () {
         this.window.addEventListener(EVENT_HASH_CHANGED, this);
         return this;
     };
-    Router.prototype.stop = function () {
+    HashRouter.prototype.stop = function () {
         this.window.removeEventListener(EVENT_HASH_CHANGED, this);
         return this;
     };
-    return Router;
+    return HashRouter;
 }());
-exports.Router = Router;
+exports.HashRouter = HashRouter;
+var parseParams = function (keys, results) {
+    var params = Object.create(null);
+    keys.forEach(function (key, index) {
+        return params[key.name] = results[index + 1];
+    });
+    return params;
+};
 /**
  * takeHash from a Window object.
  *
@@ -1270,7 +1296,7 @@ exports.compile = function (r) {
     });
 };
 
-},{"@quenk/noni/lib/control/monad/future":17,"@quenk/noni/lib/data/function":21,"@quenk/noni/lib/data/record":23,"path-to-regexp":39,"qs":43}],15:[function(require,module,exports){
+},{"@quenk/noni/lib/control/monad/future":18,"@quenk/noni/lib/data/function":22,"@quenk/noni/lib/data/record":24,"path-to-regexp":80,"qs":84}],16:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -1448,7 +1474,7 @@ exports.toString = function (value) {
  */
 exports.must = function (value) { return new Positive(value, true); };
 
-},{"egal":35,"json-stringify-safe":37}],16:[function(require,module,exports){
+},{"egal":76,"json-stringify-safe":78}],17:[function(require,module,exports){
 "use strict";
 /**
  * This module provides functions and types to make dealing with ES errors
@@ -1489,7 +1515,7 @@ exports.attempt = function (f) {
     }
 };
 
-},{"../data/either":20}],17:[function(require,module,exports){
+},{"../data/either":21}],18:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -1983,7 +2009,7 @@ exports.liftP = function (f) { return new Run(function (s) {
     return function_1.noop;
 }); };
 
-},{"../../data/function":21,"../error":16,"../timer":18}],18:[function(require,module,exports){
+},{"../../data/function":22,"../error":17,"../timer":19}],19:[function(require,module,exports){
 (function (process){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
@@ -1996,7 +2022,7 @@ exports.tick = function (f) { return (typeof window == 'undefined') ?
     process.nextTick(f); };
 
 }).call(this,require('_process'))
-},{"_process":40}],19:[function(require,module,exports){
+},{"_process":81}],20:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 /**
@@ -2077,7 +2103,7 @@ exports.dedupe = function (list) {
     return list.filter(function (e, i, l) { return l.indexOf(e) === i; });
 };
 
-},{"../math":24,"./record":23}],20:[function(require,module,exports){
+},{"../math":27,"./record":24}],21:[function(require,module,exports){
 "use strict";
 /**
  * Either represents a value that may be one of two types.
@@ -2272,7 +2298,7 @@ exports.either = function (f) { return function (g) { return function (e) {
     return (e instanceof Right) ? g(e.takeRight()) : f(e.takeLeft());
 }; }; };
 
-},{"./maybe":22}],21:[function(require,module,exports){
+},{"./maybe":23}],22:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 /**
@@ -2331,7 +2357,7 @@ exports.curry5 = function (f) {
  */
 exports.noop = function () { };
 
-},{}],22:[function(require,module,exports){
+},{}],23:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 /**
@@ -2564,7 +2590,7 @@ exports.fromNaN = function (n) {
     return isNaN(n) ? new Nothing() : new Just(n);
 };
 
-},{}],23:[function(require,module,exports){
+},{}],24:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 /**
@@ -2745,7 +2771,176 @@ var _clone = function (a) {
         return a;
 };
 
-},{"../array":19}],24:[function(require,module,exports){
+},{"../array":20}],25:[function(require,module,exports){
+"use strict";
+/**
+ *  Common functions used to manipulate strings.
+ */
+Object.defineProperty(exports, "__esModule", { value: true });
+/**
+ * startsWith polyfill.
+ */
+exports.startsWith = function (str, search, pos) {
+    if (pos === void 0) { pos = 0; }
+    return str.substr(!pos || pos < 0 ? 0 : +pos, search.length) === search;
+};
+/**
+ * endsWith polyfill.
+ */
+exports.endsWith = function (str, search, this_len) {
+    if (this_len === void 0) { this_len = str.length; }
+    return (this_len === undefined || this_len > str.length) ?
+        this_len = str.length :
+        str.substring(this_len - search.length, this_len) === search;
+};
+/**
+ * contains uses String#indexOf to determine if a substring occurs
+ * in a string.
+ */
+exports.contains = function (str, match) {
+    return (str.indexOf(match) > -1);
+};
+/**
+ * camelCase transforms a string into CamelCase.
+ */
+exports.camelCase = function (str) {
+    return [str[0].toUpperCase()]
+        .concat(str
+        .split(str[0])
+        .slice(1)
+        .join(str[0]))
+        .join('')
+        .replace(/(\-|_|\s)+(.)?/g, function (_, __, c) {
+        return (c ? c.toUpperCase() : '');
+    });
+};
+/**
+ * capitalize a string.
+ *
+ * Note: spaces are treated as part of the string.
+ */
+exports.capitalize = function (str) {
+    return "" + str[0].toUpperCase() + str.slice(1);
+};
+/**
+ * uncapitalize a string.
+ *
+ * Note: spaces are treated as part of the string.
+ */
+exports.uncapitalize = function (str) {
+    return "" + str[0].toLowerCase() + str.slice(1);
+};
+
+},{}],26:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+var prims = ['string', 'number', 'boolean'];
+/**
+ * Any is a class used to represent typescript's "any" type.
+ */
+var Any = /** @class */ (function () {
+    function Any() {
+    }
+    return Any;
+}());
+exports.Any = Any;
+/**
+ * isObject test.
+ *
+ * Does not consider an Array an object.
+ */
+exports.isObject = function (value) {
+    return (typeof value === 'object') && (!exports.isArray(value));
+};
+/**
+ * isArray test.
+ */
+exports.isArray = Array.isArray;
+/**
+ * isString test.
+ */
+exports.isString = function (value) { return typeof value === 'string'; };
+/**
+ * isNumber test.
+ */
+exports.isNumber = function (value) {
+    return (typeof value === 'number') && (!isNaN(value));
+};
+/**
+ * isBoolean test.
+ */
+exports.isBoolean = function (value) { return typeof value === 'boolean'; };
+/**
+ * isFunction test.
+ */
+exports.isFunction = function (value) { return typeof value === 'function'; };
+/**
+ * isPrim test.
+ */
+exports.isPrim = function (value) {
+    return !(exports.isObject(value) ||
+        exports.isArray(value) ||
+        exports.isFunction(value));
+};
+/**
+ * is performs a typeof of check on a type.
+ */
+exports.is = function (expected) { return function (value) { return typeof (value) === expected; }; };
+/**
+ * test whether a value conforms to some pattern.
+ *
+ * This function is made available mainly for a crude pattern matching
+ * machinery that works as followss:
+ * string   -> Matches on the value of the string.
+ * number   -> Matches on the value of the number.
+ * boolean  -> Matches on the value of the boolean.
+ * object   -> Each key of the object is matched on the value, all must match.
+ * function -> Treated as a constructor and results in an instanceof check or
+ *             for String,Number and Boolean, this uses the typeof check. If
+ *             the function is RegExp then we uses the RegExp.test function
+ *             instead.
+ */
+exports.test = function (value, t) {
+    return ((prims.indexOf(typeof t) > -1) && (value === t)) ?
+        true :
+        ((typeof t === 'function') &&
+            (((t === String) && (typeof value === 'string')) ||
+                ((t === Number) && (typeof value === 'number')) ||
+                ((t === Boolean) && (typeof value === 'boolean')) ||
+                ((t === Array) && (Array.isArray(value))) ||
+                (t === Any) ||
+                (value instanceof t))) ?
+            true :
+            ((t instanceof RegExp) && ((typeof value === 'string') && t.test(value))) ?
+                true :
+                ((typeof t === 'object') && (typeof value === 'object')) ?
+                    Object
+                        .keys(t)
+                        .every(function (k) { return value.hasOwnProperty(k) ?
+                        exports.test(value[k], t[k]) : false; }) :
+                    false;
+};
+/**
+ * show the type of a value.
+ *
+ * Note: This may crash if the value is an
+ * object literal with recursive references.
+ */
+exports.show = function (value) {
+    if (typeof value === 'object') {
+        if (Array.isArray(value))
+            return "[" + value.map(exports.show) + "]";
+        else if (value.constructor !== Object)
+            return (value.constructor.name || value.constructor);
+        else
+            return JSON.stringify(value);
+    }
+    else {
+        return '' + value;
+    }
+};
+
+},{}],27:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 /**
@@ -2753,7 +2948,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
  */
 exports.isMultipleOf = function (x, y) { return ((y % x) === 0); };
 
-},{}],25:[function(require,module,exports){
+},{}],28:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var property_seek_1 = require("property-seek");
@@ -2785,7 +2980,2340 @@ exports.polate = function (str, data, opts) {
 };
 exports.default = exports.polate;
 
-},{"property-seek":41}],26:[function(require,module,exports){
+},{"property-seek":82}],29:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+var array_1 = require("@quenk/noni/lib/data/array");
+var string_1 = require("@quenk/noni/lib/data/string");
+exports.SEPERATOR = '/';
+exports.ADDRESS_DISCARD = '?';
+exports.ADDRESS_SYSTEM = '$';
+exports.ADDRESS_EMPTY = '';
+exports.ADDRESS_RESTRICTED = [
+    exports.ADDRESS_DISCARD,
+    exports.ADDRESS_SYSTEM,
+    exports.SEPERATOR
+];
+/**
+ * isRestricted indicates whether an actor id is restricted or not.
+ */
+exports.isRestricted = function (id) {
+    return ((exports.ADDRESS_RESTRICTED.some(function (a) { return id.indexOf(a) > -1; })) && (id !== exports.SEPERATOR));
+};
+/**
+ * make a child address given its id and parent address.
+ */
+exports.make = function (parent, id) {
+    return ((parent === exports.SEPERATOR) || (parent === exports.ADDRESS_EMPTY)) ?
+        "" + parent + id :
+        (parent === exports.ADDRESS_SYSTEM) ?
+            id :
+            "" + parent + exports.SEPERATOR + id;
+};
+/**
+ * getParent computes the parent of an Address.
+ */
+exports.getParent = function (addr) {
+    if (((addr === exports.ADDRESS_SYSTEM) ||
+        (addr === exports.ADDRESS_EMPTY) ||
+        (addr === exports.ADDRESS_DISCARD) || (addr === exports.SEPERATOR))) {
+        return exports.ADDRESS_SYSTEM;
+    }
+    else {
+        var b4 = addr.split(exports.SEPERATOR);
+        if ((b4.length === 2) && (b4[0] === '')) {
+            return exports.SEPERATOR;
+        }
+        else {
+            var a = b4
+                .reverse()
+                .slice(1)
+                .reverse()
+                .join(exports.SEPERATOR);
+            return a === exports.ADDRESS_EMPTY ? exports.ADDRESS_SYSTEM : a;
+        }
+    }
+};
+/**
+ * getId provides the id part of an actor address.
+ */
+exports.getId = function (addr) {
+    return ((addr === exports.ADDRESS_SYSTEM) ||
+        (addr === exports.ADDRESS_DISCARD) ||
+        (addr === exports.ADDRESS_EMPTY) ||
+        (addr === exports.SEPERATOR)) ?
+        addr :
+        array_1.tail(addr.split(exports.SEPERATOR));
+};
+/**
+ * isChild tests whether an address is a child of the parent address.
+ */
+exports.isChild = function (parent, child) {
+    return (parent !== child) && string_1.startsWith(child, parent);
+};
+
+},{"@quenk/noni/lib/data/array":20,"@quenk/noni/lib/data/string":25}],30:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+/**
+ * Envelope for messages.
+ *
+ * Used to internally keep track of message sources and destintations.
+ */
+var Envelope = /** @class */ (function () {
+    function Envelope(to, from, message) {
+        this.to = to;
+        this.from = from;
+        this.message = message;
+    }
+    return Envelope;
+}());
+exports.Envelope = Envelope;
+
+},{}],31:[function(require,module,exports){
+"use strict";
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+        return extendStatics(d, b);
+    };
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
+Object.defineProperty(exports, "__esModule", { value: true });
+var type_1 = require("@quenk/noni/lib/data/type");
+/**
+ * Case is provided for situations where it is better to extend
+ * the Case class instead of creating new instances.
+ */
+var Case = /** @class */ (function () {
+    function Case(pattern, handler) {
+        this.pattern = pattern;
+        this.handler = handler;
+    }
+    /**
+     * match a message against a pattern.
+     *
+     * A successful match results in a side effect.
+     */
+    Case.prototype.match = function (m) {
+        if (type_1.test(m, this.pattern)) {
+            this.handler(m);
+            return true;
+        }
+        else {
+            return false;
+        }
+    };
+    return Case;
+}());
+exports.Case = Case;
+/**
+ * Default matches any message value.
+ */
+var Default = /** @class */ (function (_super) {
+    __extends(Default, _super);
+    function Default(handler) {
+        var _this = _super.call(this, Object, handler) || this;
+        _this.handler = handler;
+        return _this;
+    }
+    Default.prototype.match = function (m) {
+        this.handler(m);
+        return true;
+    };
+    return Default;
+}(Case));
+exports.Default = Default;
+
+},{"@quenk/noni/lib/data/type":26}],32:[function(require,module,exports){
+"use strict";
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+        return extendStatics(d, b);
+    };
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
+Object.defineProperty(exports, "__esModule", { value: true });
+var either_1 = require("@quenk/noni/lib/data/either");
+var maybe_1 = require("@quenk/noni/lib/data/maybe");
+var function_1 = require("@quenk/noni/lib/data/function");
+var scripts_1 = require("../system/vm/runtime/scripts");
+var scripts_2 = require("../system/framework/scripts");
+var system_1 = require("../system");
+var address_1 = require("../address");
+var scripts_3 = require("./scripts");
+/**
+ * AbstractResident implementation.
+ */
+var AbstractResident = /** @class */ (function () {
+    function AbstractResident(system) {
+        this.system = system;
+    }
+    AbstractResident.prototype.notify = function () {
+        this.system.exec(this, new scripts_3.NotifyScript());
+    };
+    AbstractResident.prototype.self = function () {
+        return this.system.ident(this);
+    };
+    AbstractResident.prototype.accept = function (m) {
+        this.system.exec(this, new scripts_3.AcceptScript(m));
+    };
+    AbstractResident.prototype.spawn = function (t) {
+        this.system.exec(this, new scripts_2.SpawnScript(this.self(), t));
+        return address_1.isRestricted(t.id) ?
+            address_1.ADDRESS_DISCARD :
+            address_1.make(this.self(), t.id);
+    };
+    AbstractResident.prototype.tell = function (ref, m) {
+        this.system.exec(this, new scripts_3.TellScript(ref, m));
+        return this;
+    };
+    AbstractResident.prototype.kill = function (addr) {
+        this.system.exec(this, new scripts_1.StopScript(addr));
+        return this;
+    };
+    AbstractResident.prototype.exit = function () {
+        this.system.exec(this, new scripts_1.StopScript(this.self()));
+    };
+    AbstractResident.prototype.stop = function () {
+        this.system = new system_1.Void();
+    };
+    return AbstractResident;
+}());
+exports.AbstractResident = AbstractResident;
+/**
+ * Immutable actors do not change their behaviour after receiving
+ * a message.
+ *
+ * Once the receive property is provided, all messages will be
+ * filtered by it.
+ */
+var Immutable = /** @class */ (function (_super) {
+    __extends(Immutable, _super);
+    function Immutable() {
+        return _super !== null && _super.apply(this, arguments) || this;
+    }
+    Immutable.prototype.init = function (c) {
+        c.behaviour.push(ibehaviour(this));
+        c.mailbox = maybe_1.just([]);
+        c.flags.immutable = true;
+        c.flags.buffered = true;
+        return c;
+    };
+    /**
+     * select noop.
+     */
+    Immutable.prototype.select = function (_) {
+        return this;
+    };
+    Immutable.prototype.run = function () { };
+    return Immutable;
+}(AbstractResident));
+exports.Immutable = Immutable;
+/**
+ * Mutable actors can change their behaviour after message processing.
+ */
+var Mutable = /** @class */ (function (_super) {
+    __extends(Mutable, _super);
+    function Mutable() {
+        var _this = _super !== null && _super.apply(this, arguments) || this;
+        _this.receive = [];
+        return _this;
+    }
+    Mutable.prototype.init = function (c) {
+        c.mailbox = maybe_1.just([]);
+        c.flags.immutable = false;
+        c.flags.buffered = true;
+        return c;
+    };
+    /**
+     * select allows for selectively receiving messages based on Case classes.
+     */
+    Mutable.prototype.select = function (cases) {
+        this.system.exec(this, new scripts_3.ReceiveScript(mbehaviour(cases)));
+        return this;
+    };
+    return Mutable;
+}(AbstractResident));
+exports.Mutable = Mutable;
+var mbehaviour = function (cases) { return function (m) {
+    return either_1.fromBoolean(cases.some(function (c) { return c.match(m); }))
+        .lmap(function () { return m; })
+        .map(function_1.noop);
+}; };
+var ibehaviour = function (i) { return function (m) {
+    return either_1.fromBoolean(i.receive.some(function (c) { return c.match(m); }))
+        .lmap(function () { return m; })
+        .map(function_1.noop);
+}; };
+/**
+ * ref produces a function for sending messages to an actor address.
+ */
+exports.ref = function (res, addr) {
+    return function (m) {
+        return res.tell(addr, m);
+    };
+};
+
+},{"../address":29,"../system":37,"../system/framework/scripts":35,"../system/vm/runtime/scripts":62,"./scripts":33,"@quenk/noni/lib/data/either":21,"@quenk/noni/lib/data/function":22,"@quenk/noni/lib/data/maybe":23}],33:[function(require,module,exports){
+"use strict";
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+        return extendStatics(d, b);
+    };
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
+Object.defineProperty(exports, "__esModule", { value: true });
+var push_1 = require("../system/vm/op/push");
+var tell_1 = require("../system/vm/op/tell");
+var drop_1 = require("../system/vm/op/drop");
+var discard_1 = require("../system/vm/op/discard");
+var jump_1 = require("../system/vm/op/jump");
+var noop_1 = require("../system/vm/op/noop");
+var receive_1 = require("../system/vm/op/receive");
+var read_1 = require("../system/vm/op/read");
+var script_1 = require("../system/vm/script");
+var acceptCode = [
+    new push_1.PushMsg(0),
+    new drop_1.Drop()
+];
+var tellcode = [
+    new push_1.PushMsg(0),
+    new push_1.PushStr(0),
+    new tell_1.Tell(),
+    new jump_1.JumpIfOne(4),
+    new noop_1.Noop() //4: Do nothing.
+];
+var receivecode = [
+    new push_1.PushForeign(0),
+    new receive_1.Receive()
+];
+var notifyCode = [
+    new read_1.Read(),
+    new jump_1.JumpIfOne(3),
+    new discard_1.Discard(),
+    new noop_1.Noop()
+];
+/**
+ * AcceptScript for discarding messages.
+ */
+var AcceptScript = /** @class */ (function (_super) {
+    __extends(AcceptScript, _super);
+    function AcceptScript(msg) {
+        var _this = _super.call(this, [[], [], [], [], [msg], []], acceptCode) || this;
+        _this.msg = msg;
+        return _this;
+    }
+    return AcceptScript;
+}(script_1.Script));
+exports.AcceptScript = AcceptScript;
+exports.DropScript = AcceptScript;
+/**
+ * TellScript for sending messages.
+ */
+var TellScript = /** @class */ (function (_super) {
+    __extends(TellScript, _super);
+    function TellScript(to, msg) {
+        var _this = _super.call(this, [[], [to], [], [], [msg], []], tellcode) || this;
+        _this.to = to;
+        _this.msg = msg;
+        return _this;
+    }
+    return TellScript;
+}(script_1.Script));
+exports.TellScript = TellScript;
+/**
+ * ReceiveScript
+ */
+var ReceiveScript = /** @class */ (function (_super) {
+    __extends(ReceiveScript, _super);
+    function ReceiveScript(func) {
+        var _this = _super.call(this, [[], [], [], [], [], [func]], receivecode) || this;
+        _this.func = func;
+        return _this;
+    }
+    return ReceiveScript;
+}(script_1.Script));
+exports.ReceiveScript = ReceiveScript;
+/**
+ * NotifyScript
+ */
+var NotifyScript = /** @class */ (function (_super) {
+    __extends(NotifyScript, _super);
+    function NotifyScript() {
+        return _super.call(this, [[], [], [], [], [], []], notifyCode) || this;
+    }
+    return NotifyScript;
+}(script_1.Script));
+exports.NotifyScript = NotifyScript;
+
+},{"../system/vm/op/discard":46,"../system/vm/op/drop":47,"../system/vm/op/jump":49,"../system/vm/op/noop":51,"../system/vm/op/push":52,"../system/vm/op/read":53,"../system/vm/op/receive":54,"../system/vm/op/tell":59,"../system/vm/script":64}],34:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+var maybe_1 = require("@quenk/noni/lib/data/maybe");
+var this_1 = require("../vm/runtime/this");
+var address_1 = require("../../address");
+var state_1 = require("../state");
+var scripts_1 = require("./scripts");
+/**
+ * STemplate is provided here as a convenience when creating new systems.
+ *
+ * It provides the expected defaults.
+ */
+var STemplate = /** @class */ (function () {
+    function STemplate() {
+        this.id = address_1.ADDRESS_SYSTEM;
+        this.create = function () {
+            throw new Error('Cannot spawn a system actor!');
+        };
+        this.trap = function (e) {
+            if (e instanceof Error) {
+                throw e;
+            }
+            else {
+                throw new Error(e.message);
+            }
+        };
+    }
+    return STemplate;
+}());
+exports.STemplate = STemplate;
+/**
+ * AbstractSystem can be extended to create a customized actor system.
+ */
+var AbstractSystem = /** @class */ (function () {
+    function AbstractSystem(configuration) {
+        if (configuration === void 0) { configuration = {}; }
+        this.configuration = configuration;
+    }
+    AbstractSystem.prototype.ident = function (i) {
+        return state_1.getAddress(this.state, i).orJust(function () { return address_1.ADDRESS_DISCARD; }).get();
+    };
+    /**
+     * spawn a new actor from a template.
+     */
+    AbstractSystem.prototype.spawn = function (t) {
+        (new this_1.This('$', this)).exec(new scripts_1.SpawnScript('', t));
+        return this;
+    };
+    AbstractSystem.prototype.init = function (c) {
+        return c;
+    };
+    AbstractSystem.prototype.notify = function () {
+    };
+    AbstractSystem.prototype.accept = function (_) {
+    };
+    AbstractSystem.prototype.stop = function () {
+    };
+    AbstractSystem.prototype.run = function () {
+    };
+    AbstractSystem.prototype.exec = function (i, s) {
+        return state_1.getRuntime(this.state, i)
+            .chain(function (r) { return r.exec(s); });
+    };
+    return AbstractSystem;
+}());
+exports.AbstractSystem = AbstractSystem;
+/**
+ * newContext produces the bare minimum needed for creating a Context type.
+ *
+ * The value can be merged to satsify user defined Context types.
+ */
+exports.newContext = function (actor, runtime, template) { return ({
+    mailbox: maybe_1.nothing(),
+    actor: actor,
+    behaviour: [],
+    flags: { immutable: false, buffered: false },
+    runtime: runtime,
+    template: template
+}); };
+/**
+ * newState produces the bare minimum needed for creating a State.
+ *
+ * The value can be merged to statisfy user defined State.
+ */
+exports.newState = function (sys) { return ({
+    contexts: {
+        $: sys.allocate(sys, new this_1.This('$', sys), new STemplate())
+    },
+    routers: {}
+}); };
+
+},{"../../address":29,"../state":39,"../vm/runtime/this":63,"./scripts":35,"@quenk/noni/lib/data/maybe":23}],35:[function(require,module,exports){
+"use strict";
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+        return extendStatics(d, b);
+    };
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
+Object.defineProperty(exports, "__esModule", { value: true });
+var push_1 = require("../vm/op/push");
+var store_1 = require("../vm/op/store");
+var load_1 = require("../vm/op/load");
+var allocate_1 = require("../vm/op/allocate");
+var run_1 = require("../vm/op/run");
+var call_1 = require("../vm/op/call");
+var tempcc_1 = require("../vm/op/tempcc");
+var tempchild_1 = require("../vm/op/tempchild");
+var cmp_1 = require("../vm/op/cmp");
+var jump_1 = require("../vm/op/jump");
+var add_1 = require("../vm/op/add");
+var noop_1 = require("../vm/op/noop");
+var script_1 = require("../vm/script");
+var spawnCode = [
+    new push_1.PushStr(0),
+    new push_1.PushTemp(0),
+    new push_1.PushFunc(0),
+    new call_1.Call(2)
+];
+var spawnFuncCode = [
+    new store_1.Store(0),
+    new store_1.Store(1),
+    new load_1.Load(1),
+    new load_1.Load(0),
+    new allocate_1.Allocate(),
+    new store_1.Store(2),
+    new load_1.Load(2),
+    new run_1.Run(),
+    new load_1.Load(1),
+    new tempcc_1.TempCC(),
+    new store_1.Store(3),
+    new push_1.PushNum(0),
+    new store_1.Store(4),
+    new load_1.Load(3),
+    new load_1.Load(4),
+    new cmp_1.Cmp(),
+    new jump_1.JumpIfOne(27),
+    new load_1.Load(4),
+    new load_1.Load(1),
+    new tempchild_1.TempChild(),
+    new load_1.Load(2),
+    new call_1.Call(2),
+    new load_1.Load(4),
+    new push_1.PushNum(1),
+    new add_1.Add(),
+    new store_1.Store(4),
+    new jump_1.Jump(13),
+    new noop_1.Noop() // 27: do nothing (return)
+];
+/**
+ * SpawnScript for spawning new actors and children from templates.
+ */
+var SpawnScript = /** @class */ (function (_super) {
+    __extends(SpawnScript, _super);
+    function SpawnScript(parent, tmp) {
+        var _this = _super.call(this, [[], [parent], [function () { return spawnFuncCode; }], [tmp], [], []], spawnCode) || this;
+        _this.parent = parent;
+        _this.tmp = tmp;
+        return _this;
+    }
+    return SpawnScript;
+}(script_1.Script));
+exports.SpawnScript = SpawnScript;
+
+},{"../vm/op/add":42,"../vm/op/allocate":43,"../vm/op/call":44,"../vm/op/cmp":45,"../vm/op/jump":49,"../vm/op/load":50,"../vm/op/noop":51,"../vm/op/push":52,"../vm/op/run":56,"../vm/op/store":58,"../vm/op/tempcc":60,"../vm/op/tempchild":61,"../vm/script":64}],36:[function(require,module,exports){
+"use strict";
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+        return extendStatics(d, b);
+    };
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
+Object.defineProperty(exports, "__esModule", { value: true });
+var mock_1 = require("@quenk/test/lib/mock");
+var _1 = require("./");
+/**
+ * TestAbstractSystem
+ *
+ * This system is provided for testing purposes. It provdies all the features
+ * of the AbstractSystem.
+ */
+var TestAbstractSystem = /** @class */ (function (_super) {
+    __extends(TestAbstractSystem, _super);
+    function TestAbstractSystem(configuration) {
+        if (configuration === void 0) { configuration = {}; }
+        var _this = _super.call(this) || this;
+        _this.configuration = configuration;
+        _this.MOCK = new mock_1.Data();
+        return _this;
+    }
+    TestAbstractSystem.prototype.exec = function (i, s) {
+        this.MOCK.record('exec', [i, s], this);
+        return _super.prototype.exec.call(this, i, s);
+    };
+    TestAbstractSystem.prototype.ident = function (i) {
+        return this.MOCK.record('ident', [i], _super.prototype.ident.call(this, i));
+    };
+    TestAbstractSystem.prototype.init = function (c) {
+        return this.MOCK.record('init', [c], _super.prototype.init.call(this, c));
+    };
+    TestAbstractSystem.prototype.accept = function (m) {
+        return this.MOCK.record('accept', [m], _super.prototype.accept.call(this, m));
+    };
+    TestAbstractSystem.prototype.stop = function () {
+        return this.MOCK.record('stop', [], _super.prototype.stop.call(this));
+    };
+    TestAbstractSystem.prototype.run = function () {
+        return this.MOCK.record('run', [], _super.prototype.run.call(this));
+    };
+    return TestAbstractSystem;
+}(_1.AbstractSystem));
+exports.TestAbstractSystem = TestAbstractSystem;
+
+},{"./":34,"@quenk/test/lib/mock":70}],37:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+var maybe_1 = require("@quenk/noni/lib/data/maybe");
+/**
+ * Void system.
+ *
+ * This can be used to prevent a stopped actor from executing further commands.
+ */
+var Void = /** @class */ (function () {
+    function Void() {
+    }
+    Void.prototype.ident = function () {
+        return '?';
+    };
+    Void.prototype.accept = function () {
+    };
+    Void.prototype.run = function () {
+    };
+    Void.prototype.notify = function () {
+    };
+    Void.prototype.stop = function () {
+    };
+    Void.prototype.exec = function (_, __) {
+        return maybe_1.nothing();
+    };
+    return Void;
+}());
+exports.Void = Void;
+
+},{"@quenk/noni/lib/data/maybe":23}],38:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+/**
+ * DEBUG log level.
+ */
+exports.DEBUG = 7;
+/**
+ * INFO log level.
+ */
+exports.INFO = 6;
+/**
+ * WARN log level.
+ */
+exports.WARN = 5;
+/**
+ * ERROR log level.
+ */
+exports.ERROR = 1;
+
+},{}],39:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+var maybe_1 = require("@quenk/noni/lib/data/maybe");
+var record_1 = require("@quenk/noni/lib/data/record");
+var string_1 = require("@quenk/noni/lib/data/string");
+var address_1 = require("../address");
+/**
+ * exists tests whether an address exists in the State.
+ */
+exports.exists = function (s, addr) { return record_1.contains(s.contexts, addr); };
+/**
+ * get a Context using an Address.
+ */
+exports.get = function (s, addr) { return maybe_1.fromNullable(s.contexts[addr]); };
+/**
+ * put a new Context in the State.
+ */
+exports.put = function (s, addr, context) {
+    s.contexts[addr] = context;
+    return s;
+};
+/**
+ * remove an actor entry.
+ */
+exports.remove = function (s, addr) {
+    delete s.contexts[addr];
+    return s;
+};
+/**
+ * getAddress attempts to retrieve the address of an Actor instance.
+ */
+exports.getAddress = function (s, actor) {
+    return record_1.reduce(s.contexts, maybe_1.nothing(), function (p, c, k) {
+        return c.actor === actor ? maybe_1.fromString(k) : p;
+    });
+};
+/**
+ * getRuntime attempts to retrieve the runtime for an Actor instance.
+ */
+exports.getRuntime = function (s, actor) {
+    return record_1.reduce(s.contexts, maybe_1.nothing(), function (p, c) {
+        return c.actor === actor ? maybe_1.fromNullable(c.runtime) : p;
+    });
+};
+/**
+ * getChildren returns the child contexts for an address.
+ */
+exports.getChildren = function (s, addr) {
+    return (addr === address_1.ADDRESS_SYSTEM) ?
+        s.contexts :
+        record_1.partition(s.contexts)(function (_, key) {
+            return (string_1.startsWith(key, addr) && key !== addr);
+        })[0];
+};
+/**
+ * getParent context using an Address.
+ */
+exports.getParent = function (s, addr) {
+    return maybe_1.fromNullable(s.contexts[address_1.getParent(addr)]);
+};
+/**
+ * getRouter will attempt to provide the
+ * routing actor for an Address.
+ *
+ * The value returned depends on whether the given
+ * address begins with any of the installed router's address.
+ */
+exports.getRouter = function (s, addr) {
+    return record_1.reduce(s.routers, maybe_1.nothing(), function (p, k) {
+        return string_1.startsWith(addr, k) ? maybe_1.fromNullable(s.contexts[k]) : p;
+    });
+};
+/**
+ * putRoute adds a route to the routing table.
+ */
+exports.putRoute = function (s, target, router) {
+    s.routers[target] = router;
+    return s;
+};
+/**
+ * removeRoute from the routing table.
+ */
+exports.removeRoute = function (s, target) {
+    delete s.routers[target];
+    return s;
+};
+
+},{"../address":29,"@quenk/noni/lib/data/maybe":23,"@quenk/noni/lib/data/record":24,"@quenk/noni/lib/data/string":25}],40:[function(require,module,exports){
+"use strict";
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+        return extendStatics(d, b);
+    };
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
+Object.defineProperty(exports, "__esModule", { value: true });
+var address_1 = require("../../address");
+/**
+ * Error
+ */
+var Error = /** @class */ (function () {
+    function Error(message) {
+        this.message = message;
+    }
+    return Error;
+}());
+exports.Error = Error;
+/**
+ * InvalidIdError indicates an id used in a template is invalid.
+ */
+var InvalidIdErr = /** @class */ (function (_super) {
+    __extends(InvalidIdErr, _super);
+    function InvalidIdErr(id) {
+        var _this = _super.call(this, "The id \"" + id + " must not contain" +
+            (address_1.ADDRESS_RESTRICTED + " or be an empty string!")) || this;
+        _this.id = id;
+        return _this;
+    }
+    return InvalidIdErr;
+}(Error));
+exports.InvalidIdErr = InvalidIdErr;
+/**
+ * UnknownParentAddressErr indicates the parent address used for
+ * spawning an actor does not exist.
+ */
+var UnknownParentAddressErr = /** @class */ (function (_super) {
+    __extends(UnknownParentAddressErr, _super);
+    function UnknownParentAddressErr(address) {
+        var _this = _super.call(this, "The parent address \"" + address + "\" is not part of the system!") || this;
+        _this.address = address;
+        return _this;
+    }
+    return UnknownParentAddressErr;
+}(Error));
+exports.UnknownParentAddressErr = UnknownParentAddressErr;
+/**
+ * DuplicateAddressErr indicates the address of a freshly spawned
+ * actor is already in use.
+ */
+var DuplicateAddressErr = /** @class */ (function (_super) {
+    __extends(DuplicateAddressErr, _super);
+    function DuplicateAddressErr(address) {
+        var _this = _super.call(this, "Duplicate address \"" + address + "\" detected!") || this;
+        _this.address = address;
+        return _this;
+    }
+    return DuplicateAddressErr;
+}(Error));
+exports.DuplicateAddressErr = DuplicateAddressErr;
+/**
+ * NullTemplatePointerErr occurs when a reference to a template
+ * does not exist in the templates table.
+ */
+var NullTemplatePointerErr = /** @class */ (function (_super) {
+    __extends(NullTemplatePointerErr, _super);
+    function NullTemplatePointerErr(index) {
+        var _this = _super.call(this, "The index \"" + index + "\" does not exist in the Template table!") || this;
+        _this.index = index;
+        return _this;
+    }
+    return NullTemplatePointerErr;
+}(Error));
+exports.NullTemplatePointerErr = NullTemplatePointerErr;
+var NullFunctionPointerErr = /** @class */ (function (_super) {
+    __extends(NullFunctionPointerErr, _super);
+    function NullFunctionPointerErr(index) {
+        var _this = _super.call(this, "The index \"" + index + "\" does not exist in the function table!") || this;
+        _this.index = index;
+        return _this;
+    }
+    return NullFunctionPointerErr;
+}(Error));
+exports.NullFunctionPointerErr = NullFunctionPointerErr;
+/**
+ * JumpOutOfBoundsErr
+ */
+var JumpOutOfBoundsErr = /** @class */ (function (_super) {
+    __extends(JumpOutOfBoundsErr, _super);
+    function JumpOutOfBoundsErr(location, size) {
+        var _this = _super.call(this, "Cannot jump to location \"" + location + "\"! Max location: " + size + "!") || this;
+        _this.location = location;
+        _this.size = size;
+        return _this;
+    }
+    return JumpOutOfBoundsErr;
+}(Error));
+exports.JumpOutOfBoundsErr = JumpOutOfBoundsErr;
+var NullPointerErr = /** @class */ (function (_super) {
+    __extends(NullPointerErr, _super);
+    function NullPointerErr(data) {
+        var _this = _super.call(this, "Reference: [" + data + "]") || this;
+        _this.data = data;
+        return _this;
+    }
+    return NullPointerErr;
+}(Error));
+exports.NullPointerErr = NullPointerErr;
+var TypeErr = /** @class */ (function (_super) {
+    __extends(TypeErr, _super);
+    function TypeErr(expected, got) {
+        var _this = _super.call(this, "Expected: " + expected + ", Received: " + got) || this;
+        _this.expected = expected;
+        _this.got = got;
+        return _this;
+    }
+    return TypeErr;
+}(Error));
+exports.TypeErr = TypeErr;
+/**
+ * IllegalStopErr
+ */
+var IllegalStopErr = /** @class */ (function (_super) {
+    __extends(IllegalStopErr, _super);
+    function IllegalStopErr(parent, child) {
+        var _this = _super.call(this, "The actor at address \"" + parent + "\" can not kill \"" + child + "\"!") || this;
+        _this.parent = parent;
+        _this.child = child;
+        return _this;
+    }
+    return IllegalStopErr;
+}(Error));
+exports.IllegalStopErr = IllegalStopErr;
+/**
+ * NoReceiveErr
+ */
+var NoReceiveErr = /** @class */ (function (_super) {
+    __extends(NoReceiveErr, _super);
+    function NoReceiveErr(actor) {
+        var _this = _super.call(this, "Actor " + actor + " tried to read without a handler!") || this;
+        _this.actor = actor;
+        return _this;
+    }
+    return NoReceiveErr;
+}(Error));
+exports.NoReceiveErr = NoReceiveErr;
+/**
+ * NoMailboxErr
+ */
+var NoMailboxErr = /** @class */ (function (_super) {
+    __extends(NoMailboxErr, _super);
+    function NoMailboxErr(actor) {
+        var _this = _super.call(this, "Actor " + actor + " has no mailbox!") || this;
+        _this.actor = actor;
+        return _this;
+    }
+    return NoMailboxErr;
+}(Error));
+exports.NoMailboxErr = NoMailboxErr;
+/**
+ * EmptyMailboxErr
+ */
+var EmptyMailboxErr = /** @class */ (function (_super) {
+    __extends(EmptyMailboxErr, _super);
+    function EmptyMailboxErr(actor) {
+        var _this = _super.call(this, "Actor " + actor + " 's mailbox is empty!") || this;
+        _this.actor = actor;
+        return _this;
+    }
+    return EmptyMailboxErr;
+}(Error));
+exports.EmptyMailboxErr = EmptyMailboxErr;
+
+},{"../../address":29}],41:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+var error = require("./error");
+var either_1 = require("@quenk/noni/lib/data/either");
+var maybe_1 = require("@quenk/noni/lib/data/maybe");
+//Type indicators.
+exports.TYPE_NUMBER = 0x0;
+exports.TYPE_STRING = 0x1;
+exports.TYPE_FUNCTION = 0x2;
+exports.TYPE_TEMPLATE = 0x3;
+exports.TYPE_MESSAGE = 0x4;
+exports.TYPE_FOREIGN = 0x5;
+//Storage locations.
+exports.LOCATION_LITERAL = 0x0;
+exports.LOCATION_CONSTANTS = 0x1;
+exports.LOCATION_HEAP = 0x2;
+exports.LOCATION_LOCAL = 0x3;
+exports.LOCATION_MAILBOX = 0x4;
+/**
+ * Type indicates the type of an Operand.
+ *
+ * One of TYPE_* constants.
+ */
+var Type;
+(function (Type) {
+    Type[Type["Number"] = exports.TYPE_NUMBER] = "Number";
+    Type[Type["String"] = exports.TYPE_STRING] = "String";
+    Type[Type["Function"] = exports.TYPE_FUNCTION] = "Function";
+    Type[Type["Template"] = exports.TYPE_TEMPLATE] = "Template";
+    Type[Type["Message"] = exports.TYPE_MESSAGE] = "Message";
+    Type[Type["Foreign"] = exports.TYPE_FOREIGN] = "Foreign";
+})(Type = exports.Type || (exports.Type = {}));
+/**
+ * Location indicates where the value is stored.
+ */
+var Location;
+(function (Location) {
+    Location[Location["Literal"] = exports.LOCATION_LITERAL] = "Literal";
+    Location[Location["Constants"] = exports.LOCATION_CONSTANTS] = "Constants";
+    Location[Location["Heap"] = exports.LOCATION_HEAP] = "Heap";
+    Location[Location["Local"] = exports.LOCATION_LOCAL] = "Local";
+    Location[Location["Mailbox"] = exports.LOCATION_MAILBOX] = "Mailbox";
+})(Location = exports.Location || (exports.Location = {}));
+/**
+ * Field
+ */
+var Field;
+(function (Field) {
+    Field[Field["Value"] = 0] = "Value";
+    Field[Field["Type"] = 1] = "Type";
+    Field[Field["Location"] = 2] = "Location";
+})(Field = exports.Field || (exports.Field = {}));
+/**
+ * Frame of execution.
+ */
+var Frame = /** @class */ (function () {
+    function Frame(actor, context, script, code, data, locals, heap, ip) {
+        if (code === void 0) { code = []; }
+        if (data === void 0) { data = []; }
+        if (locals === void 0) { locals = []; }
+        if (heap === void 0) { heap = []; }
+        if (ip === void 0) { ip = 0; }
+        this.actor = actor;
+        this.context = context;
+        this.script = script;
+        this.code = code;
+        this.data = data;
+        this.locals = locals;
+        this.heap = heap;
+        this.ip = ip;
+    }
+    /**
+     * seek advances the Frame's ip to the location specified.
+     *
+     * Generates an error if the seek is out of the code block's bounds.
+     */
+    Frame.prototype.seek = function (location) {
+        if ((location < 0) || (location >= (this.code.length)))
+            return either_1.left(new error.JumpOutOfBoundsErr(location, this.code.length - 1));
+        this.ip = location;
+        return either_1.right(this);
+    };
+    /**
+     * allocate space on the heap for a value.
+     */
+    Frame.prototype.allocate = function (value, typ) {
+        this.heap.push(value);
+        return [this.heap.length - 1, typ, Location.Heap];
+    };
+    /**
+     * allocateTemplate
+     */
+    Frame.prototype.allocateTemplate = function (t) {
+        return this.allocate(t, Type.Template);
+    };
+    /**
+     * push onto the stack an Operand, indicating its type and storage location.
+     */
+    Frame.prototype.push = function (value, type, location) {
+        this.data.push(location);
+        this.data.push(type);
+        this.data.push(value);
+        return this;
+    };
+    /**
+     * pushNumber onto the stack.
+     */
+    Frame.prototype.pushNumber = function (n) {
+        this.push(n, Type.Number, Location.Literal);
+        return this;
+    };
+    /**
+     * pushAddress onto the stack.
+     *
+     * (Value is stored on the heap)
+     */
+    Frame.prototype.pushAddress = function (addr) {
+        this.heap.push(addr);
+        this.push(this.heap.length - 1, Type.String, Location.Heap);
+        return this;
+    };
+    /**
+     * pop an operand off the stack.
+     */
+    Frame.prototype.pop = function () {
+        return [
+            this.data.pop(),
+            this.data.pop(),
+            this.data.pop()
+        ];
+    };
+    Frame.prototype.peek = function (n) {
+        if (n === void 0) { n = 0; }
+        var len = this.data.length;
+        var offset = n * 3;
+        return [
+            this.data[len - (1 + offset)],
+            this.data[len - (2 + offset)],
+            this.data[len - (3 + offset)]
+        ];
+    };
+    /**
+     * resolve a value from it's location, producing
+     * an error if it can not be found.
+     */
+    Frame.prototype.resolve = function (data) {
+        var _this = this;
+        var nullErr = function () { return either_1.left(new error.NullPointerErr(data)); };
+        switch (data[Field.Location]) {
+            case Location.Literal:
+                return either_1.right(data[Field.Value]);
+            case Location.Constants:
+                return maybe_1.fromNullable(this.script.constants[data[Field.Type]])
+                    .chain(function (typ) { return maybe_1.fromNullable(typ[data[Field.Value]]); })
+                    .map(function (v) { return either_1.right(v); })
+                    .orJust(nullErr)
+                    .get();
+            case Location.Local:
+                return maybe_1.fromNullable(this.locals[data[Field.Value]])
+                    .map(function (d) { return _this.resolve(d); })
+                    .orJust(nullErr)
+                    .get();
+            case Location.Heap:
+                return maybe_1.fromNullable(this.heap[data[Field.Value]])
+                    .map(function (v) { return either_1.right(v); })
+                    .orJust(nullErr)
+                    .get();
+            case Location.Mailbox:
+                return this
+                    .context
+                    .mailbox
+                    .chain(function (m) { return maybe_1.fromNullable(m[data[Field.Value]]); })
+                    .map(function (v) { return either_1.right(v); })
+                    .get();
+            default:
+                return nullErr();
+        }
+    };
+    /**
+     * resolveNumber
+     */
+    Frame.prototype.resolveNumber = function (data) {
+        if (data[Field.Type] !== Type.Number)
+            return either_1.left(new error.TypeErr(Type.Number, data[Field.Type]));
+        return this.resolve(data);
+    };
+    /**
+     * resolveAddress
+     */
+    Frame.prototype.resolveAddress = function (data) {
+        if (data[Field.Type] !== Type.String)
+            return either_1.left(new error.TypeErr(Type.String, data[Field.Type]));
+        return this.resolve(data);
+    };
+    /**
+     * resolveFunction
+     */
+    Frame.prototype.resolveFunction = function (data) {
+        if (data[Field.Type] !== Type.Function)
+            return either_1.left(new error.TypeErr(Type.Function, data[Field.Type]));
+        return this.resolve(data);
+    };
+    /**
+     * resolveTemplate
+     */
+    Frame.prototype.resolveTemplate = function (data) {
+        if (data[Field.Type] !== Type.Template)
+            return either_1.left(new error.TypeErr(Type.Template, data[Field.Type]));
+        return this.resolve(data);
+    };
+    /**
+     * resolveMessage
+     */
+    Frame.prototype.resolveMessage = function (data) {
+        if (data[Field.Type] !== Type.Message)
+            return either_1.left(new error.TypeErr(Type.Message, data[Field.Type]));
+        return this.resolve(data);
+    };
+    /**
+     * resolveForeign
+     */
+    Frame.prototype.resolveForeign = function (data) {
+        if (data[Field.Type] !== Type.Foreign)
+            return either_1.left(new error.TypeErr(Type.Foreign, data[Field.Type]));
+        return this.resolve(data);
+    };
+    return Frame;
+}());
+exports.Frame = Frame;
+
+},{"./error":40,"@quenk/noni/lib/data/either":21,"@quenk/noni/lib/data/maybe":23}],42:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+var _1 = require("./");
+/**
+ * Add the top two operands of the stack.
+ *
+ * Pops:
+ * 1. The first value.
+ * 2. The second value.
+ *
+ * Pushes:
+ *
+ * The result of adding the two numbers.
+ */
+var Add = /** @class */ (function () {
+    function Add() {
+        this.code = _1.OP_CODE_ADD;
+        this.level = _1.Level.Base;
+    }
+    Add.prototype.exec = function (e) {
+        var curr = e.current().get();
+        var eitherA = curr.resolveNumber(curr.pop());
+        var eitherB = curr.resolveNumber(curr.pop());
+        if (eitherA.isLeft())
+            return e.raise(eitherA.takeLeft());
+        if (eitherB.isLeft())
+            return e.raise(eitherB.takeLeft());
+        curr.pushNumber(eitherA.takeRight() + eitherB.takeRight());
+    };
+    Add.prototype.toLog = function (f) {
+        return ['add', [], [f.peek(), f.peek(1)]];
+    };
+    return Add;
+}());
+exports.Add = Add;
+
+},{"./":48}],43:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+var error = require("../error");
+var address_1 = require("../../../address");
+var _1 = require("./");
+/**
+ * Allocate a new Context frame for an actor from a template.
+ *
+ * Pops:
+ * 1: Address of the parent actor.
+ * 2: Pointer to the template to use from the templates table.
+ *
+ * Raises:
+ * InvalidIdErr
+ * UnknownParentAddressErr
+ * DuplicateAddressErr
+ */
+var Allocate = /** @class */ (function () {
+    function Allocate() {
+        this.code = _1.OP_CODE_ALLOCATE;
+        this.level = _1.Level.Actor;
+    }
+    Allocate.prototype.exec = function (e) {
+        var curr = e.current().get();
+        var parent = curr.resolveAddress(curr.pop());
+        var temp = curr.resolveTemplate(curr.pop());
+        if (parent.isLeft())
+            return e.raise(parent.takeLeft());
+        if (temp.isLeft())
+            return e.raise(temp.takeLeft());
+        var p = parent.takeRight();
+        var t = temp.takeRight();
+        if (address_1.isRestricted(t.id))
+            return e.raise(new error.InvalidIdErr(t.id));
+        var addr = address_1.make(p, t.id);
+        if (e.getContext(addr).isJust())
+            return e.raise(new error.DuplicateAddressErr(addr));
+        var ctx = e.allocate(addr, t);
+        e.putContext(addr, ctx);
+        if (ctx.flags.router === true)
+            e.putRoute(addr, addr);
+        curr.pushAddress(addr);
+    };
+    Allocate.prototype.toLog = function (f) {
+        return ['allocate', [], [f.peek(), f.peek(1)]];
+    };
+    return Allocate;
+}());
+exports.Allocate = Allocate;
+
+},{"../../../address":29,"../error":40,"./":48}],44:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+var frame_1 = require("../frame");
+var _1 = require("./");
+/**
+ * Call a function.
+ *
+ * Pops:
+ * 1: The function reference from the top of the stack.
+ * 2: N arguments to be pushed onto the new Frame's stack.
+ */
+var Call = /** @class */ (function () {
+    function Call(args) {
+        this.args = args;
+        this.code = _1.OP_CODE_CALL;
+        this.level = _1.Level.Control;
+    }
+    Call.prototype.exec = function (e) {
+        var curr = e.current().get();
+        var actor = curr.actor, context = curr.context, script = curr.script, heap = curr.heap;
+        var eitherFunc = curr.resolveFunction(curr.pop());
+        if (eitherFunc.isLeft())
+            return e.raise(eitherFunc.takeLeft());
+        var f = eitherFunc.takeRight();
+        var frm = new frame_1.Frame(actor, context, script, f(), [], heap);
+        for (var i = 0; i < this.args; i++) {
+            var _a = curr.pop(), value = _a[0], type = _a[1], location_1 = _a[2];
+            frm.push(value, type, location_1);
+        }
+        e.push(frm);
+    };
+    Call.prototype.toLog = function (f) {
+        var data = [f.peek()];
+        for (var i = 1; i <= this.args; i++)
+            data.push((f.peek(i)));
+        return ['call', [this.args, frame_1.Type.Number, frame_1.Location.Literal], data];
+    };
+    return Call;
+}());
+exports.Call = Call;
+
+},{"../frame":41,"./":48}],45:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+var _1 = require("./");
+/**
+ * Cmp compares the top two values for equality.
+ *
+ * Pops:
+ *
+ * 1. Left value.
+ * 2. Right value.
+ *
+ * Pushes:
+ *
+ * 1 if true, 0 if false
+ */
+var Cmp = /** @class */ (function () {
+    function Cmp() {
+        this.code = _1.OP_CODE_CMP;
+        this.level = _1.Level.Base;
+    }
+    Cmp.prototype.exec = function (e) {
+        var curr = e.current().get();
+        curr
+            .resolve(curr.pop())
+            .chain(function (a) {
+            return curr
+                .resolve(curr.pop())
+                .map(function (b) {
+                if (a === b)
+                    curr.pushNumber(1);
+                else
+                    curr.pushNumber(0);
+            });
+        })
+            .lmap(function (err) { return e.raise(err); });
+    };
+    Cmp.prototype.toLog = function (f) {
+        return ['cmp', [], [f.peek(), f.peek(1)]];
+    };
+    return Cmp;
+}());
+exports.Cmp = Cmp;
+
+},{"./":48}],46:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+var errors = require("../error");
+var maybe_1 = require("@quenk/noni/lib/data/maybe");
+var frame_1 = require("../frame");
+var _1 = require("./");
+/**
+ * Discard removes and discards the first message in a Context's mailbox.
+ */
+var Discard = /** @class */ (function () {
+    function Discard() {
+        this.code = _1.OP_CODE_DISCARD;
+        this.level = _1.Level.Actor;
+    }
+    Discard.prototype.exec = function (e) {
+        var curr = e.current().get();
+        var maybBox = curr.context.mailbox;
+        if (maybBox.isNothing())
+            return e.raise(new errors.NoMailboxErr(e.self));
+        var mayBMail = maybBox.chain(maybe_1.fromArray);
+        if (mayBMail.isNothing())
+            return e.raise(new errors.EmptyMailboxErr(e.self));
+        mayBMail.get().shift();
+    };
+    Discard.prototype.toLog = function () {
+        return ['discard', [], [[0, frame_1.Type.Message, frame_1.Location.Mailbox]]];
+    };
+    return Discard;
+}());
+exports.Discard = Discard;
+
+},{"../error":40,"../frame":41,"./":48,"@quenk/noni/lib/data/maybe":23}],47:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+var _1 = require("./");
+/**
+ * Drop an unwanted message.
+ *
+ * Pops:
+ *
+ * 1. The message to be dropped.
+ */
+var Drop = /** @class */ (function () {
+    function Drop() {
+        this.code = _1.OP_CODE_DROP;
+        this.level = _1.Level.Actor;
+    }
+    Drop.prototype.exec = function (e) {
+        var curr = e.current().get();
+        var eitherMsg = curr.resolveMessage(curr.pop());
+        if (eitherMsg.isLeft())
+            return e.raise(eitherMsg.takeLeft());
+        var m = eitherMsg.takeRight();
+        e.drop(m);
+    };
+    Drop.prototype.toLog = function (f) {
+        return ['drop', [], [f.peek()]];
+    };
+    return Drop;
+}());
+exports.Drop = Drop;
+
+},{"./":48}],48:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+var log = require("../../log");
+exports.OP_CODE_NOOP = 0x0;
+exports.OP_CODE_PUSH_NUM = 0x1;
+exports.OP_CODE_PUSH_STR = 0x2;
+exports.OP_CODE_PUSH_FUNC = 0x3;
+exports.OP_CODE_PUSH_MSG = 0x4;
+exports.OP_CODE_PUSH_TEMP = 0x5;
+exports.OP_CODE_PUSH_FOREIGN = 0x6;
+exports.OP_CODE_DUP = 0x7;
+exports.OP_CODE_ADD = 0x8;
+exports.OP_CODE_CMP = 0x9;
+exports.OP_CODE_CALL = 0xa;
+exports.OP_CODE_STORE = 0xb;
+exports.OP_CODE_LOAD = 0xc;
+exports.OP_CODE_JUMP = 0xd;
+exports.OP_CODE_JUMP_IF_ONE = 0xe;
+exports.OP_CODE_IDENT = 0x13;
+exports.OP_CODE_QUERY = 0x20;
+exports.OP_CODE_ALLOCATE = 0x21;
+exports.OP_CODE_TEMP_CC = 0x22;
+exports.OP_CODE_TEMP_CHILD = 0x23;
+exports.OP_CODE_TELL = 0x24;
+exports.OP_CODE_DISCARD = 0x25;
+exports.OP_CODE_RUN = 0x26;
+exports.OP_CODE_RECEIVE = 0x27;
+exports.OP_CODE_READ = 0x28;
+exports.OP_CODE_RESTART = 0x29;
+exports.OP_CODE_DROP = 0x30;
+exports.OP_CODE_STOP = 0x2a;
+exports.OP_CODE_RAISE = 0xb;
+/**
+ * Levels allowed for ops.
+ */
+var Level;
+(function (Level) {
+    Level[Level["Base"] = log.DEBUG] = "Base";
+    Level[Level["Control"] = log.DEBUG] = "Control";
+    Level[Level["Actor"] = log.INFO] = "Actor";
+    Level[Level["System"] = log.WARN] = "System";
+})(Level = exports.Level || (exports.Level = {}));
+
+},{"../../log":38}],49:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+var either_1 = require("@quenk/noni/lib/data/either");
+var frame_1 = require("../frame");
+var _1 = require("./");
+/**
+ * Jump to a new location.
+ */
+var Jump = /** @class */ (function () {
+    function Jump(location) {
+        this.location = location;
+        this.code = _1.OP_CODE_JUMP;
+        this.level = _1.Level.Base;
+    }
+    Jump.prototype.exec = function (e) {
+        var curr = e.current().get();
+        curr
+            .seek(this.location)
+            .lmap(function (err) { return e.raise(err); });
+    };
+    Jump.prototype.toLog = function () {
+        return ['jump', [this.location, frame_1.Type.Number, frame_1.Location.Literal], []];
+    };
+    return Jump;
+}());
+exports.Jump = Jump;
+/**
+ * JumpIfOne changes the current Frame's ip if the top value is one.
+ *
+ * Pops
+ * 1. value to test.
+ */
+var JumpIfOne = /** @class */ (function () {
+    function JumpIfOne(location) {
+        this.location = location;
+        this.code = _1.OP_CODE_JUMP_IF_ONE;
+        this.level = _1.Level.Base;
+    }
+    JumpIfOne.prototype.exec = function (e) {
+        var _this = this;
+        var curr = e.current().get();
+        curr
+            .resolveNumber(curr.pop())
+            .chain(function (n) {
+            if (n === 1)
+                return curr.seek(_this.location);
+            return either_1.right(curr);
+        })
+            .lmap(function (err) { return e.raise(err); });
+    };
+    JumpIfOne.prototype.toLog = function (f) {
+        return ['jumpifone', [this.location, frame_1.Type.Number, frame_1.Location.Literal],
+            [f.peek()]];
+    };
+    return JumpIfOne;
+}());
+exports.JumpIfOne = JumpIfOne;
+
+},{"../frame":41,"./":48,"@quenk/noni/lib/data/either":21}],50:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+var frame_1 = require("../frame");
+var _1 = require("./");
+/**
+ * Load the local stored at index onto the stack.
+ *
+ * Pushes:
+ * 1. Value of index in locals table.
+ */
+var Load = /** @class */ (function () {
+    function Load(index) {
+        this.index = index;
+        this.code = _1.OP_CODE_LOAD;
+        this.level = _1.Level.Base;
+    }
+    Load.prototype.exec = function (e) {
+        var curr = e.current().get();
+        var _a = curr.locals[this.index], value = _a[0], type = _a[1], location = _a[2];
+        curr.push(value, type, location);
+    };
+    Load.prototype.toLog = function (_) {
+        return ['load', [this.index, frame_1.Type.Number, frame_1.Location.Literal], []];
+    };
+    return Load;
+}());
+exports.Load = Load;
+
+},{"../frame":41,"./":48}],51:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+var _1 = require("./");
+/**
+ * Noop does nothing.
+ */
+var Noop = /** @class */ (function () {
+    function Noop() {
+        this.code = _1.OP_CODE_NOOP;
+        this.level = _1.Level.Base;
+    }
+    Noop.prototype.exec = function (_) {
+    };
+    Noop.prototype.toLog = function (_) {
+        return ['noop', [], []];
+    };
+    return Noop;
+}());
+exports.Noop = Noop;
+
+},{"./":48}],52:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+var frame_1 = require("../frame");
+var _1 = require("./");
+/**
+ * PushNum pushes a literal number onto the stack.
+ */
+var PushNum = /** @class */ (function () {
+    function PushNum(index) {
+        this.index = index;
+        this.code = _1.OP_CODE_PUSH_NUM;
+        this.level = _1.Level.Base;
+    }
+    PushNum.prototype.exec = function (e) {
+        e.current().get().push(this.index, frame_1.Type.Number, frame_1.Location.Literal);
+    };
+    PushNum.prototype.toLog = function () {
+        return ['pushnum', [this.index, frame_1.Type.Number, frame_1.Location.Literal], []];
+    };
+    return PushNum;
+}());
+exports.PushNum = PushNum;
+/**
+ * PushStr pushes a string from the constants table onto the stack.
+ */
+var PushStr = /** @class */ (function () {
+    function PushStr(index) {
+        this.index = index;
+        this.code = _1.OP_CODE_PUSH_STR;
+        this.level = _1.Level.Base;
+    }
+    PushStr.prototype.exec = function (e) {
+        e.current().get().push(this.index, frame_1.Type.String, frame_1.Location.Constants);
+    };
+    PushStr.prototype.toLog = function () {
+        return ['pushstr', [this.index, frame_1.Type.String, frame_1.Location.Constants], []];
+    };
+    return PushStr;
+}());
+exports.PushStr = PushStr;
+/**
+ * PushFunc pushes a function constant onto the stack.
+ */
+var PushFunc = /** @class */ (function () {
+    function PushFunc(index) {
+        this.index = index;
+        this.code = _1.OP_CODE_PUSH_FUNC;
+        this.level = _1.Level.Base;
+    }
+    PushFunc.prototype.exec = function (e) {
+        e.current().get().push(this.index, frame_1.Type.Function, frame_1.Location.Constants);
+    };
+    PushFunc.prototype.toLog = function () {
+        return ['pushfunc', [this.index, frame_1.Type.Function, frame_1.Location.Constants], []];
+    };
+    return PushFunc;
+}());
+exports.PushFunc = PushFunc;
+/**
+ * PushTemp pushes a template from the constants table onto the stack.
+ */
+var PushTemp = /** @class */ (function () {
+    function PushTemp(index) {
+        this.index = index;
+        this.code = _1.OP_CODE_PUSH_TEMP;
+        this.level = _1.Level.Base;
+    }
+    PushTemp.prototype.exec = function (e) {
+        e.current().get().push(this.index, frame_1.Type.Template, frame_1.Location.Constants);
+    };
+    PushTemp.prototype.toLog = function () {
+        return ['pushtemp', [this.index, frame_1.Type.Template, frame_1.Location.Constants], []];
+    };
+    return PushTemp;
+}());
+exports.PushTemp = PushTemp;
+/**
+ * PushMsg pushes a message constant onto the stack.
+ */
+var PushMsg = /** @class */ (function () {
+    function PushMsg(index) {
+        this.index = index;
+        this.code = _1.OP_CODE_PUSH_MSG;
+        this.level = _1.Level.Base;
+    }
+    PushMsg.prototype.exec = function (e) {
+        e.current().get().push(this.index, frame_1.Type.Message, frame_1.Location.Constants);
+    };
+    PushMsg.prototype.toLog = function () {
+        return ['pushmsg', [this.index, frame_1.Type.Message, frame_1.Location.Constants], []];
+    };
+    return PushMsg;
+}());
+exports.PushMsg = PushMsg;
+/**
+ * PushForeign pushes a foreign function onto the stack.
+ */
+var PushForeign = /** @class */ (function () {
+    function PushForeign(index) {
+        this.index = index;
+        this.code = _1.OP_CODE_PUSH_FOREIGN;
+        this.level = _1.Level.Base;
+    }
+    PushForeign.prototype.exec = function (e) {
+        e.current().get().push(this.index, frame_1.Type.Foreign, frame_1.Location.Constants);
+    };
+    PushForeign.prototype.toLog = function () {
+        return ['pushforeign', [this.index, frame_1.Type.Foreign, frame_1.Location.Constants], []];
+    };
+    return PushForeign;
+}());
+exports.PushForeign = PushForeign;
+
+},{"../frame":41,"./":48}],53:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+var errors = require("../error");
+var maybe_1 = require("@quenk/noni/lib/data/maybe");
+var frame_1 = require("../frame");
+var _1 = require("./");
+/**
+ * Read consumes the next message in the current actor's mailbox.
+ *
+ * Pushes
+ *
+ * The number 1 if successful or 0 if the message was not processed.
+ */
+var Read = /** @class */ (function () {
+    function Read() {
+        this.code = _1.OP_CODE_READ;
+        this.level = _1.Level.Actor;
+    }
+    Read.prototype.exec = function (e) {
+        var curr = e.current().get();
+        var maybBehave = maybe_1.fromArray(curr.context.behaviour);
+        if (maybBehave.isNothing())
+            return e.raise(new errors.NoReceiveErr(e.self));
+        var stack = maybBehave.get();
+        var maybMbox = curr.context.mailbox;
+        if (maybMbox.isNothing())
+            return e.raise(new errors.NoMailboxErr(e.self));
+        var maybHasMail = maybMbox.chain(maybe_1.fromArray);
+        if (maybHasMail.isNothing()) {
+            return e.raise(new errors.EmptyMailboxErr(e.self));
+        }
+        else {
+            var mbox = maybHasMail.get();
+            var eitherRead = stack[0](mbox.shift());
+            if (eitherRead.isLeft()) {
+                mbox.unshift(eitherRead.takeLeft());
+                curr.pushNumber(0);
+            }
+            else {
+                if (!curr.context.flags.immutable)
+                    curr.context.behaviour.shift();
+                curr.pushNumber(1);
+            }
+        }
+    };
+    Read.prototype.toLog = function () {
+        return ['read', [], [[0, frame_1.Type.Message, frame_1.Location.Mailbox]]];
+    };
+    return Read;
+}());
+exports.Read = Read;
+
+},{"../error":40,"../frame":41,"./":48,"@quenk/noni/lib/data/maybe":23}],54:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+var _1 = require("./");
+/**
+ * Receive schedules a handler for a resident actor to receive the next
+ * message from its mailbox.
+ *
+ * Pops:
+ *  1. Reference to a foreign function that will be installed as the message
+ *     handler.
+ */
+var Receive = /** @class */ (function () {
+    function Receive() {
+        this.code = _1.OP_CODE_RECEIVE;
+        this.level = _1.Level.Actor;
+    }
+    Receive.prototype.exec = function (e) {
+        var curr = e.current().get();
+        curr
+            .resolveForeign(curr.pop())
+            .map(function (f) { return curr.context.behaviour.push(f); })
+            .map(function () {
+            curr
+                .context
+                .mailbox
+                .map(function (box) {
+                if (box.length > 0)
+                    curr.context.actor.notify();
+            });
+        })
+            .lmap(function (err) { return e.raise(err); });
+    };
+    Receive.prototype.toLog = function (f) {
+        return ['receive', [], [f.peek()]];
+    };
+    return Receive;
+}());
+exports.Receive = Receive;
+
+},{"./":48}],55:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+var _1 = require("./");
+/**
+ * Restart the current actor.
+ */
+var Restart = /** @class */ (function () {
+    function Restart() {
+        this.code = _1.OP_CODE_RESTART;
+        this.level = _1.Level.Control;
+    }
+    Restart.prototype.exec = function (e) {
+        var curr = e.current().get();
+        e
+            .getContext(curr.actor)
+            .map(function (ctx) {
+            e.clear();
+            ctx.actor.stop();
+            var nctx = e.allocate(curr.actor, ctx.template);
+            nctx.mailbox = ctx.mailbox;
+            e.putContext(curr.actor, nctx);
+        });
+    };
+    Restart.prototype.toLog = function () {
+        return ['restart', [], []];
+    };
+    return Restart;
+}());
+exports.Restart = Restart;
+
+},{"./":48}],56:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+var timer_1 = require("@quenk/noni/lib/control/timer");
+var _1 = require("./");
+/**
+ * Run invokes the run method of an actor given the address.
+ *
+ * Pops
+ * 1. The address of the current actor or child to be run.
+ */
+var Run = /** @class */ (function () {
+    function Run() {
+        this.code = _1.OP_CODE_RUN;
+        this.level = _1.Level.Control;
+    }
+    Run.prototype.exec = function (e) {
+        var curr = e.current().get();
+        curr
+            .resolveAddress(curr.pop())
+            .map(function (addr) {
+            e
+                .getContext(addr)
+                .map(function (ctx) { return timer_1.tick(function () { return ctx.actor.run(); }); });
+        })
+            .lmap(function (err) { return e.raise(err); });
+    };
+    Run.prototype.toLog = function (f) {
+        return ['run', [], [f.peek()]];
+    };
+    return Run;
+}());
+exports.Run = Run;
+
+},{"./":48,"@quenk/noni/lib/control/timer":19}],57:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+var error = require("../error");
+var record_1 = require("@quenk/noni/lib/data/record");
+var address_1 = require("../../../address");
+var _1 = require("./");
+/**
+ * Stop an actor, all of it's children will also be stopped.
+ *
+ * Pops:
+ * 1. Address of actor to stop.
+ */
+var Stop = /** @class */ (function () {
+    function Stop() {
+        this.code = _1.OP_CODE_STOP;
+        this.level = _1.Level.Control;
+    }
+    Stop.prototype.exec = function (e) {
+        var curr = e.current().get();
+        var eitherAddress = curr.resolveAddress(curr.pop());
+        if (eitherAddress.isLeft())
+            return e.raise(eitherAddress.takeLeft());
+        var addr = eitherAddress.takeRight();
+        if ((!address_1.isChild(curr.actor, addr)) && (addr !== curr.actor))
+            return e.raise(new error.IllegalStopErr(curr.actor, addr));
+        var maybeChilds = e.getChildren(addr);
+        if (maybeChilds.isJust()) {
+            var ctxs = maybeChilds.get();
+            record_1.map(ctxs, function (c, k) { c.actor.stop(); e.removeContext(k); });
+        }
+        curr.context.actor.stop();
+        e.removeContext(addr);
+        e.clear();
+    };
+    Stop.prototype.toLog = function (f) {
+        return ['stop', [], [f.peek()]];
+    };
+    return Stop;
+}());
+exports.Stop = Stop;
+
+},{"../../../address":29,"../error":40,"./":48,"@quenk/noni/lib/data/record":24}],58:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+var frame_1 = require("../frame");
+var _1 = require("./");
+/**
+ * Store the top most value on the stack in the locals array at the
+ * location specified.
+ *
+ * Pops:
+ * 1. Operand to store.
+ */
+var Store = /** @class */ (function () {
+    function Store(index) {
+        this.index = index;
+        this.code = _1.OP_CODE_STORE;
+        this.level = _1.Level.Base;
+    }
+    Store.prototype.exec = function (e) {
+        var curr = e.current().get();
+        curr.locals[this.index] = curr.pop();
+    };
+    Store.prototype.toLog = function (f) {
+        return ['store', [this.index, frame_1.Type.Number, frame_1.Location.Literal], [f.peek()]];
+    };
+    return Store;
+}());
+exports.Store = Store;
+
+},{"../frame":41,"./":48}],59:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+var timer_1 = require("@quenk/noni/lib/control/timer");
+var mailbox_1 = require("../../../mailbox");
+var _1 = require("./");
+/**
+ * Tell delivers the first message in the outbox queue to the address
+ * at the top of the data stack.
+ *
+ * Pops:
+ * 1. Address
+ * 2. Message
+ *
+ * Pushes:
+ *
+ * 1 if delivery is successful, 0 otherwise.
+ */
+var Tell = /** @class */ (function () {
+    function Tell() {
+        this.code = _1.OP_CODE_TELL;
+        this.level = _1.Level.Actor;
+    }
+    Tell.prototype.exec = function (e) {
+        var curr = e.current().get();
+        var eitherAddr = curr.resolveAddress(curr.pop());
+        if (eitherAddr.isLeft())
+            return e.raise(eitherAddr.takeLeft());
+        var eitherMsg = curr.resolveMessage(curr.pop());
+        if (eitherMsg.isLeft())
+            return e.raise(eitherMsg.takeRight());
+        var addr = eitherAddr.takeRight();
+        var msg = eitherMsg.takeRight();
+        var maybeRouter = e.getRouter(addr);
+        if (maybeRouter.isJust()) {
+            deliver(maybeRouter.get(), new mailbox_1.Envelope(addr, curr.actor, msg));
+            curr.pushNumber(1);
+        }
+        else {
+            var maybeCtx = e.getContext(addr);
+            var conf = e.config();
+            if (maybeCtx.isJust()) {
+                deliver(maybeCtx.get(), msg);
+                curr.pushNumber(1);
+            }
+            else if (conf.hooks &&
+                conf.hooks.drop) {
+                conf.hooks.drop(new mailbox_1.Envelope(addr, e.self, msg));
+                curr.pushNumber(1);
+            }
+            else {
+                curr.pushNumber(0);
+            }
+        }
+    };
+    Tell.prototype.toLog = function (f) {
+        return ['tell', [], [f.peek(), f.peek(1)]];
+    };
+    return Tell;
+}());
+exports.Tell = Tell;
+var deliver = function (ctx, msg) {
+    if (ctx.mailbox.isJust()) {
+        timer_1.tick(function () { ctx.mailbox.get().push(msg); ctx.actor.notify(); });
+    }
+    else {
+        ctx.actor.accept(msg);
+    }
+};
+
+},{"../../../mailbox":30,"./":48,"@quenk/noni/lib/control/timer":19}],60:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+var _1 = require("./");
+/**
+ * TempCC counts the number of child templates a template has.
+ *
+ * Pops:
+ *
+ * 1: Reference to the template to count.
+ */
+var TempCC = /** @class */ (function () {
+    function TempCC() {
+        this.code = _1.OP_CODE_TEMP_CC;
+        this.level = _1.Level.Control;
+    }
+    TempCC.prototype.exec = function (e) {
+        var curr = e.current().get();
+        curr
+            .resolveTemplate(curr.pop())
+            .map(function (temp) { return temp.children && temp.children.length || 0; })
+            .map(function (count) { return curr.pushNumber(count); })
+            .lmap(function (err) { return e.raise(err); });
+    };
+    TempCC.prototype.toLog = function (f) {
+        return ['tempcc', [], [f.peek()]];
+    };
+    return TempCC;
+}());
+exports.TempCC = TempCC;
+
+},{"./":48}],61:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+var error = require("../error");
+var either_1 = require("@quenk/noni/lib/data/either");
+var _1 = require("./");
+/**
+ * TempChild copies a template's child onto the heap.
+ *
+ * Pops:
+ * 1: Pointer to the template.
+ * 2: Index of the child template.
+ */
+var TempChild = /** @class */ (function () {
+    function TempChild() {
+        this.code = _1.OP_CODE_TEMP_CHILD;
+        this.level = _1.Level.Control;
+    }
+    TempChild.prototype.exec = function (e) {
+        var curr = e.current().get();
+        curr
+            .resolveTemplate(curr.pop())
+            .chain(function (t) {
+            return curr
+                .resolveNumber(curr.pop())
+                .chain(function (n) {
+                if ((t.children && t.children.length > n) && (n > 0)) {
+                    var _a = curr.allocateTemplate(t.children[n]), value = _a[0], type = _a[1], location_1 = _a[2];
+                    return either_1.right(curr.push(value, type, location_1));
+                }
+                else {
+                    return either_1.left(new error.NullTemplatePointerErr(n));
+                }
+            });
+        })
+            .lmap(function (err) { return e.raise(err); });
+    };
+    TempChild.prototype.toLog = function (f) {
+        return ['tempchild', [], [f.peek(), f.peek(1)]];
+    };
+    return TempChild;
+}());
+exports.TempChild = TempChild;
+
+},{"../error":40,"./":48,"@quenk/noni/lib/data/either":21}],62:[function(require,module,exports){
+"use strict";
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+        return extendStatics(d, b);
+    };
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
+Object.defineProperty(exports, "__esModule", { value: true });
+var push_1 = require("../op/push");
+var stop_1 = require("../op/stop");
+var restart_1 = require("../op/restart");
+var run_1 = require("../op/run");
+var script_1 = require("../script");
+var restartCode = [
+    new restart_1.Restart(),
+    new run_1.Run()
+];
+var stopCode = [
+    new push_1.PushStr(0),
+    new stop_1.Stop()
+];
+/**
+ * StopScript for stopping actors.
+ */
+var StopScript = /** @class */ (function (_super) {
+    __extends(StopScript, _super);
+    function StopScript(addr) {
+        var _this = _super.call(this, [[], [addr], [], [], [], []], stopCode) || this;
+        _this.addr = addr;
+        return _this;
+    }
+    return StopScript;
+}(script_1.Script));
+exports.StopScript = StopScript;
+/**
+ * RestartScript for restarting actors.
+ */
+var RestartScript = /** @class */ (function (_super) {
+    __extends(RestartScript, _super);
+    function RestartScript() {
+        return _super.call(this, [[], [], [], [], [], []], restartCode) || this;
+    }
+    return RestartScript;
+}(script_1.Script));
+exports.RestartScript = RestartScript;
+
+},{"../op/push":52,"../op/restart":55,"../op/run":56,"../op/stop":57,"../script":64}],63:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+var template = require("../../../template");
+var logging = require("../../log");
+var error_1 = require("@quenk/noni/lib/control/error");
+var array_1 = require("@quenk/noni/lib/data/array");
+var maybe_1 = require("@quenk/noni/lib/data/maybe");
+var address_1 = require("../../../address");
+var state_1 = require("../../state");
+var frame_1 = require("../frame");
+var scripts_1 = require("./scripts");
+/**
+ * This is an implementation of Runtime for exactly one
+ * actor.
+ *
+ * It has all the methods and properties expected for Op code execution.
+ */
+var This = /** @class */ (function () {
+    function This(self, system, stack, queue) {
+        if (stack === void 0) { stack = []; }
+        if (queue === void 0) { queue = []; }
+        this.self = self;
+        this.system = system;
+        this.stack = stack;
+        this.queue = queue;
+        this.running = false;
+    }
+    This.prototype.config = function () {
+        return this.system.configuration;
+    };
+    This.prototype.current = function () {
+        return (this.stack.length > 0) ?
+            maybe_1.just(array_1.tail(this.stack)) :
+            maybe_1.nothing();
+    };
+    This.prototype.allocate = function (addr, t) {
+        var h = new This(addr, this.system);
+        var act = t.create(this.system);
+        return act.init(this.system.allocate(act, h, t));
+    };
+    This.prototype.getContext = function (addr) {
+        return state_1.get(this.system.state, addr);
+    };
+    This.prototype.getRouter = function (addr) {
+        return state_1.getRouter(this.system.state, addr);
+    };
+    This.prototype.getChildren = function (addr) {
+        return maybe_1.fromNullable(state_1.getChildren(this.system.state, addr));
+    };
+    This.prototype.putContext = function (addr, ctx) {
+        this.system.state = state_1.put(this.system.state, addr, ctx);
+        return this;
+    };
+    This.prototype.removeContext = function (addr) {
+        this.system.state = state_1.remove(this.system.state, addr);
+        return this;
+    };
+    This.prototype.putRoute = function (target, router) {
+        state_1.putRoute(this.system.state, target, router);
+        return this;
+    };
+    This.prototype.removeRoute = function (target) {
+        state_1.removeRoute(this.system.state, target);
+        return this;
+    };
+    This.prototype.push = function (f) {
+        this.stack.push(f);
+        return this;
+    };
+    This.prototype.clear = function () {
+        this.stack = [];
+        return this;
+    };
+    This.prototype.drop = function (m) {
+        var policy = (this.system.configuration.log || {});
+        var level = policy.level || 0;
+        var logger = policy.logger || console;
+        if (level > logging.WARN) {
+            logger.warn("[" + this.self + "]: Dropped ", m);
+        }
+        return this;
+    };
+    This.prototype.raise = function (err) {
+        var _this = this;
+        var self = this.self;
+        this
+            .getContext(self)
+            .chain(function (ctx) {
+            return maybe_1.fromNullable(ctx.template.trap)
+                .map(function (trap) {
+                switch (trap(err)) {
+                    case template.ACTION_IGNORE:
+                        break;
+                    case template.ACTION_RESTART:
+                        _this.exec(new scripts_1.RestartScript());
+                        break;
+                    case template.ACTION_STOP:
+                        _this.exec(new scripts_1.StopScript(self));
+                        break;
+                    default:
+                        _this.exec(new scripts_1.StopScript(self));
+                        escalate(_this.system, self, err);
+                        break;
+                }
+            });
+        })
+            .orJust(function () {
+            _this.exec(new scripts_1.StopScript(self));
+            escalate(_this.system, self, err);
+        });
+    };
+    This.prototype.exec = function (s) {
+        var ctx = this.getContext(this.self).get();
+        if (this.running) {
+            this.queue.push(new frame_1.Frame(this.self, ctx, s, s.code));
+        }
+        else {
+            this.push(new frame_1.Frame(this.self, ctx, s, s.code));
+        }
+        return this.run();
+    };
+    This.prototype.run = function () {
+        var policy = (this.system.configuration.log || {});
+        var ret = maybe_1.nothing();
+        if (this.running)
+            return ret;
+        this.running = true;
+        while (true) {
+            var cur = array_1.tail(this.stack);
+            while (true) {
+                if (array_1.tail(this.stack) !== cur)
+                    break;
+                if (cur.ip === cur.code.length) {
+                    //XXX: We should really always push the top most to the next
+                    if ((this.stack.length > 1) && (cur.data.length > 0)) {
+                        var _a = cur.pop(), value = _a[0], type = _a[1], loc = _a[2];
+                        this.stack[this.stack.length - 2].push(value, type, loc);
+                    }
+                    ret = cur.resolve(cur.pop()).toMaybe();
+                    this.stack.pop();
+                    break;
+                }
+                var next = log(policy, cur, cur.code[cur.ip]);
+                cur.ip++; // increment here so jumps do not skip
+                next.exec(this);
+            }
+            if (this.stack.length === 0) {
+                if (this.queue.length > 0) {
+                    this.stack.push(this.queue.shift());
+                }
+                else {
+                    break;
+                }
+            }
+        }
+        this.running = false;
+        return ret;
+    };
+    return This;
+}());
+exports.This = This;
+var escalate = function (env, target, err) {
+    return state_1.get(env.state, address_1.getParent(target))
+        .map(function (ctx) { return ctx.runtime.raise(err); })
+        .orJust(function () { throw error_1.convert(err); });
+};
+var log = function (policy, f, o) {
+    var level = policy.level || 0;
+    var logger = policy.logger || console;
+    if (o.level <= level) {
+        var ctx = "[" + f.actor + "]";
+        var msg = [ctx].concat(resolveLog(f, o.toLog(f)));
+        switch (o.level) {
+            case logging.INFO:
+                logger.info.apply(logger, msg);
+                break;
+            case logging.WARN:
+                logger.warn.apply(logger, msg);
+                break;
+            case logging.ERROR:
+                logger.error.apply(logger, msg);
+                break;
+            default:
+                logger.log.apply(logger, msg);
+                break;
+        }
+    }
+    return o;
+};
+var resolveLog = function (f, _a) {
+    var op = _a[0], rand = _a[1], data = _a[2];
+    var operand = rand.length > 0 ?
+        f
+            .resolve(rand)
+            .orRight(function () { return undefined; })
+            .takeRight() : [];
+    var stack = data.length > 0 ?
+        data.map(function (d) {
+            return f.resolve(d)
+                .orRight(function () { return undefined; })
+                .takeRight();
+        }) : [];
+    return [op, operand].concat(stack);
+};
+
+},{"../../../address":29,"../../../template":65,"../../log":38,"../../state":39,"../frame":41,"./scripts":62,"@quenk/noni/lib/control/error":17,"@quenk/noni/lib/data/array":20,"@quenk/noni/lib/data/maybe":23}],64:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+/**
+ * Script is a "program" an actor submits to the Runtime run execute.
+ *
+ * It consists of the following sections:
+ * 1. constants - Static values referenced in the code section.
+ * 2. code - A list of one or more Op codes to execute in sequence.
+ */
+var Script = /** @class */ (function () {
+    function Script(constants, code) {
+        if (constants === void 0) { constants = [[], [], [], [], [], []]; }
+        if (code === void 0) { code = []; }
+        this.constants = constants;
+        this.code = code;
+    }
+    return Script;
+}());
+exports.Script = Script;
+
+},{}],65:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.ACTION_RAISE = -0x1;
+exports.ACTION_IGNORE = 0x0;
+exports.ACTION_RESTART = 0x1;
+exports.ACTION_STOP = 0x2;
+
+},{}],66:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var result_1 = require("./result");
@@ -2829,7 +5357,7 @@ exports.toNumber = function (value) {
     return isNaN(n) ? result_1.fail('NaN', value, {}) : result_1.succeed(n);
 };
 
-},{"./result":28}],27:[function(require,module,exports){
+},{"./result":68}],67:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var polate_1 = require("@quenk/polate");
@@ -2960,7 +5488,7 @@ var DualFailure = /** @class */ (function () {
 }());
 exports.DualFailure = DualFailure;
 
-},{"@quenk/noni/lib/data/record":23,"@quenk/polate":25}],28:[function(require,module,exports){
+},{"@quenk/noni/lib/data/record":24,"@quenk/polate":28}],68:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var either_1 = require("@quenk/noni/lib/data/either");
@@ -2981,7 +5509,7 @@ exports.succeed = function (b) {
     return either_1.right(b);
 };
 
-},{"./failure":27,"@quenk/noni/lib/data/either":20}],29:[function(require,module,exports){
+},{"./failure":67,"@quenk/noni/lib/data/either":21}],69:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -3159,7 +5687,58 @@ exports.toString = function (value) {
  */
 exports.assert = function (value) { return new Positive(value, true); };
 
-},{"deep-equal":32,"json-stringify-safe":37}],30:[function(require,module,exports){
+},{"deep-equal":73,"json-stringify-safe":78}],70:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+/**
+ * Call records the application of a function or method.
+ */
+var Call = /** @class */ (function () {
+    function Call(name, args, ret) {
+        this.name = name;
+        this.args = args;
+        this.ret = ret;
+    }
+    return Call;
+}());
+exports.Call = Call;
+/**
+ * Data recorded during testing.
+ */
+var Data = /** @class */ (function () {
+    function Data(calls) {
+        if (calls === void 0) { calls = []; }
+        this.calls = calls;
+    }
+    /**
+     * record the application of a method.
+     */
+    Data.prototype.record = function (name, args, ret) {
+        this.calls.push(new Call(name, args, ret));
+        return ret;
+    };
+    /**
+     * called returns a list of methods that have been called so far.
+     */
+    Data.prototype.called = function () {
+        return this.calls.map(function (c) { return c.name; });
+    };
+    return Data;
+}());
+exports.Data = Data;
+/**
+ * Mock can be extended to satisfy an interface for which we are only interested
+ * in recording information about method application.
+ */
+var Mock = /** @class */ (function () {
+    function Mock() {
+        this.MOCK = new Data();
+    }
+    return Mock;
+}());
+exports.Mock = Mock;
+
+},{}],71:[function(require,module,exports){
 'use strict'
 
 exports.byteLength = byteLength
@@ -3312,7 +5891,7 @@ function fromByteArray (uint8) {
   return parts.join('')
 }
 
-},{}],31:[function(require,module,exports){
+},{}],72:[function(require,module,exports){
 /*!
  * The buffer module from node.js, for the browser.
  *
@@ -5091,7 +7670,7 @@ function numberIsNaN (obj) {
   return obj !== obj // eslint-disable-line no-self-compare
 }
 
-},{"base64-js":30,"ieee754":36}],32:[function(require,module,exports){
+},{"base64-js":71,"ieee754":77}],73:[function(require,module,exports){
 var pSlice = Array.prototype.slice;
 var objectKeys = require('./lib/keys.js');
 var isArguments = require('./lib/is_arguments.js');
@@ -5187,7 +7766,7 @@ function objEquiv(a, b, opts) {
   return typeof a === typeof b;
 }
 
-},{"./lib/is_arguments.js":33,"./lib/keys.js":34}],33:[function(require,module,exports){
+},{"./lib/is_arguments.js":74,"./lib/keys.js":75}],74:[function(require,module,exports){
 var supportsArgumentsClass = (function(){
   return Object.prototype.toString.call(arguments)
 })() == '[object Arguments]';
@@ -5209,7 +7788,7 @@ function unsupported(object){
     false;
 };
 
-},{}],34:[function(require,module,exports){
+},{}],75:[function(require,module,exports){
 exports = module.exports = typeof Object.keys === 'function'
   ? Object.keys : shim;
 
@@ -5220,7 +7799,7 @@ function shim (obj) {
   return keys;
 }
 
-},{}],35:[function(require,module,exports){
+},{}],76:[function(require,module,exports){
 var kindof = require("kindof")
 exports = module.exports = egal
 exports.deepEgal = deepEgal
@@ -5342,7 +7921,7 @@ function keys(obj) {
   return all
 }
 
-},{"kindof":38}],36:[function(require,module,exports){
+},{"kindof":79}],77:[function(require,module,exports){
 exports.read = function (buffer, offset, isLE, mLen, nBytes) {
   var e, m
   var eLen = (nBytes * 8) - mLen - 1
@@ -5428,7 +8007,7 @@ exports.write = function (buffer, value, offset, isLE, mLen, nBytes) {
   buffer[offset + i - d] |= s * 128
 }
 
-},{}],37:[function(require,module,exports){
+},{}],78:[function(require,module,exports){
 exports = module.exports = stringify
 exports.getSerialize = serializer
 
@@ -5457,7 +8036,7 @@ function serializer(replacer, cycleReplacer) {
   }
 }
 
-},{}],38:[function(require,module,exports){
+},{}],79:[function(require,module,exports){
 if (typeof module != "undefined") module.exports = kindof
 
 function kindof(obj) {
@@ -5477,7 +8056,7 @@ function kindof(obj) {
   }
 }
 
-},{}],39:[function(require,module,exports){
+},{}],80:[function(require,module,exports){
 /**
  * Expose `pathToRegexp`.
  */
@@ -5491,7 +8070,6 @@ module.exports.tokensToRegExp = tokensToRegExp
  * Default configs.
  */
 var DEFAULT_DELIMITER = '/'
-var DEFAULT_DELIMITERS = './'
 
 /**
  * The main path matching regexp utility.
@@ -5523,7 +8101,7 @@ function parse (str, options) {
   var index = 0
   var path = ''
   var defaultDelimiter = (options && options.delimiter) || DEFAULT_DELIMITER
-  var delimiters = (options && options.delimiters) || DEFAULT_DELIMITERS
+  var whitelist = (options && options.whitelist) || undefined
   var pathEscaped = false
   var res
 
@@ -5542,7 +8120,6 @@ function parse (str, options) {
     }
 
     var prev = ''
-    var next = str[index]
     var name = res[2]
     var capture = res[3]
     var group = res[4]
@@ -5550,9 +8127,11 @@ function parse (str, options) {
 
     if (!pathEscaped && path.length) {
       var k = path.length - 1
+      var c = path[k]
+      var matches = whitelist ? whitelist.indexOf(c) > -1 : true
 
-      if (delimiters.indexOf(path[k]) > -1) {
-        prev = path[k]
+      if (matches) {
+        prev = c
         path = path.slice(0, k)
       }
     }
@@ -5564,11 +8143,10 @@ function parse (str, options) {
       pathEscaped = false
     }
 
-    var partial = prev !== '' && next !== undefined && next !== prev
     var repeat = modifier === '+' || modifier === '*'
     var optional = modifier === '?' || modifier === '*'
-    var delimiter = prev || defaultDelimiter
     var pattern = capture || group
+    var delimiter = prev || defaultDelimiter
 
     tokens.push({
       name: name || key++,
@@ -5576,8 +8154,9 @@ function parse (str, options) {
       delimiter: delimiter,
       optional: optional,
       repeat: repeat,
-      partial: partial,
-      pattern: pattern ? escapeGroup(pattern) : '[^' + escapeString(delimiter) + ']+?'
+      pattern: pattern
+        ? escapeGroup(pattern)
+        : '[^' + escapeString(delimiter === defaultDelimiter ? delimiter : (delimiter + defaultDelimiter)) + ']+?'
     })
   }
 
@@ -5664,12 +8243,7 @@ function tokensToFunction (tokens) {
         continue
       }
 
-      if (token.optional) {
-        // Prepend partial segment prefixes.
-        if (token.partial) path += token.prefix
-
-        continue
-      }
+      if (token.optional) continue
 
       throw new TypeError('Expected "' + token.name + '" to be ' + (token.repeat ? 'an array' : 'a string'))
     }
@@ -5729,7 +8303,6 @@ function regexpToRegexp (path, keys) {
         delimiter: null,
         optional: false,
         repeat: false,
-        partial: false,
         pattern: null
       })
     }
@@ -5782,11 +8355,9 @@ function tokensToRegExp (tokens, keys, options) {
   var strict = options.strict
   var start = options.start !== false
   var end = options.end !== false
-  var delimiter = escapeString(options.delimiter || DEFAULT_DELIMITER)
-  var delimiters = options.delimiters || DEFAULT_DELIMITERS
+  var delimiter = options.delimiter || DEFAULT_DELIMITER
   var endsWith = [].concat(options.endsWith || []).map(escapeString).concat('$').join('|')
   var route = start ? '^' : ''
-  var isEndDelimited = tokens.length === 0
 
   // Iterate over the tokens and create our regexp string.
   for (var i = 0; i < tokens.length; i++) {
@@ -5794,7 +8365,6 @@ function tokensToRegExp (tokens, keys, options) {
 
     if (typeof token === 'string') {
       route += escapeString(token)
-      isEndDelimited = i === tokens.length - 1 && delimiters.indexOf(token[token.length - 1]) > -1
     } else {
       var capture = token.repeat
         ? '(?:' + token.pattern + ')(?:' + escapeString(token.delimiter) + '(?:' + token.pattern + '))*'
@@ -5803,8 +8373,8 @@ function tokensToRegExp (tokens, keys, options) {
       if (keys) keys.push(token)
 
       if (token.optional) {
-        if (token.partial) {
-          route += escapeString(token.prefix) + '(' + capture + ')?'
+        if (!token.prefix) {
+          route += '(' + capture + ')?'
         } else {
           route += '(?:' + escapeString(token.prefix) + '(' + capture + '))?'
         }
@@ -5815,12 +8385,17 @@ function tokensToRegExp (tokens, keys, options) {
   }
 
   if (end) {
-    if (!strict) route += '(?:' + delimiter + ')?'
+    if (!strict) route += '(?:' + escapeString(delimiter) + ')?'
 
     route += endsWith === '$' ? '$' : '(?=' + endsWith + ')'
   } else {
-    if (!strict) route += '(?:' + delimiter + '(?=' + endsWith + '))?'
-    if (!isEndDelimited) route += '(?=' + delimiter + '|' + endsWith + ')'
+    var endToken = tokens[tokens.length - 1]
+    var isEndDelimited = typeof endToken === 'string'
+      ? endToken[endToken.length - 1] === delimiter
+      : endToken === undefined
+
+    if (!strict) route += '(?:' + escapeString(delimiter) + '(?=' + endsWith + '))?'
+    if (!isEndDelimited) route += '(?=' + escapeString(delimiter) + '|' + endsWith + ')'
   }
 
   return new RegExp(route, flags(options))
@@ -5850,7 +8425,7 @@ function pathToRegexp (path, keys, options) {
   return stringToRegexp(/** @type {string} */ (path), keys, options)
 }
 
-},{}],40:[function(require,module,exports){
+},{}],81:[function(require,module,exports){
 // shim for using process in browser
 var process = module.exports = {};
 
@@ -6036,7 +8611,7 @@ process.chdir = function (dir) {
 };
 process.umask = function() { return 0; };
 
-},{}],41:[function(require,module,exports){
+},{}],82:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var ESCAPED_SUBS = '@xR25$e!#fda8f623';
@@ -6138,7 +8713,7 @@ function default_1(k, v, o) {
 exports.default = default_1;
 ;
 
-},{}],42:[function(require,module,exports){
+},{}],83:[function(require,module,exports){
 'use strict';
 
 var replace = String.prototype.replace;
@@ -6158,7 +8733,7 @@ module.exports = {
     RFC3986: 'RFC3986'
 };
 
-},{}],43:[function(require,module,exports){
+},{}],84:[function(require,module,exports){
 'use strict';
 
 var stringify = require('./stringify');
@@ -6171,7 +8746,7 @@ module.exports = {
     stringify: stringify
 };
 
-},{"./formats":42,"./parse":44,"./stringify":45}],44:[function(require,module,exports){
+},{"./formats":83,"./parse":85,"./stringify":86}],85:[function(require,module,exports){
 'use strict';
 
 var utils = require('./utils');
@@ -6182,21 +8757,62 @@ var defaults = {
     allowDots: false,
     allowPrototypes: false,
     arrayLimit: 20,
+    charset: 'utf-8',
+    charsetSentinel: false,
     decoder: utils.decode,
     delimiter: '&',
     depth: 5,
+    ignoreQueryPrefix: false,
+    interpretNumericEntities: false,
     parameterLimit: 1000,
+    parseArrays: true,
     plainObjects: false,
     strictNullHandling: false
 };
+
+var interpretNumericEntities = function (str) {
+    return str.replace(/&#(\d+);/g, function ($0, numberStr) {
+        return String.fromCharCode(parseInt(numberStr, 10));
+    });
+};
+
+// This is what browsers will submit when the ✓ character occurs in an
+// application/x-www-form-urlencoded body and the encoding of the page containing
+// the form is iso-8859-1, or when the submitted form has an accept-charset
+// attribute of iso-8859-1. Presumably also with other charsets that do not contain
+// the ✓ character, such as us-ascii.
+var isoSentinel = 'utf8=%26%2310003%3B'; // encodeURIComponent('&#10003;')
+
+// These are the percent-encoded utf-8 octets representing a checkmark, indicating that the request actually is utf-8 encoded.
+var charsetSentinel = 'utf8=%E2%9C%93'; // encodeURIComponent('✓')
 
 var parseValues = function parseQueryStringValues(str, options) {
     var obj = {};
     var cleanStr = options.ignoreQueryPrefix ? str.replace(/^\?/, '') : str;
     var limit = options.parameterLimit === Infinity ? undefined : options.parameterLimit;
     var parts = cleanStr.split(options.delimiter, limit);
+    var skipIndex = -1; // Keep track of where the utf8 sentinel was found
+    var i;
 
-    for (var i = 0; i < parts.length; ++i) {
+    var charset = options.charset;
+    if (options.charsetSentinel) {
+        for (i = 0; i < parts.length; ++i) {
+            if (parts[i].indexOf('utf8=') === 0) {
+                if (parts[i] === charsetSentinel) {
+                    charset = 'utf-8';
+                } else if (parts[i] === isoSentinel) {
+                    charset = 'iso-8859-1';
+                }
+                skipIndex = i;
+                i = parts.length; // The eslint settings do not allow break;
+            }
+        }
+    }
+
+    for (i = 0; i < parts.length; ++i) {
+        if (i === skipIndex) {
+            continue;
+        }
         var part = parts[i];
 
         var bracketEqualsPos = part.indexOf(']=');
@@ -6204,14 +8820,18 @@ var parseValues = function parseQueryStringValues(str, options) {
 
         var key, val;
         if (pos === -1) {
-            key = options.decoder(part, defaults.decoder);
+            key = options.decoder(part, defaults.decoder, charset);
             val = options.strictNullHandling ? null : '';
         } else {
-            key = options.decoder(part.slice(0, pos), defaults.decoder);
-            val = options.decoder(part.slice(pos + 1), defaults.decoder);
+            key = options.decoder(part.slice(0, pos), defaults.decoder, charset);
+            val = options.decoder(part.slice(pos + 1), defaults.decoder, charset);
+        }
+
+        if (val && options.interpretNumericEntities && charset === 'iso-8859-1') {
+            val = interpretNumericEntities(val);
         }
         if (has.call(obj, key)) {
-            obj[key] = [].concat(obj[key]).concat(val);
+            obj[key] = utils.combine(obj[key], val);
         } else {
             obj[key] = val;
         }
@@ -6227,14 +8847,15 @@ var parseObject = function (chain, val, options) {
         var obj;
         var root = chain[i];
 
-        if (root === '[]') {
-            obj = [];
-            obj = obj.concat(leaf);
+        if (root === '[]' && options.parseArrays) {
+            obj = [].concat(leaf);
         } else {
             obj = options.plainObjects ? Object.create(null) : {};
             var cleanRoot = root.charAt(0) === '[' && root.charAt(root.length - 1) === ']' ? root.slice(1, -1) : root;
             var index = parseInt(cleanRoot, 10);
-            if (
+            if (!options.parseArrays && cleanRoot === '') {
+                obj = { 0: leaf };
+            } else if (
                 !isNaN(index)
                 && root !== cleanRoot
                 && String(index) === cleanRoot
@@ -6276,8 +8897,7 @@ var parseKeys = function parseQueryStringKeys(givenKey, val, options) {
 
     var keys = [];
     if (parent) {
-        // If we aren't using plain objects, optionally prefix keys
-        // that would overwrite object prototype properties
+        // If we aren't using plain objects, optionally prefix keys that would overwrite object prototype properties
         if (!options.plainObjects && has.call(Object.prototype, parent)) {
             if (!options.allowPrototypes) {
                 return;
@@ -6322,11 +8942,18 @@ module.exports = function (str, opts) {
     options.arrayLimit = typeof options.arrayLimit === 'number' ? options.arrayLimit : defaults.arrayLimit;
     options.parseArrays = options.parseArrays !== false;
     options.decoder = typeof options.decoder === 'function' ? options.decoder : defaults.decoder;
-    options.allowDots = typeof options.allowDots === 'boolean' ? options.allowDots : defaults.allowDots;
+    options.allowDots = typeof options.allowDots === 'undefined' ? defaults.allowDots : !!options.allowDots;
     options.plainObjects = typeof options.plainObjects === 'boolean' ? options.plainObjects : defaults.plainObjects;
     options.allowPrototypes = typeof options.allowPrototypes === 'boolean' ? options.allowPrototypes : defaults.allowPrototypes;
     options.parameterLimit = typeof options.parameterLimit === 'number' ? options.parameterLimit : defaults.parameterLimit;
     options.strictNullHandling = typeof options.strictNullHandling === 'boolean' ? options.strictNullHandling : defaults.strictNullHandling;
+
+    if (typeof options.charset !== 'undefined' && options.charset !== 'utf-8' && options.charset !== 'iso-8859-1') {
+        throw new Error('The charset option must be either utf-8, iso-8859-1, or undefined');
+    }
+    if (typeof options.charset === 'undefined') {
+        options.charset = defaults.charset;
+    }
 
     if (str === '' || str === null || typeof str === 'undefined') {
         return options.plainObjects ? Object.create(null) : {};
@@ -6347,7 +8974,7 @@ module.exports = function (str, opts) {
     return utils.compact(obj);
 };
 
-},{"./utils":46}],45:[function(require,module,exports){
+},{"./utils":87}],86:[function(require,module,exports){
 'use strict';
 
 var utils = require('./utils');
@@ -6365,13 +8992,25 @@ var arrayPrefixGenerators = {
     }
 };
 
+var isArray = Array.isArray;
+var push = Array.prototype.push;
+var pushToArray = function (arr, valueOrArray) {
+    push.apply(arr, isArray(valueOrArray) ? valueOrArray : [valueOrArray]);
+};
+
 var toISO = Date.prototype.toISOString;
 
 var defaults = {
+    addQueryPrefix: false,
+    allowDots: false,
+    charset: 'utf-8',
+    charsetSentinel: false,
     delimiter: '&',
     encode: true,
     encoder: utils.encode,
     encodeValuesOnly: false,
+    // deprecated
+    indices: false,
     serializeDate: function serializeDate(date) { // eslint-disable-line func-name-matching
         return toISO.call(date);
     },
@@ -6391,16 +9030,19 @@ var stringify = function stringify( // eslint-disable-line func-name-matching
     allowDots,
     serializeDate,
     formatter,
-    encodeValuesOnly
+    encodeValuesOnly,
+    charset
 ) {
     var obj = object;
     if (typeof filter === 'function') {
         obj = filter(prefix, obj);
     } else if (obj instanceof Date) {
         obj = serializeDate(obj);
-    } else if (obj === null) {
+    }
+
+    if (obj === null) {
         if (strictNullHandling) {
-            return encoder && !encodeValuesOnly ? encoder(prefix, defaults.encoder) : prefix;
+            return encoder && !encodeValuesOnly ? encoder(prefix, defaults.encoder, charset) : prefix;
         }
 
         obj = '';
@@ -6408,8 +9050,8 @@ var stringify = function stringify( // eslint-disable-line func-name-matching
 
     if (typeof obj === 'string' || typeof obj === 'number' || typeof obj === 'boolean' || utils.isBuffer(obj)) {
         if (encoder) {
-            var keyValue = encodeValuesOnly ? prefix : encoder(prefix, defaults.encoder);
-            return [formatter(keyValue) + '=' + formatter(encoder(obj, defaults.encoder))];
+            var keyValue = encodeValuesOnly ? prefix : encoder(prefix, defaults.encoder, charset);
+            return [formatter(keyValue) + '=' + formatter(encoder(obj, defaults.encoder, charset))];
         }
         return [formatter(prefix) + '=' + formatter(String(obj))];
     }
@@ -6436,7 +9078,7 @@ var stringify = function stringify( // eslint-disable-line func-name-matching
         }
 
         if (Array.isArray(obj)) {
-            values = values.concat(stringify(
+            pushToArray(values, stringify(
                 obj[key],
                 generateArrayPrefix(prefix, key),
                 generateArrayPrefix,
@@ -6448,10 +9090,11 @@ var stringify = function stringify( // eslint-disable-line func-name-matching
                 allowDots,
                 serializeDate,
                 formatter,
-                encodeValuesOnly
+                encodeValuesOnly,
+                charset
             ));
         } else {
-            values = values.concat(stringify(
+            pushToArray(values, stringify(
                 obj[key],
                 prefix + (allowDots ? '.' + key : '[' + key + ']'),
                 generateArrayPrefix,
@@ -6463,7 +9106,8 @@ var stringify = function stringify( // eslint-disable-line func-name-matching
                 allowDots,
                 serializeDate,
                 formatter,
-                encodeValuesOnly
+                encodeValuesOnly,
+                charset
             ));
         }
     }
@@ -6485,9 +9129,14 @@ module.exports = function (object, opts) {
     var encode = typeof options.encode === 'boolean' ? options.encode : defaults.encode;
     var encoder = typeof options.encoder === 'function' ? options.encoder : defaults.encoder;
     var sort = typeof options.sort === 'function' ? options.sort : null;
-    var allowDots = typeof options.allowDots === 'undefined' ? false : options.allowDots;
+    var allowDots = typeof options.allowDots === 'undefined' ? defaults.allowDots : !!options.allowDots;
     var serializeDate = typeof options.serializeDate === 'function' ? options.serializeDate : defaults.serializeDate;
     var encodeValuesOnly = typeof options.encodeValuesOnly === 'boolean' ? options.encodeValuesOnly : defaults.encodeValuesOnly;
+    var charset = options.charset || defaults.charset;
+    if (typeof options.charset !== 'undefined' && options.charset !== 'utf-8' && options.charset !== 'iso-8859-1') {
+        throw new Error('The charset option must be either utf-8, iso-8859-1, or undefined');
+    }
+
     if (typeof options.format === 'undefined') {
         options.format = formats['default'];
     } else if (!Object.prototype.hasOwnProperty.call(formats.formatters, options.format)) {
@@ -6536,8 +9185,7 @@ module.exports = function (object, opts) {
         if (skipNulls && obj[key] === null) {
             continue;
         }
-
-        keys = keys.concat(stringify(
+        pushToArray(keys, stringify(
             obj[key],
             key,
             generateArrayPrefix,
@@ -6549,17 +9197,28 @@ module.exports = function (object, opts) {
             allowDots,
             serializeDate,
             formatter,
-            encodeValuesOnly
+            encodeValuesOnly,
+            charset
         ));
     }
 
     var joined = keys.join(delimiter);
     var prefix = options.addQueryPrefix === true ? '?' : '';
 
+    if (options.charsetSentinel) {
+        if (charset === 'iso-8859-1') {
+            // encodeURIComponent('&#10003;'), the "numeric entity" representation of a checkmark
+            prefix += 'utf8=%26%2310003%3B&';
+        } else {
+            // encodeURIComponent('✓')
+            prefix += 'utf8=%E2%9C%93&';
+        }
+    }
+
     return joined.length > 0 ? prefix + joined : '';
 };
 
-},{"./formats":42,"./utils":46}],46:[function(require,module,exports){
+},{"./formats":83,"./utils":87}],87:[function(require,module,exports){
 'use strict';
 
 var has = Object.prototype.hasOwnProperty;
@@ -6574,11 +9233,9 @@ var hexTable = (function () {
 }());
 
 var compactQueue = function compactQueue(queue) {
-    var obj;
-
-    while (queue.length) {
+    while (queue.length > 1) {
         var item = queue.pop();
-        obj = item.obj[item.prop];
+        var obj = item.obj[item.prop];
 
         if (Array.isArray(obj)) {
             var compacted = [];
@@ -6592,8 +9249,6 @@ var compactQueue = function compactQueue(queue) {
             item.obj[item.prop] = compacted;
         }
     }
-
-    return obj;
 };
 
 var arrayToObject = function arrayToObject(source, options) {
@@ -6616,7 +9271,7 @@ var merge = function merge(target, source, options) {
         if (Array.isArray(target)) {
             target.push(source);
         } else if (typeof target === 'object') {
-            if (options.plainObjects || options.allowPrototypes || !has.call(Object.prototype, source)) {
+            if ((options && (options.plainObjects || options.allowPrototypes)) || !has.call(Object.prototype, source)) {
                 target[source] = true;
             }
         } else {
@@ -6669,15 +9324,21 @@ var assign = function assignSingleSource(target, source) {
     }, target);
 };
 
-var decode = function (str) {
+var decode = function (str, decoder, charset) {
+    var strWithoutPlus = str.replace(/\+/g, ' ');
+    if (charset === 'iso-8859-1') {
+        // unescape never throws, no try...catch needed:
+        return strWithoutPlus.replace(/%[0-9a-f]{2}/gi, unescape);
+    }
+    // utf-8
     try {
-        return decodeURIComponent(str.replace(/\+/g, ' '));
+        return decodeURIComponent(strWithoutPlus);
     } catch (e) {
-        return str;
+        return strWithoutPlus;
     }
 };
 
-var encode = function encode(str) {
+var encode = function encode(str, defaultEncoder, charset) {
     // This code was originally written by Brian White (mscdex) for the io.js core querystring library.
     // It has been adapted here for stricter adherence to RFC 3986
     if (str.length === 0) {
@@ -6685,6 +9346,12 @@ var encode = function encode(str) {
     }
 
     var string = typeof str === 'string' ? str : String(str);
+
+    if (charset === 'iso-8859-1') {
+        return escape(string).replace(/%u[0-9a-f]{4}/gi, function ($0) {
+            return '%26%23' + parseInt($0.slice(2), 16) + '%3B';
+        });
+    }
 
     var out = '';
     for (var i = 0; i < string.length; ++i) {
@@ -6748,7 +9415,9 @@ var compact = function compact(value) {
         }
     }
 
-    return compactQueue(queue);
+    compactQueue(queue);
+
+    return value;
 };
 
 var isRegExp = function isRegExp(obj) {
@@ -6763,9 +9432,14 @@ var isBuffer = function isBuffer(obj) {
     return !!(obj.constructor && obj.constructor.isBuffer && obj.constructor.isBuffer(obj));
 };
 
+var combine = function combine(a, b) {
+    return [].concat(a, b);
+};
+
 module.exports = {
     arrayToObject: arrayToObject,
     assign: assign,
+    combine: combine,
     compact: compact,
     decode: decode,
     encode: encode,
@@ -6774,7 +9448,7 @@ module.exports = {
     merge: merge
 };
 
-},{}],47:[function(require,module,exports){
+},{}],88:[function(require,module,exports){
 'use strict';
 
 function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'default' in ex) ? ex['default'] : ex; }
@@ -7108,7 +9782,7 @@ function eq(a, b, opts) {
 eq.EQ = EQ;
 
 module.exports = eq;
-},{"should-type":50}],48:[function(require,module,exports){
+},{"should-type":91}],89:[function(require,module,exports){
 'use strict';
 
 function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'default' in ex) ? ex['default'] : ex; }
@@ -7641,7 +10315,7 @@ Formatter.addType(new t.Type(t.OBJECT, t.HOST), function() {
 });
 
 module.exports = defaultFormat;
-},{"should-type":50,"should-type-adaptors":49}],49:[function(require,module,exports){
+},{"should-type":91,"should-type-adaptors":90}],90:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', { value: true });
@@ -7930,7 +10604,7 @@ exports.some = some;
 exports.every = every;
 exports.isIterable = isIterable;
 exports.iterator = iterator;
-},{"should-type":50,"should-util":51}],50:[function(require,module,exports){
+},{"should-type":91,"should-util":92}],91:[function(require,module,exports){
 (function (Buffer){
 'use strict';
 
@@ -8196,7 +10870,7 @@ Object.keys(types).forEach(function(typeName) {
 
 module.exports = getGlobalType;
 }).call(this,require("buffer").Buffer)
-},{"buffer":31}],51:[function(require,module,exports){
+},{"buffer":72}],92:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', { value: true });
@@ -8247,7 +10921,7 @@ exports.propertyIsEnumerable = propertyIsEnumerable;
 exports.merge = merge;
 exports.isIterator = isIterator;
 exports.isGeneratorFunction = isGeneratorFunction;
-},{}],52:[function(require,module,exports){
+},{}],93:[function(require,module,exports){
 (function (global){
 'use strict';
 
@@ -11213,7 +13887,7 @@ try {
 module.exports = should$1;
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"should-equal":47,"should-format":48,"should-type":50,"should-type-adaptors":49,"should-util":51}],53:[function(require,module,exports){
+},{"should-equal":88,"should-format":89,"should-type":91,"should-type-adaptors":90,"should-util":92}],94:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -11234,10 +13908,10 @@ var maybe_1 = require("@quenk/noni/lib/data/maybe");
 var function_1 = require("@quenk/noni/lib/data/function");
 var future_1 = require("@quenk/noni/lib/control/monad/future");
 var case_1 = require("@quenk/potoo/lib/actor/resident/case");
-var hash_1 = require("../../../../../lib/browser/window/router/hash");
-var router_1 = require("../../../../../lib/app/actor/api/router");
-var actor_1 = require("../../../../../lib/app/actor");
-var app_1 = require("../../fixtures/app");
+var default_1 = require("../../../../../../lib/browser/window/router/hash/default");
+var display_1 = require("../../../../../../lib/app/actor/api/router/display");
+var actor_1 = require("../../../../../../lib/app/actor");
+var app_1 = require("../../../fixtures/app");
 var Ctrl = /** @class */ (function (_super) {
     __extends(Ctrl, _super);
     function Ctrl(cases, system) {
@@ -11257,7 +13931,7 @@ var controllerTemplate = function (id, cases) { return ({
 }); };
 var routerTemplate = function (routes, router, time) { return ({
     id: 'router',
-    create: function (s) { return new router_1.Router('display', routes, router, time, maybe_1.nothing(), s); }
+    create: function (s) { return new display_1.DisplayRouter('display', routes, router, maybe_1.just(time), maybe_1.nothing(), s); }
 }); };
 describe('router', function () {
     describe('Router', function () {
@@ -11269,10 +13943,10 @@ describe('router', function () {
         });
         it('should route ', function () { return future_1.toPromise(future_1.fromCallback(function (cb) {
             var sys = system();
-            hash = new hash_1.Router(window, {}, onNotFound);
+            hash = new default_1.DefaultHashRouter(window, {}, undefined, onNotFound);
             sys.spawn(routerTemplate({ '/foo': 'ctl' }, hash, 200));
             sys.spawn(controllerTemplate('ctl', function () { return [
-                new case_1.Case(router_1.Resume, function () {
+                new case_1.Case(display_1.Resume, function () {
                     assert_1.assert(true).be.true();
                     cb(undefined);
                 })
@@ -11283,16 +13957,16 @@ describe('router', function () {
         it('should suspend', function () { return future_1.toPromise(future_1.fromCallback(function (cb) {
             var sys = system();
             var routes = { '/foo': 'foo', '/bar': 'bar' };
-            hash = new hash_1.Router(window, {}, onNotFound);
+            hash = new default_1.DefaultHashRouter(window, {}, undefined, onNotFound);
             sys.spawn(routerTemplate(routes, hash, 100));
             sys.spawn(controllerTemplate('foo', function (c) { return [
-                new case_1.Case(router_1.Suspend, function (_a) {
+                new case_1.Case(display_1.Suspend, function (_a) {
                     var router = _a.router;
-                    return c.tell(router, new router_1.Ack());
+                    return c.tell(router, new display_1.Ack());
                 })
             ]; }));
             sys.spawn(controllerTemplate('bar', function () { return [
-                new case_1.Case(router_1.Resume, function () {
+                new case_1.Case(display_1.Resume, function () {
                     assert_1.assert(true).true();
                     cb(undefined);
                 })
@@ -11306,13 +13980,13 @@ describe('router', function () {
             var routes = { '/foo': 'foo', '/bar': 'bar' };
             var promoted = false;
             var onErr = function () { return future_1.pure(function_1.noop()); };
-            hash = new hash_1.Router(window, {}, onNotFound, onErr);
+            hash = new default_1.DefaultHashRouter(window, {}, onErr, onNotFound);
             sys.spawn(routerTemplate(routes, hash, 100));
             sys.spawn(controllerTemplate('foo', function () { return [
-                new case_1.Case(router_1.Suspend, function_1.noop)
+                new case_1.Case(display_1.Suspend, function_1.noop)
             ]; }));
             sys.spawn(controllerTemplate('bar', function () { return [
-                new case_1.Case(router_1.Resume, function () { promoted = true; })
+                new case_1.Case(display_1.Resume, function () { promoted = true; })
             ]; }));
             hash.start();
             setTimeout(function () { return window.location.hash = 'foo'; }, 300);
@@ -11328,16 +14002,16 @@ describe('router', function () {
             var expired = false;
             var promoted = false;
             var onErr = function () { expired = true; return future_1.pure(function_1.noop()); };
-            hash = new hash_1.Router(window, {}, onNotFound, onErr);
+            hash = new default_1.DefaultHashRouter(window, {}, onErr, onNotFound);
             sys.spawn(routerTemplate(routes, hash, 100));
             sys.spawn(controllerTemplate('foo', function (c) { return [
-                new case_1.Case(router_1.Suspend, function (_a) {
+                new case_1.Case(display_1.Suspend, function (_a) {
                     var router = _a.router;
-                    return c.tell(router, new router_1.Cont());
+                    return c.tell(router, new display_1.Cont());
                 })
             ]; }));
             sys.spawn(controllerTemplate('bar', function () { return [
-                new case_1.Case(router_1.Resume, function () { promoted = true; })
+                new case_1.Case(display_1.Resume, function () { promoted = true; })
             ]; }));
             hash.start();
             setTimeout(function () { return window.location.hash = 'foo'; }, 300);
@@ -11351,7 +14025,163 @@ describe('router', function () {
     });
 });
 
-},{"../../../../../lib/app/actor":2,"../../../../../lib/app/actor/api/router":1,"../../../../../lib/browser/window/router/hash":14,"../../fixtures/app":67,"@quenk/noni/lib/control/monad/future":17,"@quenk/noni/lib/data/function":21,"@quenk/noni/lib/data/maybe":22,"@quenk/potoo/lib/actor/resident/case":73,"@quenk/test/lib/assert":29}],54:[function(require,module,exports){
+},{"../../../../../../lib/app/actor":3,"../../../../../../lib/app/actor/api/router/display":1,"../../../../../../lib/browser/window/router/hash/default":14,"../../../fixtures/app":108,"@quenk/noni/lib/control/monad/future":18,"@quenk/noni/lib/data/function":22,"@quenk/noni/lib/data/maybe":23,"@quenk/potoo/lib/actor/resident/case":31,"@quenk/test/lib/assert":69}],95:[function(require,module,exports){
+"use strict";
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+        return extendStatics(d, b);
+    };
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
+Object.defineProperty(exports, "__esModule", { value: true });
+var must_1 = require("@quenk/must");
+var router_1 = require("../../../../../../lib/app/actor/api/router");
+var actor_1 = require("../../fixtures/actor");
+var Request = /** @class */ (function () {
+    function Request() {
+        this.src = '?';
+    }
+    return Request;
+}());
+var Parent = /** @class */ (function () {
+    function Parent(actor) {
+        this.actor = actor;
+    }
+    return Parent;
+}());
+var Ack = /** @class */ (function (_super) {
+    __extends(Ack, _super);
+    function Ack() {
+        var _this = _super !== null && _super.apply(this, arguments) || this;
+        _this.ack = 'yes';
+        return _this;
+    }
+    return Ack;
+}(Parent));
+var Exp = /** @class */ (function (_super) {
+    __extends(Exp, _super);
+    function Exp() {
+        var _this = _super !== null && _super.apply(this, arguments) || this;
+        _this.ts = 100;
+        return _this;
+    }
+    return Exp;
+}(Parent));
+var Cont = /** @class */ (function (_super) {
+    __extends(Cont, _super);
+    function Cont() {
+        var _this = _super !== null && _super.apply(this, arguments) || this;
+        _this.retry = false;
+        return _this;
+    }
+    return Cont;
+}(Parent));
+var Message = /** @class */ (function (_super) {
+    __extends(Message, _super);
+    function Message() {
+        var _this = _super !== null && _super.apply(this, arguments) || this;
+        _this.value = 12;
+        return _this;
+    }
+    return Message;
+}(Parent));
+var Rout = /** @class */ (function (_super) {
+    __extends(Rout, _super);
+    function Rout() {
+        var _this = _super !== null && _super.apply(this, arguments) || this;
+        _this.current = 'x';
+        return _this;
+    }
+    Rout.prototype.beforeRouting = function () {
+        this.__record('routing', []);
+        return this;
+    };
+    Rout.prototype.beforeAwaiting = function (_) {
+        return this.__record('beforeWait', [_]);
+    };
+    Rout.prototype.awaiting = function (_) {
+        this.__record('waiting', [_]);
+        return [];
+    };
+    Rout.prototype.afterAck = function (_) {
+        return this.__record('afterAck', [_]);
+    };
+    Rout.prototype.afterContinue = function (_) {
+        return this.__record('afterContinue', [_]);
+    };
+    Rout.prototype.afterExpire = function (_) {
+        return this.__record('afterExpire', [_]);
+    };
+    Rout.prototype.afterMessage = function (_) {
+        return this.__record('afterMessage', [_]);
+    };
+    Rout.prototype.routing = function () {
+        this.__record('scheduling', []);
+        return [];
+    };
+    return Rout;
+}(actor_1.ActorImpl));
+describe('router', function () {
+    describe('DispatchCase', function () {
+        it('should transition to waiting()', function () {
+            var s = new Rout();
+            var c = new router_1.DispatchCase(Request, s);
+            c.match(new Request());
+            must_1.must(s.__test.invokes.order()).equate([
+                'beforeWait', 'waiting', 'select'
+            ]);
+        });
+    });
+    describe('AckCase', function () {
+        it('should transition to scheduling()', function () {
+            var s = new Rout();
+            var c = new router_1.AckCase(Ack, s);
+            c.match(new Ack('x'));
+            must_1.must(s.__test.invokes.order()).equate([
+                'afterAck', 'scheduling', 'select'
+            ]);
+        });
+    });
+    describe('ContinueCase', function () {
+        it('should transition to scheduling()', function () {
+            var s = new Rout();
+            var c = new router_1.ContinueCase(Cont, s);
+            c.match(new Cont('x'));
+            must_1.must(s.__test.invokes.order()).equate([
+                'afterContinue', 'scheduling', 'select'
+            ]);
+        });
+    });
+    describe('ExpireCase', function () {
+        it('should transition to scheduling()', function () {
+            var s = new Rout();
+            var c = new router_1.ExpireCase(Exp, s);
+            c.match(new Exp('x'));
+            must_1.must(s.__test.invokes.order()).equate([
+                'afterExpire', 'scheduling', 'select'
+            ]);
+        });
+    });
+    describe('MessageCase', function () {
+        it('should transition to scheduling()', function () {
+            var s = new Rout();
+            var c = new router_1.MessageCase(Message, s);
+            c.match(new Message('x'));
+            must_1.must(s.__test.invokes.order()).equate([
+                'afterMessage', 'scheduling', 'select'
+            ]);
+        });
+    });
+});
+
+},{"../../../../../../lib/app/actor/api/router":2,"../../fixtures/actor":96,"@quenk/must":16}],96:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -11403,7 +14233,7 @@ var ActorImpl = /** @class */ (function (_super) {
 }(mock_1.Mock));
 exports.ActorImpl = ActorImpl;
 
-},{"../../../fixtures/mock":69}],55:[function(require,module,exports){
+},{"../../../fixtures/mock":110}],97:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -11464,7 +14294,7 @@ describe('app/interact/data/form/abort', function () {
     });
 });
 
-},{"../../../../../../../lib/app/actor/interact/data/form/abort":3,"../../../fixtures/actor":54,"@quenk/must":15}],56:[function(require,module,exports){
+},{"../../../../../../../lib/app/actor/interact/data/form/abort":4,"../../../fixtures/actor":96,"@quenk/must":16}],98:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -11590,7 +14420,7 @@ describe('app/interact/data/form/client', function () {
     });
 });
 
-},{"../../../../../../../../lib/app/actor/interact/data/form/client":4,"../../../../fixtures/actor":54,"@quenk/must":15}],57:[function(require,module,exports){
+},{"../../../../../../../../lib/app/actor/interact/data/form/client":5,"../../../../fixtures/actor":96,"@quenk/must":16}],99:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -11677,7 +14507,7 @@ describe('app/interact/data/form', function () {
     });
 });
 
-},{"../../../../../../../lib/app/actor/interact/data/form":5,"../../../fixtures/actor":54,"@quenk/must":15}],58:[function(require,module,exports){
+},{"../../../../../../../lib/app/actor/interact/data/form":6,"../../../fixtures/actor":96,"@quenk/must":16}],100:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -11729,7 +14559,7 @@ describe('app/interact/data/form/send', function () {
     });
 });
 
-},{"../../../../../../../lib/app/actor/interact/data/form/send":6,"../../../fixtures/actor":54,"@quenk/must":15}],59:[function(require,module,exports){
+},{"../../../../../../../lib/app/actor/interact/data/form/send":7,"../../../fixtures/actor":96,"@quenk/must":16}],101:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -11812,7 +14642,7 @@ describe('app/interact/data/form/validate', function () {
     });
 });
 
-},{"../../../../../../../../lib/app/actor/interact/data/form/validate":7,"../../../../fixtures/actor":54,"@quenk/must":15,"@quenk/preconditions/lib/number":26}],60:[function(require,module,exports){
+},{"../../../../../../../../lib/app/actor/interact/data/form/validate":8,"../../../../fixtures/actor":96,"@quenk/must":16,"@quenk/preconditions/lib/number":66}],102:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -11867,7 +14697,7 @@ describe('app/interact/data/preload', function () {
     });
 });
 
-},{"../../../../../../lib/app/actor/interact/data/preload":8,"../../fixtures/actor":54,"@quenk/must":15}],61:[function(require,module,exports){
+},{"../../../../../../lib/app/actor/interact/data/preload":9,"../../fixtures/actor":96,"@quenk/must":16}],103:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -11954,7 +14784,7 @@ describe('app/interact/data/search/filtered', function () {
     });
 });
 
-},{"../../../../../../../lib/app/actor/interact/data/search/filtered":9,"../../../fixtures/actor":54,"@quenk/must":15}],62:[function(require,module,exports){
+},{"../../../../../../../lib/app/actor/interact/data/search/filtered":10,"../../../fixtures/actor":96,"@quenk/must":16}],104:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -12013,7 +14843,7 @@ describe('app/interact/data/search/realtime', function () {
     });
 });
 
-},{"../../../../../../../lib/app/actor/interact/data/search/realtime":10,"../../../fixtures/actor":54,"@quenk/must":15}],63:[function(require,module,exports){
+},{"../../../../../../../lib/app/actor/interact/data/search/realtime":11,"../../../fixtures/actor":96,"@quenk/must":16}],105:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -12055,7 +14885,7 @@ var InteractImpl = /** @class */ (function (_super) {
 }(actor_1.ActorImpl));
 exports.InteractImpl = InteractImpl;
 
-},{"../../fixtures/actor":54}],64:[function(require,module,exports){
+},{"../../fixtures/actor":96}],106:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -12195,7 +15025,7 @@ describe('app/interact/http', function () {
     });
 });
 
-},{"../../../../../../lib/app/actor/interact/http":11,"../fixtures/interact":63,"@quenk/must":15}],65:[function(require,module,exports){
+},{"../../../../../../lib/app/actor/interact/http":12,"../fixtures/interact":105,"@quenk/must":16}],107:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -12271,159 +15101,7 @@ describe('app/interact', function () {
     });
 });
 
-},{"../../../../../lib/app/actor/interact":12,"../fixtures/actor":54,"@quenk/must":15}],66:[function(require,module,exports){
-"use strict";
-var __extends = (this && this.__extends) || (function () {
-    var extendStatics = function (d, b) {
-        extendStatics = Object.setPrototypeOf ||
-            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
-        return extendStatics(d, b);
-    };
-    return function (d, b) {
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
-Object.defineProperty(exports, "__esModule", { value: true });
-var must_1 = require("@quenk/must");
-var scheduler_1 = require("../../../../../lib/app/actor/runtime/scheduler");
-var actor_1 = require("../fixtures/actor");
-var Request = /** @class */ (function () {
-    function Request() {
-        this.src = '?';
-    }
-    return Request;
-}());
-var Parent = /** @class */ (function () {
-    function Parent(actor) {
-        this.actor = actor;
-    }
-    return Parent;
-}());
-var Ack = /** @class */ (function (_super) {
-    __extends(Ack, _super);
-    function Ack() {
-        var _this = _super !== null && _super.apply(this, arguments) || this;
-        _this.ack = 'yes';
-        return _this;
-    }
-    return Ack;
-}(Parent));
-var Exp = /** @class */ (function (_super) {
-    __extends(Exp, _super);
-    function Exp() {
-        var _this = _super !== null && _super.apply(this, arguments) || this;
-        _this.ts = 100;
-        return _this;
-    }
-    return Exp;
-}(Parent));
-var Cont = /** @class */ (function (_super) {
-    __extends(Cont, _super);
-    function Cont() {
-        var _this = _super !== null && _super.apply(this, arguments) || this;
-        _this.retry = false;
-        return _this;
-    }
-    return Cont;
-}(Parent));
-var Message = /** @class */ (function (_super) {
-    __extends(Message, _super);
-    function Message() {
-        var _this = _super !== null && _super.apply(this, arguments) || this;
-        _this.value = 12;
-        return _this;
-    }
-    return Message;
-}(Parent));
-var Sched = /** @class */ (function (_super) {
-    __extends(Sched, _super);
-    function Sched() {
-        var _this = _super !== null && _super.apply(this, arguments) || this;
-        _this.current = 'x';
-        return _this;
-    }
-    Sched.prototype.beforeWait = function (_) {
-        return this.__record('beforeWait', [_]);
-    };
-    Sched.prototype.waiting = function (_) {
-        this.__record('waiting', [_]);
-        return [];
-    };
-    Sched.prototype.afterAck = function (_) {
-        return this.__record('afterAck', [_]);
-    };
-    Sched.prototype.afterContinue = function (_) {
-        return this.__record('afterContinue', [_]);
-    };
-    Sched.prototype.afterExpire = function (_) {
-        return this.__record('afterExpire', [_]);
-    };
-    Sched.prototype.afterMessage = function (_) {
-        return this.__record('afterMessage', [_]);
-    };
-    Sched.prototype.scheduling = function () {
-        this.__record('scheduling', []);
-        return [];
-    };
-    return Sched;
-}(actor_1.ActorImpl));
-describe('scheduler', function () {
-    describe('ScheduleCase', function () {
-        it('should transition to waiting()', function () {
-            var s = new Sched();
-            var c = new scheduler_1.ScheduleCase(Request, s);
-            c.match(new Request());
-            must_1.must(s.__test.invokes.order()).equate([
-                'beforeWait', 'waiting', 'select'
-            ]);
-        });
-    });
-    describe('AckCase', function () {
-        it('should transition to scheduling()', function () {
-            var s = new Sched();
-            var c = new scheduler_1.AckCase(Ack, s);
-            c.match(new Ack('x'));
-            must_1.must(s.__test.invokes.order()).equate([
-                'afterAck', 'scheduling', 'select'
-            ]);
-        });
-    });
-    describe('ContinueCase', function () {
-        it('should transition to scheduling()', function () {
-            var s = new Sched();
-            var c = new scheduler_1.ContinueCase(Cont, s);
-            c.match(new Cont('x'));
-            must_1.must(s.__test.invokes.order()).equate([
-                'afterContinue', 'scheduling', 'select'
-            ]);
-        });
-    });
-    describe('ExpireCase', function () {
-        it('should transition to scheduling()', function () {
-            var s = new Sched();
-            var c = new scheduler_1.ExpireCase(Exp, s);
-            c.match(new Exp('x'));
-            must_1.must(s.__test.invokes.order()).equate([
-                'afterExpire', 'scheduling', 'select'
-            ]);
-        });
-    });
-    describe('MessageCase', function () {
-        it('should transition to scheduling()', function () {
-            var s = new Sched();
-            var c = new scheduler_1.MessageCase(Message, s);
-            c.match(new Message('x'));
-            must_1.must(s.__test.invokes.order()).equate([
-                'afterMessage', 'scheduling', 'select'
-            ]);
-        });
-    });
-});
-
-},{"../../../../../lib/app/actor/runtime/scheduler":13,"../fixtures/actor":54,"@quenk/must":15}],67:[function(require,module,exports){
+},{"../../../../../lib/app/actor/interact":13,"../fixtures/actor":96,"@quenk/must":16}],108:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -12459,15 +15137,15 @@ var TestApp = /** @class */ (function (_super) {
 }(test_1.TestAbstractSystem));
 exports.TestApp = TestApp;
 
-},{"@quenk/potoo/lib/actor/system/framework":76,"@quenk/potoo/lib/actor/system/framework/test":78}],68:[function(require,module,exports){
+},{"@quenk/potoo/lib/actor/system/framework":34,"@quenk/potoo/lib/actor/system/framework/test":36}],109:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var must = require("should");
 var future_1 = require("@quenk/noni/lib/control/monad/future");
 var function_1 = require("@quenk/noni/lib/data/function");
-var hash_1 = require("../../../../../lib/browser/window/router/hash");
+var default_1 = require("../../../../../../lib/browser/window/router/hash/default");
 describe('router', function () {
-    describe('Router', function () {
+    describe('DefaultHashRouter', function () {
         var router;
         afterEach(function () {
             if (router)
@@ -12476,7 +15154,7 @@ describe('router', function () {
         });
         it('should activate a route', function (cb) {
             var called = false;
-            router = new hash_1.Router(window, {});
+            router = new default_1.DefaultHashRouter(window, {});
             router
                 .add('/search/:collection', function (req) {
                 called = true;
@@ -12492,7 +15170,7 @@ describe('router', function () {
         });
         it('should recognise # as /', function (cb) {
             var called = false;
-            router = new hash_1.Router(window, {});
+            router = new default_1.DefaultHashRouter(window, {});
             router
                 .add('/', function () {
                 called = true;
@@ -12507,7 +15185,7 @@ describe('router', function () {
         });
         it('must parse path parameters variables', function (cb) {
             var called = false;
-            router = new hash_1.Router(window, {});
+            router = new default_1.DefaultHashRouter(window, {});
             router
                 .add('/spreadsheet/locations/:worksheet', function (req) {
                 must.exist(req.query);
@@ -12525,7 +15203,7 @@ describe('router', function () {
         });
         it('should recognise "" as /', function (cb) {
             var called = false;
-            router = new hash_1.Router(window, {});
+            router = new default_1.DefaultHashRouter(window, {});
             router
                 .add('/', function () {
                 called = true;
@@ -12541,7 +15219,7 @@ describe('router', function () {
         it('should execute middleware', function (cb) {
             var count = 0;
             var mware = function (req) { count = count + 1; return future_1.pure(req); };
-            router = new hash_1.Router(window, {});
+            router = new default_1.DefaultHashRouter(window, {});
             router
                 .use('/search', mware)
                 .use('/search', mware)
@@ -12561,7 +15239,7 @@ describe('router', function () {
             var hadNotFound = false;
             var onErr = function () { return future_1.pure(function_1.noop()); };
             var onNotFound = function () { hadNotFound = true; return future_1.pure(function_1.noop()); };
-            router = new hash_1.Router(window, {}, onNotFound, onErr);
+            router = new default_1.DefaultHashRouter(window, {}, onErr, onNotFound);
             router.start();
             window.location.hash = 'waldo';
             setTimeout(function () {
@@ -12572,7 +15250,7 @@ describe('router', function () {
     });
 });
 
-},{"../../../../../lib/browser/window/router/hash":14,"@quenk/noni/lib/control/monad/future":17,"@quenk/noni/lib/data/function":21,"should":52}],69:[function(require,module,exports){
+},{"../../../../../../lib/browser/window/router/hash/default":14,"@quenk/noni/lib/control/monad/future":18,"@quenk/noni/lib/data/function":22,"should":93}],110:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var Invoke = /** @class */ (function () {
@@ -12615,8 +15293,8 @@ var Mock = /** @class */ (function () {
 }());
 exports.Mock = Mock;
 
-},{}],70:[function(require,module,exports){
-require("./browser/window/router/hash_test.js");
+},{}],111:[function(require,module,exports){
+require("./browser/window/router/hash/default_test.js");
 require("./app/actor/interact/data/form/validate/index_test.js");
 require("./app/actor/interact/data/form/index_test.js");
 require("./app/actor/interact/data/form/send_test.js");
@@ -12627,2576 +15305,7 @@ require("./app/actor/interact/data/search/realtime_test.js");
 require("./app/actor/interact/data/preload_test.js");
 require("./app/actor/interact/index_test.js");
 require("./app/actor/interact/http/index_test.js");
-require("./app/actor/runtime/scheduler_test.js");
-require("./app/actor/api/router_test.js");
+require("./app/actor/api/router/display_test.js");
+require("./app/actor/api/router/index_test.js");
 
-},{"./app/actor/api/router_test.js":53,"./app/actor/interact/data/form/abort_test.js":55,"./app/actor/interact/data/form/client/index_test.js":56,"./app/actor/interact/data/form/index_test.js":57,"./app/actor/interact/data/form/send_test.js":58,"./app/actor/interact/data/form/validate/index_test.js":59,"./app/actor/interact/data/preload_test.js":60,"./app/actor/interact/data/search/filtered_test.js":61,"./app/actor/interact/data/search/realtime_test.js":62,"./app/actor/interact/http/index_test.js":64,"./app/actor/interact/index_test.js":65,"./app/actor/runtime/scheduler_test.js":66,"./browser/window/router/hash_test.js":68}],71:[function(require,module,exports){
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-var array_1 = require("@quenk/noni/lib/data/array");
-var string_1 = require("@quenk/noni/lib/data/string");
-exports.SEPERATOR = '/';
-exports.ADDRESS_DISCARD = '?';
-exports.ADDRESS_SYSTEM = '$';
-exports.ADDRESS_EMPTY = '';
-exports.ADDRESS_RESTRICTED = [
-    exports.ADDRESS_DISCARD,
-    exports.ADDRESS_SYSTEM,
-    exports.SEPERATOR
-];
-/**
- * isRestricted indicates whether an actor id is restricted or not.
- */
-exports.isRestricted = function (id) {
-    return ((exports.ADDRESS_RESTRICTED.some(function (a) { return id.indexOf(a) > -1; })) && (id !== exports.SEPERATOR));
-};
-/**
- * make a child address given its id and parent address.
- */
-exports.make = function (parent, id) {
-    return ((parent === exports.SEPERATOR) || (parent === exports.ADDRESS_EMPTY)) ?
-        "" + parent + id :
-        (parent === exports.ADDRESS_SYSTEM) ?
-            id :
-            "" + parent + exports.SEPERATOR + id;
-};
-/**
- * getParent computes the parent of an Address.
- */
-exports.getParent = function (addr) {
-    if (((addr === exports.ADDRESS_SYSTEM) ||
-        (addr === exports.ADDRESS_EMPTY) ||
-        (addr === exports.ADDRESS_DISCARD) || (addr === exports.SEPERATOR))) {
-        return exports.ADDRESS_SYSTEM;
-    }
-    else {
-        var b4 = addr.split(exports.SEPERATOR);
-        if ((b4.length === 2) && (b4[0] === '')) {
-            return exports.SEPERATOR;
-        }
-        else {
-            var a = b4
-                .reverse()
-                .slice(1)
-                .reverse()
-                .join(exports.SEPERATOR);
-            return a === exports.ADDRESS_EMPTY ? exports.ADDRESS_SYSTEM : a;
-        }
-    }
-};
-/**
- * getId provides the id part of an actor address.
- */
-exports.getId = function (addr) {
-    return ((addr === exports.ADDRESS_SYSTEM) ||
-        (addr === exports.ADDRESS_DISCARD) ||
-        (addr === exports.ADDRESS_EMPTY) ||
-        (addr === exports.SEPERATOR)) ?
-        addr :
-        array_1.tail(addr.split(exports.SEPERATOR));
-};
-/**
- * isChild tests whether an address is a child of the parent address.
- */
-exports.isChild = function (parent, child) {
-    return (parent !== child) && string_1.startsWith(child, parent);
-};
-
-},{"@quenk/noni/lib/data/array":110,"@quenk/noni/lib/data/string":115}],72:[function(require,module,exports){
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-/**
- * Envelope for messages.
- *
- * Used to internally keep track of message sources and destintations.
- */
-var Envelope = /** @class */ (function () {
-    function Envelope(to, from, message) {
-        this.to = to;
-        this.from = from;
-        this.message = message;
-    }
-    return Envelope;
-}());
-exports.Envelope = Envelope;
-
-},{}],73:[function(require,module,exports){
-"use strict";
-var __extends = (this && this.__extends) || (function () {
-    var extendStatics = function (d, b) {
-        extendStatics = Object.setPrototypeOf ||
-            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
-        return extendStatics(d, b);
-    };
-    return function (d, b) {
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
-Object.defineProperty(exports, "__esModule", { value: true });
-var type_1 = require("@quenk/noni/lib/data/type");
-/**
- * Case is provided for situations where it is better to extend
- * the Case class instead of creating new instances.
- */
-var Case = /** @class */ (function () {
-    function Case(pattern, handler) {
-        this.pattern = pattern;
-        this.handler = handler;
-    }
-    /**
-     * match a message against a pattern.
-     *
-     * A successful match results in a side effect.
-     */
-    Case.prototype.match = function (m) {
-        if (type_1.test(m, this.pattern)) {
-            this.handler(m);
-            return true;
-        }
-        else {
-            return false;
-        }
-    };
-    return Case;
-}());
-exports.Case = Case;
-/**
- * Default matches any message value.
- */
-var Default = /** @class */ (function (_super) {
-    __extends(Default, _super);
-    function Default(handler) {
-        var _this = _super.call(this, Object, handler) || this;
-        _this.handler = handler;
-        return _this;
-    }
-    Default.prototype.match = function (m) {
-        this.handler(m);
-        return true;
-    };
-    return Default;
-}(Case));
-exports.Default = Default;
-
-},{"@quenk/noni/lib/data/type":116}],74:[function(require,module,exports){
-"use strict";
-var __extends = (this && this.__extends) || (function () {
-    var extendStatics = function (d, b) {
-        extendStatics = Object.setPrototypeOf ||
-            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
-        return extendStatics(d, b);
-    };
-    return function (d, b) {
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
-Object.defineProperty(exports, "__esModule", { value: true });
-var either_1 = require("@quenk/noni/lib/data/either");
-var maybe_1 = require("@quenk/noni/lib/data/maybe");
-var function_1 = require("@quenk/noni/lib/data/function");
-var scripts_1 = require("../system/vm/runtime/scripts");
-var scripts_2 = require("../system/framework/scripts");
-var system_1 = require("../system");
-var address_1 = require("../address");
-var scripts_3 = require("./scripts");
-/**
- * AbstractResident implementation.
- */
-var AbstractResident = /** @class */ (function () {
-    function AbstractResident(system) {
-        this.system = system;
-    }
-    AbstractResident.prototype.notify = function () {
-        this.system.exec(this, new scripts_3.NotifyScript());
-    };
-    AbstractResident.prototype.self = function () {
-        return this.system.ident(this);
-    };
-    AbstractResident.prototype.accept = function (m) {
-        this.system.exec(this, new scripts_3.AcceptScript(m));
-    };
-    AbstractResident.prototype.spawn = function (t) {
-        this.system.exec(this, new scripts_2.SpawnScript(this.self(), t));
-        return address_1.isRestricted(t.id) ?
-            address_1.ADDRESS_DISCARD :
-            address_1.make(this.self(), t.id);
-    };
-    AbstractResident.prototype.tell = function (ref, m) {
-        this.system.exec(this, new scripts_3.TellScript(ref, m));
-        return this;
-    };
-    AbstractResident.prototype.kill = function (addr) {
-        this.system.exec(this, new scripts_1.StopScript(addr));
-        return this;
-    };
-    AbstractResident.prototype.exit = function () {
-        this.system.exec(this, new scripts_1.StopScript(this.self()));
-    };
-    AbstractResident.prototype.stop = function () {
-        this.system = new system_1.Void();
-    };
-    return AbstractResident;
-}());
-exports.AbstractResident = AbstractResident;
-/**
- * Immutable actors do not change their behaviour after receiving
- * a message.
- *
- * Once the receive property is provided, all messages will be
- * filtered by it.
- */
-var Immutable = /** @class */ (function (_super) {
-    __extends(Immutable, _super);
-    function Immutable() {
-        return _super !== null && _super.apply(this, arguments) || this;
-    }
-    Immutable.prototype.init = function (c) {
-        c.behaviour.push(ibehaviour(this));
-        c.mailbox = maybe_1.just([]);
-        c.flags.immutable = true;
-        c.flags.buffered = true;
-        return c;
-    };
-    /**
-     * select noop.
-     */
-    Immutable.prototype.select = function (_) {
-        return this;
-    };
-    Immutable.prototype.run = function () { };
-    return Immutable;
-}(AbstractResident));
-exports.Immutable = Immutable;
-/**
- * Mutable actors can change their behaviour after message processing.
- */
-var Mutable = /** @class */ (function (_super) {
-    __extends(Mutable, _super);
-    function Mutable() {
-        var _this = _super !== null && _super.apply(this, arguments) || this;
-        _this.receive = [];
-        return _this;
-    }
-    Mutable.prototype.init = function (c) {
-        c.mailbox = maybe_1.just([]);
-        c.flags.immutable = false;
-        c.flags.buffered = true;
-        return c;
-    };
-    /**
-     * select allows for selectively receiving messages based on Case classes.
-     */
-    Mutable.prototype.select = function (cases) {
-        this.system.exec(this, new scripts_3.ReceiveScript(mbehaviour(cases)));
-        return this;
-    };
-    return Mutable;
-}(AbstractResident));
-exports.Mutable = Mutable;
-var mbehaviour = function (cases) { return function (m) {
-    return either_1.fromBoolean(cases.some(function (c) { return c.match(m); }))
-        .lmap(function () { return m; })
-        .map(function_1.noop);
-}; };
-var ibehaviour = function (i) { return function (m) {
-    return either_1.fromBoolean(i.receive.some(function (c) { return c.match(m); }))
-        .lmap(function () { return m; })
-        .map(function_1.noop);
-}; };
-/**
- * ref produces a function for sending messages to an actor address.
- */
-exports.ref = function (res, addr) {
-    return function (m) {
-        return res.tell(addr, m);
-    };
-};
-
-},{"../address":71,"../system":79,"../system/framework/scripts":77,"../system/vm/runtime/scripts":104,"./scripts":75,"@quenk/noni/lib/data/either":111,"@quenk/noni/lib/data/function":112,"@quenk/noni/lib/data/maybe":113}],75:[function(require,module,exports){
-"use strict";
-var __extends = (this && this.__extends) || (function () {
-    var extendStatics = function (d, b) {
-        extendStatics = Object.setPrototypeOf ||
-            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
-        return extendStatics(d, b);
-    };
-    return function (d, b) {
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
-Object.defineProperty(exports, "__esModule", { value: true });
-var push_1 = require("../system/vm/op/push");
-var tell_1 = require("../system/vm/op/tell");
-var drop_1 = require("../system/vm/op/drop");
-var discard_1 = require("../system/vm/op/discard");
-var jump_1 = require("../system/vm/op/jump");
-var noop_1 = require("../system/vm/op/noop");
-var receive_1 = require("../system/vm/op/receive");
-var read_1 = require("../system/vm/op/read");
-var script_1 = require("../system/vm/script");
-var acceptCode = [
-    new push_1.PushMsg(0),
-    new drop_1.Drop()
-];
-var tellcode = [
-    new push_1.PushMsg(0),
-    new push_1.PushStr(0),
-    new tell_1.Tell(),
-    new jump_1.JumpIfOne(4),
-    new noop_1.Noop() //4: Do nothing.
-];
-var receivecode = [
-    new push_1.PushForeign(0),
-    new receive_1.Receive()
-];
-var notifyCode = [
-    new read_1.Read(),
-    new jump_1.JumpIfOne(3),
-    new discard_1.Discard(),
-    new noop_1.Noop()
-];
-/**
- * AcceptScript for discarding messages.
- */
-var AcceptScript = /** @class */ (function (_super) {
-    __extends(AcceptScript, _super);
-    function AcceptScript(msg) {
-        var _this = _super.call(this, [[], [], [], [], [msg], []], acceptCode) || this;
-        _this.msg = msg;
-        return _this;
-    }
-    return AcceptScript;
-}(script_1.Script));
-exports.AcceptScript = AcceptScript;
-exports.DropScript = AcceptScript;
-/**
- * TellScript for sending messages.
- */
-var TellScript = /** @class */ (function (_super) {
-    __extends(TellScript, _super);
-    function TellScript(to, msg) {
-        var _this = _super.call(this, [[], [to], [], [], [msg], []], tellcode) || this;
-        _this.to = to;
-        _this.msg = msg;
-        return _this;
-    }
-    return TellScript;
-}(script_1.Script));
-exports.TellScript = TellScript;
-/**
- * ReceiveScript
- */
-var ReceiveScript = /** @class */ (function (_super) {
-    __extends(ReceiveScript, _super);
-    function ReceiveScript(func) {
-        var _this = _super.call(this, [[], [], [], [], [], [func]], receivecode) || this;
-        _this.func = func;
-        return _this;
-    }
-    return ReceiveScript;
-}(script_1.Script));
-exports.ReceiveScript = ReceiveScript;
-/**
- * NotifyScript
- */
-var NotifyScript = /** @class */ (function (_super) {
-    __extends(NotifyScript, _super);
-    function NotifyScript() {
-        return _super.call(this, [[], [], [], [], [], []], notifyCode) || this;
-    }
-    return NotifyScript;
-}(script_1.Script));
-exports.NotifyScript = NotifyScript;
-
-},{"../system/vm/op/discard":88,"../system/vm/op/drop":89,"../system/vm/op/jump":91,"../system/vm/op/noop":93,"../system/vm/op/push":94,"../system/vm/op/read":95,"../system/vm/op/receive":96,"../system/vm/op/tell":101,"../system/vm/script":106}],76:[function(require,module,exports){
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-var maybe_1 = require("@quenk/noni/lib/data/maybe");
-var this_1 = require("../vm/runtime/this");
-var address_1 = require("../../address");
-var state_1 = require("../state");
-var scripts_1 = require("./scripts");
-/**
- * STemplate is provided here as a convenience when creating new systems.
- *
- * It provides the expected defaults.
- */
-var STemplate = /** @class */ (function () {
-    function STemplate() {
-        this.id = address_1.ADDRESS_SYSTEM;
-        this.create = function () {
-            throw new Error('Cannot spawn a system actor!');
-        };
-        this.trap = function (e) {
-            if (e instanceof Error) {
-                throw e;
-            }
-            else {
-                throw new Error(e.message);
-            }
-        };
-    }
-    return STemplate;
-}());
-exports.STemplate = STemplate;
-/**
- * AbstractSystem can be extended to create a customized actor system.
- */
-var AbstractSystem = /** @class */ (function () {
-    function AbstractSystem(configuration) {
-        if (configuration === void 0) { configuration = {}; }
-        this.configuration = configuration;
-    }
-    AbstractSystem.prototype.ident = function (i) {
-        return state_1.getAddress(this.state, i).orJust(function () { return address_1.ADDRESS_DISCARD; }).get();
-    };
-    /**
-     * spawn a new actor from a template.
-     */
-    AbstractSystem.prototype.spawn = function (t) {
-        (new this_1.This('$', this)).exec(new scripts_1.SpawnScript('', t));
-        return this;
-    };
-    AbstractSystem.prototype.init = function (c) {
-        return c;
-    };
-    AbstractSystem.prototype.notify = function () {
-    };
-    AbstractSystem.prototype.accept = function (_) {
-    };
-    AbstractSystem.prototype.stop = function () {
-    };
-    AbstractSystem.prototype.run = function () {
-    };
-    AbstractSystem.prototype.exec = function (i, s) {
-        return state_1.getRuntime(this.state, i)
-            .chain(function (r) { return r.exec(s); });
-    };
-    return AbstractSystem;
-}());
-exports.AbstractSystem = AbstractSystem;
-/**
- * newContext produces the bare minimum needed for creating a Context type.
- *
- * The value can be merged to satsify user defined Context types.
- */
-exports.newContext = function (actor, runtime, template) { return ({
-    mailbox: maybe_1.nothing(),
-    actor: actor,
-    behaviour: [],
-    flags: { immutable: false, buffered: false },
-    runtime: runtime,
-    template: template
-}); };
-/**
- * newState produces the bare minimum needed for creating a State.
- *
- * The value can be merged to statisfy user defined State.
- */
-exports.newState = function (sys) { return ({
-    contexts: {
-        $: sys.allocate(sys, new this_1.This('$', sys), new STemplate())
-    },
-    routers: {}
-}); };
-
-},{"../../address":71,"../state":81,"../vm/runtime/this":105,"./scripts":77,"@quenk/noni/lib/data/maybe":113}],77:[function(require,module,exports){
-"use strict";
-var __extends = (this && this.__extends) || (function () {
-    var extendStatics = function (d, b) {
-        extendStatics = Object.setPrototypeOf ||
-            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
-        return extendStatics(d, b);
-    };
-    return function (d, b) {
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
-Object.defineProperty(exports, "__esModule", { value: true });
-var push_1 = require("../vm/op/push");
-var store_1 = require("../vm/op/store");
-var load_1 = require("../vm/op/load");
-var allocate_1 = require("../vm/op/allocate");
-var run_1 = require("../vm/op/run");
-var call_1 = require("../vm/op/call");
-var tempcc_1 = require("../vm/op/tempcc");
-var tempchild_1 = require("../vm/op/tempchild");
-var cmp_1 = require("../vm/op/cmp");
-var jump_1 = require("../vm/op/jump");
-var add_1 = require("../vm/op/add");
-var noop_1 = require("../vm/op/noop");
-var script_1 = require("../vm/script");
-var spawnCode = [
-    new push_1.PushStr(0),
-    new push_1.PushTemp(0),
-    new push_1.PushFunc(0),
-    new call_1.Call(2)
-];
-var spawnFuncCode = [
-    new store_1.Store(0),
-    new store_1.Store(1),
-    new load_1.Load(1),
-    new load_1.Load(0),
-    new allocate_1.Allocate(),
-    new store_1.Store(2),
-    new load_1.Load(2),
-    new run_1.Run(),
-    new load_1.Load(1),
-    new tempcc_1.TempCC(),
-    new store_1.Store(3),
-    new push_1.PushNum(0),
-    new store_1.Store(4),
-    new load_1.Load(3),
-    new load_1.Load(4),
-    new cmp_1.Cmp(),
-    new jump_1.JumpIfOne(27),
-    new load_1.Load(4),
-    new load_1.Load(1),
-    new tempchild_1.TempChild(),
-    new load_1.Load(2),
-    new call_1.Call(2),
-    new load_1.Load(4),
-    new push_1.PushNum(1),
-    new add_1.Add(),
-    new store_1.Store(4),
-    new jump_1.Jump(13),
-    new noop_1.Noop() // 27: do nothing (return)
-];
-/**
- * SpawnScript for spawning new actors and children from templates.
- */
-var SpawnScript = /** @class */ (function (_super) {
-    __extends(SpawnScript, _super);
-    function SpawnScript(parent, tmp) {
-        var _this = _super.call(this, [[], [parent], [function () { return spawnFuncCode; }], [tmp], [], []], spawnCode) || this;
-        _this.parent = parent;
-        _this.tmp = tmp;
-        return _this;
-    }
-    return SpawnScript;
-}(script_1.Script));
-exports.SpawnScript = SpawnScript;
-
-},{"../vm/op/add":84,"../vm/op/allocate":85,"../vm/op/call":86,"../vm/op/cmp":87,"../vm/op/jump":91,"../vm/op/load":92,"../vm/op/noop":93,"../vm/op/push":94,"../vm/op/run":98,"../vm/op/store":100,"../vm/op/tempcc":102,"../vm/op/tempchild":103,"../vm/script":106}],78:[function(require,module,exports){
-"use strict";
-var __extends = (this && this.__extends) || (function () {
-    var extendStatics = function (d, b) {
-        extendStatics = Object.setPrototypeOf ||
-            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
-        return extendStatics(d, b);
-    };
-    return function (d, b) {
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
-Object.defineProperty(exports, "__esModule", { value: true });
-var mock_1 = require("@quenk/test/lib/mock");
-var _1 = require("./");
-/**
- * TestAbstractSystem
- *
- * This system is provided for testing purposes. It provdies all the features
- * of the AbstractSystem.
- */
-var TestAbstractSystem = /** @class */ (function (_super) {
-    __extends(TestAbstractSystem, _super);
-    function TestAbstractSystem(configuration) {
-        if (configuration === void 0) { configuration = {}; }
-        var _this = _super.call(this) || this;
-        _this.configuration = configuration;
-        _this.MOCK = new mock_1.Data();
-        return _this;
-    }
-    TestAbstractSystem.prototype.exec = function (i, s) {
-        this.MOCK.record('exec', [i, s], this);
-        return _super.prototype.exec.call(this, i, s);
-    };
-    TestAbstractSystem.prototype.ident = function (i) {
-        return this.MOCK.record('ident', [i], _super.prototype.ident.call(this, i));
-    };
-    TestAbstractSystem.prototype.init = function (c) {
-        return this.MOCK.record('init', [c], _super.prototype.init.call(this, c));
-    };
-    TestAbstractSystem.prototype.accept = function (m) {
-        return this.MOCK.record('accept', [m], _super.prototype.accept.call(this, m));
-    };
-    TestAbstractSystem.prototype.stop = function () {
-        return this.MOCK.record('stop', [], _super.prototype.stop.call(this));
-    };
-    TestAbstractSystem.prototype.run = function () {
-        return this.MOCK.record('run', [], _super.prototype.run.call(this));
-    };
-    return TestAbstractSystem;
-}(_1.AbstractSystem));
-exports.TestAbstractSystem = TestAbstractSystem;
-
-},{"./":76,"@quenk/test/lib/mock":118}],79:[function(require,module,exports){
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-var maybe_1 = require("@quenk/noni/lib/data/maybe");
-/**
- * Void system.
- *
- * This can be used to prevent a stopped actor from executing further commands.
- */
-var Void = /** @class */ (function () {
-    function Void() {
-    }
-    Void.prototype.ident = function () {
-        return '?';
-    };
-    Void.prototype.accept = function () {
-    };
-    Void.prototype.run = function () {
-    };
-    Void.prototype.notify = function () {
-    };
-    Void.prototype.stop = function () {
-    };
-    Void.prototype.exec = function (_, __) {
-        return maybe_1.nothing();
-    };
-    return Void;
-}());
-exports.Void = Void;
-
-},{"@quenk/noni/lib/data/maybe":113}],80:[function(require,module,exports){
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-/**
- * DEBUG log level.
- */
-exports.DEBUG = 7;
-/**
- * INFO log level.
- */
-exports.INFO = 6;
-/**
- * WARN log level.
- */
-exports.WARN = 5;
-/**
- * ERROR log level.
- */
-exports.ERROR = 1;
-
-},{}],81:[function(require,module,exports){
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-var maybe_1 = require("@quenk/noni/lib/data/maybe");
-var record_1 = require("@quenk/noni/lib/data/record");
-var string_1 = require("@quenk/noni/lib/data/string");
-var address_1 = require("../address");
-/**
- * exists tests whether an address exists in the State.
- */
-exports.exists = function (s, addr) { return record_1.contains(s.contexts, addr); };
-/**
- * get a Context using an Address.
- */
-exports.get = function (s, addr) { return maybe_1.fromNullable(s.contexts[addr]); };
-/**
- * put a new Context in the State.
- */
-exports.put = function (s, addr, context) {
-    s.contexts[addr] = context;
-    return s;
-};
-/**
- * remove an actor entry.
- */
-exports.remove = function (s, addr) {
-    delete s.contexts[addr];
-    return s;
-};
-/**
- * getAddress attempts to retrieve the address of an Actor instance.
- */
-exports.getAddress = function (s, actor) {
-    return record_1.reduce(s.contexts, maybe_1.nothing(), function (p, c, k) {
-        return c.actor === actor ? maybe_1.fromString(k) : p;
-    });
-};
-/**
- * getRuntime attempts to retrieve the runtime for an Actor instance.
- */
-exports.getRuntime = function (s, actor) {
-    return record_1.reduce(s.contexts, maybe_1.nothing(), function (p, c) {
-        return c.actor === actor ? maybe_1.fromNullable(c.runtime) : p;
-    });
-};
-/**
- * getChildren returns the child contexts for an address.
- */
-exports.getChildren = function (s, addr) {
-    return (addr === address_1.ADDRESS_SYSTEM) ?
-        s.contexts :
-        record_1.partition(s.contexts)(function (_, key) {
-            return (string_1.startsWith(key, addr) && key !== addr);
-        })[0];
-};
-/**
- * getParent context using an Address.
- */
-exports.getParent = function (s, addr) {
-    return maybe_1.fromNullable(s.contexts[address_1.getParent(addr)]);
-};
-/**
- * getRouter will attempt to provide the
- * routing actor for an Address.
- *
- * The value returned depends on whether the given
- * address begins with any of the installed router's address.
- */
-exports.getRouter = function (s, addr) {
-    return record_1.reduce(s.routers, maybe_1.nothing(), function (p, k) {
-        return string_1.startsWith(addr, k) ? maybe_1.fromNullable(s.contexts[k]) : p;
-    });
-};
-/**
- * putRoute adds a route to the routing table.
- */
-exports.putRoute = function (s, target, router) {
-    s.routers[target] = router;
-    return s;
-};
-/**
- * removeRoute from the routing table.
- */
-exports.removeRoute = function (s, target) {
-    delete s.routers[target];
-    return s;
-};
-
-},{"../address":71,"@quenk/noni/lib/data/maybe":113,"@quenk/noni/lib/data/record":114,"@quenk/noni/lib/data/string":115}],82:[function(require,module,exports){
-"use strict";
-var __extends = (this && this.__extends) || (function () {
-    var extendStatics = function (d, b) {
-        extendStatics = Object.setPrototypeOf ||
-            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
-        return extendStatics(d, b);
-    };
-    return function (d, b) {
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
-Object.defineProperty(exports, "__esModule", { value: true });
-var address_1 = require("../../address");
-/**
- * Error
- */
-var Error = /** @class */ (function () {
-    function Error(message) {
-        this.message = message;
-    }
-    return Error;
-}());
-exports.Error = Error;
-/**
- * InvalidIdError indicates an id used in a template is invalid.
- */
-var InvalidIdErr = /** @class */ (function (_super) {
-    __extends(InvalidIdErr, _super);
-    function InvalidIdErr(id) {
-        var _this = _super.call(this, "The id \"" + id + " must not contain" +
-            (address_1.ADDRESS_RESTRICTED + " or be an empty string!")) || this;
-        _this.id = id;
-        return _this;
-    }
-    return InvalidIdErr;
-}(Error));
-exports.InvalidIdErr = InvalidIdErr;
-/**
- * UnknownParentAddressErr indicates the parent address used for
- * spawning an actor does not exist.
- */
-var UnknownParentAddressErr = /** @class */ (function (_super) {
-    __extends(UnknownParentAddressErr, _super);
-    function UnknownParentAddressErr(address) {
-        var _this = _super.call(this, "The parent address \"" + address + "\" is not part of the system!") || this;
-        _this.address = address;
-        return _this;
-    }
-    return UnknownParentAddressErr;
-}(Error));
-exports.UnknownParentAddressErr = UnknownParentAddressErr;
-/**
- * DuplicateAddressErr indicates the address of a freshly spawned
- * actor is already in use.
- */
-var DuplicateAddressErr = /** @class */ (function (_super) {
-    __extends(DuplicateAddressErr, _super);
-    function DuplicateAddressErr(address) {
-        var _this = _super.call(this, "Duplicate address \"" + address + "\" detected!") || this;
-        _this.address = address;
-        return _this;
-    }
-    return DuplicateAddressErr;
-}(Error));
-exports.DuplicateAddressErr = DuplicateAddressErr;
-/**
- * NullTemplatePointerErr occurs when a reference to a template
- * does not exist in the templates table.
- */
-var NullTemplatePointerErr = /** @class */ (function (_super) {
-    __extends(NullTemplatePointerErr, _super);
-    function NullTemplatePointerErr(index) {
-        var _this = _super.call(this, "The index \"" + index + "\" does not exist in the Template table!") || this;
-        _this.index = index;
-        return _this;
-    }
-    return NullTemplatePointerErr;
-}(Error));
-exports.NullTemplatePointerErr = NullTemplatePointerErr;
-var NullFunctionPointerErr = /** @class */ (function (_super) {
-    __extends(NullFunctionPointerErr, _super);
-    function NullFunctionPointerErr(index) {
-        var _this = _super.call(this, "The index \"" + index + "\" does not exist in the function table!") || this;
-        _this.index = index;
-        return _this;
-    }
-    return NullFunctionPointerErr;
-}(Error));
-exports.NullFunctionPointerErr = NullFunctionPointerErr;
-/**
- * JumpOutOfBoundsErr
- */
-var JumpOutOfBoundsErr = /** @class */ (function (_super) {
-    __extends(JumpOutOfBoundsErr, _super);
-    function JumpOutOfBoundsErr(location, size) {
-        var _this = _super.call(this, "Cannot jump to location \"" + location + "\"! Max location: " + size + "!") || this;
-        _this.location = location;
-        _this.size = size;
-        return _this;
-    }
-    return JumpOutOfBoundsErr;
-}(Error));
-exports.JumpOutOfBoundsErr = JumpOutOfBoundsErr;
-var NullPointerErr = /** @class */ (function (_super) {
-    __extends(NullPointerErr, _super);
-    function NullPointerErr(data) {
-        var _this = _super.call(this, "Reference: [" + data + "]") || this;
-        _this.data = data;
-        return _this;
-    }
-    return NullPointerErr;
-}(Error));
-exports.NullPointerErr = NullPointerErr;
-var TypeErr = /** @class */ (function (_super) {
-    __extends(TypeErr, _super);
-    function TypeErr(expected, got) {
-        var _this = _super.call(this, "Expected: " + expected + ", Received: " + got) || this;
-        _this.expected = expected;
-        _this.got = got;
-        return _this;
-    }
-    return TypeErr;
-}(Error));
-exports.TypeErr = TypeErr;
-/**
- * IllegalStopErr
- */
-var IllegalStopErr = /** @class */ (function (_super) {
-    __extends(IllegalStopErr, _super);
-    function IllegalStopErr(parent, child) {
-        var _this = _super.call(this, "The actor at address \"" + parent + "\" can not kill \"" + child + "\"!") || this;
-        _this.parent = parent;
-        _this.child = child;
-        return _this;
-    }
-    return IllegalStopErr;
-}(Error));
-exports.IllegalStopErr = IllegalStopErr;
-/**
- * NoReceiveErr
- */
-var NoReceiveErr = /** @class */ (function (_super) {
-    __extends(NoReceiveErr, _super);
-    function NoReceiveErr(actor) {
-        var _this = _super.call(this, "Actor " + actor + " tried to read without a handler!") || this;
-        _this.actor = actor;
-        return _this;
-    }
-    return NoReceiveErr;
-}(Error));
-exports.NoReceiveErr = NoReceiveErr;
-/**
- * NoMailboxErr
- */
-var NoMailboxErr = /** @class */ (function (_super) {
-    __extends(NoMailboxErr, _super);
-    function NoMailboxErr(actor) {
-        var _this = _super.call(this, "Actor " + actor + " has no mailbox!") || this;
-        _this.actor = actor;
-        return _this;
-    }
-    return NoMailboxErr;
-}(Error));
-exports.NoMailboxErr = NoMailboxErr;
-/**
- * EmptyMailboxErr
- */
-var EmptyMailboxErr = /** @class */ (function (_super) {
-    __extends(EmptyMailboxErr, _super);
-    function EmptyMailboxErr(actor) {
-        var _this = _super.call(this, "Actor " + actor + " 's mailbox is empty!") || this;
-        _this.actor = actor;
-        return _this;
-    }
-    return EmptyMailboxErr;
-}(Error));
-exports.EmptyMailboxErr = EmptyMailboxErr;
-
-},{"../../address":71}],83:[function(require,module,exports){
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-var error = require("./error");
-var either_1 = require("@quenk/noni/lib/data/either");
-var maybe_1 = require("@quenk/noni/lib/data/maybe");
-//Type indicators.
-exports.TYPE_NUMBER = 0x0;
-exports.TYPE_STRING = 0x1;
-exports.TYPE_FUNCTION = 0x2;
-exports.TYPE_TEMPLATE = 0x3;
-exports.TYPE_MESSAGE = 0x4;
-exports.TYPE_FOREIGN = 0x5;
-//Storage locations.
-exports.LOCATION_LITERAL = 0x0;
-exports.LOCATION_CONSTANTS = 0x1;
-exports.LOCATION_HEAP = 0x2;
-exports.LOCATION_LOCAL = 0x3;
-exports.LOCATION_MAILBOX = 0x4;
-/**
- * Type indicates the type of an Operand.
- *
- * One of TYPE_* constants.
- */
-var Type;
-(function (Type) {
-    Type[Type["Number"] = exports.TYPE_NUMBER] = "Number";
-    Type[Type["String"] = exports.TYPE_STRING] = "String";
-    Type[Type["Function"] = exports.TYPE_FUNCTION] = "Function";
-    Type[Type["Template"] = exports.TYPE_TEMPLATE] = "Template";
-    Type[Type["Message"] = exports.TYPE_MESSAGE] = "Message";
-    Type[Type["Foreign"] = exports.TYPE_FOREIGN] = "Foreign";
-})(Type = exports.Type || (exports.Type = {}));
-/**
- * Location indicates where the value is stored.
- */
-var Location;
-(function (Location) {
-    Location[Location["Literal"] = exports.LOCATION_LITERAL] = "Literal";
-    Location[Location["Constants"] = exports.LOCATION_CONSTANTS] = "Constants";
-    Location[Location["Heap"] = exports.LOCATION_HEAP] = "Heap";
-    Location[Location["Local"] = exports.LOCATION_LOCAL] = "Local";
-    Location[Location["Mailbox"] = exports.LOCATION_MAILBOX] = "Mailbox";
-})(Location = exports.Location || (exports.Location = {}));
-/**
- * Field
- */
-var Field;
-(function (Field) {
-    Field[Field["Value"] = 0] = "Value";
-    Field[Field["Type"] = 1] = "Type";
-    Field[Field["Location"] = 2] = "Location";
-})(Field = exports.Field || (exports.Field = {}));
-/**
- * Frame of execution.
- */
-var Frame = /** @class */ (function () {
-    function Frame(actor, context, script, code, data, locals, heap, ip) {
-        if (code === void 0) { code = []; }
-        if (data === void 0) { data = []; }
-        if (locals === void 0) { locals = []; }
-        if (heap === void 0) { heap = []; }
-        if (ip === void 0) { ip = 0; }
-        this.actor = actor;
-        this.context = context;
-        this.script = script;
-        this.code = code;
-        this.data = data;
-        this.locals = locals;
-        this.heap = heap;
-        this.ip = ip;
-    }
-    /**
-     * seek advances the Frame's ip to the location specified.
-     *
-     * Generates an error if the seek is out of the code block's bounds.
-     */
-    Frame.prototype.seek = function (location) {
-        if ((location < 0) || (location >= (this.code.length)))
-            return either_1.left(new error.JumpOutOfBoundsErr(location, this.code.length - 1));
-        this.ip = location;
-        return either_1.right(this);
-    };
-    /**
-     * allocate space on the heap for a value.
-     */
-    Frame.prototype.allocate = function (value, typ) {
-        this.heap.push(value);
-        return [this.heap.length - 1, typ, Location.Heap];
-    };
-    /**
-     * allocateTemplate
-     */
-    Frame.prototype.allocateTemplate = function (t) {
-        return this.allocate(t, Type.Template);
-    };
-    /**
-     * push onto the stack an Operand, indicating its type and storage location.
-     */
-    Frame.prototype.push = function (value, type, location) {
-        this.data.push(location);
-        this.data.push(type);
-        this.data.push(value);
-        return this;
-    };
-    /**
-     * pushNumber onto the stack.
-     */
-    Frame.prototype.pushNumber = function (n) {
-        this.push(n, Type.Number, Location.Literal);
-        return this;
-    };
-    /**
-     * pushAddress onto the stack.
-     *
-     * (Value is stored on the heap)
-     */
-    Frame.prototype.pushAddress = function (addr) {
-        this.heap.push(addr);
-        this.push(this.heap.length - 1, Type.String, Location.Heap);
-        return this;
-    };
-    /**
-     * pop an operand off the stack.
-     */
-    Frame.prototype.pop = function () {
-        return [
-            this.data.pop(),
-            this.data.pop(),
-            this.data.pop()
-        ];
-    };
-    Frame.prototype.peek = function (n) {
-        if (n === void 0) { n = 0; }
-        var len = this.data.length;
-        var offset = n * 3;
-        return [
-            this.data[len - (1 + offset)],
-            this.data[len - (2 + offset)],
-            this.data[len - (3 + offset)]
-        ];
-    };
-    /**
-     * resolve a value from it's location, producing
-     * an error if it can not be found.
-     */
-    Frame.prototype.resolve = function (data) {
-        var _this = this;
-        var nullErr = function () { return either_1.left(new error.NullPointerErr(data)); };
-        switch (data[Field.Location]) {
-            case Location.Literal:
-                return either_1.right(data[Field.Value]);
-            case Location.Constants:
-                return maybe_1.fromNullable(this.script.constants[data[Field.Type]])
-                    .chain(function (typ) { return maybe_1.fromNullable(typ[data[Field.Value]]); })
-                    .map(function (v) { return either_1.right(v); })
-                    .orJust(nullErr)
-                    .get();
-            case Location.Local:
-                return maybe_1.fromNullable(this.locals[data[Field.Value]])
-                    .map(function (d) { return _this.resolve(d); })
-                    .orJust(nullErr)
-                    .get();
-            case Location.Heap:
-                return maybe_1.fromNullable(this.heap[data[Field.Value]])
-                    .map(function (v) { return either_1.right(v); })
-                    .orJust(nullErr)
-                    .get();
-            case Location.Mailbox:
-                return this
-                    .context
-                    .mailbox
-                    .chain(function (m) { return maybe_1.fromNullable(m[data[Field.Value]]); })
-                    .map(function (v) { return either_1.right(v); })
-                    .get();
-            default:
-                return nullErr();
-        }
-    };
-    /**
-     * resolveNumber
-     */
-    Frame.prototype.resolveNumber = function (data) {
-        if (data[Field.Type] !== Type.Number)
-            return either_1.left(new error.TypeErr(Type.Number, data[Field.Type]));
-        return this.resolve(data);
-    };
-    /**
-     * resolveAddress
-     */
-    Frame.prototype.resolveAddress = function (data) {
-        if (data[Field.Type] !== Type.String)
-            return either_1.left(new error.TypeErr(Type.String, data[Field.Type]));
-        return this.resolve(data);
-    };
-    /**
-     * resolveFunction
-     */
-    Frame.prototype.resolveFunction = function (data) {
-        if (data[Field.Type] !== Type.Function)
-            return either_1.left(new error.TypeErr(Type.Function, data[Field.Type]));
-        return this.resolve(data);
-    };
-    /**
-     * resolveTemplate
-     */
-    Frame.prototype.resolveTemplate = function (data) {
-        if (data[Field.Type] !== Type.Template)
-            return either_1.left(new error.TypeErr(Type.Template, data[Field.Type]));
-        return this.resolve(data);
-    };
-    /**
-     * resolveMessage
-     */
-    Frame.prototype.resolveMessage = function (data) {
-        if (data[Field.Type] !== Type.Message)
-            return either_1.left(new error.TypeErr(Type.Message, data[Field.Type]));
-        return this.resolve(data);
-    };
-    /**
-     * resolveForeign
-     */
-    Frame.prototype.resolveForeign = function (data) {
-        if (data[Field.Type] !== Type.Foreign)
-            return either_1.left(new error.TypeErr(Type.Foreign, data[Field.Type]));
-        return this.resolve(data);
-    };
-    return Frame;
-}());
-exports.Frame = Frame;
-
-},{"./error":82,"@quenk/noni/lib/data/either":111,"@quenk/noni/lib/data/maybe":113}],84:[function(require,module,exports){
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-var _1 = require("./");
-/**
- * Add the top two operands of the stack.
- *
- * Pops:
- * 1. The first value.
- * 2. The second value.
- *
- * Pushes:
- *
- * The result of adding the two numbers.
- */
-var Add = /** @class */ (function () {
-    function Add() {
-        this.code = _1.OP_CODE_ADD;
-        this.level = _1.Level.Base;
-    }
-    Add.prototype.exec = function (e) {
-        var curr = e.current().get();
-        var eitherA = curr.resolveNumber(curr.pop());
-        var eitherB = curr.resolveNumber(curr.pop());
-        if (eitherA.isLeft())
-            return e.raise(eitherA.takeLeft());
-        if (eitherB.isLeft())
-            return e.raise(eitherB.takeLeft());
-        curr.pushNumber(eitherA.takeRight() + eitherB.takeRight());
-    };
-    Add.prototype.toLog = function (f) {
-        return ['add', [], [f.peek(), f.peek(1)]];
-    };
-    return Add;
-}());
-exports.Add = Add;
-
-},{"./":90}],85:[function(require,module,exports){
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-var error = require("../error");
-var address_1 = require("../../../address");
-var _1 = require("./");
-/**
- * Allocate a new Context frame for an actor from a template.
- *
- * Pops:
- * 1: Address of the parent actor.
- * 2: Pointer to the template to use from the templates table.
- *
- * Raises:
- * InvalidIdErr
- * UnknownParentAddressErr
- * DuplicateAddressErr
- */
-var Allocate = /** @class */ (function () {
-    function Allocate() {
-        this.code = _1.OP_CODE_ALLOCATE;
-        this.level = _1.Level.Actor;
-    }
-    Allocate.prototype.exec = function (e) {
-        var curr = e.current().get();
-        var parent = curr.resolveAddress(curr.pop());
-        var temp = curr.resolveTemplate(curr.pop());
-        if (parent.isLeft())
-            return e.raise(parent.takeLeft());
-        if (temp.isLeft())
-            return e.raise(temp.takeLeft());
-        var p = parent.takeRight();
-        var t = temp.takeRight();
-        if (address_1.isRestricted(t.id))
-            return e.raise(new error.InvalidIdErr(t.id));
-        var addr = address_1.make(p, t.id);
-        if (e.getContext(addr).isJust())
-            return e.raise(new error.DuplicateAddressErr(addr));
-        var ctx = e.allocate(addr, t);
-        e.putContext(addr, ctx);
-        if (ctx.flags.router === true)
-            e.putRoute(addr, addr);
-        curr.pushAddress(addr);
-    };
-    Allocate.prototype.toLog = function (f) {
-        return ['allocate', [], [f.peek(), f.peek(1)]];
-    };
-    return Allocate;
-}());
-exports.Allocate = Allocate;
-
-},{"../../../address":71,"../error":82,"./":90}],86:[function(require,module,exports){
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-var frame_1 = require("../frame");
-var _1 = require("./");
-/**
- * Call a function.
- *
- * Pops:
- * 1: The function reference from the top of the stack.
- * 2: N arguments to be pushed onto the new Frame's stack.
- */
-var Call = /** @class */ (function () {
-    function Call(args) {
-        this.args = args;
-        this.code = _1.OP_CODE_CALL;
-        this.level = _1.Level.Control;
-    }
-    Call.prototype.exec = function (e) {
-        var curr = e.current().get();
-        var actor = curr.actor, context = curr.context, script = curr.script, heap = curr.heap;
-        var eitherFunc = curr.resolveFunction(curr.pop());
-        if (eitherFunc.isLeft())
-            return e.raise(eitherFunc.takeLeft());
-        var f = eitherFunc.takeRight();
-        var frm = new frame_1.Frame(actor, context, script, f(), [], heap);
-        for (var i = 0; i < this.args; i++) {
-            var _a = curr.pop(), value = _a[0], type = _a[1], location_1 = _a[2];
-            frm.push(value, type, location_1);
-        }
-        e.push(frm);
-    };
-    Call.prototype.toLog = function (f) {
-        var data = [f.peek()];
-        for (var i = 1; i <= this.args; i++)
-            data.push((f.peek(i)));
-        return ['call', [this.args, frame_1.Type.Number, frame_1.Location.Literal], data];
-    };
-    return Call;
-}());
-exports.Call = Call;
-
-},{"../frame":83,"./":90}],87:[function(require,module,exports){
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-var _1 = require("./");
-/**
- * Cmp compares the top two values for equality.
- *
- * Pops:
- *
- * 1. Left value.
- * 2. Right value.
- *
- * Pushes:
- *
- * 1 if true, 0 if false
- */
-var Cmp = /** @class */ (function () {
-    function Cmp() {
-        this.code = _1.OP_CODE_CMP;
-        this.level = _1.Level.Base;
-    }
-    Cmp.prototype.exec = function (e) {
-        var curr = e.current().get();
-        curr
-            .resolve(curr.pop())
-            .chain(function (a) {
-            return curr
-                .resolve(curr.pop())
-                .map(function (b) {
-                if (a === b)
-                    curr.pushNumber(1);
-                else
-                    curr.pushNumber(0);
-            });
-        })
-            .lmap(function (err) { return e.raise(err); });
-    };
-    Cmp.prototype.toLog = function (f) {
-        return ['cmp', [], [f.peek(), f.peek(1)]];
-    };
-    return Cmp;
-}());
-exports.Cmp = Cmp;
-
-},{"./":90}],88:[function(require,module,exports){
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-var errors = require("../error");
-var maybe_1 = require("@quenk/noni/lib/data/maybe");
-var frame_1 = require("../frame");
-var _1 = require("./");
-/**
- * Discard removes and discards the first message in a Context's mailbox.
- */
-var Discard = /** @class */ (function () {
-    function Discard() {
-        this.code = _1.OP_CODE_DISCARD;
-        this.level = _1.Level.Actor;
-    }
-    Discard.prototype.exec = function (e) {
-        var curr = e.current().get();
-        var maybBox = curr.context.mailbox;
-        if (maybBox.isNothing())
-            return e.raise(new errors.NoMailboxErr(e.self));
-        var mayBMail = maybBox.chain(maybe_1.fromArray);
-        if (mayBMail.isNothing())
-            return e.raise(new errors.EmptyMailboxErr(e.self));
-        mayBMail.get().shift();
-    };
-    Discard.prototype.toLog = function () {
-        return ['discard', [], [[0, frame_1.Type.Message, frame_1.Location.Mailbox]]];
-    };
-    return Discard;
-}());
-exports.Discard = Discard;
-
-},{"../error":82,"../frame":83,"./":90,"@quenk/noni/lib/data/maybe":113}],89:[function(require,module,exports){
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-var _1 = require("./");
-/**
- * Drop an unwanted message.
- *
- * Pops:
- *
- * 1. The message to be dropped.
- */
-var Drop = /** @class */ (function () {
-    function Drop() {
-        this.code = _1.OP_CODE_DROP;
-        this.level = _1.Level.Actor;
-    }
-    Drop.prototype.exec = function (e) {
-        var curr = e.current().get();
-        var eitherMsg = curr.resolveMessage(curr.pop());
-        if (eitherMsg.isLeft())
-            return e.raise(eitherMsg.takeLeft());
-        var m = eitherMsg.takeRight();
-        e.drop(m);
-    };
-    Drop.prototype.toLog = function (f) {
-        return ['drop', [], [f.peek()]];
-    };
-    return Drop;
-}());
-exports.Drop = Drop;
-
-},{"./":90}],90:[function(require,module,exports){
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-var log = require("../../log");
-exports.OP_CODE_NOOP = 0x0;
-exports.OP_CODE_PUSH_NUM = 0x1;
-exports.OP_CODE_PUSH_STR = 0x2;
-exports.OP_CODE_PUSH_FUNC = 0x3;
-exports.OP_CODE_PUSH_MSG = 0x4;
-exports.OP_CODE_PUSH_TEMP = 0x5;
-exports.OP_CODE_PUSH_FOREIGN = 0x6;
-exports.OP_CODE_DUP = 0x7;
-exports.OP_CODE_ADD = 0x8;
-exports.OP_CODE_CMP = 0x9;
-exports.OP_CODE_CALL = 0xa;
-exports.OP_CODE_STORE = 0xb;
-exports.OP_CODE_LOAD = 0xc;
-exports.OP_CODE_JUMP = 0xd;
-exports.OP_CODE_JUMP_IF_ONE = 0xe;
-exports.OP_CODE_IDENT = 0x13;
-exports.OP_CODE_QUERY = 0x20;
-exports.OP_CODE_ALLOCATE = 0x21;
-exports.OP_CODE_TEMP_CC = 0x22;
-exports.OP_CODE_TEMP_CHILD = 0x23;
-exports.OP_CODE_TELL = 0x24;
-exports.OP_CODE_DISCARD = 0x25;
-exports.OP_CODE_RUN = 0x26;
-exports.OP_CODE_RECEIVE = 0x27;
-exports.OP_CODE_READ = 0x28;
-exports.OP_CODE_RESTART = 0x29;
-exports.OP_CODE_DROP = 0x30;
-exports.OP_CODE_STOP = 0x2a;
-exports.OP_CODE_RAISE = 0xb;
-/**
- * Levels allowed for ops.
- */
-var Level;
-(function (Level) {
-    Level[Level["Base"] = log.DEBUG] = "Base";
-    Level[Level["Control"] = log.DEBUG] = "Control";
-    Level[Level["Actor"] = log.INFO] = "Actor";
-    Level[Level["System"] = log.WARN] = "System";
-})(Level = exports.Level || (exports.Level = {}));
-
-},{"../../log":80}],91:[function(require,module,exports){
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-var either_1 = require("@quenk/noni/lib/data/either");
-var frame_1 = require("../frame");
-var _1 = require("./");
-/**
- * Jump to a new location.
- */
-var Jump = /** @class */ (function () {
-    function Jump(location) {
-        this.location = location;
-        this.code = _1.OP_CODE_JUMP;
-        this.level = _1.Level.Base;
-    }
-    Jump.prototype.exec = function (e) {
-        var curr = e.current().get();
-        curr
-            .seek(this.location)
-            .lmap(function (err) { return e.raise(err); });
-    };
-    Jump.prototype.toLog = function () {
-        return ['jump', [this.location, frame_1.Type.Number, frame_1.Location.Literal], []];
-    };
-    return Jump;
-}());
-exports.Jump = Jump;
-/**
- * JumpIfOne changes the current Frame's ip if the top value is one.
- *
- * Pops
- * 1. value to test.
- */
-var JumpIfOne = /** @class */ (function () {
-    function JumpIfOne(location) {
-        this.location = location;
-        this.code = _1.OP_CODE_JUMP_IF_ONE;
-        this.level = _1.Level.Base;
-    }
-    JumpIfOne.prototype.exec = function (e) {
-        var _this = this;
-        var curr = e.current().get();
-        curr
-            .resolveNumber(curr.pop())
-            .chain(function (n) {
-            if (n === 1)
-                return curr.seek(_this.location);
-            return either_1.right(curr);
-        })
-            .lmap(function (err) { return e.raise(err); });
-    };
-    JumpIfOne.prototype.toLog = function (f) {
-        return ['jumpifone', [this.location, frame_1.Type.Number, frame_1.Location.Literal],
-            [f.peek()]];
-    };
-    return JumpIfOne;
-}());
-exports.JumpIfOne = JumpIfOne;
-
-},{"../frame":83,"./":90,"@quenk/noni/lib/data/either":111}],92:[function(require,module,exports){
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-var frame_1 = require("../frame");
-var _1 = require("./");
-/**
- * Load the local stored at index onto the stack.
- *
- * Pushes:
- * 1. Value of index in locals table.
- */
-var Load = /** @class */ (function () {
-    function Load(index) {
-        this.index = index;
-        this.code = _1.OP_CODE_LOAD;
-        this.level = _1.Level.Base;
-    }
-    Load.prototype.exec = function (e) {
-        var curr = e.current().get();
-        var _a = curr.locals[this.index], value = _a[0], type = _a[1], location = _a[2];
-        curr.push(value, type, location);
-    };
-    Load.prototype.toLog = function (_) {
-        return ['load', [this.index, frame_1.Type.Number, frame_1.Location.Literal], []];
-    };
-    return Load;
-}());
-exports.Load = Load;
-
-},{"../frame":83,"./":90}],93:[function(require,module,exports){
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-var _1 = require("./");
-/**
- * Noop does nothing.
- */
-var Noop = /** @class */ (function () {
-    function Noop() {
-        this.code = _1.OP_CODE_NOOP;
-        this.level = _1.Level.Base;
-    }
-    Noop.prototype.exec = function (_) {
-    };
-    Noop.prototype.toLog = function (_) {
-        return ['noop', [], []];
-    };
-    return Noop;
-}());
-exports.Noop = Noop;
-
-},{"./":90}],94:[function(require,module,exports){
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-var frame_1 = require("../frame");
-var _1 = require("./");
-/**
- * PushNum pushes a literal number onto the stack.
- */
-var PushNum = /** @class */ (function () {
-    function PushNum(index) {
-        this.index = index;
-        this.code = _1.OP_CODE_PUSH_NUM;
-        this.level = _1.Level.Base;
-    }
-    PushNum.prototype.exec = function (e) {
-        e.current().get().push(this.index, frame_1.Type.Number, frame_1.Location.Literal);
-    };
-    PushNum.prototype.toLog = function () {
-        return ['pushnum', [this.index, frame_1.Type.Number, frame_1.Location.Literal], []];
-    };
-    return PushNum;
-}());
-exports.PushNum = PushNum;
-/**
- * PushStr pushes a string from the constants table onto the stack.
- */
-var PushStr = /** @class */ (function () {
-    function PushStr(index) {
-        this.index = index;
-        this.code = _1.OP_CODE_PUSH_STR;
-        this.level = _1.Level.Base;
-    }
-    PushStr.prototype.exec = function (e) {
-        e.current().get().push(this.index, frame_1.Type.String, frame_1.Location.Constants);
-    };
-    PushStr.prototype.toLog = function () {
-        return ['pushstr', [this.index, frame_1.Type.String, frame_1.Location.Constants], []];
-    };
-    return PushStr;
-}());
-exports.PushStr = PushStr;
-/**
- * PushFunc pushes a function constant onto the stack.
- */
-var PushFunc = /** @class */ (function () {
-    function PushFunc(index) {
-        this.index = index;
-        this.code = _1.OP_CODE_PUSH_FUNC;
-        this.level = _1.Level.Base;
-    }
-    PushFunc.prototype.exec = function (e) {
-        e.current().get().push(this.index, frame_1.Type.Function, frame_1.Location.Constants);
-    };
-    PushFunc.prototype.toLog = function () {
-        return ['pushfunc', [this.index, frame_1.Type.Function, frame_1.Location.Constants], []];
-    };
-    return PushFunc;
-}());
-exports.PushFunc = PushFunc;
-/**
- * PushTemp pushes a template from the constants table onto the stack.
- */
-var PushTemp = /** @class */ (function () {
-    function PushTemp(index) {
-        this.index = index;
-        this.code = _1.OP_CODE_PUSH_TEMP;
-        this.level = _1.Level.Base;
-    }
-    PushTemp.prototype.exec = function (e) {
-        e.current().get().push(this.index, frame_1.Type.Template, frame_1.Location.Constants);
-    };
-    PushTemp.prototype.toLog = function () {
-        return ['pushtemp', [this.index, frame_1.Type.Template, frame_1.Location.Constants], []];
-    };
-    return PushTemp;
-}());
-exports.PushTemp = PushTemp;
-/**
- * PushMsg pushes a message constant onto the stack.
- */
-var PushMsg = /** @class */ (function () {
-    function PushMsg(index) {
-        this.index = index;
-        this.code = _1.OP_CODE_PUSH_MSG;
-        this.level = _1.Level.Base;
-    }
-    PushMsg.prototype.exec = function (e) {
-        e.current().get().push(this.index, frame_1.Type.Message, frame_1.Location.Constants);
-    };
-    PushMsg.prototype.toLog = function () {
-        return ['pushmsg', [this.index, frame_1.Type.Message, frame_1.Location.Constants], []];
-    };
-    return PushMsg;
-}());
-exports.PushMsg = PushMsg;
-/**
- * PushForeign pushes a foreign function onto the stack.
- */
-var PushForeign = /** @class */ (function () {
-    function PushForeign(index) {
-        this.index = index;
-        this.code = _1.OP_CODE_PUSH_FOREIGN;
-        this.level = _1.Level.Base;
-    }
-    PushForeign.prototype.exec = function (e) {
-        e.current().get().push(this.index, frame_1.Type.Foreign, frame_1.Location.Constants);
-    };
-    PushForeign.prototype.toLog = function () {
-        return ['pushforeign', [this.index, frame_1.Type.Foreign, frame_1.Location.Constants], []];
-    };
-    return PushForeign;
-}());
-exports.PushForeign = PushForeign;
-
-},{"../frame":83,"./":90}],95:[function(require,module,exports){
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-var errors = require("../error");
-var maybe_1 = require("@quenk/noni/lib/data/maybe");
-var frame_1 = require("../frame");
-var _1 = require("./");
-/**
- * Read consumes the next message in the current actor's mailbox.
- *
- * Pushes
- *
- * The number 1 if successful or 0 if the message was not processed.
- */
-var Read = /** @class */ (function () {
-    function Read() {
-        this.code = _1.OP_CODE_READ;
-        this.level = _1.Level.Actor;
-    }
-    Read.prototype.exec = function (e) {
-        var curr = e.current().get();
-        var maybBehave = maybe_1.fromArray(curr.context.behaviour);
-        if (maybBehave.isNothing())
-            return e.raise(new errors.NoReceiveErr(e.self));
-        var stack = maybBehave.get();
-        var maybMbox = curr.context.mailbox;
-        if (maybMbox.isNothing())
-            return e.raise(new errors.NoMailboxErr(e.self));
-        var maybHasMail = maybMbox.chain(maybe_1.fromArray);
-        if (maybHasMail.isNothing()) {
-            return e.raise(new errors.EmptyMailboxErr(e.self));
-        }
-        else {
-            var mbox = maybHasMail.get();
-            var eitherRead = stack[0](mbox.shift());
-            if (eitherRead.isLeft()) {
-                mbox.unshift(eitherRead.takeLeft());
-                curr.pushNumber(0);
-            }
-            else {
-                if (!curr.context.flags.immutable)
-                    curr.context.behaviour.shift();
-                curr.pushNumber(1);
-            }
-        }
-    };
-    Read.prototype.toLog = function () {
-        return ['read', [], [[0, frame_1.Type.Message, frame_1.Location.Mailbox]]];
-    };
-    return Read;
-}());
-exports.Read = Read;
-
-},{"../error":82,"../frame":83,"./":90,"@quenk/noni/lib/data/maybe":113}],96:[function(require,module,exports){
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-var _1 = require("./");
-/**
- * Receive schedules a handler for a resident actor to receive the next
- * message from its mailbox.
- *
- * Pops:
- *  1. Reference to a foreign function that will be installed as the message
- *     handler.
- */
-var Receive = /** @class */ (function () {
-    function Receive() {
-        this.code = _1.OP_CODE_RECEIVE;
-        this.level = _1.Level.Actor;
-    }
-    Receive.prototype.exec = function (e) {
-        var curr = e.current().get();
-        curr
-            .resolveForeign(curr.pop())
-            .map(function (f) { return curr.context.behaviour.push(f); })
-            .map(function () {
-            curr
-                .context
-                .mailbox
-                .map(function (box) {
-                if (box.length > 0)
-                    curr.context.actor.notify();
-            });
-        })
-            .lmap(function (err) { return e.raise(err); });
-    };
-    Receive.prototype.toLog = function (f) {
-        return ['receive', [], [f.peek()]];
-    };
-    return Receive;
-}());
-exports.Receive = Receive;
-
-},{"./":90}],97:[function(require,module,exports){
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-var _1 = require("./");
-/**
- * Restart the current actor.
- */
-var Restart = /** @class */ (function () {
-    function Restart() {
-        this.code = _1.OP_CODE_RESTART;
-        this.level = _1.Level.Control;
-    }
-    Restart.prototype.exec = function (e) {
-        var curr = e.current().get();
-        e
-            .getContext(curr.actor)
-            .map(function (ctx) {
-            e.clear();
-            ctx.actor.stop();
-            var nctx = e.allocate(curr.actor, ctx.template);
-            nctx.mailbox = ctx.mailbox;
-            e.putContext(curr.actor, nctx);
-        });
-    };
-    Restart.prototype.toLog = function () {
-        return ['restart', [], []];
-    };
-    return Restart;
-}());
-exports.Restart = Restart;
-
-},{"./":90}],98:[function(require,module,exports){
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-var timer_1 = require("@quenk/noni/lib/control/timer");
-var _1 = require("./");
-/**
- * Run invokes the run method of an actor given the address.
- *
- * Pops
- * 1. The address of the current actor or child to be run.
- */
-var Run = /** @class */ (function () {
-    function Run() {
-        this.code = _1.OP_CODE_RUN;
-        this.level = _1.Level.Control;
-    }
-    Run.prototype.exec = function (e) {
-        var curr = e.current().get();
-        curr
-            .resolveAddress(curr.pop())
-            .map(function (addr) {
-            e
-                .getContext(addr)
-                .map(function (ctx) { return timer_1.tick(function () { return ctx.actor.run(); }); });
-        })
-            .lmap(function (err) { return e.raise(err); });
-    };
-    Run.prototype.toLog = function (f) {
-        return ['run', [], [f.peek()]];
-    };
-    return Run;
-}());
-exports.Run = Run;
-
-},{"./":90,"@quenk/noni/lib/control/timer":109}],99:[function(require,module,exports){
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-var error = require("../error");
-var record_1 = require("@quenk/noni/lib/data/record");
-var address_1 = require("../../../address");
-var _1 = require("./");
-/**
- * Stop an actor, all of it's children will also be stopped.
- *
- * Pops:
- * 1. Address of actor to stop.
- */
-var Stop = /** @class */ (function () {
-    function Stop() {
-        this.code = _1.OP_CODE_STOP;
-        this.level = _1.Level.Control;
-    }
-    Stop.prototype.exec = function (e) {
-        var curr = e.current().get();
-        var eitherAddress = curr.resolveAddress(curr.pop());
-        if (eitherAddress.isLeft())
-            return e.raise(eitherAddress.takeLeft());
-        var addr = eitherAddress.takeRight();
-        if ((!address_1.isChild(curr.actor, addr)) && (addr !== curr.actor))
-            return e.raise(new error.IllegalStopErr(curr.actor, addr));
-        var maybeChilds = e.getChildren(addr);
-        if (maybeChilds.isJust()) {
-            var ctxs = maybeChilds.get();
-            record_1.map(ctxs, function (c, k) { c.actor.stop(); e.removeContext(k); });
-        }
-        curr.context.actor.stop();
-        e.removeContext(addr);
-        e.clear();
-    };
-    Stop.prototype.toLog = function (f) {
-        return ['stop', [], [f.peek()]];
-    };
-    return Stop;
-}());
-exports.Stop = Stop;
-
-},{"../../../address":71,"../error":82,"./":90,"@quenk/noni/lib/data/record":114}],100:[function(require,module,exports){
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-var frame_1 = require("../frame");
-var _1 = require("./");
-/**
- * Store the top most value on the stack in the locals array at the
- * location specified.
- *
- * Pops:
- * 1. Operand to store.
- */
-var Store = /** @class */ (function () {
-    function Store(index) {
-        this.index = index;
-        this.code = _1.OP_CODE_STORE;
-        this.level = _1.Level.Base;
-    }
-    Store.prototype.exec = function (e) {
-        var curr = e.current().get();
-        curr.locals[this.index] = curr.pop();
-    };
-    Store.prototype.toLog = function (f) {
-        return ['store', [this.index, frame_1.Type.Number, frame_1.Location.Literal], [f.peek()]];
-    };
-    return Store;
-}());
-exports.Store = Store;
-
-},{"../frame":83,"./":90}],101:[function(require,module,exports){
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-var timer_1 = require("@quenk/noni/lib/control/timer");
-var mailbox_1 = require("../../../mailbox");
-var _1 = require("./");
-/**
- * Tell delivers the first message in the outbox queue to the address
- * at the top of the data stack.
- *
- * Pops:
- * 1. Address
- * 2. Message
- *
- * Pushes:
- *
- * 1 if delivery is successful, 0 otherwise.
- */
-var Tell = /** @class */ (function () {
-    function Tell() {
-        this.code = _1.OP_CODE_TELL;
-        this.level = _1.Level.Actor;
-    }
-    Tell.prototype.exec = function (e) {
-        var curr = e.current().get();
-        var eitherAddr = curr.resolveAddress(curr.pop());
-        if (eitherAddr.isLeft())
-            return e.raise(eitherAddr.takeLeft());
-        var eitherMsg = curr.resolveMessage(curr.pop());
-        if (eitherMsg.isLeft())
-            return e.raise(eitherMsg.takeRight());
-        var addr = eitherAddr.takeRight();
-        var msg = eitherMsg.takeRight();
-        var maybeRouter = e.getRouter(addr);
-        if (maybeRouter.isJust()) {
-            deliver(maybeRouter.get(), new mailbox_1.Envelope(addr, curr.actor, msg));
-            curr.pushNumber(1);
-        }
-        else {
-            var maybeCtx = e.getContext(addr);
-            var conf = e.config();
-            if (maybeCtx.isJust()) {
-                deliver(maybeCtx.get(), msg);
-                curr.pushNumber(1);
-            }
-            else if (conf.hooks &&
-                conf.hooks.drop) {
-                conf.hooks.drop(new mailbox_1.Envelope(addr, e.self, msg));
-                curr.pushNumber(1);
-            }
-            else {
-                curr.pushNumber(0);
-            }
-        }
-    };
-    Tell.prototype.toLog = function (f) {
-        return ['tell', [], [f.peek(), f.peek(1)]];
-    };
-    return Tell;
-}());
-exports.Tell = Tell;
-var deliver = function (ctx, msg) {
-    if (ctx.mailbox.isJust()) {
-        timer_1.tick(function () { ctx.mailbox.get().push(msg); ctx.actor.notify(); });
-    }
-    else {
-        ctx.actor.accept(msg);
-    }
-};
-
-},{"../../../mailbox":72,"./":90,"@quenk/noni/lib/control/timer":109}],102:[function(require,module,exports){
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-var _1 = require("./");
-/**
- * TempCC counts the number of child templates a template has.
- *
- * Pops:
- *
- * 1: Reference to the template to count.
- */
-var TempCC = /** @class */ (function () {
-    function TempCC() {
-        this.code = _1.OP_CODE_TEMP_CC;
-        this.level = _1.Level.Control;
-    }
-    TempCC.prototype.exec = function (e) {
-        var curr = e.current().get();
-        curr
-            .resolveTemplate(curr.pop())
-            .map(function (temp) { return temp.children && temp.children.length || 0; })
-            .map(function (count) { return curr.pushNumber(count); })
-            .lmap(function (err) { return e.raise(err); });
-    };
-    TempCC.prototype.toLog = function (f) {
-        return ['tempcc', [], [f.peek()]];
-    };
-    return TempCC;
-}());
-exports.TempCC = TempCC;
-
-},{"./":90}],103:[function(require,module,exports){
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-var error = require("../error");
-var either_1 = require("@quenk/noni/lib/data/either");
-var _1 = require("./");
-/**
- * TempChild copies a template's child onto the heap.
- *
- * Pops:
- * 1: Pointer to the template.
- * 2: Index of the child template.
- */
-var TempChild = /** @class */ (function () {
-    function TempChild() {
-        this.code = _1.OP_CODE_TEMP_CHILD;
-        this.level = _1.Level.Control;
-    }
-    TempChild.prototype.exec = function (e) {
-        var curr = e.current().get();
-        curr
-            .resolveTemplate(curr.pop())
-            .chain(function (t) {
-            return curr
-                .resolveNumber(curr.pop())
-                .chain(function (n) {
-                if ((t.children && t.children.length > n) && (n > 0)) {
-                    var _a = curr.allocateTemplate(t.children[n]), value = _a[0], type = _a[1], location_1 = _a[2];
-                    return either_1.right(curr.push(value, type, location_1));
-                }
-                else {
-                    return either_1.left(new error.NullTemplatePointerErr(n));
-                }
-            });
-        })
-            .lmap(function (err) { return e.raise(err); });
-    };
-    TempChild.prototype.toLog = function (f) {
-        return ['tempchild', [], [f.peek(), f.peek(1)]];
-    };
-    return TempChild;
-}());
-exports.TempChild = TempChild;
-
-},{"../error":82,"./":90,"@quenk/noni/lib/data/either":111}],104:[function(require,module,exports){
-"use strict";
-var __extends = (this && this.__extends) || (function () {
-    var extendStatics = function (d, b) {
-        extendStatics = Object.setPrototypeOf ||
-            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
-        return extendStatics(d, b);
-    };
-    return function (d, b) {
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
-Object.defineProperty(exports, "__esModule", { value: true });
-var push_1 = require("../op/push");
-var stop_1 = require("../op/stop");
-var restart_1 = require("../op/restart");
-var run_1 = require("../op/run");
-var script_1 = require("../script");
-var restartCode = [
-    new restart_1.Restart(),
-    new run_1.Run()
-];
-var stopCode = [
-    new push_1.PushStr(0),
-    new stop_1.Stop()
-];
-/**
- * StopScript for stopping actors.
- */
-var StopScript = /** @class */ (function (_super) {
-    __extends(StopScript, _super);
-    function StopScript(addr) {
-        var _this = _super.call(this, [[], [addr], [], [], [], []], stopCode) || this;
-        _this.addr = addr;
-        return _this;
-    }
-    return StopScript;
-}(script_1.Script));
-exports.StopScript = StopScript;
-/**
- * RestartScript for restarting actors.
- */
-var RestartScript = /** @class */ (function (_super) {
-    __extends(RestartScript, _super);
-    function RestartScript() {
-        return _super.call(this, [[], [], [], [], [], []], restartCode) || this;
-    }
-    return RestartScript;
-}(script_1.Script));
-exports.RestartScript = RestartScript;
-
-},{"../op/push":94,"../op/restart":97,"../op/run":98,"../op/stop":99,"../script":106}],105:[function(require,module,exports){
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-var template = require("../../../template");
-var logging = require("../../log");
-var error_1 = require("@quenk/noni/lib/control/error");
-var array_1 = require("@quenk/noni/lib/data/array");
-var maybe_1 = require("@quenk/noni/lib/data/maybe");
-var address_1 = require("../../../address");
-var state_1 = require("../../state");
-var frame_1 = require("../frame");
-var scripts_1 = require("./scripts");
-/**
- * This is an implementation of Runtime for exactly one
- * actor.
- *
- * It has all the methods and properties expected for Op code execution.
- */
-var This = /** @class */ (function () {
-    function This(self, system, stack, queue) {
-        if (stack === void 0) { stack = []; }
-        if (queue === void 0) { queue = []; }
-        this.self = self;
-        this.system = system;
-        this.stack = stack;
-        this.queue = queue;
-        this.running = false;
-    }
-    This.prototype.config = function () {
-        return this.system.configuration;
-    };
-    This.prototype.current = function () {
-        return (this.stack.length > 0) ?
-            maybe_1.just(array_1.tail(this.stack)) :
-            maybe_1.nothing();
-    };
-    This.prototype.allocate = function (addr, t) {
-        var h = new This(addr, this.system);
-        var act = t.create(this.system);
-        return act.init(this.system.allocate(act, h, t));
-    };
-    This.prototype.getContext = function (addr) {
-        return state_1.get(this.system.state, addr);
-    };
-    This.prototype.getRouter = function (addr) {
-        return state_1.getRouter(this.system.state, addr);
-    };
-    This.prototype.getChildren = function (addr) {
-        return maybe_1.fromNullable(state_1.getChildren(this.system.state, addr));
-    };
-    This.prototype.putContext = function (addr, ctx) {
-        this.system.state = state_1.put(this.system.state, addr, ctx);
-        return this;
-    };
-    This.prototype.removeContext = function (addr) {
-        this.system.state = state_1.remove(this.system.state, addr);
-        return this;
-    };
-    This.prototype.putRoute = function (target, router) {
-        state_1.putRoute(this.system.state, target, router);
-        return this;
-    };
-    This.prototype.removeRoute = function (target) {
-        state_1.removeRoute(this.system.state, target);
-        return this;
-    };
-    This.prototype.push = function (f) {
-        this.stack.push(f);
-        return this;
-    };
-    This.prototype.clear = function () {
-        this.stack = [];
-        return this;
-    };
-    This.prototype.drop = function (m) {
-        var policy = (this.system.configuration.log || {});
-        var level = policy.level || 0;
-        var logger = policy.logger || console;
-        if (level > logging.WARN) {
-            logger.warn("[" + this.self + "]: Dropped ", m);
-        }
-        return this;
-    };
-    This.prototype.raise = function (err) {
-        var _this = this;
-        var self = this.self;
-        this
-            .getContext(self)
-            .chain(function (ctx) {
-            return maybe_1.fromNullable(ctx.template.trap)
-                .map(function (trap) {
-                switch (trap(err)) {
-                    case template.ACTION_IGNORE:
-                        break;
-                    case template.ACTION_RESTART:
-                        _this.exec(new scripts_1.RestartScript());
-                        break;
-                    case template.ACTION_STOP:
-                        _this.exec(new scripts_1.StopScript(self));
-                        break;
-                    default:
-                        _this.exec(new scripts_1.StopScript(self));
-                        escalate(_this.system, self, err);
-                        break;
-                }
-            });
-        })
-            .orJust(function () {
-            _this.exec(new scripts_1.StopScript(self));
-            escalate(_this.system, self, err);
-        });
-    };
-    This.prototype.exec = function (s) {
-        var ctx = this.getContext(this.self).get();
-        if (this.running) {
-            this.queue.push(new frame_1.Frame(this.self, ctx, s, s.code));
-        }
-        else {
-            this.push(new frame_1.Frame(this.self, ctx, s, s.code));
-        }
-        return this.run();
-    };
-    This.prototype.run = function () {
-        var policy = (this.system.configuration.log || {});
-        var ret = maybe_1.nothing();
-        if (this.running)
-            return ret;
-        this.running = true;
-        while (true) {
-            var cur = array_1.tail(this.stack);
-            while (true) {
-                if (array_1.tail(this.stack) !== cur)
-                    break;
-                if (cur.ip === cur.code.length) {
-                    //XXX: We should really always push the top most to the next
-                    if ((this.stack.length > 1) && (cur.data.length > 0)) {
-                        var _a = cur.pop(), value = _a[0], type = _a[1], loc = _a[2];
-                        this.stack[this.stack.length - 2].push(value, type, loc);
-                    }
-                    ret = cur.resolve(cur.pop()).toMaybe();
-                    this.stack.pop();
-                    break;
-                }
-                var next = log(policy, cur, cur.code[cur.ip]);
-                cur.ip++; // increment here so jumps do not skip
-                next.exec(this);
-            }
-            if (this.stack.length === 0) {
-                if (this.queue.length > 0) {
-                    this.stack.push(this.queue.shift());
-                }
-                else {
-                    break;
-                }
-            }
-        }
-        this.running = false;
-        return ret;
-    };
-    return This;
-}());
-exports.This = This;
-var escalate = function (env, target, err) {
-    return state_1.get(env.state, address_1.getParent(target))
-        .map(function (ctx) { return ctx.runtime.raise(err); })
-        .orJust(function () { throw error_1.convert(err); });
-};
-var log = function (policy, f, o) {
-    var level = policy.level || 0;
-    var logger = policy.logger || console;
-    if (o.level <= level) {
-        var ctx = "[" + f.actor + "]";
-        var msg = [ctx].concat(resolveLog(f, o.toLog(f)));
-        switch (o.level) {
-            case logging.INFO:
-                logger.info.apply(logger, msg);
-                break;
-            case logging.WARN:
-                logger.warn.apply(logger, msg);
-                break;
-            case logging.ERROR:
-                logger.error.apply(logger, msg);
-                break;
-            default:
-                logger.log.apply(logger, msg);
-                break;
-        }
-    }
-    return o;
-};
-var resolveLog = function (f, _a) {
-    var op = _a[0], rand = _a[1], data = _a[2];
-    var operand = rand.length > 0 ?
-        f
-            .resolve(rand)
-            .orRight(function () { return undefined; })
-            .takeRight() : [];
-    var stack = data.length > 0 ?
-        data.map(function (d) {
-            return f.resolve(d)
-                .orRight(function () { return undefined; })
-                .takeRight();
-        }) : [];
-    return [op, operand].concat(stack);
-};
-
-},{"../../../address":71,"../../../template":107,"../../log":80,"../../state":81,"../frame":83,"./scripts":104,"@quenk/noni/lib/control/error":108,"@quenk/noni/lib/data/array":110,"@quenk/noni/lib/data/maybe":113}],106:[function(require,module,exports){
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-/**
- * Script is a "program" an actor submits to the Runtime run execute.
- *
- * It consists of the following sections:
- * 1. constants - Static values referenced in the code section.
- * 2. code - A list of one or more Op codes to execute in sequence.
- */
-var Script = /** @class */ (function () {
-    function Script(constants, code) {
-        if (constants === void 0) { constants = [[], [], [], [], [], []]; }
-        if (code === void 0) { code = []; }
-        this.constants = constants;
-        this.code = code;
-    }
-    return Script;
-}());
-exports.Script = Script;
-
-},{}],107:[function(require,module,exports){
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.ACTION_RAISE = -0x1;
-exports.ACTION_IGNORE = 0x0;
-exports.ACTION_RESTART = 0x1;
-exports.ACTION_STOP = 0x2;
-
-},{}],108:[function(require,module,exports){
-arguments[4][16][0].apply(exports,arguments)
-},{"../data/either":111,"dup":16}],109:[function(require,module,exports){
-arguments[4][18][0].apply(exports,arguments)
-},{"_process":40,"dup":18}],110:[function(require,module,exports){
-arguments[4][19][0].apply(exports,arguments)
-},{"../math":117,"./record":114,"dup":19}],111:[function(require,module,exports){
-arguments[4][20][0].apply(exports,arguments)
-},{"./maybe":113,"dup":20}],112:[function(require,module,exports){
-arguments[4][21][0].apply(exports,arguments)
-},{"dup":21}],113:[function(require,module,exports){
-arguments[4][22][0].apply(exports,arguments)
-},{"dup":22}],114:[function(require,module,exports){
-arguments[4][23][0].apply(exports,arguments)
-},{"../array":110,"dup":23}],115:[function(require,module,exports){
-"use strict";
-/**
- *  Common functions used to manipulate strings.
- */
-Object.defineProperty(exports, "__esModule", { value: true });
-/**
- * startsWith polyfill.
- */
-exports.startsWith = function (str, search, pos) {
-    if (pos === void 0) { pos = 0; }
-    return str.substr(!pos || pos < 0 ? 0 : +pos, search.length) === search;
-};
-/**
- * endsWith polyfill.
- */
-exports.endsWith = function (str, search, this_len) {
-    if (this_len === void 0) { this_len = str.length; }
-    return (this_len === undefined || this_len > str.length) ?
-        this_len = str.length :
-        str.substring(this_len - search.length, this_len) === search;
-};
-/**
- * contains uses String#indexOf to determine if a substring occurs
- * in a string.
- */
-exports.contains = function (str, match) {
-    return (str.indexOf(match) > -1);
-};
-/**
- * camelCase transforms a string into CamelCase.
- */
-exports.camelCase = function (str) {
-    return [str[0].toUpperCase()]
-        .concat(str
-        .split(str[0])
-        .slice(1)
-        .join(str[0]))
-        .join('')
-        .replace(/(\-|_|\s)+(.)?/g, function (_, __, c) {
-        return (c ? c.toUpperCase() : '');
-    });
-};
-/**
- * capitalize a string.
- *
- * Note: spaces are treated as part of the string.
- */
-exports.capitalize = function (str) {
-    return "" + str[0].toUpperCase() + str.slice(1);
-};
-/**
- * uncapitalize a string.
- *
- * Note: spaces are treated as part of the string.
- */
-exports.uncapitalize = function (str) {
-    return "" + str[0].toLowerCase() + str.slice(1);
-};
-
-},{}],116:[function(require,module,exports){
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-var prims = ['string', 'number', 'boolean'];
-/**
- * Any is a class used to represent typescript's "any" type.
- */
-var Any = /** @class */ (function () {
-    function Any() {
-    }
-    return Any;
-}());
-exports.Any = Any;
-/**
- * isObject test.
- *
- * Does not consider an Array an object.
- */
-exports.isObject = function (value) {
-    return (typeof value === 'object') && (!exports.isArray(value));
-};
-/**
- * isArray test.
- */
-exports.isArray = Array.isArray;
-/**
- * isString test.
- */
-exports.isString = function (value) { return typeof value === 'string'; };
-/**
- * isNumber test.
- */
-exports.isNumber = function (value) {
-    return (typeof value === 'number') && (!isNaN(value));
-};
-/**
- * isBoolean test.
- */
-exports.isBoolean = function (value) { return typeof value === 'boolean'; };
-/**
- * isFunction test.
- */
-exports.isFunction = function (value) { return typeof value === 'function'; };
-/**
- * isPrim test.
- */
-exports.isPrim = function (value) {
-    return !(exports.isObject(value) ||
-        exports.isArray(value) ||
-        exports.isFunction(value));
-};
-/**
- * is performs a typeof of check on a type.
- */
-exports.is = function (expected) { return function (value) { return typeof (value) === expected; }; };
-/**
- * test whether a value conforms to some pattern.
- *
- * This function is made available mainly for a crude pattern matching
- * machinery that works as followss:
- * string   -> Matches on the value of the string.
- * number   -> Matches on the value of the number.
- * boolean  -> Matches on the value of the boolean.
- * object   -> Each key of the object is matched on the value, all must match.
- * function -> Treated as a constructor and results in an instanceof check or
- *             for String,Number and Boolean, this uses the typeof check. If
- *             the function is RegExp then we uses the RegExp.test function
- *             instead.
- */
-exports.test = function (value, t) {
-    return ((prims.indexOf(typeof t) > -1) && (value === t)) ?
-        true :
-        ((typeof t === 'function') &&
-            (((t === String) && (typeof value === 'string')) ||
-                ((t === Number) && (typeof value === 'number')) ||
-                ((t === Boolean) && (typeof value === 'boolean')) ||
-                ((t === Array) && (Array.isArray(value))) ||
-                (t === Any) ||
-                (value instanceof t))) ?
-            true :
-            ((t instanceof RegExp) && ((typeof value === 'string') && t.test(value))) ?
-                true :
-                ((typeof t === 'object') && (typeof value === 'object')) ?
-                    Object
-                        .keys(t)
-                        .every(function (k) { return value.hasOwnProperty(k) ?
-                        exports.test(value[k], t[k]) : false; }) :
-                    false;
-};
-/**
- * show the type of a value.
- *
- * Note: This may crash if the value is an
- * object literal with recursive references.
- */
-exports.show = function (value) {
-    if (typeof value === 'object') {
-        if (Array.isArray(value))
-            return "[" + value.map(exports.show) + "]";
-        else if (value.constructor !== Object)
-            return (value.constructor.name || value.constructor);
-        else
-            return JSON.stringify(value);
-    }
-    else {
-        return '' + value;
-    }
-};
-
-},{}],117:[function(require,module,exports){
-arguments[4][24][0].apply(exports,arguments)
-},{"dup":24}],118:[function(require,module,exports){
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-/**
- * Call records the application of a function or method.
- */
-var Call = /** @class */ (function () {
-    function Call(name, args, ret) {
-        this.name = name;
-        this.args = args;
-        this.ret = ret;
-    }
-    return Call;
-}());
-exports.Call = Call;
-/**
- * Data recorded during testing.
- */
-var Data = /** @class */ (function () {
-    function Data(calls) {
-        if (calls === void 0) { calls = []; }
-        this.calls = calls;
-    }
-    /**
-     * record the application of a method.
-     */
-    Data.prototype.record = function (name, args, ret) {
-        this.calls.push(new Call(name, args, ret));
-        return ret;
-    };
-    /**
-     * called returns a list of methods that have been called so far.
-     */
-    Data.prototype.called = function () {
-        return this.calls.map(function (c) { return c.name; });
-    };
-    return Data;
-}());
-exports.Data = Data;
-/**
- * Mock can be extended to satisfy an interface for which we are only interested
- * in recording information about method application.
- */
-var Mock = /** @class */ (function () {
-    function Mock() {
-        this.MOCK = new Data();
-    }
-    return Mock;
-}());
-exports.Mock = Mock;
-
-},{}]},{},[70]);
+},{"./app/actor/api/router/display_test.js":94,"./app/actor/api/router/index_test.js":95,"./app/actor/interact/data/form/abort_test.js":97,"./app/actor/interact/data/form/client/index_test.js":98,"./app/actor/interact/data/form/index_test.js":99,"./app/actor/interact/data/form/send_test.js":100,"./app/actor/interact/data/form/validate/index_test.js":101,"./app/actor/interact/data/preload_test.js":102,"./app/actor/interact/data/search/filtered_test.js":103,"./app/actor/interact/data/search/realtime_test.js":104,"./app/actor/interact/http/index_test.js":106,"./app/actor/interact/index_test.js":107,"./browser/window/router/hash/default_test.js":109}]},{},[111]);

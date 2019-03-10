@@ -26,12 +26,12 @@ export interface Router<R> {
   /**
    * onError hook.
    */
-    onError: (e: Error) => Future<void>;
+    onError(e: Error) : Future<void>;
 
   /**
    * onNotFound hook.
    */
-    onNotFound: (url: string) => Future<void>;
+    onNotFound(url: string): Future<void>;
 
     /**
      * add a Handler to the internal route table.

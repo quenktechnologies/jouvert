@@ -2,16 +2,16 @@ import * as must from 'should';
 import { pure } from '@quenk/noni/lib/control/monad/future';
 import { noop } from '@quenk/noni/lib/data/function';
 import {
-    Router,
+    DefaultHashRouter,
     Request
 }
-    from '../../../../../lib/browser/window/router/hash';
+    from '../../../../../../lib/browser/window/router/hash/default';
 
 describe('router', () => {
 
-    describe('Router', () => {
+    describe('DefaultHashRouter', () => {
 
-        let router: Router;
+        let router: DefaultHashRouter;
 
         afterEach(() => {
 
@@ -25,7 +25,7 @@ describe('router', () => {
         it('should activate a route', cb => {
 
             let called = false;
-            router = new Router(window, {});
+            router = new DefaultHashRouter(window, {});
 
             router
                 .add('/search/:collection', req => {
@@ -53,7 +53,7 @@ describe('router', () => {
 
             let called = false;
 
-            router = new Router(window, {});
+            router = new DefaultHashRouter(window, {});
 
             router
                 .add('/', () => {
@@ -80,7 +80,7 @@ describe('router', () => {
 
             let called = false;
 
-            router = new Router(window, {});
+            router = new DefaultHashRouter(window, {});
 
             router
                 .add('/spreadsheet/locations/:worksheet', req => {
@@ -110,7 +110,7 @@ describe('router', () => {
 
             let called = false;
 
-            router = new Router(window, {});
+            router = new DefaultHashRouter(window, {});
 
             router
                 .add('/', () => {
@@ -138,7 +138,7 @@ describe('router', () => {
             let count = 0;
             let mware = (req: Request) => { count = count + 1; return pure(req); };
 
-            router = new Router(window, {});
+            router = new DefaultHashRouter(window, {});
 
             router
                 .use('/search', mware)
@@ -168,7 +168,7 @@ describe('router', () => {
             let hadNotFound = false;
             let onErr = () => { return pure(noop()) }
             let onNotFound = () => { hadNotFound = true; return pure(noop()) }
-            router = new Router(window, {}, onNotFound, onErr);
+            router = new DefaultHashRouter(window, {}, onErr, onNotFound );
 
             router.start();
 

@@ -1,71 +1,67 @@
 import * as qs from 'qs';
 import * as toRegex from 'path-to-regexp';
-import * as router from './';
+import * as router from '../';
 import { Value, Object as JObject } from '@quenk/noni/lib/data/json';
 import { noop } from '@quenk/noni/lib/data/function';
-import { Future, pure, raise } from '@quenk/noni/lib/control/monad/future';
+import { Future, pure } from '@quenk/noni/lib/control/monad/future';
 import { reduce } from '@quenk/noni/lib/data/record';
 import { Key } from 'path-to-regexp';
 
 const EVENT_HASH_CHANGED = 'hashchange';
 
 /**
- * OnError type.
+ * Path type alias.
  */
-export type OnError = (e: Error) => Future<void>;
+export type Path = string;
 
 /**
- * OnNotFound type.
+ * Query type alias.
  */
-export type OnNotFound = (path: string) => Future<void>;
+export type Query = JObject;
+
+/**
+ * Params
+ */
+export type Params = JObject;
 
 /**
  * Filter type.
  */
-export type Filter = router.Filter<Request>;
+export type Filter<R extends Request> = router.Filter<R>;
 
 /**
  * Handler type.
  */
-export type Handler = router.Handler<Request>;
+export type Handler<R extends Request> = router.Handler<R>;
 
 /**
  * Routes table.
  */
-export interface Routes {
+export interface Routes<R extends Request> {
 
-    [key: string]: [Filter[], Handler]
+    [key: string]: [Filter<R>[], Handler<R>]
 
 }
 
 /**
- * Request represents a change in the browser's hash triggered
- * by the user.
+ * Request interface.
  */
-export class Request {
-
-    constructor(
-        public path: string,
-        public query: JObject,
-        public params: JObject) { }
+export interface Request {
 
     /**
-     * create a new Request object
+     * path requested
      */
-    static create(
-        path: string,
-        query: string,
-        keys: Object[],
-        results: Value[]): Request {
+    path: Path,
 
-        let params: JObject = Object.create(null);
+    /**
+     * query data.
+     */
+    query: Query,
 
-        keys.forEach((key: any, index) =>
-            params[<string>key.name] = results[index + 1]);
-
-        return new Request(path, qs.parse(query), params);
-
-    }
+    /**
+     * params data.
+     */
+    params: Params
 
 }
 
@@ -73,37 +69,51 @@ export class Request {
  * Cache used internally by the Router.
  * @private
  */
-export class Cache {
+export class Cache<R extends Request> {
 
     constructor(
         public regex: RegExp,
         public keys: Key[],
-        public filters: Filter[],
-        public handler: Handler) { }
+        public filters: Filter<R>[],
+        public handler: Handler<R>) { }
 
 }
 
 /**
- * Router implementation based on the value of window.location.hash.
+ * HashRouter implementation based on the value of window.location.hash.
  */
-export class Router implements router.Router<Request> {
+export abstract class HashRouter<R extends Request>
+    implements router.Router<R> {
 
     constructor(
         public window: Window,
-        public routes: Routes = {},
-        public onNotFound: OnNotFound = () => pure(noop()),
-        public onError: OnError = (e: Error) => raise(e)) { }
+        public routes: Routes<R> = {}) { }
 
-    cache: Cache[] = [];
+    cache: Cache<R>[] = [];
 
     keys: Object[] = [];
+
+    /**
+     * createRequest is a constructor for new Request instances.
+     */
+      abstract createRequest(path: Path, query: Query, params: Params): Future<R>
+
+    /**
+     * onError is invoked when an non-thrown error is invoked.
+     */
+    abstract onError(e: Error): Future<void>
+
+    /**
+     * onNotFound is invoked each time the user navigates to an unknown route.
+     */
+    abstract onNotFound(path: string): Future<void>
 
     handleEvent(_: Event): void {
 
         let [path, query] = takeHash(this.window);
         let cache = this.cache;
-        let mware: Filter[] = [];
-        let handler: Handler = () => pure(<void>undefined);
+        let mware: Filter<R>[] = [];
+        let handler: Handler<R> = () => pure(<void>undefined);
         let keys: Object[] = [];
         let r: any = null;
         let count = 0;
@@ -120,7 +130,8 @@ export class Router implements router.Router<Request> {
 
         if (r != null) {
 
-            let ft = pure(Request.create(path, query, keys, r));
+            let ft = this.createRequest(path, qs.parse(query),
+                parseParams(keys, r));
 
             mware
                 .reduce((p, c) => p.chain(c), ft)
@@ -139,7 +150,7 @@ export class Router implements router.Router<Request> {
     /**
      * add a Handler to the route table for a specific path.
      */
-    add(path: string, handler: Handler): Router {
+    add(path: string, handler: Handler<R>): HashRouter<R> {
 
         if (this.routes.hasOwnProperty(path)) {
 
@@ -157,7 +168,7 @@ export class Router implements router.Router<Request> {
 
     }
 
-    use(path: string, mware: Filter): Router {
+    use(path: string, mware: Filter<R>): HashRouter<R> {
 
         if (this.routes.hasOwnProperty(path)) {
 
@@ -186,19 +197,30 @@ export class Router implements router.Router<Request> {
      * start activates routing by installing a hook into the supplied
      * window.
      */
-    start(): Router {
+    start(): HashRouter<R> {
 
         this.window.addEventListener(EVENT_HASH_CHANGED, this);
         return this;
 
     }
 
-    stop(): Router {
+    stop(): HashRouter<R> {
 
         this.window.removeEventListener(EVENT_HASH_CHANGED, this);
         return this;
 
     }
+
+}
+
+const parseParams = (keys: Object[], results: Value[]): JObject => {
+
+    let params: JObject = Object.create(null);
+
+    keys.forEach((key: any, index) =>
+        params[<string>key.name] = results[index + 1]);
+
+    return params;
 
 }
 
@@ -218,8 +240,8 @@ export const takeHash = (w: Window) =>
 /**
  * compile a Routes map into a Cache for faster route matching.
  */
-export const compile = (r: Routes): Cache[] =>
-    reduce(r, [], (p: Cache[], c: [Filter[], Handler], path: string) => {
+export const compile = <R extends Request>(r: Routes<R>): Cache<R>[] =>
+    reduce(r, [], (p: Cache<R>[], c: [Filter<R>[], Handler<R>], path: string) => {
 
         let keys: Key[] = [];
         return p.concat(new Cache(toRegex(path, keys), keys, c[0], c[1]));

@@ -40,7 +40,7 @@ export interface Schedulable<M> extends Actor {
  * Target behaviour matrix:
  *               scheduling                  waiting
  * scheduling                                <Schedule>       
- * waiting          <Ack>|<Continue>|<Expire>                
+ * waiting       <Ack>|<Continue>|<Expire>                
  */
 export interface Scheduler<T, MScheduling, MWaiting>
     extends Schedulable<MScheduling>, Waiting<T, MWaiting> {
@@ -55,7 +55,6 @@ export interface Scheduler<T, MScheduling, MWaiting>
 /**
  * Timesout allows the Scheduler to limit the amount of time waited
  * for an actor to yield control.
- *
  */
 export interface Timesout<T, MScheduling, MWaiting>
     extends Scheduler<T, MScheduling, MWaiting> {

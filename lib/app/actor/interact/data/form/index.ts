@@ -1,7 +1,7 @@
 import { Constructor } from '@quenk/noni/lib/data/type/constructor';
 import { Address } from '@quenk/potoo/lib/actor/address';
 import { Case } from '@quenk/potoo/lib/actor/resident/case';
-import { Resumable } from '../../resumable';
+import { Resumes } from '../../resumes';
 import { Resume } from '../../';
 import { Inputtable } from './inputtable';
 
@@ -56,7 +56,7 @@ export interface Form<E, R extends Request, MResumed>
  * CreateListener exists for Forms that distinguish between edit and create mode.
  */
 export interface CreateListener<R extends Request, MResumed>
-    extends Resumable<R, MResumed> {
+    extends Resumes<R, MResumed> {
 
     /**
      * beforeCreate is applied before creating to intialize the Form
@@ -69,7 +69,7 @@ export interface CreateListener<R extends Request, MResumed>
  * EditListener exists for FOrms that distinguish between edit and create modes.
  */
 export interface EditListener<R extends Request, MResumed>
-    extends Resumable<R, MResumed> {
+    extends Resumes<R, MResumed> {
 
     /**
      * beforeEdit is applied before editing to intialize the Form.

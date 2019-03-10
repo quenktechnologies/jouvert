@@ -17,8 +17,8 @@
 import { Address } from '@quenk/potoo/lib/actor/address';
 import { Constructor } from '@quenk/noni/lib/data/type/constructor';
 import { Case as Case } from '@quenk/potoo/lib/actor/resident/case';
-import { Suspendable } from './suspendable';
-import { Resumable } from './resumable';
+import { BeforeSuspends, Suspends } from './suspends';
+import { BeforeResumes, Resumes } from './resumes';
 
 /**
  * ResumedMessages type.
@@ -59,14 +59,13 @@ export interface Suspend {
  * Interact is an actor that provides a unit of interactivity
  * to the user.
  *
- * Interacts stream content to display servers that are updated via the
- * Resume message.
+ * Upon receiving the relevant Resume message, an Interact is expected to 
+ * stream content to a display server until it is told to stop via the 
+ * Suspend message.
+ *
+ * Hooks are provided to execute side effects before transitioning. 
+ * Implementors can use the `beforeResume` hook to begin streaming content.
  *  
- * An Interact has two behaviours:
- *
- * 1. Suspended - The Interact is in the background and idles.
- * 2. Resumed - The Interact is active, streaming and observing events.
- *
  * Behaviour matrix:
  *
  *            suspended resumed
@@ -79,20 +78,14 @@ export interface Suspend {
  * @param <MResumed>   - Type of messages handled while resumed.
  */
 export interface Interact<R, MSuspended, MResumed>
-    extends Suspendable<MSuspended>, Resumable<R, ResumedMessages<R, MResumed>> {
+    extends
+    BeforeSuspends,
+    Suspends<MSuspended>,
+    BeforeResumes<R>,
+    Resumes<R, ResumedMessages<R, MResumed>> {
 
-    /**
-     * beforeResume hook.
-     *
-     * This should be invoked before transitioning to the Resume behaviour.
-     */
     beforeResume(r: R): Interact<R, MSuspended, MResumed>
 
-    /**
-     * beforeSuspend hook.
-     *
-     * This should be invoked before transitioning to the Suspend behaviour.
-     */
     beforeSuspend(): Interact<R, MSuspended, MResumed>
 
 }

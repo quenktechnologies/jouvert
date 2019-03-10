@@ -1,6 +1,6 @@
 import { Constructor } from '@quenk/noni/lib/data/type/constructor';
 import { Case } from '@quenk/potoo/lib/actor/resident/case';
-import { Resumes } from '../../../resumes';
+import { Resumed } from '../../../resumed';
 import { Request } from '../';
 import { Editable } from './editable';
 
@@ -29,7 +29,7 @@ export interface Client<MEditing> extends Editable<MEditing> {
  * @param <RM>- Additional messages handled while resuming.
  */
 export interface AbortListener<C, R, MResumed>
-    extends Resumes<R, MResumed> {
+    extends Resumed<R, MResumed> {
 
     /**
      * afterFormAborted hook.
@@ -45,7 +45,7 @@ export interface AbortListener<C, R, MResumed>
  * @param <R> - The token type for resuming.
  * @param <RM>- Additional messages handled while resuming.
  */
-export interface SavedListener<S, R, MResumed> extends Resumes<R, MResumed> {
+export interface SavedListener<S, R, MResumed> extends Resumed<R, MResumed> {
 
     /**
      * afterFormSaved hook.
@@ -112,7 +112,7 @@ export class AbortCase<C, R, MResumed> extends Case<C> {
         super(pattern, (c: C) =>
             form
                 .afterFormAborted(c)
-                .select(form.resume(token)));
+                .select(form.resumed(token)));
 
     }
 
@@ -133,7 +133,7 @@ export class SaveCase<S, R, MResumed> extends Case<S> {
         super(pattern, (s: S) =>
             form
                 .afterFormSaved(s)
-                .select(form.resume(token)));
+                .select(form.resumed(token)));
 
     }
 

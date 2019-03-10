@@ -1,6 +1,6 @@
 import { Constructor } from '@quenk/noni/lib/data/type/constructor';
 import { Case } from '@quenk/potoo/lib/actor/resident/case';
-import { Suspends } from '../../suspends';
+import { Suspended } from '../../suspended';
 import { Request } from './';
 
 /**
@@ -29,7 +29,7 @@ export type ResumedMessage<E, C, M>
  * @param <MSuspended> - Type of messages handled while aborted (suspended).
  */
 export interface Abort<C, R extends Request, MSuspended>
-    extends Suspends<MSuspended> {
+    extends Suspended<MSuspended> {
 
     /**
      * beforeAbort hook
@@ -39,7 +39,7 @@ export interface Abort<C, R extends Request, MSuspended>
 }
 
 /**
- * AbortCase invokes the beforeAbort hook and suspends the Form.
+ * AbortCase invokes the beforeAbort hook and Suspended the Form.
  */
 export class AbortCase<C, R extends Request, MSuspended>
     extends Case<C> {
@@ -52,7 +52,7 @@ export class AbortCase<C, R extends Request, MSuspended>
         super(pattern, (c: C) =>
             abort
                 .beforeAbort(c)
-                .select(abort.suspend())
+                .select(abort.suspended())
                 .tell(token.client, c));
 
     }

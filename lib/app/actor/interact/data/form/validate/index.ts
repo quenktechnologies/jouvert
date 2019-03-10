@@ -79,7 +79,7 @@ export class InputCase<E extends InputEvent, R extends Request, MResumed>
                 .validateEvent(e)
                 .map(v => form.afterFieldValid(e.name, v, e))
                 .orRight(f => form.afterFieldInvalid(e.name, f, e))
-                .map(() => form.select(form.resume(token))));
+                .map(() => form.select(form.resumed(token))));
 
     }
 

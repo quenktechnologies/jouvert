@@ -1,7 +1,7 @@
 import { Constructor } from '@quenk/noni/lib/data/type/constructor';
 import { Address } from '@quenk/potoo/lib/actor/address';
 import { Case } from '@quenk/potoo/lib/actor/resident/case';
-import { Resumes } from '../../resumes';
+import { Resumed } from '../../resumed';
 import { Resume } from '../../';
 import { Inputtable } from './inputtable';
 
@@ -9,9 +9,9 @@ import { Inputtable } from './inputtable';
  * ResumedMessages type.
  */
 export type ResumedMessages<E, MResumed>
-   = E
-   | MResumed
-   ;
+    = E
+    | MResumed
+    ;
 
 /**
  * Request extends the regular Resume 
@@ -56,7 +56,7 @@ export interface Form<E, R extends Request, MResumed>
  * CreateListener exists for Forms that distinguish between edit and create mode.
  */
 export interface CreateListener<R extends Request, MResumed>
-    extends Resumes<R, MResumed> {
+    extends Resumed<R, MResumed> {
 
     /**
      * beforeCreate is applied before creating to intialize the Form
@@ -69,7 +69,7 @@ export interface CreateListener<R extends Request, MResumed>
  * EditListener exists for FOrms that distinguish between edit and create modes.
  */
 export interface EditListener<R extends Request, MResumed>
-    extends Resumes<R, MResumed> {
+    extends Resumed<R, MResumed> {
 
     /**
      * beforeEdit is applied before editing to intialize the Form.
@@ -90,7 +90,7 @@ export class CreateCase<R extends Request, MResumed> extends Case<R> {
         super(pattern, (t: R) =>
             listener
                 .beforeCreate(t)
-                .select(listener.resume(t)));
+                .select(listener.resumed(t)));
 
     }
 
@@ -108,7 +108,7 @@ export class EditCase<R extends Request, MResumed> extends Case<R> {
         super(pattern, (t: R) =>
             listener
                 .beforeEdit(t)
-                .select(listener.resume(t)));
+                .select(listener.resumed(t)));
 
     }
 
@@ -127,7 +127,7 @@ export class InputCase<E, R extends Request, MResumed> extends Case<E> {
         super(pattern, (e: E) =>
             input
                 .onInput(e)
-                .select(input.resume(token)));
+                .select(input.resumed(token)));
 
     }
 

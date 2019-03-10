@@ -6,12 +6,12 @@
 /** imports */
 import { Constructor } from '@quenk/noni/lib/data/type/constructor';
 import { Case } from '@quenk/potoo/lib/actor/resident/case';
-import { Resumes } from '../resumes';
+import { Resumed } from '../resumed';
 
 /**
  * OkListener
  */
-export interface OkListener<A, R, MResumed> extends Resumes<R, MResumed> {
+export interface OkListener<A, R, MResumed> extends Resumed<R, MResumed> {
     /**
      * afterOk hook.
      */
@@ -22,7 +22,7 @@ export interface OkListener<A, R, MResumed> extends Resumes<R, MResumed> {
 /**
  * CreatedListener
  */
-export interface CreatedListener<A, R, MResumed> extends Resumes<R, MResumed> {
+export interface CreatedListener<A, R, MResumed> extends Resumed<R, MResumed> {
 
     /**
      * afterCreated hook.
@@ -34,7 +34,7 @@ export interface CreatedListener<A, R, MResumed> extends Resumes<R, MResumed> {
 /**
  * NoContentListener
  */
-export interface NoContentListener<A, R, MResumed> extends Resumes<R, MResumed> {
+export interface NoContentListener<A, R, MResumed> extends Resumed<R, MResumed> {
 
     /**
      * afterNoContent hook.
@@ -46,7 +46,7 @@ export interface NoContentListener<A, R, MResumed> extends Resumes<R, MResumed> 
 /**
  * ForbiddenListener
  */
-export interface ForbiddenListener<A, R, MResumed> extends Resumes<R, MResumed> {
+export interface ForbiddenListener<A, R, MResumed> extends Resumed<R, MResumed> {
 
     /**
      * afterForbidden hook.
@@ -58,7 +58,7 @@ export interface ForbiddenListener<A, R, MResumed> extends Resumes<R, MResumed> 
 /**
  * UnauthorizedListener
  */
-export interface UnauthorizedListener<A, R, MResumed> extends Resumes<R, MResumed> {
+export interface UnauthorizedListener<A, R, MResumed> extends Resumed<R, MResumed> {
 
     /**
      * afterUnauthorized hook.
@@ -70,7 +70,7 @@ export interface UnauthorizedListener<A, R, MResumed> extends Resumes<R, MResume
 /**
  * NotFoundListener
  */
-export interface NotFoundListener<A, R, MResumed> extends Resumes<R, MResumed> {
+export interface NotFoundListener<A, R, MResumed> extends Resumed<R, MResumed> {
 
     /**
      * afterNotFound hook.
@@ -82,7 +82,7 @@ export interface NotFoundListener<A, R, MResumed> extends Resumes<R, MResumed> {
 /**
  * ServerErrorListener
  */
-export interface ServerErrorListener<A, R, MResumed> extends Resumes<R, MResumed> {
+export interface ServerErrorListener<A, R, MResumed> extends Resumed<R, MResumed> {
 
     /**
      * afterServerError hook.
@@ -104,7 +104,7 @@ export class OkCase<A, R, MResumed> extends Case<A> {
         super(pattern, (res: A) =>
             listener
                 .afterOk(res)
-                .select(listener.resume(token)));
+                .select(listener.resumed(token)));
 
     }
 
@@ -123,7 +123,7 @@ export class CreatedCase<A, R, MResumed> extends Case<A> {
         super(pattern, (res: A) =>
             listener
                 .afterCreated(res)
-                .select(listener.resume(token)));
+                .select(listener.resumed(token)));
 
     }
 
@@ -142,7 +142,7 @@ export class NoContentCase<A, R, MResumed> extends Case<A> {
         super(pattern, (res: A) =>
             listener
                 .afterNoContent(res)
-                .select(listener.resume(token)));
+                .select(listener.resumed(token)));
 
     }
 
@@ -161,7 +161,7 @@ export class ForbiddenCase<A, R, MResumed> extends Case<A> {
         super(pattern, (res: A) =>
             listener
                 .afterForbidden(res)
-                .select(listener.resume(token)));
+                .select(listener.resumed(token)));
 
     }
 
@@ -180,7 +180,7 @@ export class UnauthorizedCase<A, R, MResumed> extends Case<A> {
         super(pattern, (res: A) =>
             listener
                 .afterUnauthorized(res)
-                .select(listener.resume(token)));
+                .select(listener.resumed(token)));
 
     }
 
@@ -199,7 +199,7 @@ export class NotFoundCase<A, R, MResumed> extends Case<A> {
         super(pattern, (res: A) =>
             listener
                 .afterNotFound(res)
-                .select(listener.resume(token)));
+                .select(listener.resumed(token)));
 
     }
 
@@ -218,7 +218,7 @@ export class ServerErrorCase<A, R, MResumed> extends Case<A> {
         super(pattern, (res: A) =>
             listener
                 .afterServerError(res)
-                .select(listener.resume(token)));
+                .select(listener.resumed(token)));
 
     }
 

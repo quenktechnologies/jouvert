@@ -5,6 +5,10 @@
   "author": [
     "Quenk Technologies Limited <info@quenk.com> (https://quenk.com)"
   ],
+  "files": [
+    "lib"
+  ],
+  "type": "lib/app/index.d.ts",
   "license": "Apache-2.0",
   "devDependencies": {
     "@quenk/must": "^1.0.6",
@@ -22,8 +26,8 @@
     "typescript": "^3.3.3"
   },
   "dependencies": {
-    "@quenk/noni": "^1.15.1",
-    "@quenk/potoo": "^2.1.0",
+    "@quenk/noni": "^1.18.0",
+    "@quenk/potoo": "^2.1.2",
     "@quenk/preconditions": "^5.2.2",
     "@quenk/test": "^2.1.0",
     "@quenk/wml": "^0.16.3",

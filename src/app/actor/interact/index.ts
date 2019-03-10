@@ -56,55 +56,49 @@ export interface Suspend {
 }
 
 /**
+ * Suspendable interface combining BeforeSuspended and Suspended.
+ */
+export interface Suspendable<M> extends BeforeSuspended, Suspended<M> { }
+
+/**
+ * Resumable interface combining BeforeResumed and Resumed.
+ */
+export interface Resumable<T, M> extends BeforeResumed<T>, Resumed<T, M> { }
+
+/**
  * Interact is an actor that provides a unit of interactivity
  * to the user.
  *
  * Upon receiving the relevant Resume message, an Interact is expected to 
- * stream content to a display server until it is told to stop via the 
+ * stream content to a display server until it is told to stop via a 
  * Suspend message.
  *
  * Hooks are provided to execute side effects before transitioning. 
- * Implementors can use the `beforeResume` hook to begin streaming content.
  *  
  * Behaviour matrix:
  *
  *            suspended resumed
  * suspended              <R>
  * resumed       <S>
- *
- * @param <R> - The accepted type used to indicate the Interact has resumed.
- * @param <S> - The accepted type used to indicate the Interact is suspending.
- * @param <MSuspended> - Type of messages handled while suspended.
- * @param <MResumed>   - Type of messages handled while resumed.
  */
-export interface Interact<R, MSuspended, MResumed>
-    extends
-    BeforeSuspended,
-    Suspended<MSuspended>,
-    BeforeResumed<R>,
-    Resumed<R, ResumedMessages<R, MResumed>> {
-
-    beforeResumed(r: R): Interact<R, MSuspended, MResumed>
-
-    beforeSuspended(): Interact<R, MSuspended, MResumed>
-
-}
+export interface Interact<T, MSuspended, MResumed>
+    extends Resumable<T, MResumed>, Suspendable<MSuspended> { }
 
 /**
  * ResumeCase
  *
  * Transitions to the resume behaviour.
  */
-export class ResumeCase<R, MResumed, MSuspended> extends Case<R> {
+export class ResumeCase<T, MResumed> extends Case<T> {
 
     constructor(
-        public pattern: Constructor<R>,
-        public interest: Interact<R, MResumed, MSuspended>) {
+        public pattern: Constructor<T>,
+        public target: Resumable<T, MResumed>) {
 
-        super(pattern, (r: R) =>
-            interest
+        super(pattern, (r: T) =>
+            target
                 .beforeResumed(r)
-                .select(interest.resumed(r)));
+                .select(target.resumed(r)));
 
     }
 
@@ -115,16 +109,16 @@ export class ResumeCase<R, MResumed, MSuspended> extends Case<R> {
  *
  * Applies the beforeSuspend hook then changes behaviour to supsend().
  */
-export class SuspendCase<S, R, MResumed, MSuspended> extends Case<S> {
+export class SuspendCase<T, MSuspended> extends Case<T> {
 
     constructor(
-        public pattern: Constructor<S>,
-        public interest: Interact<R, MResumed, MSuspended>) {
+        public pattern: Constructor<T>,
+        public target: Suspendable<MSuspended>) {
 
-        super(pattern, (_: S) =>
-            interest
+        super(pattern, (_: T) =>
+            target
                 .beforeSuspended()
-                .select(interest.suspended()));
+                .select(target.suspended()));
 
     }
 

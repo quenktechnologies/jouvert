@@ -4,30 +4,30 @@ import { ActorImpl } from '../../fixtures/actor';
 export class InteractImpl<R, MSuspended, MResumed> extends ActorImpl
     implements Interact<R, MSuspended, MResumed>  {
 
-    beforeResume(_: R) {
+    beforeResumed(_: R) {
 
-        this.__record('beforeResume', [_]);
+        this.__record('beforeResumed', [_]);
         return this;
 
     }
 
-    beforeSuspend() {
+    beforeSuspended() {
 
-        this.__record('beforeSuspend', []);
+        this.__record('beforeSuspended', []);
         return this;
 
     }
 
-    resume(_: R) {
+    resumed(_: R) {
 
-        this.__record('resume', [_]);
+        this.__record('resumed', [_]);
         return [];
 
     }
 
-    suspend() {
+    suspended() {
 
-        this.__record('suspend', []);
+        this.__record('suspended', []);
         return [];
 
     }

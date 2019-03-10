@@ -464,7 +464,7 @@ var __extends = (this && this.__extends) || (function () {
 Object.defineProperty(exports, "__esModule", { value: true });
 var case_1 = require("@quenk/potoo/lib/actor/resident/case");
 /**
- * AbortCase invokes the beforeAbort hook and suspends the Form.
+ * AbortCase invokes the beforeAbort hook and Suspended the Form.
  */
 var AbortCase = /** @class */ (function (_super) {
     __extends(AbortCase, _super);
@@ -472,7 +472,7 @@ var AbortCase = /** @class */ (function (_super) {
         var _this = _super.call(this, pattern, function (c) {
             return abort
                 .beforeAbort(c)
-                .select(abort.suspend())
+                .select(abort.suspended())
                 .tell(token.client, c);
         }) || this;
         _this.pattern = pattern;
@@ -553,7 +553,7 @@ var AbortCase = /** @class */ (function (_super) {
         var _this = _super.call(this, pattern, function (c) {
             return form
                 .afterFormAborted(c)
-                .select(form.resume(token));
+                .select(form.resumed(token));
         }) || this;
         _this.pattern = pattern;
         _this.token = token;
@@ -574,7 +574,7 @@ var SaveCase = /** @class */ (function (_super) {
         var _this = _super.call(this, pattern, function (s) {
             return form
                 .afterFormSaved(s)
-                .select(form.resume(token));
+                .select(form.resumed(token));
         }) || this;
         _this.pattern = pattern;
         _this.token = token;
@@ -611,7 +611,7 @@ var CreateCase = /** @class */ (function (_super) {
         var _this = _super.call(this, pattern, function (t) {
             return listener
                 .beforeCreate(t)
-                .select(listener.resume(t));
+                .select(listener.resumed(t));
         }) || this;
         _this.pattern = pattern;
         _this.listener = listener;
@@ -629,7 +629,7 @@ var EditCase = /** @class */ (function (_super) {
         var _this = _super.call(this, pattern, function (t) {
             return listener
                 .beforeEdit(t)
-                .select(listener.resume(t));
+                .select(listener.resumed(t));
         }) || this;
         _this.pattern = pattern;
         _this.listener = listener;
@@ -647,7 +647,7 @@ var InputCase = /** @class */ (function (_super) {
         var _this = _super.call(this, pattern, function (e) {
             return input
                 .onInput(e)
-                .select(input.resume(token));
+                .select(input.resumed(token));
         }) || this;
         _this.pattern = pattern;
         _this.token = token;
@@ -724,7 +724,7 @@ var InputCase = /** @class */ (function (_super) {
                 .validateEvent(e)
                 .map(function (v) { return form.afterFieldValid(e.name, v, e); })
                 .orRight(function (f) { return form.afterFieldInvalid(e.name, f, e); })
-                .map(function () { return form.select(form.resume(token)); });
+                .map(function () { return form.select(form.resumed(token)); });
         }) || this;
         _this.pattern = pattern;
         _this.token = token;
@@ -801,7 +801,7 @@ var SetFilterCase = /** @class */ (function (_super) {
         var _this = _super.call(this, pattern, function (f) {
             return filtered
                 .setFilter(f)
-                .select(filtered.resume(token));
+                .select(filtered.resumed(token));
         }) || this;
         _this.pattern = pattern;
         _this.token = token;
@@ -821,7 +821,7 @@ var RemoveFilterCase = /** @class */ (function (_super) {
         var _this = _super.call(this, pattern, function (f) {
             return filtered
                 .removeFilter(f)
-                .select(filtered.resume(token));
+                .select(filtered.resumed(token));
         }) || this;
         _this.pattern = pattern;
         _this.token = token;
@@ -841,7 +841,7 @@ var ClearFiltersCase = /** @class */ (function (_super) {
         var _this = _super.call(this, pattern, function (_) {
             return filtered
                 .clearFilters()
-                .select(filtered.resume(token));
+                .select(filtered.resumed(token));
         }) || this;
         _this.pattern = pattern;
         _this.token = token;
@@ -878,7 +878,7 @@ var SearchCase = /** @class */ (function (_super) {
         var _this = _super.call(this, pattern, function (e) {
             return realtime
                 .search(e)
-                .select(realtime.resume(token));
+                .select(realtime.resumed(token));
         }) || this;
         _this.pattern = pattern;
         _this.token = token;
@@ -919,7 +919,7 @@ var OkCase = /** @class */ (function (_super) {
         var _this = _super.call(this, pattern, function (res) {
             return listener
                 .afterOk(res)
-                .select(listener.resume(token));
+                .select(listener.resumed(token));
         }) || this;
         _this.pattern = pattern;
         _this.token = token;
@@ -938,7 +938,7 @@ var CreatedCase = /** @class */ (function (_super) {
         var _this = _super.call(this, pattern, function (res) {
             return listener
                 .afterCreated(res)
-                .select(listener.resume(token));
+                .select(listener.resumed(token));
         }) || this;
         _this.pattern = pattern;
         _this.token = token;
@@ -957,7 +957,7 @@ var NoContentCase = /** @class */ (function (_super) {
         var _this = _super.call(this, pattern, function (res) {
             return listener
                 .afterNoContent(res)
-                .select(listener.resume(token));
+                .select(listener.resumed(token));
         }) || this;
         _this.pattern = pattern;
         _this.token = token;
@@ -976,7 +976,7 @@ var ForbiddenCase = /** @class */ (function (_super) {
         var _this = _super.call(this, pattern, function (res) {
             return listener
                 .afterForbidden(res)
-                .select(listener.resume(token));
+                .select(listener.resumed(token));
         }) || this;
         _this.pattern = pattern;
         _this.token = token;
@@ -995,7 +995,7 @@ var UnauthorizedCase = /** @class */ (function (_super) {
         var _this = _super.call(this, pattern, function (res) {
             return listener
                 .afterUnauthorized(res)
-                .select(listener.resume(token));
+                .select(listener.resumed(token));
         }) || this;
         _this.pattern = pattern;
         _this.token = token;
@@ -1014,7 +1014,7 @@ var NotFoundCase = /** @class */ (function (_super) {
         var _this = _super.call(this, pattern, function (res) {
             return listener
                 .afterNotFound(res)
-                .select(listener.resume(token));
+                .select(listener.resumed(token));
         }) || this;
         _this.pattern = pattern;
         _this.token = token;
@@ -1033,7 +1033,7 @@ var ServerErrorCase = /** @class */ (function (_super) {
         var _this = _super.call(this, pattern, function (res) {
             return listener
                 .afterServerError(res)
-                .select(listener.resume(token));
+                .select(listener.resumed(token));
         }) || this;
         _this.pattern = pattern;
         _this.token = token;
@@ -1071,8 +1071,8 @@ var ResumeCase = /** @class */ (function (_super) {
     function ResumeCase(pattern, interest) {
         var _this = _super.call(this, pattern, function (r) {
             return interest
-                .beforeResume(r)
-                .select(interest.resume(r));
+                .beforeResumed(r)
+                .select(interest.resumed(r));
         }) || this;
         _this.pattern = pattern;
         _this.interest = interest;
@@ -1091,8 +1091,8 @@ var SuspendCase = /** @class */ (function (_super) {
     function SuspendCase(pattern, interest) {
         var _this = _super.call(this, pattern, function (_) {
             return interest
-                .beforeSuspend()
-                .select(interest.suspend());
+                .beforeSuspended()
+                .select(interest.suspended());
         }) || this;
         _this.pattern = pattern;
         _this.interest = interest;
@@ -14274,8 +14274,8 @@ var AbortImpl = /** @class */ (function (_super) {
     AbortImpl.prototype.beforeAbort = function (_) {
         return this.__record('beforeAbort', [_]);
     };
-    AbortImpl.prototype.suspend = function () {
-        this.__record('suspend', []);
+    AbortImpl.prototype.suspended = function () {
+        this.__record('suspended', []);
         return [];
     };
     return AbortImpl;
@@ -14288,7 +14288,7 @@ describe('app/interact/data/form/abort', function () {
             var c = new abort_1.AbortCase(Cancel, t, m);
             c.match(new Cancel());
             must_1.must(m.__test.invokes.order()).equate([
-                'beforeAbort', 'suspend', 'select', 'tell'
+                'beforeAbort', 'suspended', 'select', 'tell'
             ]);
         });
     });
@@ -14364,8 +14364,8 @@ var ClientImpl = /** @class */ (function (_super) {
         this.__record('edit', []);
         return [];
     };
-    ClientImpl.prototype.resume = function (_) {
-        this.__record('resume', [_]);
+    ClientImpl.prototype.resumed = function (_) {
+        this.__record('resumed', [_]);
         return [];
     };
     ClientImpl.prototype.suspend = function () {
@@ -14403,7 +14403,7 @@ describe('app/interact/data/form/client', function () {
             var c = new client_1.AbortCase(Cancel, t, m);
             c.match(new Cancel());
             must_1.must(m.__test.invokes.order()).equate([
-                'afterFormAborted', 'resume', 'select'
+                'afterFormAborted', 'resumed', 'select'
             ]);
         });
     });
@@ -14414,7 +14414,7 @@ describe('app/interact/data/form/client', function () {
             var c = new client_1.SaveCase(Save, t, m);
             c.match(new Save());
             must_1.must(m.__test.invokes.order()).equate([
-                'afterFormSaved', 'resume', 'select'
+                'afterFormSaved', 'resumed', 'select'
             ]);
         });
     });
@@ -14467,8 +14467,8 @@ var FormImpl = /** @class */ (function (_super) {
     FormImpl.prototype.onInput = function (_) {
         return this.__record('onInput', [_]);
     };
-    FormImpl.prototype.resume = function (_) {
-        this.__record('resume', [_]);
+    FormImpl.prototype.resumed = function (_) {
+        this.__record('resumed', [_]);
         return [];
     };
     return FormImpl;
@@ -14480,7 +14480,7 @@ describe('app/interact/data/form', function () {
             var c = new form_1.CreateCase(Request, m);
             c.match(new Request());
             must_1.must(m.__test.invokes.order()).equate([
-                'beforeCreate', 'resume', 'select'
+                'beforeCreate', 'resumed', 'select'
             ]);
         });
     });
@@ -14490,7 +14490,7 @@ describe('app/interact/data/form', function () {
             var c = new form_1.EditCase(Request, m);
             c.match(new Request());
             must_1.must(m.__test.invokes.order()).equate([
-                'beforeEdit', 'resume', 'select'
+                'beforeEdit', 'resumed', 'select'
             ]);
         });
     });
@@ -14501,7 +14501,7 @@ describe('app/interact/data/form', function () {
             var c = new form_1.InputCase(Event, t, m);
             c.match(new Event());
             must_1.must(m.__test.invokes.order()).equate([
-                'onInput', 'resume', 'select'
+                'onInput', 'resumed', 'select'
             ]);
         });
     });
@@ -14613,8 +14613,8 @@ var ValidateImpl = /** @class */ (function (_super) {
     ValidateImpl.prototype.afterFieldInvalid = function (name, f, e) {
         return this.__record('afterFieldInvalid', [name, f, e]);
     };
-    ValidateImpl.prototype.resume = function (_) {
-        this.__record('resume', [_]);
+    ValidateImpl.prototype.resumed = function (_) {
+        this.__record('resumed', [_]);
         return [];
     };
     return ValidateImpl;
@@ -14627,7 +14627,7 @@ describe('app/interact/data/form/validate', function () {
             var c = new validate_1.InputCase(Event, t, m);
             c.match(new Event('name', 12));
             must_1.must(m.__test.invokes.order()).equate([
-                'validateEvent', 'afterFieldValid', 'resume', 'select'
+                'validateEvent', 'afterFieldValid', 'resumed', 'select'
             ]);
         });
         it('should invoke the afterFieldInvalid hook', function () {
@@ -14636,7 +14636,7 @@ describe('app/interact/data/form/validate', function () {
             var c = new validate_1.InputCase(Event, t, m);
             c.match(new Event('name', 0));
             must_1.must(m.__test.invokes.order()).equate([
-                'validateEvent', 'afterFieldInvalid', 'resume', 'select'
+                'validateEvent', 'afterFieldInvalid', 'resumed', 'select'
             ]);
         });
     });
@@ -14742,8 +14742,8 @@ var FilteredImpl = /** @class */ (function (_super) {
     FilteredImpl.prototype.clearFilters = function () {
         return this.__record('clearFilters', []);
     };
-    FilteredImpl.prototype.resume = function (_) {
-        this.__record('resume', [_]);
+    FilteredImpl.prototype.resumed = function (_) {
+        this.__record('resumed', [_]);
         return [];
     };
     return FilteredImpl;
@@ -14756,7 +14756,7 @@ describe('app/interact/data/search/filtered', function () {
             var c = new filtered_1.SetFilterCase(Filter, t, m);
             c.match(new Filter());
             must_1.must(m.__test.invokes.order()).equate([
-                'setFilter', 'resume', 'select'
+                'setFilter', 'resumed', 'select'
             ]);
         });
     });
@@ -14767,7 +14767,7 @@ describe('app/interact/data/search/filtered', function () {
             var c = new filtered_1.RemoveFilterCase(Filter, t, m);
             c.match(new Filter());
             must_1.must(m.__test.invokes.order()).equate([
-                'removeFilter', 'resume', 'select'
+                'removeFilter', 'resumed', 'select'
             ]);
         });
     });
@@ -14778,7 +14778,7 @@ describe('app/interact/data/search/filtered', function () {
             var c = new filtered_1.ClearFiltersCase(Filter, t, m);
             c.match(new Filter());
             must_1.must(m.__test.invokes.order()).equate([
-                'clearFilters', 'resume', 'select'
+                'clearFilters', 'resumed', 'select'
             ]);
         });
     });
@@ -14823,8 +14823,8 @@ var RealtimeImpl = /** @class */ (function (_super) {
     RealtimeImpl.prototype.search = function (e) {
         return this.__record('search', [e]);
     };
-    RealtimeImpl.prototype.resume = function (_) {
-        this.__record('resume', [_]);
+    RealtimeImpl.prototype.resumed = function (_) {
+        this.__record('resumed', [_]);
         return [];
     };
     return RealtimeImpl;
@@ -14837,7 +14837,7 @@ describe('app/interact/data/search/realtime', function () {
             var c = new realtime_1.SearchCase(Exec, t, m);
             c.match(new Exec());
             must_1.must(m.__test.invokes.order()).equate([
-                'search', 'resume', 'select'
+                'search', 'resumed', 'select'
             ]);
         });
     });
@@ -14865,20 +14865,20 @@ var InteractImpl = /** @class */ (function (_super) {
     function InteractImpl() {
         return _super !== null && _super.apply(this, arguments) || this;
     }
-    InteractImpl.prototype.beforeResume = function (_) {
-        this.__record('beforeResume', [_]);
+    InteractImpl.prototype.beforeResumed = function (_) {
+        this.__record('beforeResumed', [_]);
         return this;
     };
-    InteractImpl.prototype.beforeSuspend = function () {
-        this.__record('beforeSuspend', []);
+    InteractImpl.prototype.beforeSuspended = function () {
+        this.__record('beforeSuspended', []);
         return this;
     };
-    InteractImpl.prototype.resume = function (_) {
-        this.__record('resume', [_]);
+    InteractImpl.prototype.resumed = function (_) {
+        this.__record('resumed', [_]);
         return [];
     };
-    InteractImpl.prototype.suspend = function () {
-        this.__record('suspend', []);
+    InteractImpl.prototype.suspended = function () {
+        this.__record('suspended', []);
         return [];
     };
     return InteractImpl;
@@ -14953,7 +14953,7 @@ describe('app/interact/http', function () {
             var c = new http_1.OkCase(Response, t, m);
             c.match(new Response());
             must_1.must(m.__test.invokes.order()).equate([
-                'afterOk', 'resume', 'select'
+                'afterOk', 'resumed', 'select'
             ]);
         });
     });
@@ -14964,7 +14964,7 @@ describe('app/interact/http', function () {
             var c = new http_1.CreatedCase(Response, t, m);
             c.match(new Response());
             must_1.must(m.__test.invokes.order()).equate([
-                'afterCreated', 'resume', 'select'
+                'afterCreated', 'resumed', 'select'
             ]);
         });
     });
@@ -14975,7 +14975,7 @@ describe('app/interact/http', function () {
             var c = new http_1.NoContentCase(Response, t, m);
             c.match(new Response());
             must_1.must(m.__test.invokes.order()).equate([
-                'afterNoContent', 'resume', 'select'
+                'afterNoContent', 'resumed', 'select'
             ]);
         });
     });
@@ -14986,7 +14986,7 @@ describe('app/interact/http', function () {
             var c = new http_1.ForbiddenCase(Response, t, m);
             c.match(new Response());
             must_1.must(m.__test.invokes.order()).equate([
-                'afterForbidden', 'resume', 'select'
+                'afterForbidden', 'resumed', 'select'
             ]);
         });
     });
@@ -14997,7 +14997,7 @@ describe('app/interact/http', function () {
             var c = new http_1.UnauthorizedCase(Response, t, m);
             c.match(new Response());
             must_1.must(m.__test.invokes.order()).equate([
-                'afterUnauthorized', 'resume', 'select'
+                'afterUnauthorized', 'resumed', 'select'
             ]);
         });
     });
@@ -15008,7 +15008,7 @@ describe('app/interact/http', function () {
             var c = new http_1.NotFoundCase(Response, t, m);
             c.match(new Response());
             must_1.must(m.__test.invokes.order()).equate([
-                'afterNotFound', 'resume', 'select'
+                'afterNotFound', 'resumed', 'select'
             ]);
         });
     });
@@ -15019,7 +15019,7 @@ describe('app/interact/http', function () {
             var c = new http_1.ServerErrorCase(Response, t, m);
             c.match(new Response());
             must_1.must(m.__test.invokes.order()).equate([
-                'afterServerError', 'resume', 'select'
+                'afterServerError', 'resumed', 'select'
             ]);
         });
     });
@@ -15061,18 +15061,18 @@ var InteractImpl = /** @class */ (function (_super) {
     function InteractImpl() {
         return _super !== null && _super.apply(this, arguments) || this;
     }
-    InteractImpl.prototype.beforeResume = function (_) {
-        return this.__record('beforeResume', [_]);
+    InteractImpl.prototype.beforeResumed = function (_) {
+        return this.__record('beforeResumed', [_]);
     };
-    InteractImpl.prototype.beforeSuspend = function () {
-        return this.__record('beforeSuspend', []);
+    InteractImpl.prototype.beforeSuspended = function () {
+        return this.__record('beforeSuspended', []);
     };
-    InteractImpl.prototype.resume = function (_) {
-        this.__record('resume', [_]);
+    InteractImpl.prototype.resumed = function (_) {
+        this.__record('resumed', [_]);
         return [];
     };
-    InteractImpl.prototype.suspend = function () {
-        this.__record('suspend', []);
+    InteractImpl.prototype.suspended = function () {
+        this.__record('suspended', []);
         return [];
     };
     return InteractImpl;
@@ -15085,7 +15085,7 @@ describe('app/interact', function () {
             var c = new interact_1.ResumeCase(Resume, m);
             c.match(new Resume('main'));
             must_1.must(m.__test.invokes.order()).equate([
-                'beforeResume', 'resume', 'select'
+                'beforeResumed', 'resumed', 'select'
             ]);
         });
     });
@@ -15095,7 +15095,7 @@ describe('app/interact', function () {
             var c = new interact_1.SuspendCase(Suspend, m);
             c.match(new Suspend('router'));
             must_1.must(m.__test.invokes.order()).equate([
-                'beforeSuspend', 'suspend', 'select'
+                'beforeSuspended', 'suspended', 'select'
             ]);
         });
     });

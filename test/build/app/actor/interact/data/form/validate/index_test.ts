@@ -38,9 +38,9 @@ class ValidateImpl extends ActorImpl implements Validate<Event, Request, void>{
 
     }
 
-    resume(_: Request) {
+    resumed(_: Request) {
 
-        this.__record('resume', [_]);
+        this.__record('resumed', [_]);
         return [];
 
     }
@@ -59,7 +59,7 @@ describe('app/interact/data/form/validate', () => {
 
             c.match(new Event('name', 12));
             must(m.__test.invokes.order()).equate([
-                'validateEvent', 'afterFieldValid', 'resume', 'select'
+                'validateEvent', 'afterFieldValid', 'resumed', 'select'
             ]);
 
         });
@@ -72,11 +72,10 @@ describe('app/interact/data/form/validate', () => {
 
             c.match(new Event('name', 0));
             must(m.__test.invokes.order()).equate([
-                'validateEvent', 'afterFieldInvalid', 'resume', 'select'
+                'validateEvent', 'afterFieldInvalid', 'resumed', 'select'
             ]);
 
         });
-
 
     });
 

@@ -19,20 +19,20 @@ var InteractImpl = /** @class */ (function (_super) {
     function InteractImpl() {
         return _super !== null && _super.apply(this, arguments) || this;
     }
-    InteractImpl.prototype.beforeResume = function (_) {
-        this.__record('beforeResume', [_]);
+    InteractImpl.prototype.beforeResumed = function (_) {
+        this.__record('beforeResumed', [_]);
         return this;
     };
-    InteractImpl.prototype.beforeSuspend = function () {
-        this.__record('beforeSuspend', []);
+    InteractImpl.prototype.beforeSuspended = function () {
+        this.__record('beforeSuspended', []);
         return this;
     };
-    InteractImpl.prototype.resume = function (_) {
-        this.__record('resume', [_]);
+    InteractImpl.prototype.resumed = function (_) {
+        this.__record('resumed', [_]);
         return [];
     };
-    InteractImpl.prototype.suspend = function () {
-        this.__record('suspend', []);
+    InteractImpl.prototype.suspended = function () {
+        this.__record('suspended', []);
         return [];
     };
     return InteractImpl;

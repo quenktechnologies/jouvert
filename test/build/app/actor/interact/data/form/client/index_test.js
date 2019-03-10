@@ -67,8 +67,8 @@ var ClientImpl = /** @class */ (function (_super) {
         this.__record('edit', []);
         return [];
     };
-    ClientImpl.prototype.resume = function (_) {
-        this.__record('resume', [_]);
+    ClientImpl.prototype.resumed = function (_) {
+        this.__record('resumed', [_]);
         return [];
     };
     ClientImpl.prototype.suspend = function () {
@@ -106,7 +106,7 @@ describe('app/interact/data/form/client', function () {
             var c = new client_1.AbortCase(Cancel, t, m);
             c.match(new Cancel());
             must_1.must(m.__test.invokes.order()).equate([
-                'afterFormAborted', 'resume', 'select'
+                'afterFormAborted', 'resumed', 'select'
             ]);
         });
     });
@@ -117,7 +117,7 @@ describe('app/interact/data/form/client', function () {
             var c = new client_1.SaveCase(Save, t, m);
             c.match(new Save());
             must_1.must(m.__test.invokes.order()).equate([
-                'afterFormSaved', 'resume', 'select'
+                'afterFormSaved', 'resumed', 'select'
             ]);
         });
     });

@@ -38,8 +38,8 @@ var AbortImpl = /** @class */ (function (_super) {
     AbortImpl.prototype.beforeAbort = function (_) {
         return this.__record('beforeAbort', [_]);
     };
-    AbortImpl.prototype.suspend = function () {
-        this.__record('suspend', []);
+    AbortImpl.prototype.suspended = function () {
+        this.__record('suspended', []);
         return [];
     };
     return AbortImpl;
@@ -52,7 +52,7 @@ describe('app/interact/data/form/abort', function () {
             var c = new abort_1.AbortCase(Cancel, t, m);
             c.match(new Cancel());
             must_1.must(m.__test.invokes.order()).equate([
-                'beforeAbort', 'suspend', 'select', 'tell'
+                'beforeAbort', 'suspended', 'select', 'tell'
             ]);
         });
     });

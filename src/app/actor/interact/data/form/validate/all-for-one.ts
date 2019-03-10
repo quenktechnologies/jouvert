@@ -69,7 +69,7 @@ export class InputCase
                     (<AllForOne<D, E, R, MResumed>>form
                         .afterFieldInvalid(e.name, f, e))
                         .afterFormInvalid())
-                .map(() => form.select(form.resume(token)));
+                .map(() => form.select(form.resumed(token)));
 
         });
 

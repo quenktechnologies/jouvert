@@ -17,8 +17,8 @@
 import { Address } from '@quenk/potoo/lib/actor/address';
 import { Constructor } from '@quenk/noni/lib/data/type/constructor';
 import { Case as Case } from '@quenk/potoo/lib/actor/resident/case';
-import { BeforeSuspends, Suspends } from './suspends';
-import { BeforeResumes, Resumes } from './resumes';
+import { BeforeSuspended, Suspended } from './suspended';
+import { BeforeResumed, Resumed } from './resumed';
 
 /**
  * ResumedMessages type.
@@ -79,14 +79,14 @@ export interface Suspend {
  */
 export interface Interact<R, MSuspended, MResumed>
     extends
-    BeforeSuspends,
-    Suspends<MSuspended>,
-    BeforeResumes<R>,
-    Resumes<R, ResumedMessages<R, MResumed>> {
+    BeforeSuspended,
+    Suspended<MSuspended>,
+    BeforeResumed<R>,
+    Resumed<R, ResumedMessages<R, MResumed>> {
 
-    beforeResume(r: R): Interact<R, MSuspended, MResumed>
+    beforeResumed(r: R): Interact<R, MSuspended, MResumed>
 
-    beforeSuspend(): Interact<R, MSuspended, MResumed>
+    beforeSuspended(): Interact<R, MSuspended, MResumed>
 
 }
 
@@ -103,8 +103,8 @@ export class ResumeCase<R, MResumed, MSuspended> extends Case<R> {
 
         super(pattern, (r: R) =>
             interest
-                .beforeResume(r)
-                .select(interest.resume(r)));
+                .beforeResumed(r)
+                .select(interest.resumed(r)));
 
     }
 
@@ -123,8 +123,8 @@ export class SuspendCase<S, R, MResumed, MSuspended> extends Case<S> {
 
         super(pattern, (_: S) =>
             interest
-                .beforeSuspend()
-                .select(interest.suspend()));
+                .beforeSuspended()
+                .select(interest.suspended()));
 
     }
 

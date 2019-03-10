@@ -17,9 +17,9 @@ class AbortImpl extends ActorImpl implements Abort<Cancel, Request, void>  {
 
     }
 
-    suspend() {
+    suspended() {
 
-        this.__record('suspend', []);
+        this.__record('suspended', []);
         return [];
 
     }
@@ -38,7 +38,7 @@ describe('app/interact/data/form/abort', () => {
 
             c.match(new Cancel());
             must(m.__test.invokes.order()).equate([
-                'beforeAbort', 'suspend', 'select', 'tell'
+                'beforeAbort', 'suspended', 'select', 'tell'
             ]);
 
         });

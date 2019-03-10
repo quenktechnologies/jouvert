@@ -18,28 +18,28 @@ class Suspend {
 export class InteractImpl<R, MSuspended, MResumed> extends ActorImpl
     implements Interact<R, MSuspended, MResumed>  {
 
-    beforeResume(_: R) {
+    beforeResumed(_: R) {
 
-        return this.__record('beforeResume', [_]);
-
-    }
-
-    beforeSuspend() {
-
-        return this.__record('beforeSuspend', []);
+        return this.__record('beforeResumed', [_]);
 
     }
 
-    resume(_: R) {
+    beforeSuspended() {
 
-        this.__record('resume', [_]);
+        return this.__record('beforeSuspended', []);
+
+    }
+
+    resumed(_: R) {
+
+        this.__record('resumed', [_]);
         return [];
 
     }
 
-    suspend() {
+    suspended() {
 
-        this.__record('suspend', []);
+        this.__record('suspended', []);
         return [];
 
     }
@@ -57,7 +57,7 @@ describe('app/interact', () => {
 
             c.match(new Resume('main'));
             must(m.__test.invokes.order()).equate([
-                'beforeResume', 'resume', 'select'
+                'beforeResumed', 'resumed', 'select'
             ]);
 
         });
@@ -73,7 +73,7 @@ describe('app/interact', () => {
 
             c.match(new Suspend('router'));
             must(m.__test.invokes.order()).equate([
-                'beforeSuspend', 'suspend', 'select'
+                'beforeSuspended', 'suspended', 'select'
             ]);
 
         });

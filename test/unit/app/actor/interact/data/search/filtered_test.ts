@@ -31,9 +31,9 @@ class FilteredImpl extends ActorImpl implements Filtered<Filter, Resume, void>  
 
     }
 
-    resume(_: Resume) {
+    resumed(_: Resume) {
 
-        this.__record('resume', [_]);
+        this.__record('resumed', [_]);
         return [];
 
     }
@@ -53,7 +53,7 @@ describe('app/interact/data/search/filtered', () => {
 
             c.match(new Filter());
             must(m.__test.invokes.order()).equate([
-                'setFilter', 'resume', 'select'
+                'setFilter', 'resumed', 'select'
             ]);
 
         });
@@ -70,7 +70,7 @@ describe('app/interact/data/search/filtered', () => {
 
             c.match(new Filter());
             must(m.__test.invokes.order()).equate([
-                'removeFilter', 'resume', 'select'
+                'removeFilter', 'resumed', 'select'
             ]);
 
         });
@@ -87,7 +87,7 @@ describe('app/interact/data/search/filtered', () => {
 
             c.match(new Filter());
             must(m.__test.invokes.order()).equate([
-                'clearFilters', 'resume', 'select'
+                'clearFilters', 'resumed', 'select'
             ]);
 
         });

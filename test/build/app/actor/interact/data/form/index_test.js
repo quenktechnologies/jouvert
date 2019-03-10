@@ -44,8 +44,8 @@ var FormImpl = /** @class */ (function (_super) {
     FormImpl.prototype.onInput = function (_) {
         return this.__record('onInput', [_]);
     };
-    FormImpl.prototype.resume = function (_) {
-        this.__record('resume', [_]);
+    FormImpl.prototype.resumed = function (_) {
+        this.__record('resumed', [_]);
         return [];
     };
     return FormImpl;
@@ -57,7 +57,7 @@ describe('app/interact/data/form', function () {
             var c = new form_1.CreateCase(Request, m);
             c.match(new Request());
             must_1.must(m.__test.invokes.order()).equate([
-                'beforeCreate', 'resume', 'select'
+                'beforeCreate', 'resumed', 'select'
             ]);
         });
     });
@@ -67,7 +67,7 @@ describe('app/interact/data/form', function () {
             var c = new form_1.EditCase(Request, m);
             c.match(new Request());
             must_1.must(m.__test.invokes.order()).equate([
-                'beforeEdit', 'resume', 'select'
+                'beforeEdit', 'resumed', 'select'
             ]);
         });
     });
@@ -78,7 +78,7 @@ describe('app/interact/data/form', function () {
             var c = new form_1.InputCase(Event, t, m);
             c.match(new Event());
             must_1.must(m.__test.invokes.order()).equate([
-                'onInput', 'resume', 'select'
+                'onInput', 'resumed', 'select'
             ]);
         });
     });

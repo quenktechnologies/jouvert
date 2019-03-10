@@ -1,6 +1,6 @@
 import { Constructor } from '@quenk/noni/lib/data/type/constructor';
 import { Case } from '@quenk/potoo/lib/actor/resident/case';
-import { Resumes } from '../../resumes';
+import { Resumed } from '../../resumed';
 
 /**
  * ResumedMessages type.
@@ -15,7 +15,7 @@ export type ResumedMessages<A, MResumed>
  * of a filtered search.
  */
 export interface Filtered<A, R, MResumed>
-    extends Resumes<R, ResumedMessages<A, MResumed>> {
+    extends Resumed<R, ResumedMessages<A, MResumed>> {
 
     /**
      * setFilter
@@ -48,7 +48,7 @@ export class SetFilterCase<A, R, MResumed> extends Case<A> {
         super(pattern, (f: A) =>
             filtered
                 .setFilter(f)
-                .select(filtered.resume(token)));
+                .select(filtered.resumed(token)));
 
     }
 
@@ -68,7 +68,7 @@ export class RemoveFilterCase<A, R, MResumed> extends Case<A> {
         super(pattern, (f: A) =>
             filtered
                 .removeFilter(f)
-                .select(filtered.resume(token)));
+                .select(filtered.resumed(token)));
 
     }
 
@@ -88,7 +88,7 @@ export class ClearFiltersCase<A, R, MResumed> extends Case<A> {
         super(pattern, (_: A) =>
             filtered
                 .clearFilters()
-                .select(filtered.resume(token)));
+                .select(filtered.resumed(token)));
 
     }
 

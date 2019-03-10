@@ -17,9 +17,9 @@ class RealtimeImpl extends ActorImpl implements Realtime<Exec, Resume, void>  {
 
     }
 
-    resume(_: Resume) {
+    resumed(_: Resume) {
 
-        this.__record('resume', [_]);
+        this.__record('resumed', [_]);
         return [];
 
     }
@@ -39,7 +39,7 @@ describe('app/interact/data/search/realtime', () => {
 
             c.match(new Exec());
             must(m.__test.invokes.order()).equate([
-                'search', 'resume', 'select'
+                'search', 'resumed', 'select'
             ]);
 
         });

@@ -96,7 +96,7 @@ export abstract class HashRouter<R extends Request>
     /**
      * createRequest is a constructor for new Request instances.
      */
-      abstract createRequest(path: Path, query: Query, params: Params): Future<R>
+    abstract createRequest(path: Path, query: Query, params: Params): Future<R>
 
     /**
      * onError is invoked when an non-thrown error is invoked.
@@ -106,7 +106,7 @@ export abstract class HashRouter<R extends Request>
     /**
      * onNotFound is invoked each time the user navigates to an unknown route.
      */
-    abstract onNotFound(path: string): Future<void>
+    abstract onNotFound(path: Path): Future<void>
 
     handleEvent(_: Event): void {
 

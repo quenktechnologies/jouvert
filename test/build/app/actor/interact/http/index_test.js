@@ -65,7 +65,7 @@ describe('app/interact/http', function () {
             var c = new http_1.OkCase(Response, t, m);
             c.match(new Response());
             must_1.must(m.__test.invokes.order()).equate([
-                'afterOk', 'resume', 'select'
+                'afterOk', 'resumed', 'select'
             ]);
         });
     });
@@ -76,7 +76,7 @@ describe('app/interact/http', function () {
             var c = new http_1.CreatedCase(Response, t, m);
             c.match(new Response());
             must_1.must(m.__test.invokes.order()).equate([
-                'afterCreated', 'resume', 'select'
+                'afterCreated', 'resumed', 'select'
             ]);
         });
     });
@@ -87,7 +87,7 @@ describe('app/interact/http', function () {
             var c = new http_1.NoContentCase(Response, t, m);
             c.match(new Response());
             must_1.must(m.__test.invokes.order()).equate([
-                'afterNoContent', 'resume', 'select'
+                'afterNoContent', 'resumed', 'select'
             ]);
         });
     });
@@ -98,7 +98,7 @@ describe('app/interact/http', function () {
             var c = new http_1.ForbiddenCase(Response, t, m);
             c.match(new Response());
             must_1.must(m.__test.invokes.order()).equate([
-                'afterForbidden', 'resume', 'select'
+                'afterForbidden', 'resumed', 'select'
             ]);
         });
     });
@@ -109,7 +109,7 @@ describe('app/interact/http', function () {
             var c = new http_1.UnauthorizedCase(Response, t, m);
             c.match(new Response());
             must_1.must(m.__test.invokes.order()).equate([
-                'afterUnauthorized', 'resume', 'select'
+                'afterUnauthorized', 'resumed', 'select'
             ]);
         });
     });
@@ -120,7 +120,7 @@ describe('app/interact/http', function () {
             var c = new http_1.NotFoundCase(Response, t, m);
             c.match(new Response());
             must_1.must(m.__test.invokes.order()).equate([
-                'afterNotFound', 'resume', 'select'
+                'afterNotFound', 'resumed', 'select'
             ]);
         });
     });
@@ -131,7 +131,7 @@ describe('app/interact/http', function () {
             var c = new http_1.ServerErrorCase(Response, t, m);
             c.match(new Response());
             must_1.must(m.__test.invokes.order()).equate([
-                'afterServerError', 'resume', 'select'
+                'afterServerError', 'resumed', 'select'
             ]);
         });
     });

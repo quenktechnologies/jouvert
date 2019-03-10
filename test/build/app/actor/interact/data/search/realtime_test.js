@@ -36,8 +36,8 @@ var RealtimeImpl = /** @class */ (function (_super) {
     RealtimeImpl.prototype.search = function (e) {
         return this.__record('search', [e]);
     };
-    RealtimeImpl.prototype.resume = function (_) {
-        this.__record('resume', [_]);
+    RealtimeImpl.prototype.resumed = function (_) {
+        this.__record('resumed', [_]);
         return [];
     };
     return RealtimeImpl;
@@ -50,7 +50,7 @@ describe('app/interact/data/search/realtime', function () {
             var c = new realtime_1.SearchCase(Exec, t, m);
             c.match(new Exec());
             must_1.must(m.__test.invokes.order()).equate([
-                'search', 'resume', 'select'
+                'search', 'resumed', 'select'
             ]);
         });
     });

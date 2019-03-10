@@ -1,6 +1,6 @@
 import { Constructor } from '@quenk/noni/lib/data/type/constructor';
 import { Case } from '@quenk/potoo/lib/actor/resident/case';
-import { Resumes } from '../../resumes';
+import { Resumed } from '../../resumed';
 
 /**
  * ResumedMessages type.
@@ -30,7 +30,7 @@ export type ResumedMessages<E, MResumed>
  * @param <MResumed>- Additional messages handled while resumed.
  */
 export interface Realtime<E, R, MResumed>
-  extends Resumes<R, ResumedMessages<E, MResumed>> {
+    extends Resumed<R, ResumedMessages<E, MResumed>> {
 
     /**
      * search
@@ -52,7 +52,7 @@ export class SearchCase<E, R, MResumed> extends Case<E>  {
         super(pattern, (e: E) =>
             realtime
                 .search(e)
-                .select(realtime.resume(token)));
+                .select(realtime.resumed(token)));
 
     }
 

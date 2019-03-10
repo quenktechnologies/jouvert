@@ -33,18 +33,18 @@ var InteractImpl = /** @class */ (function (_super) {
     function InteractImpl() {
         return _super !== null && _super.apply(this, arguments) || this;
     }
-    InteractImpl.prototype.beforeResume = function (_) {
-        return this.__record('beforeResume', [_]);
+    InteractImpl.prototype.beforeResumed = function (_) {
+        return this.__record('beforeResumed', [_]);
     };
-    InteractImpl.prototype.beforeSuspend = function () {
-        return this.__record('beforeSuspend', []);
+    InteractImpl.prototype.beforeSuspended = function () {
+        return this.__record('beforeSuspended', []);
     };
-    InteractImpl.prototype.resume = function (_) {
-        this.__record('resume', [_]);
+    InteractImpl.prototype.resumed = function (_) {
+        this.__record('resumed', [_]);
         return [];
     };
-    InteractImpl.prototype.suspend = function () {
-        this.__record('suspend', []);
+    InteractImpl.prototype.suspended = function () {
+        this.__record('suspended', []);
         return [];
     };
     return InteractImpl;
@@ -57,7 +57,7 @@ describe('app/interact', function () {
             var c = new interact_1.ResumeCase(Resume, m);
             c.match(new Resume('main'));
             must_1.must(m.__test.invokes.order()).equate([
-                'beforeResume', 'resume', 'select'
+                'beforeResumed', 'resumed', 'select'
             ]);
         });
     });
@@ -67,7 +67,7 @@ describe('app/interact', function () {
             var c = new interact_1.SuspendCase(Suspend, m);
             c.match(new Suspend('router'));
             must_1.must(m.__test.invokes.order()).equate([
-                'beforeSuspend', 'suspend', 'select'
+                'beforeSuspended', 'suspended', 'select'
             ]);
         });
     });

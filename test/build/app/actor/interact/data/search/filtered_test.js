@@ -42,8 +42,8 @@ var FilteredImpl = /** @class */ (function (_super) {
     FilteredImpl.prototype.clearFilters = function () {
         return this.__record('clearFilters', []);
     };
-    FilteredImpl.prototype.resume = function (_) {
-        this.__record('resume', [_]);
+    FilteredImpl.prototype.resumed = function (_) {
+        this.__record('resumed', [_]);
         return [];
     };
     return FilteredImpl;
@@ -56,7 +56,7 @@ describe('app/interact/data/search/filtered', function () {
             var c = new filtered_1.SetFilterCase(Filter, t, m);
             c.match(new Filter());
             must_1.must(m.__test.invokes.order()).equate([
-                'setFilter', 'resume', 'select'
+                'setFilter', 'resumed', 'select'
             ]);
         });
     });
@@ -67,7 +67,7 @@ describe('app/interact/data/search/filtered', function () {
             var c = new filtered_1.RemoveFilterCase(Filter, t, m);
             c.match(new Filter());
             must_1.must(m.__test.invokes.order()).equate([
-                'removeFilter', 'resume', 'select'
+                'removeFilter', 'resumed', 'select'
             ]);
         });
     });
@@ -78,7 +78,7 @@ describe('app/interact/data/search/filtered', function () {
             var c = new filtered_1.ClearFiltersCase(Filter, t, m);
             c.match(new Filter());
             must_1.must(m.__test.invokes.order()).equate([
-                'clearFilters', 'resume', 'select'
+                'clearFilters', 'resumed', 'select'
             ]);
         });
     });

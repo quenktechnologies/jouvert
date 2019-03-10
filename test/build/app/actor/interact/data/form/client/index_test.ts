@@ -51,9 +51,9 @@ class ClientImpl extends ActorImpl
 
     }
 
-    resume(_: Resume) {
+    resumed(_: Resume) {
 
-        this.__record('resume', [_]);
+        this.__record('resumed', [_]);
         return [];
 
     }
@@ -112,7 +112,7 @@ describe('app/interact/data/form/client', () => {
 
             c.match(new Cancel());
             must(m.__test.invokes.order()).equate([
-                'afterFormAborted', 'resume', 'select'
+                'afterFormAborted', 'resumed', 'select'
             ]);
 
         });
@@ -129,7 +129,7 @@ describe('app/interact/data/form/client', () => {
 
             c.match(new Save());
             must(m.__test.invokes.order()).equate([
-                'afterFormSaved', 'resume', 'select'
+                'afterFormSaved', 'resumed', 'select'
             ]);
 
         });

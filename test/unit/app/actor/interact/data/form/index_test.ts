@@ -36,9 +36,9 @@ class FormImpl extends ActorImpl
 
     }
 
-    resume(_: Request) {
+    resumed(_: Request) {
 
-        this.__record('resume', [_]);
+        this.__record('resumed', [_]);
         return [];
 
     }
@@ -56,7 +56,7 @@ describe('app/interact/data/form', () => {
 
             c.match(new Request());
             must(m.__test.invokes.order()).equate([
-                'beforeCreate', 'resume', 'select'
+                'beforeCreate', 'resumed', 'select'
             ]);
 
         });
@@ -72,7 +72,7 @@ describe('app/interact/data/form', () => {
 
             c.match(new Request());
             must(m.__test.invokes.order()).equate([
-                'beforeEdit', 'resume', 'select'
+                'beforeEdit', 'resumed', 'select'
             ]);
 
         });
@@ -89,13 +89,11 @@ describe('app/interact/data/form', () => {
 
             c.match(new Event());
             must(m.__test.invokes.order()).equate([
-                'onInput', 'resume', 'select'
+                'onInput', 'resumed', 'select'
             ]);
 
         });
 
     });
-
-
 
 });

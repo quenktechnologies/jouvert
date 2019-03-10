@@ -1,7 +1,7 @@
 import { must } from '@quenk/must';
 import {
-    Scheduler,
-    ScheduleCase,
+    Router,
+    DispatchCase,
     AckListener,
     AckCase,
     ContinueListener,
@@ -11,8 +11,8 @@ import {
     MessageListener,
     MessageCase
 
-} from '../../../../../lib/app/actor/runtime/scheduler';
-import { ActorImpl } from '../fixtures/actor';
+} from '../../../../../../lib/app/actor/api/router';
+import { ActorImpl } from '../../fixtures/actor';
 
 type MDispatching = Ack | Exp | Cont;
 
@@ -28,8 +28,8 @@ class Cont extends Parent { retry = false }
 
 class Message extends Parent { value = 12 }
 
-class Sched extends ActorImpl
-    implements Scheduler<Request, MDispatching, void>,
+class Rout extends ActorImpl
+    implements Router<Request, MDispatching, void>,
     AckListener<Ack, MDispatching>,
     ContinueListener<Cont, MDispatching>,
     ExpireListener<Exp, MDispatching>,
@@ -37,13 +37,20 @@ class Sched extends ActorImpl
 
     current = 'x';
 
-    beforeWait(_: Request) {
+    beforeRouting() {
+
+      this.__record('routing', []);
+      return this;
+
+    }
+
+    beforeAwaiting(_: Request) {
 
         return this.__record('beforeWait', [_]);
 
     }
 
-    waiting(_: Request) {
+    awaiting(_: Request) {
 
         this.__record('waiting', [_]);
         return [];
@@ -74,7 +81,7 @@ class Sched extends ActorImpl
 
     }
 
-    scheduling() {
+    routing() {
 
         this.__record('scheduling', []);
         return [];
@@ -83,14 +90,14 @@ class Sched extends ActorImpl
 
 }
 
-describe('scheduler', () => {
+describe('router', () => {
 
-    describe('ScheduleCase', () => {
+    describe('DispatchCase', () => {
 
         it('should transition to waiting()', () => {
 
-            let s = new Sched();
-            let c = new ScheduleCase(Request, s);
+            let s = new Rout();
+            let c = new DispatchCase(Request, s);
 
             c.match(new Request());
             must(s.__test.invokes.order()).equate([
@@ -107,7 +114,7 @@ describe('scheduler', () => {
 
         it('should transition to scheduling()', () => {
 
-            let s = new Sched();
+            let s = new Rout();
             let c = new AckCase(Ack, s);
 
             c.match(new Ack('x'));
@@ -125,7 +132,7 @@ describe('scheduler', () => {
 
         it('should transition to scheduling()', () => {
 
-            let s = new Sched();
+            let s = new Rout();
             let c = new ContinueCase(Cont, s);
 
             c.match(new Cont('x'));
@@ -144,7 +151,7 @@ describe('scheduler', () => {
 
         it('should transition to scheduling()', () => {
 
-            let s = new Sched();
+            let s = new Rout();
             let c = new ExpireCase(Exp, s);
 
             c.match(new Exp('x'));
@@ -162,7 +169,7 @@ describe('scheduler', () => {
 
         it('should transition to scheduling()', () => {
 
-            let s = new Sched();
+            let s = new Rout();
             let c = new MessageCase(Message, s);
 
             c.match(new Message('x'));

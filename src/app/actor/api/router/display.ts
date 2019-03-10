@@ -3,21 +3,20 @@ import { Maybe, just } from '@quenk/noni/lib/data/maybe';
 import { pure } from '@quenk/noni/lib/control/monad/future';
 import { Case, Default } from '@quenk/potoo/lib/actor/resident/case';
 import { Address } from '@quenk/potoo/lib/actor/address';
-import { Router as RealRouter } from '../../../browser/window/router';
+import { Router as RealRouter } from '../../../../browser/window/router';
+import { App } from '../../../';
+import { Proxy, Mutable, Immutable } from '../../';
+import { Routing } from './routing';
 import {
-    Schedulable,
-    Scheduler,
-    Timesout,
-    TimedScheduleCase,
+    Router,
+    DispatchCase,
     AckListener,
     AckCase,
     ContinueListener,
     ContinueCase,
     ExpireListener,
     ExpireCase
-} from '../../actor/runtime/scheduler';
-import { App } from '../../';
-import { Proxy, Mutable, Immutable } from '../';
+} from './';
 
 export const SUPERVISOR_ID = 'current';
 
@@ -27,24 +26,24 @@ export const SUPERVISOR_ID = 'current';
 export type TimeLimit = number;
 
 /**
- * Path for that activates control switching.
+ * Route that activates an actor.
  */
-export type Path = string;
+export type Route = string;
 
 /**
- * WaitingMessages type.
+ * AwaitingMessages type.
  */
-export type WaitingMessages
+export type AwaitingMessages
     = Ack
     | Cont
     | Exp
     ;
 
 /**
- * SchedulingMessages type.
+ * RoutingMessages type.
  */
-export type SchedulingMessages<R>
-    = Resume<R>
+export type RoutingMessages<T>
+    = T
     ;
 
 /**
@@ -57,7 +56,7 @@ export type SupervisorMessages
     ;
 
 /**
- * Routes map
+ * Routes to actor address map.
  */
 export interface Routes {
 
@@ -71,7 +70,7 @@ export interface Routes {
 export class Resume<R> {
 
     constructor(
-        public path: Path,
+        public route: Route,
         public actor: Address,
         public display: Address,
         public request: R) { }
@@ -103,7 +102,7 @@ export class Cont { }
  */
 export class Exp {
 
-    constructor(public path: Path) { }
+    constructor(public route: Route) { }
 
 }
 
@@ -157,31 +156,31 @@ export class Supervisor<R> extends Immutable<SupervisorMessages> {
  */
 export class AckProxy<R> extends Proxy
     implements
-    Schedulable<SchedulingMessages<R>>,
-    AckListener<Ack, SchedulingMessages<R>> {
+    Routing<RoutingMessages<Resume<R>>>,
+    AckListener<Ack, RoutingMessages<Resume<R>>> {
 
     constructor(
         public next: Resume<R>,
         public display: Address,
-        public instance: Router<R>) {
+        public instance: DisplayRouter<R>) {
 
         super(instance);
 
     }
 
-    scheduling() {
+    routing() {
 
-        return this.instance.scheduling();
+        return this.instance.routing();
 
     }
 
     afterAck(_: Ack): AckProxy<R> {
 
-      this.instance.current = just(this.spawn({
+        this.instance.current = just(this.spawn({
 
-        id: SUPERVISOR_ID,
+            id: SUPERVISOR_ID,
 
-        create: h => new Supervisor(this.next, this.display, this.self(), h)
+            create: h => new Supervisor(this.next, this.display, this.self(), h)
 
         }));
 
@@ -201,21 +200,21 @@ export class AckProxy<R> extends Proxy
  */
 export class ExpProxy<R> extends Proxy
     implements
-    Schedulable<SchedulingMessages<R>>,
-    ExpireListener<Exp, SchedulingMessages<R>>{
+    Routing<RoutingMessages<Resume<R>>>,
+    ExpireListener<Exp, RoutingMessages<Resume<R>>>{
 
     constructor(
         public next: Resume<R>,
         public display: Address,
-        public instance: Router<R>) { super(instance); }
+        public instance: DisplayRouter<R>) { super(instance); }
 
-    scheduling() {
+    routing() {
 
-        return this.instance.scheduling();
+        return this.instance.routing();
 
     }
 
-    afterExpire({ path }: Exp): ExpProxy<R> {
+    afterExpire({ route }: Exp): ExpProxy<R> {
 
         let { routes } = this.instance;
 
@@ -230,7 +229,7 @@ export class ExpProxy<R> extends Proxy
                 id: SUPERVISOR_ID,
 
                 create: h => new Supervisor(this.next, this.display,
-                  this.self(), h)
+                    this.self(), h)
 
             });
 
@@ -247,7 +246,7 @@ export class ExpProxy<R> extends Proxy
 
         }
 
-        this.instance.routes = exclude(routes, path);
+        this.instance.routes = exclude(routes, route);
 
         return this;
 
@@ -256,7 +255,7 @@ export class ExpProxy<R> extends Proxy
 }
 
 /**
- * Router provides an actor that allows controller style actors to stream 
+ * DisplayRouter provides an actor that allows controller style actors to stream 
  * content to a display in response to user requests.
  *
  * In order to be a compliant with a Router, a controller actor must:
@@ -269,40 +268,32 @@ export class ExpProxy<R> extends Proxy
  * the actor resulting in the real router implementation's onError function being
  * called each time the user requests the route.
  */
-export class Router<R> extends Mutable
+export class DisplayRouter<R> extends Mutable
     implements
-    Scheduler<Resume<R>, SchedulingMessages<R>, WaitingMessages>,
-    Timesout<Resume<R>, SchedulingMessages<R>, WaitingMessages>,
-    ContinueListener<Cont, SchedulingMessages<R>> {
+    Router<Resume<R>, RoutingMessages<Resume<R>>, AwaitingMessages>,
+    ContinueListener<Cont, RoutingMessages<Resume<R>>> {
 
     constructor(
         public display: Address,
         public routes: Routes,
         public router: RealRouter<R>,
-        public timeLimit: TimeLimit,
+        public timeout: Maybe<TimeLimit>,
         public current: Maybe<Address>,
         public system: App) { super(system); }
 
-    scheduling(): Case<SchedulingMessages<R>>[] {
+    beforeRouting(): DisplayRouter<R> {
 
-        return whenScheduling(this);
-
-    }
-
-    waiting(t: Resume<R>): Case<WaitingMessages>[] {
-
-        return whenWaiting(this, t);
-
-    }
-
-    beforeTimer(t: Resume<R>) {
-
-        setTimeout(() => this.tell(this.self(), new Exp(t.path)), this.timeLimit);
         return this;
 
     }
 
-    beforeWait(_: Resume<R>): Router<R> {
+    routing(): Case<RoutingMessages<Resume<R>>>[] {
+
+        return whenRouting(this);
+
+    }
+
+    beforeAwaiting(t: Resume<R>): DisplayRouter<R> {
 
         if (this.current.isJust()) {
 
@@ -316,11 +307,25 @@ export class Router<R> extends Mutable
 
         }
 
+        this
+            .timeout
+            .map(n => {
+
+                setTimeout(() => this.tell(this.self(), new Exp(t.route)), n);
+
+            });
+
         return this;
 
     }
 
-    afterContinue(_: Cont): Router<R> {
+    awaiting(t: Resume<R>): Case<AwaitingMessages>[] {
+
+        return whenAwaiting(this, t);
+
+    }
+
+    afterContinue(_: Cont): DisplayRouter<R> {
 
         return this;
 
@@ -328,20 +333,21 @@ export class Router<R> extends Mutable
 
     run() {
 
-        this.routes = map(this.routes, (actor, path) => {
+        this.routes = map(this.routes, (actor, route) => {
 
-            this.router.add(path, (r: R) => {
+            this.router.add(route, (r: R) => {
 
-                if (this.routes.hasOwnProperty(path)) {
+                if (this.routes.hasOwnProperty(route)) {
+
+                    let display = `${this.self()}/${SUPERVISOR_ID}`;
 
                     return pure(<void>void this.tell(this.self(),
-                        new Resume(path, actor,
-                            `${this.self()}/${SUPERVISOR_ID}`, r)));
+                        new Resume(route, this.self(), display, r)));
 
                 } else {
 
                     return this.router.onError(new Error(
-                        `${path}: not responding!`));
+                        `${route}: not responding!`));
 
                 }
 
@@ -351,26 +357,27 @@ export class Router<R> extends Mutable
 
         });
 
-        this.select(this.scheduling());
+        this.select(this.routing());
 
     }
 
 }
 
 /**
- * whenScheduling behaviour.
+ * whenRouting behaviour.
  */
-export const whenScheduling = <R>(r: Router<R>): Case<SchedulingMessages<R>>[] => [
+export const whenRouting = <R>(r: DisplayRouter<R>)
+    : Case<RoutingMessages<Resume<R>>>[] => [
 
-    new TimedScheduleCase<Resume<R>, SchedulingMessages<R>, WaitingMessages>(Resume, r)
+        new DispatchCase<Resume<R>, AwaitingMessages>(Resume, r)
 
-];
+    ];
 
 /**
- * whenWaiting behaviour.
+ * whenAwaiting behaviour.
  */
-export const whenWaiting = <R>(r: Router<R>, t: Resume<R>)
-    : Case<WaitingMessages>[] => <Case<WaitingMessages>[]>[
+export const whenAwaiting = <R, T extends Resume<R>>(r: DisplayRouter<R>, t: T)
+    : Case<AwaitingMessages>[] => <Case<AwaitingMessages>[]>[
 
         new AckCase(Ack, new AckProxy(t, r.display, r)),
 

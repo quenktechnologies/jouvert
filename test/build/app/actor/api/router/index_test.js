@@ -14,8 +14,8 @@ var __extends = (this && this.__extends) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 var must_1 = require("@quenk/must");
-var scheduler_1 = require("../../../../../lib/app/actor/runtime/scheduler");
-var actor_1 = require("../fixtures/actor");
+var router_1 = require("../../../../../../lib/app/actor/api/router");
+var actor_1 = require("../../fixtures/actor");
 var Request = /** @class */ (function () {
     function Request() {
         this.src = '?';
@@ -64,43 +64,47 @@ var Message = /** @class */ (function (_super) {
     }
     return Message;
 }(Parent));
-var Sched = /** @class */ (function (_super) {
-    __extends(Sched, _super);
-    function Sched() {
+var Rout = /** @class */ (function (_super) {
+    __extends(Rout, _super);
+    function Rout() {
         var _this = _super !== null && _super.apply(this, arguments) || this;
         _this.current = 'x';
         return _this;
     }
-    Sched.prototype.beforeWait = function (_) {
+    Rout.prototype.beforeRouting = function () {
+        this.__record('routing', []);
+        return this;
+    };
+    Rout.prototype.beforeAwaiting = function (_) {
         return this.__record('beforeWait', [_]);
     };
-    Sched.prototype.waiting = function (_) {
+    Rout.prototype.awaiting = function (_) {
         this.__record('waiting', [_]);
         return [];
     };
-    Sched.prototype.afterAck = function (_) {
+    Rout.prototype.afterAck = function (_) {
         return this.__record('afterAck', [_]);
     };
-    Sched.prototype.afterContinue = function (_) {
+    Rout.prototype.afterContinue = function (_) {
         return this.__record('afterContinue', [_]);
     };
-    Sched.prototype.afterExpire = function (_) {
+    Rout.prototype.afterExpire = function (_) {
         return this.__record('afterExpire', [_]);
     };
-    Sched.prototype.afterMessage = function (_) {
+    Rout.prototype.afterMessage = function (_) {
         return this.__record('afterMessage', [_]);
     };
-    Sched.prototype.scheduling = function () {
+    Rout.prototype.routing = function () {
         this.__record('scheduling', []);
         return [];
     };
-    return Sched;
+    return Rout;
 }(actor_1.ActorImpl));
-describe('scheduler', function () {
-    describe('ScheduleCase', function () {
+describe('router', function () {
+    describe('DispatchCase', function () {
         it('should transition to waiting()', function () {
-            var s = new Sched();
-            var c = new scheduler_1.ScheduleCase(Request, s);
+            var s = new Rout();
+            var c = new router_1.DispatchCase(Request, s);
             c.match(new Request());
             must_1.must(s.__test.invokes.order()).equate([
                 'beforeWait', 'waiting', 'select'
@@ -109,8 +113,8 @@ describe('scheduler', function () {
     });
     describe('AckCase', function () {
         it('should transition to scheduling()', function () {
-            var s = new Sched();
-            var c = new scheduler_1.AckCase(Ack, s);
+            var s = new Rout();
+            var c = new router_1.AckCase(Ack, s);
             c.match(new Ack('x'));
             must_1.must(s.__test.invokes.order()).equate([
                 'afterAck', 'scheduling', 'select'
@@ -119,8 +123,8 @@ describe('scheduler', function () {
     });
     describe('ContinueCase', function () {
         it('should transition to scheduling()', function () {
-            var s = new Sched();
-            var c = new scheduler_1.ContinueCase(Cont, s);
+            var s = new Rout();
+            var c = new router_1.ContinueCase(Cont, s);
             c.match(new Cont('x'));
             must_1.must(s.__test.invokes.order()).equate([
                 'afterContinue', 'scheduling', 'select'
@@ -129,8 +133,8 @@ describe('scheduler', function () {
     });
     describe('ExpireCase', function () {
         it('should transition to scheduling()', function () {
-            var s = new Sched();
-            var c = new scheduler_1.ExpireCase(Exp, s);
+            var s = new Rout();
+            var c = new router_1.ExpireCase(Exp, s);
             c.match(new Exp('x'));
             must_1.must(s.__test.invokes.order()).equate([
                 'afterExpire', 'scheduling', 'select'
@@ -139,8 +143,8 @@ describe('scheduler', function () {
     });
     describe('MessageCase', function () {
         it('should transition to scheduling()', function () {
-            var s = new Sched();
-            var c = new scheduler_1.MessageCase(Message, s);
+            var s = new Rout();
+            var c = new router_1.MessageCase(Message, s);
             c.match(new Message('x'));
             must_1.must(s.__test.invokes.order()).equate([
                 'afterMessage', 'scheduling', 'select'
@@ -148,4 +152,4 @@ describe('scheduler', function () {
         });
     });
 });
-//# sourceMappingURL=scheduler_test.js.map
+//# sourceMappingURL=index_test.js.map

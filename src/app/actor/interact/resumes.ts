@@ -5,7 +5,7 @@ import { Actor } from '../../actor';
  * BeforeResumes indicates the actor has a hook that can be invoked
  * before resuming.
  */
-export interface BeforeResumes<T> {
+export interface BeforeResumes<T> extends Actor {
 
     /**
      * beforeResume hook.

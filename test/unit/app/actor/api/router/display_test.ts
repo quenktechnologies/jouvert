@@ -1,23 +1,23 @@
 import { assert } from '@quenk/test/lib/assert';
-import { nothing } from '@quenk/noni/lib/data/maybe';
+import { just, nothing } from '@quenk/noni/lib/data/maybe';
 import { noop } from '@quenk/noni/lib/data/function';
 import { pure, toPromise, fromCallback } from '@quenk/noni/lib/control/monad/future';
 import { Case } from '@quenk/potoo/lib/actor/resident/case';
 import {
-    Router as Hash,
+    DefaultHashRouter as Hash,
     Request
-} from '../../../../../lib/browser/window/router/hash';
+} from '../../../../../../lib/browser/window/router/hash/default';
 import {
     Routes,
-    Router,
+    DisplayRouter,
     Resume,
     Suspend,
     Cont,
     Ack
-} from '../../../../../lib/app/actor/api/router';
-import { Immutable } from '../../../../../lib/app/actor';
-import { App } from '../../../../../lib/app';
-import { TestApp } from '../../fixtures/app';
+} from '../../../../../../lib/app/actor/api/router/display';
+import { Immutable } from '../../../../../../lib/app/actor';
+import { App } from '../../../../../../lib/app';
+import { TestApp } from '../../../fixtures/app';
 
 type Messages
     = Resume<Request>
@@ -51,7 +51,8 @@ const routerTemplate = (routes: Routes, router: Hash, time: number) => ({
 
     id: 'router',
 
-    create: (s: App) => new Router('display', routes, router, time, nothing(), s)
+    create: (s: App) => new DisplayRouter('display', routes, router,
+        just(time), nothing(), s)
 
 })
 
@@ -70,11 +71,11 @@ describe('router', () => {
 
         })
 
-       it('should route ', () => toPromise(fromCallback(cb => {
+        it('should route ', () => toPromise(fromCallback(cb => {
 
             let sys = system();
 
-            hash = new Hash(window, {}, onNotFound);
+            hash = new Hash(window, {}, undefined, onNotFound);
 
             sys.spawn(routerTemplate({ '/foo': 'ctl' }, hash, 200));
 
@@ -95,12 +96,12 @@ describe('router', () => {
 
         })))
 
-       it('should suspend', () => toPromise(fromCallback(cb => {
+        it('should suspend', () => toPromise(fromCallback(cb => {
 
             let sys = system();
             let routes = { '/foo': 'foo', '/bar': 'bar' };
 
-            hash = new Hash(window, {}, onNotFound);
+            hash = new Hash(window, {}, undefined, onNotFound);
 
             sys.spawn(routerTemplate(routes, hash, 100));
 
@@ -133,7 +134,7 @@ describe('router', () => {
             let promoted = false;
             let onErr = () => { return pure(noop()); }
 
-            hash = new Hash(window, {}, onNotFound, onErr);
+            hash = new Hash(window, {}, onErr, onNotFound);
 
             sys.spawn(routerTemplate(routes, hash, 100));
 
@@ -162,7 +163,7 @@ describe('router', () => {
 
         })));
 
-       it('should continue', () => toPromise(fromCallback(cb => {
+        it('should continue', () => toPromise(fromCallback(cb => {
 
             let sys = system();
             let routes = { '/foo': 'foo', '/bar': 'bar' };
@@ -170,7 +171,7 @@ describe('router', () => {
             let promoted = false;
             let onErr = () => { expired = true; return pure(noop()); }
 
-            hash = new Hash(window, {}, onNotFound, onErr);
+            hash = new Hash(window, {}, onErr, onNotFound);
 
             sys.spawn(routerTemplate(routes, hash, 100));
 
@@ -197,8 +198,6 @@ describe('router', () => {
             }, 800);
 
         })));
-
-
 
     });
 

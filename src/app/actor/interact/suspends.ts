@@ -5,7 +5,7 @@ import { Actor } from '../../actor';
  * BeforeSuspends indicates that the actor has a hook that can be invoked
  * before suspending.
  */
-export interface BeforeSuspends {
+export interface BeforeSuspends extends Actor {
 
     /**
      * beforeSuspend hook

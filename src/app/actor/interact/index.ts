@@ -59,14 +59,13 @@ export interface Suspend {
  * Interact is an actor that provides a unit of interactivity
  * to the user.
  *
- * Interacts stream content to display servers that are updated via the
- * Resume message.
+ * Upon receiving the relevant Resume message, an Interact is expected to 
+ * stream content to a display server until it is told to stop via the 
+ * Suspend message.
+ *
+ * Hooks are provided to execute side effects before transitioning. 
+ * Implementors can use the `beforeResume` hook to begin streaming content.
  *  
- * An Interact has two behaviours:
- *
- * 1. Suspended - The Interact is in the background and idles.
- * 2. Resumed - The Interact is active, streaming and observing events.
- *
  * Behaviour matrix:
  *
  *            suspended resumed
@@ -87,7 +86,7 @@ export interface Interact<R, MSuspended, MResumed>
 
     beforeResume(r: R): Interact<R, MSuspended, MResumed>
 
-        beforeSuspend(): Interact<R, MSuspended, MResumed>
+    beforeSuspend(): Interact<R, MSuspended, MResumed>
 
 }
 

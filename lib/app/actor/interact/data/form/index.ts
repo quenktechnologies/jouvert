@@ -3,7 +3,7 @@ import { Address } from '@quenk/potoo/lib/actor/address';
 import { Case } from '@quenk/potoo/lib/actor/resident/case';
 import { Resumed } from '../../resumed';
 import { Resume } from '../../';
-import { Inputtable } from './inputtable';
+import { OnInput } from './on-input';
 
 /**
  * ResumedMessages type.
@@ -32,102 +32,44 @@ export interface Request extends Resume {
 }
 
 /**
+ * Inputtable 
+ */
+export interface Inputtable<E, T, MResumed>
+    extends OnInput<E>, Resumed<T, MResumed> { }
+
+/**
  * Form interface is for actors that provide form
  * functionality.
  *
- * Forms here are not considered with the details of design and UX,
- * just the workflow. The Form apis are designed around a client
+ * Forms here are not concerned with the details of design and UX,
+ * just the workflow for capturing input.
+ *
+ * The Form apis are designed around a client
  * server model where another Interact (the client) yields control
- * to the Form while awaiting a signal to recalim control.
+ * for input and awaits some message from the form indicating completion.
  *
  * Behaviour matrix:
  *             suspended  resume
  * suspended               <R>
  * resume                  <E>  
- *
- * @param <D> - The type of the Form's data.
- * @param <R> - The type of message that resumes the Form.
- * @param <MResumed> - Messages handled when resumed.
  */
-export interface Form<E, R extends Request, MResumed>
-    extends Inputtable<E, R, ResumedMessages<E, MResumed>> { }
-
-/**
- * CreateListener exists for Forms that distinguish between edit and create mode.
- */
-export interface CreateListener<R extends Request, MResumed>
-    extends Resumed<R, MResumed> {
-
-    /**
-     * beforeCreate is applied before creating to intialize the Form
-     */
-    beforeCreate(t: R): CreateListener<R, MResumed>;
-
-}
-
-/**
- * EditListener exists for FOrms that distinguish between edit and create modes.
- */
-export interface EditListener<R extends Request, MResumed>
-    extends Resumed<R, MResumed> {
-
-    /**
-     * beforeEdit is applied before editing to intialize the Form.
-     */
-    beforeEdit(t: R): EditListener<R, MResumed>;
-
-}
-
-/**
- * CreateCase invokes the beforeEdit hook before transitioning to resuming()
- */
-export class CreateCase<R extends Request, MResumed> extends Case<R> {
-
-    constructor(
-        public pattern: Constructor<R>,
-        public listener: CreateListener<R, MResumed>) {
-
-        super(pattern, (t: R) =>
-            listener
-                .beforeCreate(t)
-                .select(listener.resumed(t)));
-
-    }
-
-}
-
-/**
- * EditCase invokes the beforeEdit hook before transitioning to resume().
- */
-export class EditCase<R extends Request, MResumed> extends Case<R> {
-
-    constructor(
-        public pattern: Constructor<R>,
-        public listener: EditListener<R, MResumed>) {
-
-        super(pattern, (t: R) =>
-            listener
-                .beforeEdit(t)
-                .select(listener.resumed(t)));
-
-    }
-
-}
+export interface Form<E, T, MResumed>
+    extends Inputtable<E, T, ResumedMessages<E, MResumed>> { }
 
 /**
  * InputCase applies the onInput hook and continues resuming.
  */
-export class InputCase<E, R extends Request, MResumed> extends Case<E> {
+export class InputCase<E, T, MResumed> extends Case<E> {
 
     constructor(
         public pattern: Constructor<E>,
-        public token: R,
-        public input: Form<E, R, MResumed>) {
+        public token: T,
+        public form: Form<E, T, MResumed>) {
 
         super(pattern, (e: E) =>
-            input
+            form
                 .onInput(e)
-                .select(input.resumed(token)));
+                .select(form.resumed(token)));
 
     }
 

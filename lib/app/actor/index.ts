@@ -22,9 +22,9 @@ export abstract class Immutable<T> extends I<T, Context, App> { }
  * Proxy provides an actor API implementation that delegates
  * all its operations to another actor.
  */
-export class Proxy implements Actor {
+export class Proxy<A extends App> implements Api<Context, A> {
 
-    constructor(public instance: Actor) { }
+  constructor(public instance: Api<Context, A>) { }
 
     self(): Address {
 
@@ -32,27 +32,27 @@ export class Proxy implements Actor {
 
     }
 
-    spawn(t: Template<Context, App>): Address {
+    spawn(t: Template<Context, A>): Address {
 
         return this.instance.spawn(t);
 
     }
 
-    tell<M>(actor: Address, m: M): Proxy {
+    tell<M>(actor: Address, m: M): Proxy<A> {
 
         this.instance.tell(actor, m);
         return this;
 
     }
 
-    select<T>(c: Case<T>[]): Proxy {
+    select<T>(c: Case<T>[]): Proxy<A> {
 
         this.instance.select(c);
         return this;
 
     }
 
-    kill(addr: Address): Proxy {
+    kill(addr: Address): Proxy<A> {
 
         this.instance.kill(addr);
         return this;

@@ -18,7 +18,7 @@ import {
     ExpireCase
 } from './';
 
-export const SUPERVISOR_ID = 'current';
+export const SUPERVISOR_ID = 'supervisor';
 
 /**
  * TimeLimit type.
@@ -71,9 +71,10 @@ export class Resume<R> {
 
     constructor(
         public route: Route,
+        public request: R,
         public actor: Address,
         public display: Address,
-        public request: R) { }
+        public router: Address) { }
 
 }
 
@@ -154,7 +155,7 @@ export class Supervisor<R> extends Immutable<SupervisorMessages> {
  *
  * Acks result in a new Supervisor being spawned for the next controlling actor.
  */
-export class AckProxy<R> extends Proxy
+export class AckProxy<R> extends Proxy<App>
     implements
     Routing<RoutingMessages<Resume<R>>>,
     AckListener<Ack, RoutingMessages<Resume<R>>> {
@@ -198,7 +199,7 @@ export class AckProxy<R> extends Proxy
  *
  * A new Supervisor is spawned for the next controlling actor.
  */
-export class ExpProxy<R> extends Proxy
+export class ExpProxy<R> extends Proxy<App>
     implements
     Routing<RoutingMessages<Resume<R>>>,
     ExpireListener<Exp, RoutingMessages<Resume<R>>>{
@@ -342,7 +343,12 @@ export class DisplayRouter<R> extends Mutable
                     let display = `${this.self()}/${SUPERVISOR_ID}`;
 
                     return pure(<void>void this.tell(this.self(),
-                        new Resume(route, this.self(), display, r)));
+                        new Resume(
+                            route,
+                            r,
+                            actor,
+                            display,
+                            this.self())));
 
                 } else {
 

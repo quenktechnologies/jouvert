@@ -21,14 +21,6 @@ import { BeforeSuspended, Suspended } from './suspended';
 import { BeforeResumed, Resumed } from './resumed';
 
 /**
- * ResumedMessages type.
- */
-export type ResumedMessages<T, M>
-    = T
-    | M
-    ;
-
-/**
  * Resume is used as an indicator for an Interest to continue
  * streaming content to a display server.
  */
@@ -82,7 +74,7 @@ export interface Resumable<T, M> extends BeforeResumed<T>, Resumed<T, M> { }
  * resumed       <S>
  */
 export interface Interact<T, MSuspended, MResumed>
-    extends Resumable<T, MResumed>, Suspendable<MSuspended> { }
+    extends Suspendable<MSuspended>,  Resumable<T, MResumed>  { }
 
 /**
  * ResumeCase

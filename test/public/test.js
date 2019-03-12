@@ -20,16 +20,17 @@ var future_1 = require("@quenk/noni/lib/control/monad/future");
 var case_1 = require("@quenk/potoo/lib/actor/resident/case");
 var __1 = require("../../");
 var _1 = require("./");
-exports.SUPERVISOR_ID = 'current';
+exports.SUPERVISOR_ID = 'supervisor';
 /**
  * Resume is sent to an actor to indicate it has control.
  */
 var Resume = /** @class */ (function () {
-    function Resume(route, actor, display, request) {
+    function Resume(route, request, actor, display, router) {
         this.route = route;
+        this.request = request;
         this.actor = actor;
         this.display = display;
-        this.request = request;
+        this.router = router;
     }
     return Resume;
 }());
@@ -238,7 +239,7 @@ var DisplayRouter = /** @class */ (function (_super) {
             _this.router.add(route, function (r) {
                 if (_this.routes.hasOwnProperty(route)) {
                     var display = _this.self() + "/" + exports.SUPERVISOR_ID;
-                    return future_1.pure(void _this.tell(_this.self(), new Resume(route, _this.self(), display, r)));
+                    return future_1.pure(void _this.tell(_this.self(), new Resume(route, r, actor, display, _this.self())));
                 }
                 else {
                     return _this.router.onError(new Error(route + ": not responding!"));
@@ -502,57 +503,35 @@ var __extends = (this && this.__extends) || (function () {
 Object.defineProperty(exports, "__esModule", { value: true });
 var case_1 = require("@quenk/potoo/lib/actor/resident/case");
 /**
- * RequestCase forwards a request to the intended form and
- * transitions to the edit behaviour.
+ * EditCase forwards a request to the intended form and
+ * transitions to the editing behaviour.
  */
-var RequestCase = /** @class */ (function (_super) {
-    __extends(RequestCase, _super);
-    function RequestCase(pattern, client) {
-        var _this = _super.call(this, pattern, function (r) {
+var EditCase = /** @class */ (function (_super) {
+    __extends(EditCase, _super);
+    function EditCase(pattern, client) {
+        var _this = _super.call(this, pattern, function (t) {
             return client
-                .tell(r.form, r)
-                .select(client.edit());
+                .beforeEditing(t)
+                .select(client.editing(t));
         }) || this;
         _this.pattern = pattern;
         _this.client = client;
         return _this;
     }
-    return RequestCase;
+    return EditCase;
 }(case_1.Case));
-exports.RequestCase = RequestCase;
+exports.EditCase = EditCase;
 /**
- * ContentCase
+ * AbortedCase handles Aborted messages coming from the client.
  *
- * Forwards content received from a Form to the
- * active display server, continues editing.
+ * Dispatches the afterFormAborted hook and transitions to resumed.
  */
-var ContentCase = /** @class */ (function (_super) {
-    __extends(ContentCase, _super);
-    function ContentCase(pattern, token, form) {
-        var _this = _super.call(this, pattern, function (c) {
+var AbortedCase = /** @class */ (function (_super) {
+    __extends(AbortedCase, _super);
+    function AbortedCase(pattern, token, form) {
+        var _this = _super.call(this, pattern, function (a) {
             return form
-                .tell(token.display, c)
-                .select(form.edit());
-        }) || this;
-        _this.pattern = pattern;
-        _this.token = token;
-        _this.form = form;
-        return _this;
-    }
-    return ContentCase;
-}(case_1.Case));
-exports.ContentCase = ContentCase;
-/**
- * AbortCase
- *
- * Dispatches the afterFormAborted hook and transitions to resuming.
- */
-var AbortCase = /** @class */ (function (_super) {
-    __extends(AbortCase, _super);
-    function AbortCase(pattern, token, form) {
-        var _this = _super.call(this, pattern, function (c) {
-            return form
-                .afterFormAborted(c)
+                .afterFormAborted(a)
                 .select(form.resumed(token));
         }) || this;
         _this.pattern = pattern;
@@ -560,17 +539,17 @@ var AbortCase = /** @class */ (function (_super) {
         _this.form = form;
         return _this;
     }
-    return AbortCase;
+    return AbortedCase;
 }(case_1.Case));
-exports.AbortCase = AbortCase;
+exports.AbortedCase = AbortedCase;
 /**
- * SaveCase
+ * SavedCase handles Saved messages coming from the form.
  *
- * Dispatches the afterFormAborted hook and transitions to resuming.
+ * Dispatches the afterFormAborted hook and transitions to resumed.
  */
-var SaveCase = /** @class */ (function (_super) {
-    __extends(SaveCase, _super);
-    function SaveCase(pattern, token, form) {
+var SavedCase = /** @class */ (function (_super) {
+    __extends(SavedCase, _super);
+    function SavedCase(pattern, token, form) {
         var _this = _super.call(this, pattern, function (s) {
             return form
                 .afterFormSaved(s)
@@ -581,9 +560,9 @@ var SaveCase = /** @class */ (function (_super) {
         _this.form = form;
         return _this;
     }
-    return SaveCase;
+    return SavedCase;
 }(case_1.Case));
-exports.SaveCase = SaveCase;
+exports.SavedCase = SavedCase;
 
 },{"@quenk/potoo/lib/actor/resident/case":32}],6:[function(require,module,exports){
 "use strict";
@@ -603,55 +582,19 @@ var __extends = (this && this.__extends) || (function () {
 Object.defineProperty(exports, "__esModule", { value: true });
 var case_1 = require("@quenk/potoo/lib/actor/resident/case");
 /**
- * CreateCase invokes the beforeEdit hook before transitioning to resuming()
- */
-var CreateCase = /** @class */ (function (_super) {
-    __extends(CreateCase, _super);
-    function CreateCase(pattern, listener) {
-        var _this = _super.call(this, pattern, function (t) {
-            return listener
-                .beforeCreate(t)
-                .select(listener.resumed(t));
-        }) || this;
-        _this.pattern = pattern;
-        _this.listener = listener;
-        return _this;
-    }
-    return CreateCase;
-}(case_1.Case));
-exports.CreateCase = CreateCase;
-/**
- * EditCase invokes the beforeEdit hook before transitioning to resume().
- */
-var EditCase = /** @class */ (function (_super) {
-    __extends(EditCase, _super);
-    function EditCase(pattern, listener) {
-        var _this = _super.call(this, pattern, function (t) {
-            return listener
-                .beforeEdit(t)
-                .select(listener.resumed(t));
-        }) || this;
-        _this.pattern = pattern;
-        _this.listener = listener;
-        return _this;
-    }
-    return EditCase;
-}(case_1.Case));
-exports.EditCase = EditCase;
-/**
  * InputCase applies the onInput hook and continues resuming.
  */
 var InputCase = /** @class */ (function (_super) {
     __extends(InputCase, _super);
-    function InputCase(pattern, token, input) {
+    function InputCase(pattern, token, form) {
         var _this = _super.call(this, pattern, function (e) {
-            return input
+            return form
                 .onInput(e)
-                .select(input.resumed(token));
+                .select(form.resumed(token));
         }) || this;
         _this.pattern = pattern;
         _this.token = token;
-        _this.input = input;
+        _this.form = form;
         return _this;
     }
     return InputCase;
@@ -3601,8 +3544,10 @@ var tellcode = [
     new push_1.PushMsg(0),
     new push_1.PushStr(0),
     new tell_1.Tell(),
-    new jump_1.JumpIfOne(4),
-    new noop_1.Noop() //4: Do nothing.
+    new jump_1.JumpIfOne(6),
+    new push_1.PushMsg(0),
+    new drop_1.Drop(),
+    new noop_1.Noop() //6: Do nothing.
 ];
 var receivecode = [
     new push_1.PushForeign(0),
@@ -3928,22 +3873,11 @@ exports.Void = Void;
 },{"@quenk/noni/lib/data/maybe":23}],39:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-/**
- * DEBUG log level.
- */
 exports.DEBUG = 7;
-/**
- * INFO log level.
- */
 exports.INFO = 6;
-/**
- * WARN log level.
- */
-exports.WARN = 5;
-/**
- * ERROR log level.
- */
-exports.ERROR = 1;
+exports.NOTICE = 5;
+exports.WARN = 4;
+exports.ERROR = 3;
 
 },{}],40:[function(require,module,exports){
 "use strict";
@@ -4687,6 +4621,7 @@ exports.Drop = Drop;
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var log = require("../../log");
+//base 
 exports.OP_CODE_NOOP = 0x0;
 exports.OP_CODE_PUSH_NUM = 0x1;
 exports.OP_CODE_PUSH_STR = 0x2;
@@ -4702,28 +4637,30 @@ exports.OP_CODE_STORE = 0xb;
 exports.OP_CODE_LOAD = 0xc;
 exports.OP_CODE_JUMP = 0xd;
 exports.OP_CODE_JUMP_IF_ONE = 0xe;
-exports.OP_CODE_IDENT = 0x13;
-exports.OP_CODE_QUERY = 0x20;
-exports.OP_CODE_ALLOCATE = 0x21;
-exports.OP_CODE_TEMP_CC = 0x22;
-exports.OP_CODE_TEMP_CHILD = 0x23;
-exports.OP_CODE_TELL = 0x24;
-exports.OP_CODE_DISCARD = 0x25;
-exports.OP_CODE_RUN = 0x26;
-exports.OP_CODE_RECEIVE = 0x27;
-exports.OP_CODE_READ = 0x28;
-exports.OP_CODE_RESTART = 0x29;
-exports.OP_CODE_DROP = 0x30;
-exports.OP_CODE_STOP = 0x2a;
-exports.OP_CODE_RAISE = 0xb;
+//control
+exports.OP_CODE_IDENT = 0x33;
+exports.OP_CODE_QUERY = 0x34;
+exports.OP_CODE_TEMP_CC = 0x35;
+exports.OP_CODE_TEMP_CHILD = 0x36;
+exports.OP_CODE_RUN = 0x37;
+exports.OP_CODE_RESTART = 0x38;
+//actor 
+exports.OP_CODE_ALLOCATE = 0x64;
+exports.OP_CODE_TELL = 0x65;
+exports.OP_CODE_DISCARD = 0x66;
+exports.OP_CODE_RECEIVE = 0x67;
+exports.OP_CODE_READ = 0x68;
+exports.OP_CODE_DROP = 0x69;
+exports.OP_CODE_STOP = 0x70;
+exports.OP_CODE_RAISE = 0x71;
 /**
  * Levels allowed for ops.
  */
 var Level;
 (function (Level) {
     Level[Level["Base"] = log.DEBUG] = "Base";
-    Level[Level["Control"] = log.DEBUG] = "Control";
-    Level[Level["Actor"] = log.INFO] = "Actor";
+    Level[Level["Control"] = log.INFO] = "Control";
+    Level[Level["Actor"] = log.NOTICE] = "Actor";
     Level[Level["System"] = log.WARN] = "System";
 })(Level = exports.Level || (exports.Level = {}));
 
@@ -14628,12 +14565,6 @@ var Resume = /** @class */ (function () {
     }
     return Resume;
 }());
-var Content = /** @class */ (function () {
-    function Content() {
-        this.view = '';
-    }
-    return Content;
-}());
 var Cancel = /** @class */ (function () {
     function Cancel() {
         this.value = 12;
@@ -14651,8 +14582,8 @@ var ClientImpl = /** @class */ (function (_super) {
     function ClientImpl() {
         return _super !== null && _super.apply(this, arguments) || this;
     }
-    ClientImpl.prototype.beforeEdit = function () {
-        return this.__record('beforeEdit', []);
+    ClientImpl.prototype.beforeEditing = function (r) {
+        return this.__record('beforeEditing', [r]);
     };
     ClientImpl.prototype.afterFormAborted = function (_) {
         return this.__record('afterFormAborted', [_]);
@@ -14660,7 +14591,7 @@ var ClientImpl = /** @class */ (function (_super) {
     ClientImpl.prototype.afterFormSaved = function (_) {
         return this.__record('afterFormSaved', [_]);
     };
-    ClientImpl.prototype.edit = function () {
+    ClientImpl.prototype.editing = function () {
         this.__record('edit', []);
         return [];
     };
@@ -14675,43 +14606,32 @@ var ClientImpl = /** @class */ (function (_super) {
     return ClientImpl;
 }(actor_1.ActorImpl));
 describe('app/interact/data/form/client', function () {
-    describe('RequestCase', function () {
-        it('should invoke the beforeEdit', function () {
+    describe('EditCase', function () {
+        it('should invoke the beforeEditing', function () {
             var m = new ClientImpl();
-            var c = new client_1.RequestCase(Request, m);
+            var c = new client_1.EditCase(Request, m);
             c.match(new Request());
             must_1.must(m.__test.invokes.order()).equate([
-                'tell', 'edit', 'select'
+                'beforeEditing', 'editing', 'select'
             ]);
         });
     });
-    describe('ContentCase', function () {
-        it('should forward content', function () {
-            var t = new Request();
-            var m = new ClientImpl();
-            var c = new client_1.ContentCase(Content, t, m);
-            c.match(new Content());
-            must_1.must(m.__test.invokes.order()).equate([
-                'tell', 'edit', 'select'
-            ]);
-        });
-    });
-    describe('AbortCase', function () {
+    describe('AbortedCase', function () {
         it('should invoke the hook', function () {
             var t = new Resume();
             var m = new ClientImpl();
-            var c = new client_1.AbortCase(Cancel, t, m);
+            var c = new client_1.AbortedCase(Cancel, t, m);
             c.match(new Cancel());
             must_1.must(m.__test.invokes.order()).equate([
                 'afterFormAborted', 'resumed', 'select'
             ]);
         });
     });
-    describe('SaveCase', function () {
+    describe('SavedCase', function () {
         it('should invoke the hook', function () {
             var t = new Resume();
             var m = new ClientImpl();
-            var c = new client_1.SaveCase(Save, t, m);
+            var c = new client_1.SavedCase(Save, t, m);
             c.match(new Save());
             must_1.must(m.__test.invokes.order()).equate([
                 'afterFormSaved', 'resumed', 'select'
@@ -14758,12 +14678,6 @@ var FormImpl = /** @class */ (function (_super) {
     function FormImpl() {
         return _super !== null && _super.apply(this, arguments) || this;
     }
-    FormImpl.prototype.beforeCreate = function (_) {
-        return this.__record('beforeCreate', [_]);
-    };
-    FormImpl.prototype.beforeEdit = function (_) {
-        return this.__record('beforeEdit', [_]);
-    };
     FormImpl.prototype.onInput = function (_) {
         return this.__record('onInput', [_]);
     };
@@ -14774,26 +14688,6 @@ var FormImpl = /** @class */ (function (_super) {
     return FormImpl;
 }(actor_1.ActorImpl));
 describe('app/interact/data/form', function () {
-    describe('CreateCase', function () {
-        it('should invoke the beforeCreate hook', function () {
-            var m = new FormImpl();
-            var c = new form_1.CreateCase(Request, m);
-            c.match(new Request());
-            must_1.must(m.__test.invokes.order()).equate([
-                'beforeCreate', 'resumed', 'select'
-            ]);
-        });
-    });
-    describe('EditCase', function () {
-        it('should invoke the beforeEdit hook', function () {
-            var m = new FormImpl();
-            var c = new form_1.EditCase(Request, m);
-            c.match(new Request());
-            must_1.must(m.__test.invokes.order()).equate([
-                'beforeEdit', 'resumed', 'select'
-            ]);
-        });
-    });
     describe('InputCase', function () {
         it('should invoke the onInput hook', function () {
             var t = new Request();

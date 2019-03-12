@@ -35,12 +35,6 @@ var FormImpl = /** @class */ (function (_super) {
     function FormImpl() {
         return _super !== null && _super.apply(this, arguments) || this;
     }
-    FormImpl.prototype.beforeCreate = function (_) {
-        return this.__record('beforeCreate', [_]);
-    };
-    FormImpl.prototype.beforeEdit = function (_) {
-        return this.__record('beforeEdit', [_]);
-    };
     FormImpl.prototype.onInput = function (_) {
         return this.__record('onInput', [_]);
     };
@@ -51,26 +45,6 @@ var FormImpl = /** @class */ (function (_super) {
     return FormImpl;
 }(actor_1.ActorImpl));
 describe('app/interact/data/form', function () {
-    describe('CreateCase', function () {
-        it('should invoke the beforeCreate hook', function () {
-            var m = new FormImpl();
-            var c = new form_1.CreateCase(Request, m);
-            c.match(new Request());
-            must_1.must(m.__test.invokes.order()).equate([
-                'beforeCreate', 'resumed', 'select'
-            ]);
-        });
-    });
-    describe('EditCase', function () {
-        it('should invoke the beforeEdit hook', function () {
-            var m = new FormImpl();
-            var c = new form_1.EditCase(Request, m);
-            c.match(new Request());
-            must_1.must(m.__test.invokes.order()).equate([
-                'beforeEdit', 'resumed', 'select'
-            ]);
-        });
-    });
     describe('InputCase', function () {
         it('should invoke the onInput hook', function () {
             var t = new Request();

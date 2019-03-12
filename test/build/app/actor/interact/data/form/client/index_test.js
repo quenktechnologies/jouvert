@@ -31,12 +31,6 @@ var Resume = /** @class */ (function () {
     }
     return Resume;
 }());
-var Content = /** @class */ (function () {
-    function Content() {
-        this.view = '';
-    }
-    return Content;
-}());
 var Cancel = /** @class */ (function () {
     function Cancel() {
         this.value = 12;
@@ -54,8 +48,8 @@ var ClientImpl = /** @class */ (function (_super) {
     function ClientImpl() {
         return _super !== null && _super.apply(this, arguments) || this;
     }
-    ClientImpl.prototype.beforeEdit = function () {
-        return this.__record('beforeEdit', []);
+    ClientImpl.prototype.beforeEditing = function (r) {
+        return this.__record('beforeEditing', [r]);
     };
     ClientImpl.prototype.afterFormAborted = function (_) {
         return this.__record('afterFormAborted', [_]);
@@ -63,7 +57,7 @@ var ClientImpl = /** @class */ (function (_super) {
     ClientImpl.prototype.afterFormSaved = function (_) {
         return this.__record('afterFormSaved', [_]);
     };
-    ClientImpl.prototype.edit = function () {
+    ClientImpl.prototype.editing = function () {
         this.__record('edit', []);
         return [];
     };
@@ -78,43 +72,32 @@ var ClientImpl = /** @class */ (function (_super) {
     return ClientImpl;
 }(actor_1.ActorImpl));
 describe('app/interact/data/form/client', function () {
-    describe('RequestCase', function () {
-        it('should invoke the beforeEdit', function () {
+    describe('EditCase', function () {
+        it('should invoke the beforeEditing', function () {
             var m = new ClientImpl();
-            var c = new client_1.RequestCase(Request, m);
+            var c = new client_1.EditCase(Request, m);
             c.match(new Request());
             must_1.must(m.__test.invokes.order()).equate([
-                'tell', 'edit', 'select'
+                'beforeEditing', 'editing', 'select'
             ]);
         });
     });
-    describe('ContentCase', function () {
-        it('should forward content', function () {
-            var t = new Request();
-            var m = new ClientImpl();
-            var c = new client_1.ContentCase(Content, t, m);
-            c.match(new Content());
-            must_1.must(m.__test.invokes.order()).equate([
-                'tell', 'edit', 'select'
-            ]);
-        });
-    });
-    describe('AbortCase', function () {
+    describe('AbortedCase', function () {
         it('should invoke the hook', function () {
             var t = new Resume();
             var m = new ClientImpl();
-            var c = new client_1.AbortCase(Cancel, t, m);
+            var c = new client_1.AbortedCase(Cancel, t, m);
             c.match(new Cancel());
             must_1.must(m.__test.invokes.order()).equate([
                 'afterFormAborted', 'resumed', 'select'
             ]);
         });
     });
-    describe('SaveCase', function () {
+    describe('SavedCase', function () {
         it('should invoke the hook', function () {
             var t = new Resume();
             var m = new ClientImpl();
-            var c = new client_1.SaveCase(Save, t, m);
+            var c = new client_1.SavedCase(Save, t, m);
             c.match(new Save());
             must_1.must(m.__test.invokes.order()).equate([
                 'afterFormSaved', 'resumed', 'select'

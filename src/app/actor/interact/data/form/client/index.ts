@@ -1,117 +1,80 @@
 import { Constructor } from '@quenk/noni/lib/data/type/constructor';
 import { Case } from '@quenk/potoo/lib/actor/resident/case';
 import { Resumed } from '../../../resumed';
-import { Request } from '../';
-import { Editable } from './editable';
+import { BeforeEditing, Editing } from './editing';
 
 /**
- * Client interface for Interacts that can yield control to a Form.
+ * Editable
+ */
+export interface Editable<T, M> extends BeforeEditing<T>, Editing<T, M> { }
+
+/**
+ * FormClient interface for Interacts that can yield control to a Form.
  *
  * Yielding to a Form means allowing the Form to stream its view to
  * the display.
- *
- * @param <MEditing> - Editing message types.
  */
-export interface Client<MEditing> extends Editable<MEditing> {
-
-    /**
-     * beforeEdit hook.
-     */
-    beforeEdit(): Client<MEditing>;
-
-}
+export interface FormClient<T, M> extends Editable<T, M> { }
 
 /**
- * AbortListener interface for receiving the Cancelled event from a form.
- *
- * @param <C> - The cancelled event type.
- * @param <R> - The token type for resuming.
- * @param <RM>- Additional messages handled while resuming.
+ * AbortedListener interface for receiving the Cancelled event from a form.
  */
-export interface AbortListener<C, R, MResumed>
-    extends Resumed<R, MResumed> {
+export interface AbortedListener<A, T, MResumed>
+    extends Resumed<T, MResumed> {
 
     /**
      * afterFormAborted hook.
      */
-    afterFormAborted(c: C): AbortListener<C, R, MResumed>
+    afterFormAborted(a: A): AbortedListener<A, T, MResumed>
 
 }
 
 /**
  * SavedListener interface for receiving the Saved event from a Form.
- *
- * @param <S> - The saved event type.
- * @param <R> - The token type for resuming.
- * @param <RM>- Additional messages handled while resuming.
  */
-export interface SavedListener<S, R, MResumed> extends Resumed<R, MResumed> {
+export interface SavedListener<S, T, MResumed> extends Resumed<T, MResumed> {
 
     /**
      * afterFormSaved hook.
      */
-    afterFormSaved(s: S): SavedListener<S, R, MResumed>
+    afterFormSaved(s: S): SavedListener<S, T, MResumed>
 
 }
 
 /**
- * RequestCase forwards a request to the intended form and
- * transitions to the edit behaviour.
+ * EditCase forwards a request to the intended form and
+ * transitions to the editing behaviour.
  */
-export class RequestCase<T extends Request, MEditing>
-    extends Case<T> {
+export class EditCase<E, M> extends Case<E> {
 
     constructor(
-        public pattern: Constructor<T>,
-        public client: Client<MEditing>) {
+        public pattern: Constructor<E>,
+        public client: Editable<E, M>) {
 
-        super(pattern, (r: T) =>
+        super(pattern, (t: E) =>
             client
-                .tell(r.form, r)
-                .select(client.edit()));
+                .beforeEditing(t)
+                .select(client.editing(t)));
 
     }
 
 }
 
 /**
- * ContentCase 
+ * AbortedCase handles Aborted messages coming from the client.
  *
- * Forwards content received from a Form to the
- * active display server, continues editing.
+ * Dispatches the afterFormAborted hook and transitions to resumed.
  */
-export class ContentCase<C, T extends Request, MEditing>
-    extends Case<C> {
+export class AbortedCase<A, T, MResumed> extends Case<A> {
 
     constructor(
-        public pattern: Constructor<C>,
+        public pattern: Constructor<A>,
         public token: T,
-        public form: Client<MEditing>) {
+        public form: AbortedListener<A, T, MResumed>) {
 
-        super(pattern, (c: C) =>
+        super(pattern, (a: A) =>
             form
-                .tell(token.display, c)
-                .select(form.edit()));
-
-    }
-
-}
-
-/**
- * AbortCase 
- *
- * Dispatches the afterFormAborted hook and transitions to resuming.
- */
-export class AbortCase<C, R, MResumed> extends Case<C> {
-
-    constructor(
-        public pattern: Constructor<C>,
-        public token: R,
-        public form: AbortListener<C, R, MResumed>) {
-
-        super(pattern, (c: C) =>
-            form
-                .afterFormAborted(c)
+                .afterFormAborted(a)
                 .select(form.resumed(token)));
 
     }
@@ -119,16 +82,16 @@ export class AbortCase<C, R, MResumed> extends Case<C> {
 }
 
 /**
- * SaveCase 
+ * SavedCase handles Saved messages coming from the form.
  *
- * Dispatches the afterFormAborted hook and transitions to resuming.
+ * Dispatches the afterFormAborted hook and transitions to resumed.
  */
-export class SaveCase<S, R, MResumed> extends Case<S> {
+export class SavedCase<S, T, MResumed> extends Case<S> {
 
     constructor(
         public pattern: Constructor<S>,
-        public token: R,
-        public form: SavedListener<S, R, MResumed>) {
+        public token: T,
+        public form: SavedListener<S, T, MResumed>) {
 
         super(pattern, (s: S) =>
             form

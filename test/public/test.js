@@ -566,6 +566,22 @@ exports.SavedCase = SavedCase;
 
 },{"@quenk/potoo/lib/actor/resident/case":32}],6:[function(require,module,exports){
 "use strict";
+/**
+ * Form interface is for actors that provide form
+ * functionality.
+ *
+ * Forms here are not concerned with the details of design and UX,
+ * just the workflow for capturing input.
+ *
+ * The form apis are designed around a client server model where another
+ * interact (the client) yields control to the form and awaits some message
+ * indicating the form has been saved or aborted.
+ *
+ * Behaviour matrix:
+ *             suspended  resume  saving
+ * suspended
+ * resume      <Abort>    <Input> <Save>
+ */
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
         extendStatics = Object.setPrototypeOf ||
@@ -588,9 +604,8 @@ var InputCase = /** @class */ (function (_super) {
     __extends(InputCase, _super);
     function InputCase(pattern, token, form) {
         var _this = _super.call(this, pattern, function (e) {
-            return form
-                .onInput(e)
-                .select(form.resumed(token));
+            form.onInput(e);
+            form.select(form.resumed(token));
         }) || this;
         _this.pattern = pattern;
         _this.token = token;
@@ -600,6 +615,41 @@ var InputCase = /** @class */ (function (_super) {
     return InputCase;
 }(case_1.Case));
 exports.InputCase = InputCase;
+/**
+ * SaveCase applies the beforeSaving hook and transitions to saving.
+ */
+var SaveCase = /** @class */ (function (_super) {
+    __extends(SaveCase, _super);
+    function SaveCase(pattern, listener) {
+        var _this = _super.call(this, pattern, function (s) {
+            listener.beforeSaving(s);
+            listener.select(listener.saving(s));
+        }) || this;
+        _this.pattern = pattern;
+        _this.listener = listener;
+        return _this;
+    }
+    return SaveCase;
+}(case_1.Case));
+exports.SaveCase = SaveCase;
+/**
+ * AbortCase applies the afterAbort hook then transitions to
+ * suspended.
+ */
+var AbortCase = /** @class */ (function (_super) {
+    __extends(AbortCase, _super);
+    function AbortCase(pattern, listener) {
+        var _this = _super.call(this, pattern, function (a) {
+            listener.afterAbort(a);
+            listener.select(listener.suspended());
+        }) || this;
+        _this.pattern = pattern;
+        _this.listener = listener;
+        return _this;
+    }
+    return AbortCase;
+}(case_1.Case));
+exports.AbortCase = AbortCase;
 
 },{"@quenk/potoo/lib/actor/resident/case":32}],7:[function(require,module,exports){
 "use strict";
@@ -14611,7 +14661,7 @@ var ClientImpl = /** @class */ (function (_super) {
         return this.__record('afterFormSaved', [_]);
     };
     ClientImpl.prototype.editing = function () {
-        this.__record('edit', []);
+        this.__record('editing', []);
         return [];
     };
     ClientImpl.prototype.resumed = function (_) {
@@ -14692,6 +14742,18 @@ var Event = /** @class */ (function () {
     }
     return Event;
 }());
+var Save = /** @class */ (function () {
+    function Save() {
+        this.save = true;
+    }
+    return Save;
+}());
+var Abort = /** @class */ (function () {
+    function Abort() {
+        this.abort = true;
+    }
+    return Abort;
+}());
 var FormImpl = /** @class */ (function (_super) {
     __extends(FormImpl, _super);
     function FormImpl() {
@@ -14699,6 +14761,20 @@ var FormImpl = /** @class */ (function (_super) {
     }
     FormImpl.prototype.onInput = function (_) {
         return this.__record('onInput', [_]);
+    };
+    FormImpl.prototype.beforeSaving = function (s) {
+        return this.__record('beforeSaving', [s]);
+    };
+    FormImpl.prototype.afterAbort = function (a) {
+        return this.__record('afterAbort', [a]);
+    };
+    FormImpl.prototype.suspended = function () {
+        this.__record('suspended', []);
+        return [];
+    };
+    FormImpl.prototype.saving = function (s) {
+        this.__record('saving', [s]);
+        return [];
     };
     FormImpl.prototype.resumed = function (_) {
         this.__record('resumed', [_]);
@@ -14715,6 +14791,26 @@ describe('app/interact/data/form', function () {
             c.match(new Event());
             must_1.must(m.__test.invokes.order()).equate([
                 'onInput', 'resumed', 'select'
+            ]);
+        });
+    });
+    describe('SaveCase', function () {
+        it('should transition to saving', function () {
+            var m = new FormImpl();
+            var c = new form_1.SaveCase(Save, m);
+            c.match(new Save());
+            must_1.must(m.__test.invokes.order()).equate([
+                'beforeSaving', 'saving', 'select'
+            ]);
+        });
+    });
+    describe('AbortCase', function () {
+        it('should transition to suspended', function () {
+            var m = new FormImpl();
+            var c = new form_1.AbortCase(Abort, m);
+            c.match(new Abort());
+            must_1.must(m.__test.invokes.order()).equate([
+                'afterAbort', 'suspended', 'select'
             ]);
         });
     });

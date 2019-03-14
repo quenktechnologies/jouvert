@@ -43,7 +43,7 @@ class ClientImpl extends ActorImpl
 
     editing() {
 
-        this.__record('edit', []);
+        this.__record('editing', []);
         return <Case<void>[]>[];
 
     }

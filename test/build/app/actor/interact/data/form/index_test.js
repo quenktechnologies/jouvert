@@ -30,6 +30,18 @@ var Event = /** @class */ (function () {
     }
     return Event;
 }());
+var Save = /** @class */ (function () {
+    function Save() {
+        this.save = true;
+    }
+    return Save;
+}());
+var Abort = /** @class */ (function () {
+    function Abort() {
+        this.abort = true;
+    }
+    return Abort;
+}());
 var FormImpl = /** @class */ (function (_super) {
     __extends(FormImpl, _super);
     function FormImpl() {
@@ -37,6 +49,20 @@ var FormImpl = /** @class */ (function (_super) {
     }
     FormImpl.prototype.onInput = function (_) {
         return this.__record('onInput', [_]);
+    };
+    FormImpl.prototype.beforeSaving = function (s) {
+        return this.__record('beforeSaving', [s]);
+    };
+    FormImpl.prototype.afterAbort = function (a) {
+        return this.__record('afterAbort', [a]);
+    };
+    FormImpl.prototype.suspended = function () {
+        this.__record('suspended', []);
+        return [];
+    };
+    FormImpl.prototype.saving = function (s) {
+        this.__record('saving', [s]);
+        return [];
     };
     FormImpl.prototype.resumed = function (_) {
         this.__record('resumed', [_]);
@@ -53,6 +79,26 @@ describe('app/interact/data/form', function () {
             c.match(new Event());
             must_1.must(m.__test.invokes.order()).equate([
                 'onInput', 'resumed', 'select'
+            ]);
+        });
+    });
+    describe('SaveCase', function () {
+        it('should transition to saving', function () {
+            var m = new FormImpl();
+            var c = new form_1.SaveCase(Save, m);
+            c.match(new Save());
+            must_1.must(m.__test.invokes.order()).equate([
+                'beforeSaving', 'saving', 'select'
+            ]);
+        });
+    });
+    describe('AbortCase', function () {
+        it('should transition to suspended', function () {
+            var m = new FormImpl();
+            var c = new form_1.AbortCase(Abort, m);
+            c.match(new Abort());
+            must_1.must(m.__test.invokes.order()).equate([
+                'afterAbort', 'suspended', 'select'
             ]);
         });
     });

@@ -58,7 +58,7 @@ var ClientImpl = /** @class */ (function (_super) {
         return this.__record('afterFormSaved', [_]);
     };
     ClientImpl.prototype.editing = function () {
-        this.__record('edit', []);
+        this.__record('editing', []);
         return [];
     };
     ClientImpl.prototype.resumed = function (_) {

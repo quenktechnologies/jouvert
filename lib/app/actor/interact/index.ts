@@ -48,14 +48,16 @@ export interface Suspend {
 }
 
 /**
- * Suspendable interface combining BeforeSuspended and Suspended.
+ * SuspendableInteract interface combining BeforeSuspended and Suspended.
  */
-export interface Suspendable<M> extends BeforeSuspended, Suspended<M> { }
+export interface SuspendableInteract<M> 
+  extends BeforeSuspended, Suspended<M> { }
 
 /**
- * Resumable interface combining BeforeResumed and Resumed.
+ * ResumableInteract interface combining BeforeResumed and Resumed.
  */
-export interface Resumable<T, M> extends BeforeResumed<T>, Resumed<T, M> { }
+export interface ResumableInteract<T, M> 
+  extends BeforeResumed<T>, Resumed<T, M> { }
 
 /**
  * Interact is an actor that provides a unit of interactivity
@@ -74,7 +76,7 @@ export interface Resumable<T, M> extends BeforeResumed<T>, Resumed<T, M> { }
  * resumed       <S>
  */
 export interface Interact<T, MSuspended, MResumed>
-    extends Suspendable<MSuspended>,  Resumable<T, MResumed>  { }
+    extends SuspendableInteract<MSuspended>, ResumableInteract<T, MResumed> { }
 
 /**
  * ResumeCase
@@ -85,7 +87,7 @@ export class ResumeCase<T, MResumed> extends Case<T> {
 
     constructor(
         public pattern: Constructor<T>,
-        public target: Resumable<T, MResumed>) {
+        public target: ResumableInteract<T, MResumed>) {
 
         super(pattern, (r: T) =>
             target
@@ -105,7 +107,7 @@ export class SuspendCase<T, MSuspended> extends Case<T> {
 
     constructor(
         public pattern: Constructor<T>,
-        public target: Suspendable<MSuspended>) {
+        public target: SuspendableInteract<MSuspended>) {
 
         super(pattern, (_: T) =>
             target

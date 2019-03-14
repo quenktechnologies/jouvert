@@ -3,6 +3,7 @@ import {
     OkCase,
     CreatedCase,
     NoContentCase,
+  ConflictCase,
     ForbiddenCase,
     UnauthorizedCase,
     NotFoundCase,
@@ -31,6 +32,12 @@ class HttpInteract extends InteractImpl<Resume, void, void> {
     afterNoContent(_: Response) {
 
         return this.__record('afterNoContent', [_]);
+
+    }
+
+    afterConflict(_: Response) {
+
+        return this.__record('afterConflict', [_]);
 
     }
 
@@ -113,6 +120,25 @@ describe('app/interact/http', () => {
             must(m.__test.invokes.order()).equate([
 
                 'afterNoContent', 'resumed', 'select'
+
+            ]);
+
+        });
+
+    });
+
+    describe('ConflictCase', () => {
+
+        it('should resume the Interact', () => {
+
+            let t = new Resume();
+            let m = listener();
+            let c = new ConflictCase(Response, t, m);
+
+            c.match(new Response());
+            must(m.__test.invokes.order()).equate([
+
+                'afterConflict', 'resumed', 'select'
 
             ]);
 

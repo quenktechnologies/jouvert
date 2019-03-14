@@ -44,6 +44,18 @@ export interface NoContentListener<A, R, MResumed> extends Resumed<R, MResumed> 
 }
 
 /**
+ * ConflictListener
+ */
+export interface ConflictListener<A, R, MResumed> extends Resumed<R, MResumed> {
+
+    /**
+     * afterConflict hook.
+     */
+    afterConflict(res: A): ConflictListener<A, R, MResumed>
+
+}
+
+/**
  * ForbiddenListener
  */
 export interface ForbiddenListener<A, R, MResumed> extends Resumed<R, MResumed> {
@@ -142,6 +154,25 @@ export class NoContentCase<A, R, MResumed> extends Case<A> {
         super(pattern, (res: A) =>
             listener
                 .afterNoContent(res)
+                .select(listener.resumed(token)));
+
+    }
+
+}
+
+/**
+ * ConflictCase dispatches afterConflict hook and resumes.
+ */
+export class ConflictCase<A, R, MResumed> extends Case<A> {
+
+    constructor(
+        public pattern: Constructor<A>,
+        public token: R,
+        public listener: ConflictListener<A, R, MResumed>) {
+
+        super(pattern, (res: A) =>
+            listener
+                .afterConflict(res)
                 .select(listener.resumed(token)));
 
     }

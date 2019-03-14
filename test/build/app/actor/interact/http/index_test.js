@@ -42,6 +42,9 @@ var HttpInteract = /** @class */ (function (_super) {
     HttpInteract.prototype.afterNoContent = function (_) {
         return this.__record('afterNoContent', [_]);
     };
+    HttpInteract.prototype.afterConflict = function (_) {
+        return this.__record('afterConflict', [_]);
+    };
     HttpInteract.prototype.afterForbidden = function (_) {
         return this.__record('afterForbidden', [_]);
     };
@@ -88,6 +91,17 @@ describe('app/interact/http', function () {
             c.match(new Response());
             must_1.must(m.__test.invokes.order()).equate([
                 'afterNoContent', 'resumed', 'select'
+            ]);
+        });
+    });
+    describe('ConflictCase', function () {
+        it('should resume the Interact', function () {
+            var t = new Resume();
+            var m = listener();
+            var c = new http_1.ConflictCase(Response, t, m);
+            c.match(new Response());
+            must_1.must(m.__test.invokes.order()).equate([
+                'afterConflict', 'resumed', 'select'
             ]);
         });
     });

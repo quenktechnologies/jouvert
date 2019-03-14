@@ -911,6 +911,25 @@ var NoContentCase = /** @class */ (function (_super) {
 }(case_1.Case));
 exports.NoContentCase = NoContentCase;
 /**
+ * ConflictCase dispatches afterConflict hook and resumes.
+ */
+var ConflictCase = /** @class */ (function (_super) {
+    __extends(ConflictCase, _super);
+    function ConflictCase(pattern, token, listener) {
+        var _this = _super.call(this, pattern, function (res) {
+            return listener
+                .afterConflict(res)
+                .select(listener.resumed(token));
+        }) || this;
+        _this.pattern = pattern;
+        _this.token = token;
+        _this.listener = listener;
+        return _this;
+    }
+    return ConflictCase;
+}(case_1.Case));
+exports.ConflictCase = ConflictCase;
+/**
  * ForbiddenCase dispatches the afterForbbidden hook and resumes.
  */
 var ForbiddenCase = /** @class */ (function (_super) {
@@ -15124,6 +15143,9 @@ var HttpInteract = /** @class */ (function (_super) {
     HttpInteract.prototype.afterNoContent = function (_) {
         return this.__record('afterNoContent', [_]);
     };
+    HttpInteract.prototype.afterConflict = function (_) {
+        return this.__record('afterConflict', [_]);
+    };
     HttpInteract.prototype.afterForbidden = function (_) {
         return this.__record('afterForbidden', [_]);
     };
@@ -15170,6 +15192,17 @@ describe('app/interact/http', function () {
             c.match(new Response());
             must_1.must(m.__test.invokes.order()).equate([
                 'afterNoContent', 'resumed', 'select'
+            ]);
+        });
+    });
+    describe('ConflictCase', function () {
+        it('should resume the Interact', function () {
+            var t = new Resume();
+            var m = listener();
+            var c = new http_1.ConflictCase(Response, t, m);
+            c.match(new Response());
+            must_1.must(m.__test.invokes.order()).equate([
+                'afterConflict', 'resumed', 'select'
             ]);
         });
     });

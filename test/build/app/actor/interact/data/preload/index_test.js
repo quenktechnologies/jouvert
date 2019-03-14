@@ -14,8 +14,8 @@ var __extends = (this && this.__extends) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 var must_1 = require("@quenk/must");
-var preload_1 = require("../../../../../../lib/app/actor/interact/data/preload");
-var actor_1 = require("../../fixtures/actor");
+var preload_1 = require("../../../../../../../lib/app/actor/interact/data/preload");
+var actor_1 = require("../../../fixtures/actor");
 var Load = /** @class */ (function () {
     function Load() {
         this.display = '?';
@@ -27,28 +27,25 @@ var PreloadImpl = /** @class */ (function (_super) {
     function PreloadImpl() {
         return _super !== null && _super.apply(this, arguments) || this;
     }
-    PreloadImpl.prototype.beforePreload = function (_) {
-        return this.__record('beforePreload', [_]);
+    PreloadImpl.prototype.beforeLoading = function (_) {
+        return this.__record('beforeLoading', [_]);
     };
-    PreloadImpl.prototype.preload = function (_) {
-        return this.__record('preload', [_]);
-    };
-    PreloadImpl.prototype.load = function (_) {
-        this.__record('load', [_]);
+    PreloadImpl.prototype.loading = function (_) {
+        this.__record('loading', [_]);
         return [];
     };
     return PreloadImpl;
 }(actor_1.ActorImpl));
 describe('app/interact/data/preload', function () {
     describe('LoadCase', function () {
-        it('should make the Interact transition to load', function () {
+        it('should transition to loading', function () {
             var m = new PreloadImpl();
             var c = new preload_1.LoadCase(Load, m);
             c.match(new Load());
             must_1.must(m.__test.invokes.order()).equate([
-                'beforePreload', 'preload', 'load', 'select'
+                'beforeLoading', 'loading', 'select'
             ]);
         });
     });
 });
-//# sourceMappingURL=preload_test.js.map
+//# sourceMappingURL=index_test.js.map

@@ -14,8 +14,8 @@ var __extends = (this && this.__extends) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 var must_1 = require("@quenk/must");
-var http_1 = require("../../../../../../lib/app/actor/interact/http");
-var interact_1 = require("../fixtures/interact");
+var http_1 = require("../../../../../../../lib/app/actor/interact/data/preload/http");
+var interact_1 = require("../../fixtures/interact");
 var Response = /** @class */ (function () {
     function Response() {
         this.body = 1;
@@ -57,6 +57,13 @@ var HttpInteract = /** @class */ (function (_super) {
     HttpInteract.prototype.afterServerError = function (_) {
         return this.__record('afterServerError', [_]);
     };
+    HttpInteract.prototype.beforeLoading = function (_) {
+        return this.__record('beforeLoading', [_]);
+    };
+    HttpInteract.prototype.loading = function (_) {
+        this.__record('loading', [_]);
+        return [];
+    };
     return HttpInteract;
 }(interact_1.InteractImpl));
 var listener = function () { return new HttpInteract(); };
@@ -68,7 +75,7 @@ describe('app/interact/http', function () {
             var c = new http_1.OkCase(Response, t, m);
             c.match(new Response());
             must_1.must(m.__test.invokes.order()).equate([
-                'afterOk', 'resumed', 'select'
+                'afterOk', 'loading', 'select'
             ]);
         });
     });
@@ -79,7 +86,7 @@ describe('app/interact/http', function () {
             var c = new http_1.CreatedCase(Response, t, m);
             c.match(new Response());
             must_1.must(m.__test.invokes.order()).equate([
-                'afterCreated', 'resumed', 'select'
+                'afterCreated', 'loading', 'select'
             ]);
         });
     });
@@ -90,7 +97,7 @@ describe('app/interact/http', function () {
             var c = new http_1.NoContentCase(Response, t, m);
             c.match(new Response());
             must_1.must(m.__test.invokes.order()).equate([
-                'afterNoContent', 'resumed', 'select'
+                'afterNoContent', 'loading', 'select'
             ]);
         });
     });
@@ -101,7 +108,7 @@ describe('app/interact/http', function () {
             var c = new http_1.ConflictCase(Response, t, m);
             c.match(new Response());
             must_1.must(m.__test.invokes.order()).equate([
-                'afterConflict', 'resumed', 'select'
+                'afterConflict', 'loading', 'select'
             ]);
         });
     });
@@ -112,7 +119,7 @@ describe('app/interact/http', function () {
             var c = new http_1.ForbiddenCase(Response, t, m);
             c.match(new Response());
             must_1.must(m.__test.invokes.order()).equate([
-                'afterForbidden', 'resumed', 'select'
+                'afterForbidden', 'loading', 'select'
             ]);
         });
     });
@@ -123,7 +130,7 @@ describe('app/interact/http', function () {
             var c = new http_1.UnauthorizedCase(Response, t, m);
             c.match(new Response());
             must_1.must(m.__test.invokes.order()).equate([
-                'afterUnauthorized', 'resumed', 'select'
+                'afterUnauthorized', 'loading', 'select'
             ]);
         });
     });
@@ -134,7 +141,7 @@ describe('app/interact/http', function () {
             var c = new http_1.NotFoundCase(Response, t, m);
             c.match(new Response());
             must_1.must(m.__test.invokes.order()).equate([
-                'afterNotFound', 'resumed', 'select'
+                'afterNotFound', 'loading', 'select'
             ]);
         });
     });
@@ -145,9 +152,9 @@ describe('app/interact/http', function () {
             var c = new http_1.ServerErrorCase(Response, t, m);
             c.match(new Response());
             must_1.must(m.__test.invokes.order()).equate([
-                'afterServerError', 'resumed', 'select'
+                'afterServerError', 'loading', 'select'
             ]);
         });
     });
 });
-//# sourceMappingURL=index_test.js.map
+//# sourceMappingURL=http_test.js.map

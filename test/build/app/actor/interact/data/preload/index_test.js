@@ -22,6 +22,17 @@ var Load = /** @class */ (function () {
     }
     return Load;
 }());
+var Finish = /** @class */ (function () {
+    function Finish() {
+        this.done = true;
+    }
+    return Finish;
+}());
+var Request = /** @class */ (function () {
+    function Request() {
+    }
+    return Request;
+}());
 var PreloadImpl = /** @class */ (function (_super) {
     __extends(PreloadImpl, _super);
     function PreloadImpl() {
@@ -34,6 +45,13 @@ var PreloadImpl = /** @class */ (function (_super) {
         this.__record('loading', [_]);
         return [];
     };
+    PreloadImpl.prototype.afterLoading = function (_) {
+        return this.__record('afterLoading', [_]);
+    };
+    PreloadImpl.prototype.resumed = function (_) {
+        this.__record('resumed', [_]);
+        return [];
+    };
     return PreloadImpl;
 }(actor_1.ActorImpl));
 describe('app/interact/data/preload', function () {
@@ -44,6 +62,16 @@ describe('app/interact/data/preload', function () {
             c.match(new Load());
             must_1.must(m.__test.invokes.order()).equate([
                 'beforeLoading', 'loading', 'select'
+            ]);
+        });
+    });
+    describe('FinishCase', function () {
+        it('should transition to loading', function () {
+            var m = new PreloadImpl();
+            var c = new preload_1.FinishCase(Finish, new Request(), m);
+            c.match(new Finish());
+            must_1.must(m.__test.invokes.order()).equate([
+                'afterLoading', 'resumed', 'select'
             ]);
         });
     });

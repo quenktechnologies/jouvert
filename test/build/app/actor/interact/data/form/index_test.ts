@@ -22,7 +22,7 @@ class Abort { abort = true }
 class FormImpl extends ActorImpl
     implements
     InputListener<Event, Request, ResumedMessages>,
-    AbortListener<Abort, Request>,
+    AbortListener<Abort,Object, Request>,
     SaveListener<Save, Request> {
 
     onInput(_: Event) {
@@ -107,7 +107,7 @@ describe('app/interact/data/form', () => {
         it('should transition to suspended', () => {
 
             let m = new FormImpl();
-            let c = new AbortCase(Abort, m);
+          let c = new AbortCase(Abort,new Object(), m);
 
             c.match(new Abort());
 

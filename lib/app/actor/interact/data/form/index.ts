@@ -19,10 +19,8 @@
 import { Constructor } from '@quenk/noni/lib/data/type/constructor';
 import { Address } from '@quenk/potoo/lib/actor/address';
 import { Case } from '@quenk/potoo/lib/actor/resident/case';
-import { Suspended } from '../../suspended';
-import { Resumed } from '../../resumed';
 import { Actor } from '../../../';
-import { Resume } from '../../';
+import { Resumed, Suspended,Resume } from '../../';
 import { OnInput } from './oninput';
 
 /**
@@ -85,12 +83,12 @@ export interface SaveListener<T, M> extends BeforeSaving<T>, Saving<T, M> { }
 /**
  * AbortListener
  */
-export interface AbortListener<A, M> extends Suspended<M> {
+export interface AbortListener<A,T, M> extends Suspended<T,M> {
 
     /**
      * afterAbort hook.
      */
-    afterAbort(a: A): AbortListener<A, M>
+    afterAbort(a: A): AbortListener<A,T, M>
 
 }
 
@@ -167,16 +165,17 @@ export class SaveCase<S, MSaving> extends Case<S> {
  * AbortCase applies the afterAbort hook then transitions to 
  * suspended.
  */
-export class AbortCase<A, MSuspended> extends Case<A> {
+export class AbortCase<A, T, MSuspended> extends Case<A> {
 
     constructor(
         public pattern: Constructor<A>,
-        public listener: AbortListener<A, MSuspended>) {
+      public token: T,
+        public listener: AbortListener<A, T, MSuspended>) {
 
         super(pattern, (a: A) => {
 
             listener.afterAbort(a);
-            listener.select(listener.suspended());
+            listener.select(listener.suspended(token));
 
         });
 

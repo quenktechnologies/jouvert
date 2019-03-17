@@ -1,14 +1,14 @@
 import { must } from '@quenk/must';
 import { Case } from '@quenk/potoo/lib/actor/resident/case';
 import {
-    FormClient,
+    EditListener,
     AbortedListener,
     SavedListener,
     EditCase,
     AbortedCase,
     SavedCase
-} from '../../../../../../../../lib/app/actor/interact/data/form/client';
-import { ActorImpl } from '../../../../fixtures/actor';
+} from '../../../../../../../lib/app/actor/interact/data/form/client';
+import { ActorImpl } from '../../../fixtures/actor';
 
 class Request { display = '?'; form = '?'; client = '?' }
 
@@ -19,7 +19,7 @@ class Cancel { value = 12 }
 class Save { source = '?' }
 
 class ClientImpl extends ActorImpl
-    implements FormClient<Request, void>,
+    implements EditListener<Request, void>,
     AbortedListener<Cancel, Resume, void>,
     SavedListener<Save, Resume, void>  {
 

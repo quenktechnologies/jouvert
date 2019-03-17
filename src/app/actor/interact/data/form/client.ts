@@ -1,20 +1,52 @@
+/**
+ * This module provides interfaces for actors that can yield control to a form
+ * to collect user input.
+ *
+ * Yielding to a form means allowing it to stream content to the display
+ * while awaiting the abort or save signals.
+ *
+ * Behaviour matrix
+ *         editing   resumed
+ * editing           <Aborted>|<Saved>            
+ * resumed <Edit>
+ */
+/** imports */
 import { Constructor } from '@quenk/noni/lib/data/type/constructor';
 import { Case } from '@quenk/potoo/lib/actor/resident/case';
-import { Resumed } from '../../../';
-import { BeforeEditing, Editing } from './editing';
+import { Actor } from '../../../';
+import { Resumed } from '../../';
 
 /**
- * Editable
+ * BeforeEditing indicates an actor has a hook to invoke before
+ * transitioning to editing.
  */
-export interface Editable<T, M> extends BeforeEditing<T>, Editing<T, M> { }
+export interface BeforeEditing<T> extends Actor {
+
+    /**
+     * beforeEditing hook.
+     */
+  beforeEditing(t: T): BeforeEditing<T>
+
+}
 
 /**
- * FormClient interface for Interacts that can yield control to a Form.
  *
- * Yielding to a Form means allowing the Form to stream its view to
- * the display.
+ * Editing indicates an actor has a behaviour for 
+ * editing via some Form actor.
  */
-export interface FormClient<T, M> extends Editable<T, M> { }
+export interface Editing<T, M> extends Actor {
+
+    /**
+     * editing behvaiour.
+     */
+    editing(t: T): Case<M>[];
+
+}
+
+/**
+ * EditListener
+ */
+export interface EditListener<T, M> extends BeforeEditing<T>, Editing<T, M> { }
 
 /**
  * AbortedListener interface for receiving the Cancelled event from a form.
@@ -49,7 +81,7 @@ export class EditCase<E, M> extends Case<E> {
 
     constructor(
         public pattern: Constructor<E>,
-        public client: Editable<E, M>) {
+        public client: EditListener<E, M>) {
 
         super(pattern, (t: E) =>
             client

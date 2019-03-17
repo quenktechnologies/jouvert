@@ -7,7 +7,7 @@
  * UI or preforming some task on behalf of the user.
  *
  * An Interact interface is provided as a basic entrypoint, this is an actor
- * that is sleeps (suspended) while not active and resumes providing 
+ * that is sleeps (suspended) while not active and resumes providing
  * interactivity when some user even has given it control.
  *
  * Some of the APIs extend this interface, others augment it without explicit
@@ -18,7 +18,34 @@ import { Address } from '@quenk/potoo/lib/actor/address';
 import { Constructor } from '@quenk/noni/lib/data/type/constructor';
 import { Case as Case } from '@quenk/potoo/lib/actor/resident/case';
 import { BeforeSuspended, Suspended } from './suspended';
-import { BeforeResumed, Resumed } from './resumed';
+import {Actor} from '../';
+
+/**
+ * BeforeResumed indicates the actor has a hook that can be invoked
+ * before resuming.
+ */
+export interface BeforeResumed<T> extends Actor {
+
+    /**
+     * beforeResumed hook.
+     */
+    beforeResumed(r: T): BeforeResumed<T>
+
+}
+
+/**
+ * Resumed indicates the actor has a behaviour for being resumed.
+ *
+ * This is usually the state where the actor is given control of the app.
+ */
+export interface Resumed<T, M> extends Actor {
+
+    /**
+     * resumed cases provider.
+     */
+    resumed(r: T): Case<M>[]
+
+}
 
 /**
  * Resume is used as an indicator for an Interest to continue
@@ -27,7 +54,7 @@ import { BeforeResumed, Resumed } from './resumed';
 export interface Resume {
 
     /**
-     * display is the address to the display server that 
+     * display is the address to the display server that
      * content is sent to.
      */
     display: Address
@@ -48,27 +75,27 @@ export interface Suspend {
 }
 
 /**
- * SuspendableInteract interface combining BeforeSuspended and Suspended.
+ * SuspendListener interface combining BeforeSuspended and Suspended.
  */
-export interface SuspendableInteract<M> 
+export interface SuspendListener<M>
   extends BeforeSuspended, Suspended<M> { }
 
 /**
- * ResumableInteract interface combining BeforeResumed and Resumed.
+ * ResumeListener interface combining BeforeResumed and Resumed.
  */
-export interface ResumableInteract<T, M> 
+export interface ResumeListener<T, M>
   extends BeforeResumed<T>, Resumed<T, M> { }
 
 /**
  * Interact is an actor that provides a unit of interactivity
  * to the user.
  *
- * Upon receiving the relevant Resume message, an Interact is expected to 
- * stream content to a display server until it is told to stop via a 
+ * Upon receiving the relevant Resume message, an Interact is expected to
+ * stream content to a display server until it is told to stop via a
  * Suspend message.
  *
- * Hooks are provided to execute side effects before transitioning. 
- *  
+ * Hooks are provided to execute side effects before transitioning.
+ *
  * Behaviour matrix:
  *
  *            suspended resumed
@@ -76,7 +103,7 @@ export interface ResumableInteract<T, M>
  * resumed       <S>
  */
 export interface Interact<T, MSuspended, MResumed>
-    extends SuspendableInteract<MSuspended>, ResumableInteract<T, MResumed> { }
+    extends SuspendListener<MSuspended>, ResumeListener<T, MResumed> { }
 
 /**
  * ResumeCase
@@ -87,7 +114,7 @@ export class ResumeCase<T, MResumed> extends Case<T> {
 
     constructor(
         public pattern: Constructor<T>,
-        public target: ResumableInteract<T, MResumed>) {
+        public target: ResumeListener<T, MResumed>) {
 
         super(pattern, (r: T) =>
             target
@@ -107,7 +134,7 @@ export class SuspendCase<T, MSuspended> extends Case<T> {
 
     constructor(
         public pattern: Constructor<T>,
-        public target: SuspendableInteract<MSuspended>) {
+        public target: SuspendListener<MSuspended>) {
 
         super(pattern, (_: T) =>
             target

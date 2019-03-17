@@ -6,7 +6,7 @@
 /** imports */
 import { Constructor } from '@quenk/noni/lib/data/type/constructor';
 import { Case } from '@quenk/potoo/lib/actor/resident/case';
-import { Resumed } from './resumed';
+import { Resumed } from './';
 
 /**
  * OkListener

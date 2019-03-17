@@ -1,7 +1,7 @@
 import { Constructor } from '@quenk/noni/lib/data/type/constructor';
 import { Case } from '@quenk/potoo/lib/actor/resident/case';
 import { Actor } from '../../../';
-import { Resumed } from '../../resumed';
+import { Resumed } from '../../';
 
 /**
  * BeforeLoading indicates an actor has a hook to invoke before loading.

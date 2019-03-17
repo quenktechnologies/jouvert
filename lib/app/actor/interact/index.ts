@@ -17,7 +17,6 @@
 import { Address } from '@quenk/potoo/lib/actor/address';
 import { Constructor } from '@quenk/noni/lib/data/type/constructor';
 import { Case as Case } from '@quenk/potoo/lib/actor/resident/case';
-import { BeforeSuspended, Suspended } from './suspended';
 import {Actor} from '../';
 
 /**
@@ -44,6 +43,34 @@ export interface Resumed<T, M> extends Actor {
      * resumed cases provider.
      */
     resumed(r: T): Case<M>[]
+
+}
+
+/**
+ * BeforeSuspended indicates that the actor has a hook that can be invoked
+ * before suspending.
+ */
+export interface BeforeSuspended<T> extends Actor {
+
+    /**
+     * beforeSuspended hook
+     */
+  beforeSuspended(t:T): BeforeSuspended<T>
+
+}
+
+/**
+ * Suspended indicates that an Interact can be put into a suspended mode.
+ *
+ * While suspended an Interact is expected to ignore most messages except
+ * the one meant for resuming.
+ */
+export interface Suspended<T,M> extends Actor {
+
+    /**
+     * suspended method providing the behaviour.
+     */
+    suspended(t:T): Case<M>[]
 
 }
 
@@ -77,33 +104,14 @@ export interface Suspend {
 /**
  * SuspendListener interface combining BeforeSuspended and Suspended.
  */
-export interface SuspendListener<M>
-  extends BeforeSuspended, Suspended<M> { }
+export interface SuspendListener<T,M>
+  extends BeforeSuspended<T>, Suspended<T,M> { }
 
 /**
  * ResumeListener interface combining BeforeResumed and Resumed.
  */
 export interface ResumeListener<T, M>
   extends BeforeResumed<T>, Resumed<T, M> { }
-
-/**
- * Interact is an actor that provides a unit of interactivity
- * to the user.
- *
- * Upon receiving the relevant Resume message, an Interact is expected to
- * stream content to a display server until it is told to stop via a
- * Suspend message.
- *
- * Hooks are provided to execute side effects before transitioning.
- *
- * Behaviour matrix:
- *
- *            suspended resumed
- * suspended              <R>
- * resumed       <S>
- */
-export interface Interact<T, MSuspended, MResumed>
-    extends SuspendListener<MSuspended>, ResumeListener<T, MResumed> { }
 
 /**
  * ResumeCase
@@ -134,12 +142,12 @@ export class SuspendCase<T, MSuspended> extends Case<T> {
 
     constructor(
         public pattern: Constructor<T>,
-        public target: SuspendListener<MSuspended>) {
+        public target: SuspendListener<T,MSuspended>) {
 
-        super(pattern, (_: T) =>
+        super(pattern, (t: T) =>
             target
-                .beforeSuspended()
-                .select(target.suspended()));
+                .beforeSuspended(t)
+                .select(target.suspended(t)));
 
     }
 

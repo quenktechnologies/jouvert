@@ -1279,10 +1279,10 @@ exports.ResumeCase = ResumeCase;
 var SuspendCase = /** @class */ (function (_super) {
     __extends(SuspendCase, _super);
     function SuspendCase(pattern, target) {
-        var _this = _super.call(this, pattern, function (_) {
+        var _this = _super.call(this, pattern, function (t) {
             return target
-                .beforeSuspended()
-                .select(target.suspended());
+                .beforeSuspended(t)
+                .select(target.suspended(t));
         }) || this;
         _this.pattern = pattern;
         _this.target = target;

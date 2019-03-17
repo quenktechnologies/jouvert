@@ -1,8 +1,13 @@
-import { Interact } from '../../../../../../lib/app/actor/interact';
+import { 
+  ResumeListener,
+  SuspendListener
+} from '../../../../../../lib/app/actor/interact';
 import { ActorImpl } from '../../fixtures/actor';
 
 export class InteractImpl<R, MSuspended, MResumed> extends ActorImpl
-    implements Interact<R, MSuspended, MResumed>  {
+implements 
+ResumeListener<R, MResumed>,
+SuspendListener<any, MSuspended>  {
 
     beforeResumed(_: R) {
 

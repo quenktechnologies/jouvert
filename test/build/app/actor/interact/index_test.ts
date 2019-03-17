@@ -1,6 +1,9 @@
 import { must } from '@quenk/must';
 import { ActorImpl } from '../fixtures/actor';
-import { Interact } from '../../../../../lib/app/actor/interact';
+import {
+    ResumeListener,
+    SuspendListener
+} from '../../../../../lib/app/actor/interact';
 import { ResumeCase, SuspendCase } from '../../../../../lib/app/actor/interact';
 
 class Resume {
@@ -15,8 +18,12 @@ class Suspend {
 
 }
 
-export class InteractImpl<R, MSuspended, MResumed> extends ActorImpl
-    implements Interact<R, MSuspended, MResumed>  {
+export class InteractImpl<R, MSuspended, MResumed>
+    extends
+    ActorImpl
+    implements
+    ResumeListener<R, MResumed>,
+    SuspendListener<any, MSuspended> {
 
     beforeResumed(_: R) {
 
@@ -53,7 +60,7 @@ describe('app/interact', () => {
         it('should resume the Interact', () => {
 
             let m = new InteractImpl<Resume, void, void>();
-            let c = new ResumeCase<Resume,  void>(Resume, m);
+            let c = new ResumeCase<Resume, void>(Resume, m);
 
             c.match(new Resume('main'));
             must(m.__test.invokes.order()).equate([

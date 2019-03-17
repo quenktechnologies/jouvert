@@ -14661,8 +14661,8 @@ var __extends = (this && this.__extends) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 var must_1 = require("@quenk/must");
-var client_1 = require("../../../../../../../../lib/app/actor/interact/data/form/client");
-var actor_1 = require("../../../../fixtures/actor");
+var client_1 = require("../../../../../../../lib/app/actor/interact/data/form/client");
+var actor_1 = require("../../../fixtures/actor");
 var Request = /** @class */ (function () {
     function Request() {
         this.display = '?';
@@ -14753,7 +14753,7 @@ describe('app/interact/data/form/client', function () {
     });
 });
 
-},{"../../../../../../../../lib/app/actor/interact/data/form/client":4,"../../../../fixtures/actor":96,"@quenk/must":15}],98:[function(require,module,exports){
+},{"../../../../../../../lib/app/actor/interact/data/form/client":4,"../../../fixtures/actor":96,"@quenk/must":15}],98:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -15797,9 +15797,9 @@ exports.Mock = Mock;
 },{}],110:[function(require,module,exports){
 require("./browser/window/router/hash/default_test.js");
 require("./app/actor/interact/http_test.js");
+require("./app/actor/interact/data/form/client_test.js");
 require("./app/actor/interact/data/form/validate/index_test.js");
 require("./app/actor/interact/data/form/index_test.js");
-require("./app/actor/interact/data/form/client/index_test.js");
 require("./app/actor/interact/data/preload/http_test.js");
 require("./app/actor/interact/data/preload/index_test.js");
 require("./app/actor/interact/data/search/filtered_test.js");
@@ -15808,4 +15808,4 @@ require("./app/actor/interact/index_test.js");
 require("./app/actor/api/router/display_test.js");
 require("./app/actor/api/router/index_test.js");
 
-},{"./app/actor/api/router/display_test.js":94,"./app/actor/api/router/index_test.js":95,"./app/actor/interact/data/form/client/index_test.js":97,"./app/actor/interact/data/form/index_test.js":98,"./app/actor/interact/data/form/validate/index_test.js":99,"./app/actor/interact/data/preload/http_test.js":100,"./app/actor/interact/data/preload/index_test.js":101,"./app/actor/interact/data/search/filtered_test.js":102,"./app/actor/interact/data/search/realtime_test.js":103,"./app/actor/interact/http_test.js":105,"./app/actor/interact/index_test.js":106,"./browser/window/router/hash/default_test.js":108}]},{},[110]);
+},{"./app/actor/api/router/display_test.js":94,"./app/actor/api/router/index_test.js":95,"./app/actor/interact/data/form/client_test.js":97,"./app/actor/interact/data/form/index_test.js":98,"./app/actor/interact/data/form/validate/index_test.js":99,"./app/actor/interact/data/preload/http_test.js":100,"./app/actor/interact/data/preload/index_test.js":101,"./app/actor/interact/data/search/filtered_test.js":102,"./app/actor/interact/data/search/realtime_test.js":103,"./app/actor/interact/http_test.js":105,"./app/actor/interact/index_test.js":106,"./browser/window/router/hash/default_test.js":108}]},{},[110]);

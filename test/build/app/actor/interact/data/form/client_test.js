@@ -14,8 +14,8 @@ var __extends = (this && this.__extends) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 var must_1 = require("@quenk/must");
-var client_1 = require("../../../../../../../../lib/app/actor/interact/data/form/client");
-var actor_1 = require("../../../../fixtures/actor");
+var client_1 = require("../../../../../../../lib/app/actor/interact/data/form/client");
+var actor_1 = require("../../../fixtures/actor");
 var Request = /** @class */ (function () {
     function Request() {
         this.display = '?';
@@ -105,4 +105,4 @@ describe('app/interact/data/form/client', function () {
         });
     });
 });
-//# sourceMappingURL=index_test.js.map
+//# sourceMappingURL=client_test.js.map

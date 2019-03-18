@@ -65,10 +65,10 @@ describe('app/interact/data/preload', function () {
             ]);
         });
     });
-    describe('FinishCase', function () {
+    describe('FinishedCase', function () {
         it('should transition to loading', function () {
             var m = new PreloadImpl();
-            var c = new preload_1.FinishCase(Finish, new Request(), m);
+            var c = new preload_1.FinishedCase(Finish, new Request(), m);
             c.match(new Finish());
             must_1.must(m.__test.invokes.order()).equate([
                 'afterLoading', 'resumed', 'select'

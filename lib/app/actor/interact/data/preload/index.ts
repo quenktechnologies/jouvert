@@ -71,10 +71,10 @@ export class LoadCase<L, MLoading> extends Case<L> {
 }
 
 /**
- * FinishCase applies the afterLoading hook then transitions to the 
+ * FinishedCase applies the afterLoading hook then transitions to the 
  * resumed behaviour.
  */
-export class FinishCase<F, T, MResumed> extends Case<F> {
+export class FinishedCase<F, T, MResumed> extends Case<F> {
 
     constructor(
         public pattern: Constructor<F>,

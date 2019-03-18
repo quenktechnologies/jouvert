@@ -853,12 +853,12 @@ var LoadCase = /** @class */ (function (_super) {
 }(case_1.Case));
 exports.LoadCase = LoadCase;
 /**
- * FinishCase applies the afterLoading hook then transitions to the
+ * FinishedCase applies the afterLoading hook then transitions to the
  * resumed behaviour.
  */
-var FinishCase = /** @class */ (function (_super) {
-    __extends(FinishCase, _super);
-    function FinishCase(pattern, token, listener) {
+var FinishedCase = /** @class */ (function (_super) {
+    __extends(FinishedCase, _super);
+    function FinishedCase(pattern, token, listener) {
         var _this = _super.call(this, pattern, function (f) {
             listener.afterLoading(f);
             listener.select(listener.resumed(token));
@@ -868,9 +868,9 @@ var FinishCase = /** @class */ (function (_super) {
         _this.listener = listener;
         return _this;
     }
-    return FinishCase;
+    return FinishedCase;
 }(case_1.Case));
-exports.FinishCase = FinishCase;
+exports.FinishedCase = FinishedCase;
 
 },{"@quenk/potoo/lib/actor/resident/case":31}],9:[function(require,module,exports){
 "use strict";
@@ -15172,10 +15172,10 @@ describe('app/interact/data/preload', function () {
             ]);
         });
     });
-    describe('FinishCase', function () {
+    describe('FinishedCase', function () {
         it('should transition to loading', function () {
             var m = new PreloadImpl();
-            var c = new preload_1.FinishCase(Finish, new Request(), m);
+            var c = new preload_1.FinishedCase(Finish, new Request(), m);
             c.match(new Finish());
             must_1.must(m.__test.invokes.order()).equate([
                 'afterLoading', 'resumed', 'select'

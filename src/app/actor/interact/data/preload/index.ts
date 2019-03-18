@@ -44,9 +44,9 @@ export interface Loading<T, M> extends Actor {
 export interface LoadListener<T, M> extends BeforeLoading<T>, Loading<T, M> { }
 
 /**
- * FinishListener
+ * FinishedListener
  */
-export interface FinishListener<F,T, M>
+export interface FinishedListener<F,T, M>
   extends AfterLoading<F>, Resumed<T, M> { }
 
 /**
@@ -79,7 +79,7 @@ export class FinishedCase<F, T, MResumed> extends Case<F> {
     constructor(
         public pattern: Constructor<F>,
         public token: T,
-        public listener: FinishListener<F,T, MResumed>) {
+        public listener: FinishedListener<F,T, MResumed>) {
 
         super(pattern, (f: F) => {
 

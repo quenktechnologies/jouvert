@@ -1,7 +1,7 @@
 import { must } from '@quenk/must';
 import {
     LoadListener,
-    FinishListener,
+    FinishedListener,
     LoadCase,
     FinishedCase
 }
@@ -17,7 +17,7 @@ class Request { }
 class PreloadImpl extends ActorImpl
     implements
     LoadListener<Load, void>,
-    FinishListener<Finish, Request, void> {
+    FinishedListener<Finish, Request, void> {
 
     beforeLoading(_: Load) {
 

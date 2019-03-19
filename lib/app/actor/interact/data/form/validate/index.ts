@@ -3,7 +3,7 @@ import { Constructor } from '@quenk/noni/lib/data/type/constructor';
 import { Case } from '@quenk/potoo/lib/actor/resident/case';
 import { Result } from '@quenk/preconditions/lib/result';
 import { Failure } from '@quenk/preconditions/lib/result/failure';
-import { Request, Form } from '../';
+import { Form } from '../';
 
 /**
  * ResumedMessage
@@ -35,7 +35,7 @@ export interface InputEvent {
  * Validate is a Form that validates its input via the @quenk/precondition
  * module.
  */
-export interface Validate<E extends InputEvent, R extends Request, MResumed>
+export interface Validate<E extends InputEvent, R, MResumed>
     extends Form<E, R, MResumed> {
 
     /**
@@ -48,8 +48,8 @@ export interface Validate<E extends InputEvent, R extends Request, MResumed>
      *
      * This hook can be used to provide positive feedback to the user.
      */
-      afterFieldValid(name: string, value: Value, e: E)
-      : Validate<E, R, MResumed>
+    afterFieldValid(name: string, value: Value, e: E)
+        : Validate<E, R, MResumed>
 
     /**
      * afterFieldInvalid hook.
@@ -66,7 +66,7 @@ export interface Validate<E extends InputEvent, R extends Request, MResumed>
  *
  * Inspects an InputEvent applying the appropriate hook just before resuming.
  */
-export class InputCase<E extends InputEvent, R extends Request, MResumed>
+export class InputCase<E extends InputEvent, R, MResumed>
     extends Case<E> {
 
     constructor(

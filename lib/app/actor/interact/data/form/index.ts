@@ -17,10 +17,9 @@
 
 /** imports */
 import { Constructor } from '@quenk/noni/lib/data/type/constructor';
-import { Address } from '@quenk/potoo/lib/actor/address';
 import { Case } from '@quenk/potoo/lib/actor/resident/case';
 import { Actor } from '../../../';
-import { Resumed, Suspended,Resume } from '../../';
+import { Resumed, Suspended } from '../../';
 import { OnInput } from './oninput';
 
 /**
@@ -89,24 +88,6 @@ export interface AbortListener<A,T, M> extends Suspended<T,M> {
      * afterAbort hook.
      */
     afterAbort(a: A): AbortListener<A,T, M>
-
-}
-
-/**
- * Request extends the regular Resume 
- * to provide extra information to the Form.
- */
-export interface Request extends Resume {
-
-    /**
-     * client address for the form.
-     */
-    client: Address
-
-    /**
-     * form is the address of the Form the Token is destined for.
-     */
-    form: Address,
 
 }
 

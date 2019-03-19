@@ -28,6 +28,12 @@ var Suspend = /** @class */ (function () {
     }
     return Suspend;
 }());
+var Exit = /** @class */ (function () {
+    function Exit() {
+        this.die = 'yes';
+    }
+    return Exit;
+}());
 var InteractImpl = /** @class */ (function (_super) {
     __extends(InteractImpl, _super);
     function InteractImpl() {
@@ -46,6 +52,10 @@ var InteractImpl = /** @class */ (function (_super) {
     InteractImpl.prototype.suspended = function () {
         this.__record('suspended', []);
         return [];
+    };
+    InteractImpl.prototype.beforeExit = function (_) {
+        this.__record('beforeExit', []);
+        return this;
     };
     return InteractImpl;
 }(actor_1.ActorImpl));
@@ -68,6 +78,16 @@ describe('app/interact', function () {
             c.match(new Suspend('router'));
             must_1.must(m.__test.invokes.order()).equate([
                 'beforeSuspended', 'suspended', 'select'
+            ]);
+        });
+    });
+    describe('Exit', function () {
+        it('should exit the Interact', function () {
+            var m = new InteractImpl();
+            var c = new interact_1.ExitCase(Exit, m);
+            c.match(new Exit());
+            must_1.must(m.__test.invokes.order()).equate([
+                'beforeExit', 'exit'
             ]);
         });
     });

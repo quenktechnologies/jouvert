@@ -2,7 +2,6 @@ import { Object } from '@quenk/noni/lib/data/json';
 import { Constructor } from '@quenk/noni/lib/data/type/constructor';
 import { Result } from '@quenk/preconditions/lib/result';
 import { Case } from '@quenk/potoo/lib/actor/resident/case';
-import { Request } from '../';
 import { Validate, InputEvent } from './';
 
 /**
@@ -13,7 +12,7 @@ import { Validate, InputEvent } from './';
  * button when the form is valid.
  */
 export interface AllForOne
-    <D extends Object, E extends InputEvent, R extends Request, MResumed>
+    <D extends Object, E extends InputEvent, R, MResumed>
     extends Validate<E, R, MResumed> {
 
     /**
@@ -45,7 +44,7 @@ export interface AllForOne
  * Inspects an InputEvent applying the appropriate hook just before resuming.
  */
 export class InputCase
-    <D extends Object, E extends InputEvent, R extends Request, MResumed>
+    <D extends Object, E extends InputEvent, R, MResumed>
     extends Case<E> {
 
     constructor(

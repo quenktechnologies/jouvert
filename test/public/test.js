@@ -1201,7 +1201,7 @@ exports.ResumeCase = ResumeCase;
 /**
  * SuspendCase
  *
- * Applies the beforeSuspend hook then changes behaviour to supsend().
+ * Applies the beforeSuspend hook then changes behaviour to suspend().
  */
 var SuspendCase = /** @class */ (function (_super) {
     __extends(SuspendCase, _super);
@@ -1218,6 +1218,25 @@ var SuspendCase = /** @class */ (function (_super) {
     return SuspendCase;
 }(case_1.Case));
 exports.SuspendCase = SuspendCase;
+/**
+ * ExitCase
+ *
+ * Applies the beforeExit hook and exits the actor.
+ */
+var ExitCase = /** @class */ (function (_super) {
+    __extends(ExitCase, _super);
+    function ExitCase(pattern, target) {
+        var _this = _super.call(this, pattern, function (t) {
+            target.beforeExit(t);
+            target.exit();
+        }) || this;
+        _this.pattern = pattern;
+        _this.target = target;
+        return _this;
+    }
+    return ExitCase;
+}(case_1.Case));
+exports.ExitCase = ExitCase;
 
 },{"@quenk/potoo/lib/actor/resident/case":31}],13:[function(require,module,exports){
 "use strict";
@@ -15557,6 +15576,12 @@ var Suspend = /** @class */ (function () {
     }
     return Suspend;
 }());
+var Exit = /** @class */ (function () {
+    function Exit() {
+        this.die = 'yes';
+    }
+    return Exit;
+}());
 var InteractImpl = /** @class */ (function (_super) {
     __extends(InteractImpl, _super);
     function InteractImpl() {
@@ -15575,6 +15600,10 @@ var InteractImpl = /** @class */ (function (_super) {
     InteractImpl.prototype.suspended = function () {
         this.__record('suspended', []);
         return [];
+    };
+    InteractImpl.prototype.beforeExit = function (_) {
+        this.__record('beforeExit', []);
+        return this;
     };
     return InteractImpl;
 }(actor_1.ActorImpl));
@@ -15597,6 +15626,16 @@ describe('app/interact', function () {
             c.match(new Suspend('router'));
             must_1.must(m.__test.invokes.order()).equate([
                 'beforeSuspended', 'suspended', 'select'
+            ]);
+        });
+    });
+    describe('Exit', function () {
+        it('should exit the Interact', function () {
+            var m = new InteractImpl();
+            var c = new interact_1.ExitCase(Exit, m);
+            c.match(new Exit());
+            must_1.must(m.__test.invokes.order()).equate([
+                'beforeExit', 'exit'
             ]);
         });
     });

@@ -2,9 +2,14 @@ import { must } from '@quenk/must';
 import { ActorImpl } from '../fixtures/actor';
 import {
     ResumeListener,
-    SuspendListener
+    SuspendListener,
+    ExitListener
 } from '../../../../../lib/app/actor/interact';
-import { ResumeCase, SuspendCase } from '../../../../../lib/app/actor/interact';
+import {
+    ResumeCase,
+    SuspendCase,
+    ExitCase
+} from '../../../../../lib/app/actor/interact';
 
 class Resume {
 
@@ -18,12 +23,19 @@ class Suspend {
 
 }
 
+class Exit {
+
+    die = 'yes';
+
+}
+
 export class InteractImpl<R, MSuspended, MResumed>
     extends
     ActorImpl
     implements
     ResumeListener<R, MResumed>,
-    SuspendListener<any, MSuspended> {
+    SuspendListener<any, MSuspended>,
+    ExitListener<Exit> {
 
     beforeResumed(_: R) {
 
@@ -48,6 +60,13 @@ export class InteractImpl<R, MSuspended, MResumed>
 
         this.__record('suspended', []);
         return [];
+
+    }
+
+    beforeExit(_: Exit) {
+
+        this.__record('beforeExit', []);
+        return this;
 
     }
 
@@ -86,5 +105,21 @@ describe('app/interact', () => {
         });
 
     });
+
+    describe('Exit', () => {
+
+        it('should exit the Interact', () => {
+
+            let m = new InteractImpl<void, void, Suspend>();
+            let c = new ExitCase(Exit, m);
+
+            c.match(new Exit());
+            must(m.__test.invokes.order()).equate([
+                'beforeExit', 'exit'
+            ]);
+
+        });
+
+    })
 
 });

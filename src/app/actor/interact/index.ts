@@ -74,6 +74,18 @@ export interface Suspended<T, M> extends Actor {
 }
 
 /**
+ * BeforeExit indicates an actor has a hook to invoke before exiting the actor.
+ */
+export interface BeforeExit<T> extends Actor {
+
+    /**
+     * beforeExit hook.
+     */
+    beforeExit(t: T): BeforeExit<T>
+
+}
+
+/**
  * SuspendListener interface combining BeforeSuspended and Suspended.
  */
 export interface SuspendListener<T, M>
@@ -84,6 +96,12 @@ export interface SuspendListener<T, M>
  */
 export interface ResumeListener<T, M>
     extends BeforeResumed<T>, Resumed<T, M> { }
+
+/**
+ * ExitListener indicates the actor can exit on receipt of 
+ * a message to do so.
+ */
+export interface ExitListener<T> extends BeforeExit<T> { }
 
 /**
  * ResumeCase
@@ -108,7 +126,7 @@ export class ResumeCase<T, MResumed> extends Case<T> {
 /**
  * SuspendCase
  *
- * Applies the beforeSuspend hook then changes behaviour to supsend().
+ * Applies the beforeSuspend hook then changes behaviour to suspend().
  */
 export class SuspendCase<T, MSuspended> extends Case<T> {
 
@@ -120,6 +138,29 @@ export class SuspendCase<T, MSuspended> extends Case<T> {
             target
                 .beforeSuspended(t)
                 .select(target.suspended(t)));
+
+    }
+
+}
+
+/**
+ * ExitCase 
+ *
+ * Applies the beforeExit hook and exits the actor.
+ */
+export class ExitCase<T> extends Case<T> {
+
+    constructor(
+        public pattern: Constructor<T>,
+        public target: ExitListener<T>) {
+
+        super(pattern, (t: T) => {
+
+            target.beforeExit(t);
+            target.exit();
+
+        });
+
 
     }
 

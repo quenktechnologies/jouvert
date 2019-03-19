@@ -14,10 +14,9 @@
  * re-definition.
  */
 /** imports */
-import { Address } from '@quenk/potoo/lib/actor/address';
 import { Constructor } from '@quenk/noni/lib/data/type/constructor';
 import { Case as Case } from '@quenk/potoo/lib/actor/resident/case';
-import {Actor} from '../';
+import { Actor } from '../';
 
 /**
  * BeforeResumed indicates the actor has a hook that can be invoked
@@ -55,7 +54,7 @@ export interface BeforeSuspended<T> extends Actor {
     /**
      * beforeSuspended hook
      */
-  beforeSuspended(t:T): BeforeSuspended<T>
+    beforeSuspended(t: T): BeforeSuspended<T>
 
 }
 
@@ -65,53 +64,26 @@ export interface BeforeSuspended<T> extends Actor {
  * While suspended an Interact is expected to ignore most messages except
  * the one meant for resuming.
  */
-export interface Suspended<T,M> extends Actor {
+export interface Suspended<T, M> extends Actor {
 
     /**
      * suspended method providing the behaviour.
      */
-    suspended(t:T): Case<M>[]
-
-}
-
-/**
- * Resume is used as an indicator for an Interest to continue
- * streaming content to a display server.
- */
-export interface Resume {
-
-    /**
-     * display is the address to the display server that
-     * content is sent to.
-     */
-    display: Address
-
-}
-
-/**
- * Suspend message indicating an Interact must cease streaming
- * its content.
- */
-export interface Suspend {
-
-    /**
-     * source of the Suspend message.
-     */
-    source: Address
+    suspended(t: T): Case<M>[]
 
 }
 
 /**
  * SuspendListener interface combining BeforeSuspended and Suspended.
  */
-export interface SuspendListener<T,M>
-  extends BeforeSuspended<T>, Suspended<T,M> { }
+export interface SuspendListener<T, M>
+    extends BeforeSuspended<T>, Suspended<T, M> { }
 
 /**
  * ResumeListener interface combining BeforeResumed and Resumed.
  */
 export interface ResumeListener<T, M>
-  extends BeforeResumed<T>, Resumed<T, M> { }
+    extends BeforeResumed<T>, Resumed<T, M> { }
 
 /**
  * ResumeCase
@@ -142,7 +114,7 @@ export class SuspendCase<T, MSuspended> extends Case<T> {
 
     constructor(
         public pattern: Constructor<T>,
-        public target: SuspendListener<T,MSuspended>) {
+        public target: SuspendListener<T, MSuspended>) {
 
         super(pattern, (t: T) =>
             target

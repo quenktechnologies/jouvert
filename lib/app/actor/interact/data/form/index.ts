@@ -82,12 +82,12 @@ export interface SaveListener<T, M> extends BeforeSaving<T>, Saving<T, M> { }
 /**
  * AbortListener
  */
-export interface AbortListener<A,T, M> extends Suspended<T,M> {
+export interface AbortListener<A,M> extends Suspended<M> {
 
     /**
      * afterAbort hook.
      */
-    afterAbort(a: A): AbortListener<A,T, M>
+    afterAbort(a: A): AbortListener<A,M>
 
 }
 
@@ -146,17 +146,16 @@ export class SaveCase<S, MSaving> extends Case<S> {
  * AbortCase applies the afterAbort hook then transitions to 
  * suspended.
  */
-export class AbortCase<A, T, MSuspended> extends Case<A> {
+export class AbortCase<A, MSuspended> extends Case<A> {
 
     constructor(
         public pattern: Constructor<A>,
-      public token: T,
-        public listener: AbortListener<A, T, MSuspended>) {
+        public listener: AbortListener<A, MSuspended>) {
 
         super(pattern, (a: A) => {
 
             listener.afterAbort(a);
-            listener.select(listener.suspended(token));
+            listener.select(listener.suspended());
 
         });
 

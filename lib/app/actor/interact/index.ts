@@ -64,12 +64,12 @@ export interface BeforeSuspended<T> extends Actor {
  * While suspended an Interact is expected to ignore most messages except
  * the one meant for resuming.
  */
-export interface Suspended<T, M> extends Actor {
+export interface Suspended<M> extends Actor {
 
     /**
      * suspended method providing the behaviour.
      */
-    suspended(t: T): Case<M>[]
+    suspended(): Case<M>[]
 
 }
 
@@ -89,7 +89,7 @@ export interface BeforeExit<T> extends Actor {
  * SuspendListener interface combining BeforeSuspended and Suspended.
  */
 export interface SuspendListener<T, M>
-    extends BeforeSuspended<T>, Suspended<T, M> { }
+    extends BeforeSuspended<T>, Suspended< M> { }
 
 /**
  * ResumeListener interface combining BeforeResumed and Resumed.
@@ -137,7 +137,7 @@ export class SuspendCase<T, MSuspended> extends Case<T> {
         super(pattern, (t: T) =>
             target
                 .beforeSuspended(t)
-                .select(target.suspended(t)));
+                .select(target.suspended()));
 
     }
 

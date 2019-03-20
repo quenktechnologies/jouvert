@@ -95,7 +95,7 @@ describe('app/interact/data/form', function () {
     describe('AbortCase', function () {
         it('should transition to suspended', function () {
             var m = new FormImpl();
-            var c = new form_1.AbortCase(Abort, new Object(), m);
+            var c = new form_1.AbortCase(Abort, m);
             c.match(new Abort());
             must_1.must(m.__test.invokes.order()).equate([
                 'afterAbort', 'suspended', 'select'

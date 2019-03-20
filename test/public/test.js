@@ -600,13 +600,12 @@ exports.SaveCase = SaveCase;
  */
 var AbortCase = /** @class */ (function (_super) {
     __extends(AbortCase, _super);
-    function AbortCase(pattern, token, listener) {
+    function AbortCase(pattern, listener) {
         var _this = _super.call(this, pattern, function (a) {
             listener.afterAbort(a);
-            listener.select(listener.suspended(token));
+            listener.select(listener.suspended());
         }) || this;
         _this.pattern = pattern;
-        _this.token = token;
         _this.listener = listener;
         return _this;
     }
@@ -1209,7 +1208,7 @@ var SuspendCase = /** @class */ (function (_super) {
         var _this = _super.call(this, pattern, function (t) {
             return target
                 .beforeSuspended(t)
-                .select(target.suspended(t));
+                .select(target.suspended());
         }) || this;
         _this.pattern = pattern;
         _this.target = target;
@@ -14870,7 +14869,7 @@ describe('app/interact/data/form', function () {
     describe('AbortCase', function () {
         it('should transition to suspended', function () {
             var m = new FormImpl();
-            var c = new form_1.AbortCase(Abort, new Object(), m);
+            var c = new form_1.AbortCase(Abort, m);
             c.match(new Abort());
             must_1.must(m.__test.invokes.order()).equate([
                 'afterAbort', 'suspended', 'select'

@@ -87,7 +87,7 @@ export interface NotFoundListener<A, R, MResumed> extends Resumed<R, MResumed> {
     /**
      * afterNotFound hook.
      */
-    afterNotFound(res: A): this;
+  afterNotFound(res: A): NotFoundListener<A,R,MResumed>;
 
 }
 
@@ -99,7 +99,7 @@ export interface ServerErrorListener<A, R, MResumed> extends Resumed<R, MResumed
     /**
      * afterServerError hook.
      */
-    afterServerError(res: A): this;
+  afterServerError(res: A): ServerErrorListener<A,R,MResumed>;
 
 }
 

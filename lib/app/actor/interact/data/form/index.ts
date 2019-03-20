@@ -82,12 +82,12 @@ export interface SaveListener<T, M> extends BeforeSaving<T>, Saving<T, M> { }
 /**
  * AbortListener
  */
-export interface AbortListener<A,M> extends Suspended<M> {
+export interface AbortListener<A, M> extends Suspended<M> {
 
     /**
      * afterAbort hook.
      */
-    afterAbort(a: A): AbortListener<A,M>
+    afterAbort(a: A): AbortListener<A, M>
 
 }
 

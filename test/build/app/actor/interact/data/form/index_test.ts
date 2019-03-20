@@ -107,7 +107,7 @@ describe('app/interact/data/form', () => {
         it('should transition to suspended', () => {
 
             let m = new FormImpl();
-          let c = new AbortCase(Abort, m);
+            let c = new AbortCase(Abort, m);
 
             c.match(new Abort());
 

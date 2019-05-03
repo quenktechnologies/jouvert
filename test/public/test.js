@@ -19,10 +19,12 @@ var maybe_1 = require("@quenk/noni/lib/data/maybe");
 var future_1 = require("@quenk/noni/lib/control/monad/future");
 var case_1 = require("@quenk/potoo/lib/actor/resident/case");
 var __1 = require("../../");
-var _1 = require("./");
+var router_1 = require("../../router");
 exports.SUPERVISOR_ID = 'supervisor';
 /**
  * Resume is sent to an actor to indicate it has control.
+ *
+ * It is also used to trigger the DispatchCase.
  */
 var Resume = /** @class */ (function () {
     function Resume(route, request, actor, display, router) {
@@ -75,15 +77,15 @@ var Exp = /** @class */ (function () {
 }());
 exports.Exp = Exp;
 /**
- * Supervisor actor.
+ * Supervisor
  *
- * These are used to isolate communication between the actors and the Router
- * to prevent expired actors from interrupting workflow.
+ * This is used to contain communication between current actors and the router
+ * so that an expired current actor is unable to communicate.
  *
- * Supervisors forward Suspend messages to the controlling actor
- * and any other incomming messages to the router.
- *
- * An Ack message causes the side-effect of the Supervisor exiting.
+ * Supervisors forward Suspend messages to their target actor
+ * and any messages from the target to the router. An Ack message from
+ * the target causes the side-effect of the Supervisor exiting, thus terminating
+ * communication.
  */
 var Supervisor = /** @class */ (function (_super) {
     __extends(Supervisor, _super);
@@ -108,90 +110,18 @@ var Supervisor = /** @class */ (function (_super) {
 }(__1.Immutable));
 exports.Supervisor = Supervisor;
 /**
- * AckProxy
+ * DisplayRouter provides a client side router that allows controller actors
+ * to stream content to a single display upon user request.
  *
- * Acks result in a new Supervisor being spawned for the next controlling actor.
- */
-var AckProxy = /** @class */ (function (_super) {
-    __extends(AckProxy, _super);
-    function AckProxy(next, display, instance) {
-        var _this = _super.call(this, instance) || this;
-        _this.next = next;
-        _this.display = display;
-        _this.instance = instance;
-        return _this;
-    }
-    AckProxy.prototype.routing = function () {
-        return this.instance.routing();
-    };
-    AckProxy.prototype.afterAck = function (_) {
-        var _this = this;
-        this.instance.current = maybe_1.just(this.spawn({
-            id: exports.SUPERVISOR_ID,
-            create: function (h) { return new Supervisor(_this.next, _this.display, _this.self(), h); }
-        }));
-        return this;
-    };
-    return AckProxy;
-}(__1.Proxy));
-exports.AckProxy = AckProxy;
-/**
- * ExpProxy
- *
- * Exps result in the current supervisor being killed off and
- * the route removed from the internal table.
- *
- * A new Supervisor is spawned for the next controlling actor.
- */
-var ExpProxy = /** @class */ (function (_super) {
-    __extends(ExpProxy, _super);
-    function ExpProxy(next, display, instance) {
-        var _this = _super.call(this, instance) || this;
-        _this.next = next;
-        _this.display = display;
-        _this.instance = instance;
-        return _this;
-    }
-    ExpProxy.prototype.routing = function () {
-        return this.instance.routing();
-    };
-    ExpProxy.prototype.afterExpire = function (_a) {
-        var _this = this;
-        var route = _a.route;
-        var routes = this.instance.routes;
-        if (this.instance.current.isJust()) {
-            var addr = this.instance.current.get();
-            this.kill(addr);
-            this.spawn({
-                id: exports.SUPERVISOR_ID,
-                create: function (h) { return new Supervisor(_this.next, _this.display, _this.self(), h); }
-            });
-        }
-        else {
-            this.spawn({
-                id: exports.SUPERVISOR_ID,
-                create: function (h) { return new Supervisor(_this.next, _this.display, _this.self(), h); }
-            });
-        }
-        this.instance.routes = record_1.exclude(routes, route);
-        return this;
-    };
-    return ExpProxy;
-}(__1.Proxy));
-exports.ExpProxy = ExpProxy;
-/**
- * DisplayRouter provides an actor that allows controller style actors to stream
- * content to a display in response to user requests.
- *
- * In order to be a compliant with a Router, a controller actor must:
+ * In order to be a compliant with the DisplayRouter, a controller actor must:
  * 1. Only start streaming when it receives a Resume message from the Router.
  * 2. Stop streaming when it receives a Suspend message from the Router.
- * 3. Reply with an Ack after it has stopped or
- * 4  reply with a Cont if it wishes to not stop.
+ * 3. Reply with an Ack after it has received a Suspend message or
+ * 4. reply with a Cont message to remain in control.
  *
  * Failure to comply with the above will result in the Router "blacklisting"
- * the actor resulting in the real router implementation's onError function being
- * called each time the user requests the route.
+ * the controller in question. Being blacklisted means future requests for that
+ * controller will result in the error handler being invoked.
  */
 var DisplayRouter = /** @class */ (function (_super) {
     __extends(DisplayRouter, _super);
@@ -203,6 +133,7 @@ var DisplayRouter = /** @class */ (function (_super) {
         _this.timeout = timeout;
         _this.current = current;
         _this.system = system;
+        _this.next = maybe_1.nothing();
         return _this;
     }
     DisplayRouter.prototype.beforeRouting = function () {
@@ -211,8 +142,11 @@ var DisplayRouter = /** @class */ (function (_super) {
     DisplayRouter.prototype.routing = function () {
         return exports.whenRouting(this);
     };
-    DisplayRouter.prototype.beforeAwaiting = function (t) {
+    DisplayRouter.prototype.beforeWaiting = function (t) {
         var _this = this;
+        this.next = maybe_1.just(t);
+        if (this.timeout.isJust())
+            setTimeout(function () { return _this.tell(_this.self(), new Exp(t.route)); }, this.timeout.get());
         if (this.current.isJust()) {
             var addr = this.current.get();
             this.tell(addr, new Suspend(addr));
@@ -220,17 +154,41 @@ var DisplayRouter = /** @class */ (function (_super) {
         else {
             this.tell(this.self(), new Ack());
         }
-        this
-            .timeout
-            .map(function (n) {
-            setTimeout(function () { return _this.tell(_this.self(), new Exp(t.route)); }, n);
-        });
         return this;
     };
-    DisplayRouter.prototype.awaiting = function (t) {
-        return exports.whenAwaiting(this, t);
+    DisplayRouter.prototype.waiting = function (_) {
+        return exports.whenAwaiting(this);
     };
     DisplayRouter.prototype.afterContinue = function (_) {
+        return this;
+    };
+    DisplayRouter.prototype.afterAck = function (_) {
+        var _this = this;
+        this.current = maybe_1.just(this.spawn({
+            id: exports.SUPERVISOR_ID,
+            create: function (h) { return new Supervisor(_this.next.get(), _this.display, _this.self(), h); }
+        }));
+        return this;
+    };
+    DisplayRouter.prototype.afterExpire = function (_a) {
+        var _this = this;
+        var route = _a.route;
+        var routes = this.routes;
+        if (this.current.isJust()) {
+            var addr = this.current.get();
+            this.kill(addr);
+            this.spawn({
+                id: exports.SUPERVISOR_ID,
+                create: function (h) { return new Supervisor(_this.next.get(), _this.display, _this.self(), h); }
+            });
+        }
+        else {
+            this.spawn({
+                id: exports.SUPERVISOR_ID,
+                create: function (h) { return new Supervisor(_this.next.get(), _this.display, _this.self(), h); }
+            });
+        }
+        this.routes = record_1.exclude(routes, route);
         return this;
     };
     DisplayRouter.prototype.run = function () {
@@ -256,132 +214,18 @@ exports.DisplayRouter = DisplayRouter;
  * whenRouting behaviour.
  */
 exports.whenRouting = function (r) { return [
-    new _1.DispatchCase(Resume, r)
+    new router_1.DispatchCase(Resume, r)
 ]; };
 /**
  * whenAwaiting behaviour.
  */
-exports.whenAwaiting = function (r, t) { return [
-    new _1.AckCase(Ack, new AckProxy(t, r.display, r)),
-    new _1.ContinueCase(Cont, r),
-    new _1.ExpireCase(Exp, new ExpProxy(t, r.display, r))
+exports.whenAwaiting = function (r) { return [
+    new router_1.AckCase(Ack, r),
+    new router_1.ContinueCase(Cont, r),
+    new router_1.ExpireCase(Exp, r)
 ]; };
 
-},{"../../":3,"./":2,"@quenk/noni/lib/control/monad/future":17,"@quenk/noni/lib/data/maybe":22,"@quenk/noni/lib/data/record":23,"@quenk/potoo/lib/actor/resident/case":31}],2:[function(require,module,exports){
-"use strict";
-var __extends = (this && this.__extends) || (function () {
-    var extendStatics = function (d, b) {
-        extendStatics = Object.setPrototypeOf ||
-            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
-        return extendStatics(d, b);
-    };
-    return function (d, b) {
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
-Object.defineProperty(exports, "__esModule", { value: true });
-var case_1 = require("@quenk/potoo/lib/actor/resident/case");
-/**
- * DispatchCase invokes the beforeAwait hook then transitions
- * to awaiting.
- *
- * Use the beforeAwait to turn off the currently scheduled actor.
- */
-var DispatchCase = /** @class */ (function (_super) {
-    __extends(DispatchCase, _super);
-    function DispatchCase(pattern, listener) {
-        var _this = _super.call(this, pattern, function (t) {
-            return listener
-                .beforeAwaiting(t)
-                .select(listener.awaiting(t));
-        }) || this;
-        _this.pattern = pattern;
-        _this.listener = listener;
-        return _this;
-    }
-    return DispatchCase;
-}(case_1.Case));
-exports.DispatchCase = DispatchCase;
-/**
- * AckCase invokes the afterAck hook then transitions to
- * dispatching.
- */
-var AckCase = /** @class */ (function (_super) {
-    __extends(AckCase, _super);
-    function AckCase(pattern, listener) {
-        var _this = _super.call(this, pattern, function (a) {
-            return listener
-                .afterAck(a)
-                .select(listener.routing());
-        }) || this;
-        _this.pattern = pattern;
-        _this.listener = listener;
-        return _this;
-    }
-    return AckCase;
-}(case_1.Case));
-exports.AckCase = AckCase;
-/**
- * ContinueCase invokes the afterContinue hook then transitions
- * to dispatching.
- */
-var ContinueCase = /** @class */ (function (_super) {
-    __extends(ContinueCase, _super);
-    function ContinueCase(pattern, listener) {
-        var _this = _super.call(this, pattern, function (c) {
-            return listener
-                .afterContinue(c)
-                .select(listener.routing());
-        }) || this;
-        _this.pattern = pattern;
-        _this.listener = listener;
-        return _this;
-    }
-    return ContinueCase;
-}(case_1.Case));
-exports.ContinueCase = ContinueCase;
-/**
- * ExpireCase invokes the afterExpire hook then transitions to dispatching.
- */
-var ExpireCase = /** @class */ (function (_super) {
-    __extends(ExpireCase, _super);
-    function ExpireCase(pattern, listener) {
-        var _this = _super.call(this, pattern, function (e) {
-            return listener
-                .afterExpire(e)
-                .select(listener.routing());
-        }) || this;
-        _this.pattern = pattern;
-        _this.listener = listener;
-        return _this;
-    }
-    return ExpireCase;
-}(case_1.Case));
-exports.ExpireCase = ExpireCase;
-/**
- * MessageCase invokes the afterMessage hook then transitions to
- * dispatching.
- */
-var MessageCase = /** @class */ (function (_super) {
-    __extends(MessageCase, _super);
-    function MessageCase(pattern, listener) {
-        var _this = _super.call(this, pattern, function (m) {
-            return listener
-                .afterMessage(m)
-                .select(listener.routing());
-        }) || this;
-        _this.pattern = pattern;
-        _this.listener = listener;
-        return _this;
-    }
-    return MessageCase;
-}(case_1.Case));
-exports.MessageCase = MessageCase;
-
-},{"@quenk/potoo/lib/actor/resident/case":31}],3:[function(require,module,exports){
+},{"../../":2,"../../router":12,"@quenk/noni/lib/control/monad/future":17,"@quenk/noni/lib/data/maybe":22,"@quenk/noni/lib/data/record":23,"@quenk/potoo/lib/actor/resident/case":31}],2:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -398,6 +242,9 @@ var __extends = (this && this.__extends) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 var resident_1 = require("@quenk/potoo/lib/actor/resident");
+/**
+ * Mutable constrained to Context and App.
+ */
 var Mutable = /** @class */ (function (_super) {
     __extends(Mutable, _super);
     function Mutable() {
@@ -406,6 +253,9 @@ var Mutable = /** @class */ (function (_super) {
     return Mutable;
 }(resident_1.Mutable));
 exports.Mutable = Mutable;
+/**
+ * Immutable constrained to Context and App.
+ */
 var Immutable = /** @class */ (function (_super) {
     __extends(Immutable, _super);
     function Immutable() {
@@ -416,7 +266,7 @@ var Immutable = /** @class */ (function (_super) {
 exports.Immutable = Immutable;
 /**
  * Proxy provides an actor API implementation that delegates
- * all its operations to another actor.
+ * all its operations to a target actor.
  */
 var Proxy = /** @class */ (function () {
     function Proxy(instance) {
@@ -447,7 +297,7 @@ var Proxy = /** @class */ (function () {
 }());
 exports.Proxy = Proxy;
 
-},{"@quenk/potoo/lib/actor/resident":32}],4:[function(require,module,exports){
+},{"@quenk/potoo/lib/actor/resident":32}],3:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -526,7 +376,7 @@ var SavedCase = /** @class */ (function (_super) {
 }(case_1.Case));
 exports.SavedCase = SavedCase;
 
-},{"@quenk/potoo/lib/actor/resident/case":31}],5:[function(require,module,exports){
+},{"@quenk/potoo/lib/actor/resident/case":31}],4:[function(require,module,exports){
 "use strict";
 /**
  * Form interface is for actors that provide form
@@ -613,7 +463,7 @@ var AbortCase = /** @class */ (function (_super) {
 }(case_1.Case));
 exports.AbortCase = AbortCase;
 
-},{"@quenk/potoo/lib/actor/resident/case":31}],6:[function(require,module,exports){
+},{"@quenk/potoo/lib/actor/resident/case":31}],5:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -654,7 +504,7 @@ var InputCase = /** @class */ (function (_super) {
 }(case_1.Case));
 exports.InputCase = InputCase;
 
-},{"@quenk/potoo/lib/actor/resident/case":31}],7:[function(require,module,exports){
+},{"@quenk/potoo/lib/actor/resident/case":31}],6:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -816,7 +666,7 @@ var ServerErrorCase = /** @class */ (function (_super) {
 }(case_1.Case));
 exports.ServerErrorCase = ServerErrorCase;
 
-},{"@quenk/potoo/lib/actor/resident/case":31}],8:[function(require,module,exports){
+},{"@quenk/potoo/lib/actor/resident/case":31}],7:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -871,7 +721,7 @@ var FinishedCase = /** @class */ (function (_super) {
 }(case_1.Case));
 exports.FinishedCase = FinishedCase;
 
-},{"@quenk/potoo/lib/actor/resident/case":31}],9:[function(require,module,exports){
+},{"@quenk/potoo/lib/actor/resident/case":31}],8:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -949,7 +799,7 @@ var ClearFiltersCase = /** @class */ (function (_super) {
 }(case_1.Case));
 exports.ClearFiltersCase = ClearFiltersCase;
 
-},{"@quenk/potoo/lib/actor/resident/case":31}],10:[function(require,module,exports){
+},{"@quenk/potoo/lib/actor/resident/case":31}],9:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -986,7 +836,7 @@ var SearchCase = /** @class */ (function (_super) {
 }(case_1.Case));
 exports.SearchCase = SearchCase;
 
-},{"@quenk/potoo/lib/actor/resident/case":31}],11:[function(require,module,exports){
+},{"@quenk/potoo/lib/actor/resident/case":31}],10:[function(require,module,exports){
 "use strict";
 /**
  * This module provides interfaces that can be implemented for Interacts
@@ -1160,7 +1010,7 @@ var ServerErrorCase = /** @class */ (function (_super) {
 }(case_1.Case));
 exports.ServerErrorCase = ServerErrorCase;
 
-},{"@quenk/potoo/lib/actor/resident/case":31}],12:[function(require,module,exports){
+},{"@quenk/potoo/lib/actor/resident/case":31}],11:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -1236,6 +1086,141 @@ var ExitCase = /** @class */ (function (_super) {
     return ExitCase;
 }(case_1.Case));
 exports.ExitCase = ExitCase;
+
+},{"@quenk/potoo/lib/actor/resident/case":31}],12:[function(require,module,exports){
+"use strict";
+/**
+ * The router module provides interfaces for building client side router actors.
+ *
+ * The approach here is assumed to be one where a single actor acts as a
+ * router that schedules control of the application between other actors.
+ *
+ * At most only one actor is allowed to have control and is referred to as the
+ * the current actor. When the user triggers a request for another
+ * actor (the next actor), the current actor is first relieved of control
+ * then the next actor promoted.
+ *
+ * The transfer of control is "polite" in that it is expected the router
+ * will inform the current actor that it has to give up control. Interfaces
+ * are provided to receive an acknowledgement (Ack) message as well as
+ * listeninig for timeouts via expiration (Exp) messages when things go wrong.
+ *
+ * Behaviour Matrix:
+ *               routing                  waiting
+ * routing       <Message>                <Dispatch>
+ * waiting       <Ack>|<Continue>|<Expire>
+ */
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+        return extendStatics(d, b);
+    };
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
+Object.defineProperty(exports, "__esModule", { value: true });
+var case_1 = require("@quenk/potoo/lib/actor/resident/case");
+/**
+ * DispatchCase invokes the beforeAwait hook then transitions
+ * to awaiting.
+ *
+ * Use the beforeAwait to turn off the currently scheduled actor.
+ */
+var DispatchCase = /** @class */ (function (_super) {
+    __extends(DispatchCase, _super);
+    function DispatchCase(pattern, listener) {
+        var _this = _super.call(this, pattern, function (t) {
+            return listener
+                .beforeWaiting(t)
+                .select(listener.waiting(t));
+        }) || this;
+        _this.pattern = pattern;
+        _this.listener = listener;
+        return _this;
+    }
+    return DispatchCase;
+}(case_1.Case));
+exports.DispatchCase = DispatchCase;
+/**
+ * AckCase invokes the afterAck hook then transitions to
+ * dispatching.
+ */
+var AckCase = /** @class */ (function (_super) {
+    __extends(AckCase, _super);
+    function AckCase(pattern, listener) {
+        var _this = _super.call(this, pattern, function (a) {
+            return listener
+                .afterAck(a)
+                .select(listener.routing());
+        }) || this;
+        _this.pattern = pattern;
+        _this.listener = listener;
+        return _this;
+    }
+    return AckCase;
+}(case_1.Case));
+exports.AckCase = AckCase;
+/**
+ * ContinueCase invokes the afterContinue hook then transitions
+ * to dispatching.
+ */
+var ContinueCase = /** @class */ (function (_super) {
+    __extends(ContinueCase, _super);
+    function ContinueCase(pattern, listener) {
+        var _this = _super.call(this, pattern, function (c) {
+            return listener
+                .afterContinue(c)
+                .select(listener.routing());
+        }) || this;
+        _this.pattern = pattern;
+        _this.listener = listener;
+        return _this;
+    }
+    return ContinueCase;
+}(case_1.Case));
+exports.ContinueCase = ContinueCase;
+/**
+ * ExpireCase invokes the afterExpire hook then transitions to dispatching.
+ */
+var ExpireCase = /** @class */ (function (_super) {
+    __extends(ExpireCase, _super);
+    function ExpireCase(pattern, listener) {
+        var _this = _super.call(this, pattern, function (e) {
+            return listener
+                .afterExpire(e)
+                .select(listener.routing());
+        }) || this;
+        _this.pattern = pattern;
+        _this.listener = listener;
+        return _this;
+    }
+    return ExpireCase;
+}(case_1.Case));
+exports.ExpireCase = ExpireCase;
+/**
+ * MessageCase invokes the afterMessage hook then transitions to
+ * dispatching.
+ */
+var MessageCase = /** @class */ (function (_super) {
+    __extends(MessageCase, _super);
+    function MessageCase(pattern, listener) {
+        var _this = _super.call(this, pattern, function (m) {
+            return listener
+                .afterMessage(m)
+                .select(listener.routing());
+        }) || this;
+        _this.pattern = pattern;
+        _this.listener = listener;
+        return _this;
+    }
+    return MessageCase;
+}(case_1.Case));
+exports.MessageCase = MessageCase;
 
 },{"@quenk/potoo/lib/actor/resident/case":31}],13:[function(require,module,exports){
 "use strict";
@@ -2164,8 +2149,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
  * The array module provides helper functions
  * for working with JS arrays.
  */
-var record_1 = require("./record");
-var math_1 = require("../math");
+var record_1 = require("../record");
+var math_1 = require("../../math");
 /**
  * head returns the item at index 0 of an array
  */
@@ -2205,8 +2190,8 @@ exports.partition = function (list) { return function (f) { return exports.empty
             [yes, exports.concat(no, c)]);
     }, [[], []]); }; };
 /**
- * group the properties of a Record into another Record using a grouping
- * function.
+ * group the elements of an array into a Record where each property
+ * is an array of elements assigned to it's property name.
  */
 exports.group = function (list) { return function (f) {
     return list.reduce(function (p, c, i) {
@@ -2238,7 +2223,7 @@ exports.dedupe = function (list) {
     return list.filter(function (e, i, l) { return l.indexOf(e) === i; });
 };
 
-},{"../math":27,"./record":23}],20:[function(require,module,exports){
+},{"../../math":27,"../record":23}],20:[function(require,module,exports){
 "use strict";
 /**
  * Either represents a value that may be one of two types.
@@ -2795,6 +2780,15 @@ exports.reduce = function (o, accum, f) {
     return exports.keys(o).reduce(function (p, k) { return f(p, o[k], k); }, accum);
 };
 /**
+ * filter the keys of a record using a filter function.
+ */
+exports.filter = function (o, f) {
+    return exports.keys(o).reduce(function (p, k) {
+        var _a;
+        return f(o[k], k, o) ? exports.merge(p, (_a = {}, _a[k] = o[k], _a)) : p;
+    }, {});
+};
+/**
  * merge two objects into one.
  *
  * The return value's type is the product of the two types supplied.
@@ -3051,6 +3045,8 @@ exports.tokenize = function (str) {
  * This function does not check if getting the value succeeded or not.
  */
 exports.unsafeGet = function (path, src) {
+    if (src == null)
+        return undefined;
     var toks = exports.tokenize(path);
     var head = src[toks.shift()];
     return toks.reduce(function (p, c) { return (p == null) ? p : p[c]; }, head);
@@ -3060,6 +3056,21 @@ exports.unsafeGet = function (path, src) {
  */
 exports.get = function (path, src) {
     return maybe_1.fromNullable(exports.unsafeGet(path, src));
+};
+/**
+ * getDefault is like get but takes a default value to return if
+ * the path is not found.
+ */
+exports.getDefault = function (path, src, def) {
+    return exports.get(path, src).orJust(function () { return def; }).get();
+};
+/**
+ * getString casts the resulting value to a string.
+ *
+ * An empty string is provided if the path is not found.
+ */
+exports.getString = function (path, src) {
+    return exports.get(path, src).map(function (v) { return String(v); }).orJust(function () { return ''; }).get();
 };
 /**
  * set sets a value on an object given a path.
@@ -3168,6 +3179,41 @@ var prefix = function (pfix, key) { return (pfix === '') ?
  */
 exports.unflatten = function (r) {
     return _1.reduce(r, {}, function (p, c, k) { return exports.set(k, c, p); });
+};
+/**
+ * intersect set operation between the keys of two records.
+ *
+ * All the properties of the left record that have matching property
+ * names in the right are retained.
+ */
+exports.intersect = function (a, b) {
+    return _1.reduce(a, {}, function (p, c, k) {
+        if (b.hasOwnProperty(k))
+            p[k] = c;
+        return p;
+    });
+};
+/**
+ * difference set operation between the keys of two records.
+ *
+ * All the properties on the left record that do not have matching
+ * property names in the right are retained.
+ */
+exports.difference = function (a, b) {
+    return _1.reduce(a, {}, function (p, c, k) {
+        if (!b.hasOwnProperty(k))
+            p[k] = c;
+        return p;
+    });
+};
+/**
+ * map over the property names of a record.
+ */
+exports.map = function (a, f) {
+    return _1.reduce(a, {}, function (p, c, k) {
+        p[f(k)] = c;
+        return p;
+    });
 };
 
 },{"../maybe":22,"./":23}],25:[function(require,module,exports){
@@ -3624,6 +3670,13 @@ var AbstractResident = /** @class */ (function () {
         this.system.exec(this, new scripts_1.StopScript(this.self()));
     };
     AbstractResident.prototype.stop = function () {
+        //XXX: this is a temp hack to avoid the system parameter being of type
+        //System<C>. As much as possibl we want to keep the system type to
+        //make implementing an actor system simple.
+        //
+        //In future revisions we may wrap the system in a Maybe or have
+        //the runtime check if the actor is the valid instance but for now,
+        //we force void. This may result in some crashes if not careful.
         this.system = new system_1.Void();
     };
     return AbstractResident;
@@ -5268,8 +5321,11 @@ var Stop = /** @class */ (function () {
             var ctxs = maybeChilds.get();
             record_1.map(ctxs, function (c, k) { c.actor.stop(); e.removeContext(k); });
         }
-        curr.context.actor.stop();
-        e.removeContext(addr);
+        var maybeTarget = e.getContext(addr);
+        if (maybeTarget.isJust()) {
+            maybeTarget.get().actor.stop();
+            e.removeContext(addr);
+        }
         e.clear();
     };
     Stop.prototype.toLog = function (f) {
@@ -14337,10 +14393,10 @@ var maybe_1 = require("@quenk/noni/lib/data/maybe");
 var function_1 = require("@quenk/noni/lib/data/function");
 var future_1 = require("@quenk/noni/lib/control/monad/future");
 var case_1 = require("@quenk/potoo/lib/actor/resident/case");
-var default_1 = require("../../../../../../lib/browser/window/router/hash/default");
-var display_1 = require("../../../../../../lib/app/actor/api/router/display");
-var actor_1 = require("../../../../../../lib/app/actor");
-var app_1 = require("../../../fixtures/app");
+var default_1 = require("../../../../../lib/browser/window/router/hash/default");
+var display_1 = require("../../../../../lib/actor/api/router/display");
+var actor_1 = require("../../../../../lib/actor");
+var app_1 = require("../../../app/fixtures/app");
 var Ctrl = /** @class */ (function (_super) {
     __extends(Ctrl, _super);
     function Ctrl(cases, system) {
@@ -14454,7 +14510,7 @@ describe('router', function () {
     });
 });
 
-},{"../../../../../../lib/app/actor":3,"../../../../../../lib/app/actor/api/router/display":1,"../../../../../../lib/browser/window/router/hash/default":13,"../../../fixtures/app":107,"@quenk/noni/lib/control/monad/future":17,"@quenk/noni/lib/data/function":21,"@quenk/noni/lib/data/maybe":22,"@quenk/potoo/lib/actor/resident/case":31,"@quenk/test/lib/assert":69}],95:[function(require,module,exports){
+},{"../../../../../lib/actor":2,"../../../../../lib/actor/api/router/display":1,"../../../../../lib/browser/window/router/hash/default":13,"../../../app/fixtures/app":107,"@quenk/noni/lib/control/monad/future":17,"@quenk/noni/lib/data/function":21,"@quenk/noni/lib/data/maybe":22,"@quenk/potoo/lib/actor/resident/case":31,"@quenk/test/lib/assert":69}],95:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -14470,163 +14526,7 @@ var __extends = (this && this.__extends) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-var must_1 = require("@quenk/must");
-var router_1 = require("../../../../../../lib/app/actor/api/router");
-var actor_1 = require("../../fixtures/actor");
-var Request = /** @class */ (function () {
-    function Request() {
-        this.src = '?';
-    }
-    return Request;
-}());
-var Parent = /** @class */ (function () {
-    function Parent(actor) {
-        this.actor = actor;
-    }
-    return Parent;
-}());
-var Ack = /** @class */ (function (_super) {
-    __extends(Ack, _super);
-    function Ack() {
-        var _this = _super !== null && _super.apply(this, arguments) || this;
-        _this.ack = 'yes';
-        return _this;
-    }
-    return Ack;
-}(Parent));
-var Exp = /** @class */ (function (_super) {
-    __extends(Exp, _super);
-    function Exp() {
-        var _this = _super !== null && _super.apply(this, arguments) || this;
-        _this.ts = 100;
-        return _this;
-    }
-    return Exp;
-}(Parent));
-var Cont = /** @class */ (function (_super) {
-    __extends(Cont, _super);
-    function Cont() {
-        var _this = _super !== null && _super.apply(this, arguments) || this;
-        _this.retry = false;
-        return _this;
-    }
-    return Cont;
-}(Parent));
-var Message = /** @class */ (function (_super) {
-    __extends(Message, _super);
-    function Message() {
-        var _this = _super !== null && _super.apply(this, arguments) || this;
-        _this.value = 12;
-        return _this;
-    }
-    return Message;
-}(Parent));
-var Rout = /** @class */ (function (_super) {
-    __extends(Rout, _super);
-    function Rout() {
-        var _this = _super !== null && _super.apply(this, arguments) || this;
-        _this.current = 'x';
-        return _this;
-    }
-    Rout.prototype.beforeRouting = function () {
-        this.__record('routing', []);
-        return this;
-    };
-    Rout.prototype.beforeAwaiting = function (_) {
-        return this.__record('beforeWait', [_]);
-    };
-    Rout.prototype.awaiting = function (_) {
-        this.__record('waiting', [_]);
-        return [];
-    };
-    Rout.prototype.afterAck = function (_) {
-        return this.__record('afterAck', [_]);
-    };
-    Rout.prototype.afterContinue = function (_) {
-        return this.__record('afterContinue', [_]);
-    };
-    Rout.prototype.afterExpire = function (_) {
-        return this.__record('afterExpire', [_]);
-    };
-    Rout.prototype.afterMessage = function (_) {
-        return this.__record('afterMessage', [_]);
-    };
-    Rout.prototype.routing = function () {
-        this.__record('scheduling', []);
-        return [];
-    };
-    return Rout;
-}(actor_1.ActorImpl));
-describe('router', function () {
-    describe('DispatchCase', function () {
-        it('should transition to waiting()', function () {
-            var s = new Rout();
-            var c = new router_1.DispatchCase(Request, s);
-            c.match(new Request());
-            must_1.must(s.__test.invokes.order()).equate([
-                'beforeWait', 'waiting', 'select'
-            ]);
-        });
-    });
-    describe('AckCase', function () {
-        it('should transition to scheduling()', function () {
-            var s = new Rout();
-            var c = new router_1.AckCase(Ack, s);
-            c.match(new Ack('x'));
-            must_1.must(s.__test.invokes.order()).equate([
-                'afterAck', 'scheduling', 'select'
-            ]);
-        });
-    });
-    describe('ContinueCase', function () {
-        it('should transition to scheduling()', function () {
-            var s = new Rout();
-            var c = new router_1.ContinueCase(Cont, s);
-            c.match(new Cont('x'));
-            must_1.must(s.__test.invokes.order()).equate([
-                'afterContinue', 'scheduling', 'select'
-            ]);
-        });
-    });
-    describe('ExpireCase', function () {
-        it('should transition to scheduling()', function () {
-            var s = new Rout();
-            var c = new router_1.ExpireCase(Exp, s);
-            c.match(new Exp('x'));
-            must_1.must(s.__test.invokes.order()).equate([
-                'afterExpire', 'scheduling', 'select'
-            ]);
-        });
-    });
-    describe('MessageCase', function () {
-        it('should transition to scheduling()', function () {
-            var s = new Rout();
-            var c = new router_1.MessageCase(Message, s);
-            c.match(new Message('x'));
-            must_1.must(s.__test.invokes.order()).equate([
-                'afterMessage', 'scheduling', 'select'
-            ]);
-        });
-    });
-});
-
-},{"../../../../../../lib/app/actor/api/router":2,"../../fixtures/actor":96,"@quenk/must":15}],96:[function(require,module,exports){
-"use strict";
-var __extends = (this && this.__extends) || (function () {
-    var extendStatics = function (d, b) {
-        extendStatics = Object.setPrototypeOf ||
-            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
-        return extendStatics(d, b);
-    };
-    return function (d, b) {
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
-Object.defineProperty(exports, "__esModule", { value: true });
-var mock_1 = require("../../../fixtures/mock");
+var mock_1 = require("../../fixtures/mock");
 var ActorImpl = /** @class */ (function (_super) {
     __extends(ActorImpl, _super);
     function ActorImpl() {
@@ -14662,7 +14562,7 @@ var ActorImpl = /** @class */ (function (_super) {
 }(mock_1.Mock));
 exports.ActorImpl = ActorImpl;
 
-},{"../../../fixtures/mock":109}],97:[function(require,module,exports){
+},{"../../fixtures/mock":109}],96:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -14679,7 +14579,7 @@ var __extends = (this && this.__extends) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 var must_1 = require("@quenk/must");
-var client_1 = require("../../../../../../../lib/app/actor/interact/data/form/client");
+var client_1 = require("../../../../../../lib/actor/interact/data/form/client");
 var actor_1 = require("../../../fixtures/actor");
 var Request = /** @class */ (function () {
     function Request() {
@@ -14771,7 +14671,7 @@ describe('app/interact/data/form/client', function () {
     });
 });
 
-},{"../../../../../../../lib/app/actor/interact/data/form/client":4,"../../../fixtures/actor":96,"@quenk/must":15}],98:[function(require,module,exports){
+},{"../../../../../../lib/actor/interact/data/form/client":3,"../../../fixtures/actor":95,"@quenk/must":15}],97:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -14788,7 +14688,7 @@ var __extends = (this && this.__extends) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 var must_1 = require("@quenk/must");
-var form_1 = require("../../../../../../../lib/app/actor/interact/data/form");
+var form_1 = require("../../../../../../lib/actor/interact/data/form");
 var actor_1 = require("../../../fixtures/actor");
 var Request = /** @class */ (function () {
     function Request() {
@@ -14878,7 +14778,7 @@ describe('app/interact/data/form', function () {
     });
 });
 
-},{"../../../../../../../lib/app/actor/interact/data/form":5,"../../../fixtures/actor":96,"@quenk/must":15}],99:[function(require,module,exports){
+},{"../../../../../../lib/actor/interact/data/form":4,"../../../fixtures/actor":95,"@quenk/must":15}],98:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -14896,7 +14796,7 @@ var __extends = (this && this.__extends) || (function () {
 Object.defineProperty(exports, "__esModule", { value: true });
 var must_1 = require("@quenk/must");
 var number_1 = require("@quenk/preconditions/lib/number");
-var validate_1 = require("../../../../../../../../lib/app/actor/interact/data/form/validate");
+var validate_1 = require("../../../../../../../lib/actor/interact/data/form/validate");
 var actor_1 = require("../../../../fixtures/actor");
 var Request = /** @class */ (function () {
     function Request() {
@@ -14961,7 +14861,7 @@ describe('app/interact/data/form/validate', function () {
     });
 });
 
-},{"../../../../../../../../lib/app/actor/interact/data/form/validate":6,"../../../../fixtures/actor":96,"@quenk/must":15,"@quenk/preconditions/lib/number":66}],100:[function(require,module,exports){
+},{"../../../../../../../lib/actor/interact/data/form/validate":5,"../../../../fixtures/actor":95,"@quenk/must":15,"@quenk/preconditions/lib/number":66}],99:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -14978,7 +14878,7 @@ var __extends = (this && this.__extends) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 var must_1 = require("@quenk/must");
-var http_1 = require("../../../../../../../lib/app/actor/interact/data/preload/http");
+var http_1 = require("../../../../../../lib/actor/interact/data/preload/http");
 var interact_1 = require("../../fixtures/interact");
 var Response = /** @class */ (function () {
     function Response() {
@@ -15122,7 +15022,7 @@ describe('app/interact/http', function () {
     });
 });
 
-},{"../../../../../../../lib/app/actor/interact/data/preload/http":7,"../../fixtures/interact":104,"@quenk/must":15}],101:[function(require,module,exports){
+},{"../../../../../../lib/actor/interact/data/preload/http":6,"../../fixtures/interact":103,"@quenk/must":15}],100:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -15139,7 +15039,7 @@ var __extends = (this && this.__extends) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 var must_1 = require("@quenk/must");
-var preload_1 = require("../../../../../../../lib/app/actor/interact/data/preload");
+var preload_1 = require("../../../../../../lib/actor/interact/data/preload");
 var actor_1 = require("../../../fixtures/actor");
 var Load = /** @class */ (function () {
     function Load() {
@@ -15202,7 +15102,7 @@ describe('app/interact/data/preload', function () {
     });
 });
 
-},{"../../../../../../../lib/app/actor/interact/data/preload":8,"../../../fixtures/actor":96,"@quenk/must":15}],102:[function(require,module,exports){
+},{"../../../../../../lib/actor/interact/data/preload":7,"../../../fixtures/actor":95,"@quenk/must":15}],101:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -15219,7 +15119,7 @@ var __extends = (this && this.__extends) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 var must_1 = require("@quenk/must");
-var filtered_1 = require("../../../../../../../lib/app/actor/interact/data/search/filtered");
+var filtered_1 = require("../../../../../../lib/actor/interact/data/search/filtered");
 var actor_1 = require("../../../fixtures/actor");
 var Resume = /** @class */ (function () {
     function Resume() {
@@ -15289,7 +15189,7 @@ describe('app/interact/data/search/filtered', function () {
     });
 });
 
-},{"../../../../../../../lib/app/actor/interact/data/search/filtered":9,"../../../fixtures/actor":96,"@quenk/must":15}],103:[function(require,module,exports){
+},{"../../../../../../lib/actor/interact/data/search/filtered":8,"../../../fixtures/actor":95,"@quenk/must":15}],102:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -15306,7 +15206,7 @@ var __extends = (this && this.__extends) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 var must_1 = require("@quenk/must");
-var realtime_1 = require("../../../../../../../lib/app/actor/interact/data/search/realtime");
+var realtime_1 = require("../../../../../../lib/actor/interact/data/search/realtime");
 var actor_1 = require("../../../fixtures/actor");
 var Resume = /** @class */ (function () {
     function Resume() {
@@ -15348,7 +15248,7 @@ describe('app/interact/data/search/realtime', function () {
     });
 });
 
-},{"../../../../../../../lib/app/actor/interact/data/search/realtime":10,"../../../fixtures/actor":96,"@quenk/must":15}],104:[function(require,module,exports){
+},{"../../../../../../lib/actor/interact/data/search/realtime":9,"../../../fixtures/actor":95,"@quenk/must":15}],103:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -15390,7 +15290,7 @@ var InteractImpl = /** @class */ (function (_super) {
 }(actor_1.ActorImpl));
 exports.InteractImpl = InteractImpl;
 
-},{"../../fixtures/actor":96}],105:[function(require,module,exports){
+},{"../../fixtures/actor":95}],104:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -15407,7 +15307,7 @@ var __extends = (this && this.__extends) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 var must_1 = require("@quenk/must");
-var http_1 = require("../../../../../lib/app/actor/interact/http");
+var http_1 = require("../../../../lib/actor/interact/http");
 var interact_1 = require("./fixtures/interact");
 var Response = /** @class */ (function () {
     function Response() {
@@ -15544,7 +15444,7 @@ describe('app/interact/http', function () {
     });
 });
 
-},{"../../../../../lib/app/actor/interact/http":11,"./fixtures/interact":104,"@quenk/must":15}],106:[function(require,module,exports){
+},{"../../../../lib/actor/interact/http":10,"./fixtures/interact":103,"@quenk/must":15}],105:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -15562,7 +15462,7 @@ var __extends = (this && this.__extends) || (function () {
 Object.defineProperty(exports, "__esModule", { value: true });
 var must_1 = require("@quenk/must");
 var actor_1 = require("../fixtures/actor");
-var interact_1 = require("../../../../../lib/app/actor/interact");
+var interact_1 = require("../../../../lib/actor/interact");
 var Resume = /** @class */ (function () {
     function Resume(display) {
         this.display = display;
@@ -15640,7 +15540,163 @@ describe('app/interact', function () {
     });
 });
 
-},{"../../../../../lib/app/actor/interact":12,"../fixtures/actor":96,"@quenk/must":15}],107:[function(require,module,exports){
+},{"../../../../lib/actor/interact":11,"../fixtures/actor":95,"@quenk/must":15}],106:[function(require,module,exports){
+"use strict";
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+        return extendStatics(d, b);
+    };
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
+Object.defineProperty(exports, "__esModule", { value: true });
+var must_1 = require("@quenk/must");
+var router_1 = require("../../../lib/actor/router");
+var actor_1 = require("./fixtures/actor");
+var Request = /** @class */ (function () {
+    function Request() {
+        this.src = '?';
+    }
+    return Request;
+}());
+var Parent = /** @class */ (function () {
+    function Parent(actor) {
+        this.actor = actor;
+    }
+    return Parent;
+}());
+var Ack = /** @class */ (function (_super) {
+    __extends(Ack, _super);
+    function Ack() {
+        var _this = _super !== null && _super.apply(this, arguments) || this;
+        _this.ack = 'yes';
+        return _this;
+    }
+    return Ack;
+}(Parent));
+var Exp = /** @class */ (function (_super) {
+    __extends(Exp, _super);
+    function Exp() {
+        var _this = _super !== null && _super.apply(this, arguments) || this;
+        _this.ts = 100;
+        return _this;
+    }
+    return Exp;
+}(Parent));
+var Cont = /** @class */ (function (_super) {
+    __extends(Cont, _super);
+    function Cont() {
+        var _this = _super !== null && _super.apply(this, arguments) || this;
+        _this.retry = false;
+        return _this;
+    }
+    return Cont;
+}(Parent));
+var Message = /** @class */ (function (_super) {
+    __extends(Message, _super);
+    function Message() {
+        var _this = _super !== null && _super.apply(this, arguments) || this;
+        _this.value = 12;
+        return _this;
+    }
+    return Message;
+}(Parent));
+var Rout = /** @class */ (function (_super) {
+    __extends(Rout, _super);
+    function Rout() {
+        var _this = _super !== null && _super.apply(this, arguments) || this;
+        _this.current = 'x';
+        return _this;
+    }
+    Rout.prototype.beforeRouting = function () {
+        this.__record('routing', []);
+        return this;
+    };
+    Rout.prototype.beforeWaiting = function (_) {
+        return this.__record('beforeWait', [_]);
+    };
+    Rout.prototype.waiting = function (_) {
+        this.__record('waiting', [_]);
+        return [];
+    };
+    Rout.prototype.afterAck = function (_) {
+        return this.__record('afterAck', [_]);
+    };
+    Rout.prototype.afterContinue = function (_) {
+        return this.__record('afterContinue', [_]);
+    };
+    Rout.prototype.afterExpire = function (_) {
+        return this.__record('afterExpire', [_]);
+    };
+    Rout.prototype.afterMessage = function (_) {
+        return this.__record('afterMessage', [_]);
+    };
+    Rout.prototype.routing = function () {
+        this.__record('scheduling', []);
+        return [];
+    };
+    return Rout;
+}(actor_1.ActorImpl));
+describe('router', function () {
+    describe('DispatchCase', function () {
+        it('should transition to waiting()', function () {
+            var s = new Rout();
+            var c = new router_1.DispatchCase(Request, s);
+            c.match(new Request());
+            must_1.must(s.__test.invokes.order()).equate([
+                'beforeWait', 'waiting', 'select'
+            ]);
+        });
+    });
+    describe('AckCase', function () {
+        it('should transition to scheduling()', function () {
+            var s = new Rout();
+            var c = new router_1.AckCase(Ack, s);
+            c.match(new Ack('x'));
+            must_1.must(s.__test.invokes.order()).equate([
+                'afterAck', 'scheduling', 'select'
+            ]);
+        });
+    });
+    describe('ContinueCase', function () {
+        it('should transition to scheduling()', function () {
+            var s = new Rout();
+            var c = new router_1.ContinueCase(Cont, s);
+            c.match(new Cont('x'));
+            must_1.must(s.__test.invokes.order()).equate([
+                'afterContinue', 'scheduling', 'select'
+            ]);
+        });
+    });
+    describe('ExpireCase', function () {
+        it('should transition to scheduling()', function () {
+            var s = new Rout();
+            var c = new router_1.ExpireCase(Exp, s);
+            c.match(new Exp('x'));
+            must_1.must(s.__test.invokes.order()).equate([
+                'afterExpire', 'scheduling', 'select'
+            ]);
+        });
+    });
+    describe('MessageCase', function () {
+        it('should transition to scheduling()', function () {
+            var s = new Rout();
+            var c = new router_1.MessageCase(Message, s);
+            c.match(new Message('x'));
+            must_1.must(s.__test.invokes.order()).equate([
+                'afterMessage', 'scheduling', 'select'
+            ]);
+        });
+    });
+});
+
+},{"../../../lib/actor/router":12,"./fixtures/actor":95,"@quenk/must":15}],107:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -15833,17 +15889,17 @@ var Mock = /** @class */ (function () {
 exports.Mock = Mock;
 
 },{}],110:[function(require,module,exports){
+require("./actor/router_test.js");
+require("./actor/interact/http_test.js");
+require("./actor/interact/data/form/client_test.js");
+require("./actor/interact/data/form/validate/index_test.js");
+require("./actor/interact/data/form/index_test.js");
+require("./actor/interact/data/preload/http_test.js");
+require("./actor/interact/data/preload/index_test.js");
+require("./actor/interact/data/search/filtered_test.js");
+require("./actor/interact/data/search/realtime_test.js");
+require("./actor/interact/index_test.js");
+require("./actor/api/router/display_test.js");
 require("./browser/window/router/hash/default_test.js");
-require("./app/actor/interact/http_test.js");
-require("./app/actor/interact/data/form/client_test.js");
-require("./app/actor/interact/data/form/validate/index_test.js");
-require("./app/actor/interact/data/form/index_test.js");
-require("./app/actor/interact/data/preload/http_test.js");
-require("./app/actor/interact/data/preload/index_test.js");
-require("./app/actor/interact/data/search/filtered_test.js");
-require("./app/actor/interact/data/search/realtime_test.js");
-require("./app/actor/interact/index_test.js");
-require("./app/actor/api/router/display_test.js");
-require("./app/actor/api/router/index_test.js");
 
-},{"./app/actor/api/router/display_test.js":94,"./app/actor/api/router/index_test.js":95,"./app/actor/interact/data/form/client_test.js":97,"./app/actor/interact/data/form/index_test.js":98,"./app/actor/interact/data/form/validate/index_test.js":99,"./app/actor/interact/data/preload/http_test.js":100,"./app/actor/interact/data/preload/index_test.js":101,"./app/actor/interact/data/search/filtered_test.js":102,"./app/actor/interact/data/search/realtime_test.js":103,"./app/actor/interact/http_test.js":105,"./app/actor/interact/index_test.js":106,"./browser/window/router/hash/default_test.js":108}]},{},[110]);
+},{"./actor/api/router/display_test.js":94,"./actor/interact/data/form/client_test.js":96,"./actor/interact/data/form/index_test.js":97,"./actor/interact/data/form/validate/index_test.js":98,"./actor/interact/data/preload/http_test.js":99,"./actor/interact/data/preload/index_test.js":100,"./actor/interact/data/search/filtered_test.js":101,"./actor/interact/data/search/realtime_test.js":102,"./actor/interact/http_test.js":104,"./actor/interact/index_test.js":105,"./actor/router_test.js":106,"./browser/window/router/hash/default_test.js":108}]},{},[110]);

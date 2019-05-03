@@ -1,60 +1,94 @@
+/**
+ * The router module provides interfaces for building client side router actors.
+ *
+ * The approach here is assumed to be one where a single actor acts as a
+ * router that schedules control of the application between other actors.
+ *
+ * At most only one actor is allowed to have control and is referred to as the
+ * the current actor. When the user triggers a request for another
+ * actor (the next actor), the current actor is first relieved of control
+ * then the next actor promoted.
+ *
+ * The transfer of control is "polite" in that it is expected the router
+ * will inform the current actor that it has to give up control. Interfaces
+ * are provided to receive an acknowledgement (Ack) message as well as
+ * listeninig for timeouts via expiration (Exp) messages when things go wrong.
+ *
+ * Behaviour Matrix:
+ *               routing                  waiting
+ * routing       <Message>                <Dispatch>       
+ * waiting       <Ack>|<Continue>|<Expire>                
+ */
+
+/** imports */
 import { Constructor } from '@quenk/noni/lib/data/type/constructor';
 import { Case } from '@quenk/potoo/lib/actor/resident/case';
-import { BeforeAwaiting, Awaiting } from './awaiting';
-import { BeforeRouting, Routing } from './routing';
+import { Actor } from './';
 
 /**
- * Router coordinates the streaming of messages to a single actor between
- * a pool of multiple actors.
- *
- * The APIs provided here assume a pattern where only one actor is allowed
- * to stream at a time.
- * 
- * The Router implementation can forward those messages by
- * implementing the MessageListener interface.
- *
- * Before changing which actor is streaming, a compliant Router attempts to 
- * stop the current one if present.
- *
- * This should be done in the `beforeAwaiting` hook.
- *
- * The current actor is expected to respond with an "acknowledgment" 
- * message which instructs the Router to complete the switch over.
- *
- * If it needs more time and is supported, a "continue" message can be sent.
- *
- * An additional Case is provided here for situations where the current actor
- * does not respond or in appropriate time. This is the ExpireCase which
- * will invoke the "afterExpire" hook.
- *
- * Use that hook to take actions such as removing the offending actor from
- * the pool.
- *
- * Behaviour matrix:
- *               routing                  awaiting
- * routing       <Message>                <Dispatch>       
- * awaiting      <Ack>|<Continue>|<Expire>                
+ * BeforeWaiting
  */
-export interface Router<T, MRouting, MAwaiting>
-    extends
-    BeforeRouting,
-    Routing<MRouting>,
-    BeforeAwaiting<T>,
-    Awaiting<T, MAwaiting> { }
+export interface BeforeWaiting<T> extends Actor {
+
+    /**
+     * beforeWaiting hook.
+     */
+    beforeWaiting(t: T): BeforeWaiting<T>
+
+}
+
+/**
+ * Waiting behaviour means the router is waiting on an ACK/Exp message
+ * before continuing.
+ */
+export interface Waiting<T, M> extends Actor {
+
+    /**
+     * waiting behaviour.
+     */
+    waiting(t: T): Case<M>[]
+
+}
+
+/**
+ * BeforeRouting
+ */
+export interface BeforeRouting {
+
+    /**
+     * beforeRouting hook.
+     */
+    beforeRouting(): BeforeRouting
+
+}
+
+/**
+ * Routing means the router is accepting dispatch requests to change the 
+ * controlling actor.
+ */
+export interface Routing<M> extends Actor {
+
+    /**
+     * routing behaviour.
+     */
+    routing(): Case<M>[]
+
+}
 
 /**
  * DispatchListener 
  *
- * Implement this interface to process requests for changing the current actor.
+ * This interface is implemented to react to requests to change
+ * the current actor.
  */
 export interface DispatchListener<T, MAwaiting>
-    extends BeforeAwaiting<T>, Awaiting<T, MAwaiting> { }
+    extends BeforeWaiting<T>, Waiting<T, MAwaiting> { }
 
 /**
  * AckListener
  *
- * Implement this interface to process the acknowldgement from the current
- * actor.
+ * Implement this interface to process the acknowldgements from the 
+ * current actor when it yields control.
  */
 export interface AckListener<A, MRouting> extends Routing<MRouting> {
 
@@ -83,8 +117,8 @@ export interface ContinueListener<C, MRouting> extends Routing<MRouting> {
 /**
  * ExpireListener
  *
- * This interface can be implemented to detect time has run out
- * for the controlling actor to respond.
+ * This interface can be implemented to detect timeouts when awaiting
+ * the current actor to yield control.
  */
 export interface ExpireListener<E, MRouting> extends Routing<MRouting> {
 
@@ -124,8 +158,8 @@ export class DispatchCase<T, MAwaiting> extends Case<T> {
 
         super(pattern, (t: T) =>
             listener
-                .beforeAwaiting(t)
-                .select(listener.awaiting(t)));
+                .beforeWaiting(t)
+                .select(listener.waiting(t)));
 
     }
 

@@ -3,28 +3,34 @@ import { Case } from '@quenk/potoo/lib/actor/resident/case';
 import { Mutable as M, Immutable as I } from '@quenk/potoo/lib/actor/resident';
 import { Template } from '@quenk/potoo/lib/actor/template';
 import { Address } from '@quenk/potoo/lib/actor/address';
-import { Context } from '../state/context';
-import { App } from '../';
+import { Context , App} from '../app';
 
 /**
  * Actor interface.
  *
- * Any resident actor that is part of the app's system
- * must satisfy this interface.
+ * This is an alias for `potoo/lib/actor/resident#Api` constrained
+ * to Context and App. It is useful in locations where we are only 
+ * interested in the resident Api methods.
  */
 export interface Actor extends Api<Context, App> { }
 
+/**
+ * Mutable constrained to Context and App.
+ */
 export abstract class Mutable extends M<Context, App> { }
 
+/**
+ * Immutable constrained to Context and App.
+ */
 export abstract class Immutable<T> extends I<T, Context, App> { }
 
 /**
  * Proxy provides an actor API implementation that delegates
- * all its operations to another actor.
+ * all its operations to a target actor.
  */
 export class Proxy<A extends App> implements Api<Context, A> {
 
-  constructor(public instance: Api<Context, A>) { }
+    constructor(public instance: Api<Context, A>) { }
 
     self(): Address {
 

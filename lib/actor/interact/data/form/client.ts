@@ -1,9 +1,10 @@
 /**
- * This module provides interfaces for actors that can yield control to a form
- * to collect user input.
+ * This module provides interfaces for interacts that yield control to a
+ * Form interact to collect user input.
  *
  * Yielding to a form means allowing it to stream content to the display
- * while awaiting the abort or save signals.
+ * while awaiting abort or save signals. This process can be seen as a client
+ * server relationship hence the modules name.
  *
  * Behaviour matrix
  *         editing   resumed
@@ -17,8 +18,7 @@ import { Actor } from '../../../';
 import { Resumed } from '../../';
 
 /**
- * BeforeEditing indicates an actor has a hook to invoke before
- * transitioning to editing.
+ * BeforeEditing
  */
 export interface BeforeEditing<T> extends Actor {
 
@@ -30,7 +30,6 @@ export interface BeforeEditing<T> extends Actor {
 }
 
 /**
- *
  * Editing indicates an actor has a behaviour for 
  * editing via some Form actor.
  */
@@ -44,12 +43,12 @@ export interface Editing<T, M> extends Actor {
 }
 
 /**
- * EditListener
+ * EditListener allows for the processing of requests to promote the Form.
  */
 export interface EditListener<T, M> extends BeforeEditing<T>, Editing<T, M> { }
 
 /**
- * AbortedListener interface for receiving the Cancelled event from a form.
+ * AbortedListener interface for receiving the <Abort> event from a form.
  */
 export interface AbortedListener<A, T, MResumed>
     extends Resumed<T, MResumed> {
@@ -62,7 +61,7 @@ export interface AbortedListener<A, T, MResumed>
 }
 
 /**
- * SavedListener interface for receiving the Saved event from a Form.
+ * SavedListener interface for receiving the <Saved> event from a Form.
  */
 export interface SavedListener<S, T, MResumed> extends Resumed<T, MResumed> {
 

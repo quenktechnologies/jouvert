@@ -1,12 +1,11 @@
 require("./actor/router_test.js");
-require("./actor/interact/http_test.js");
+require("./actor/interact/data/search_test.js");
 require("./actor/interact/data/form/client_test.js");
-require("./actor/interact/data/form/validate/index_test.js");
 require("./actor/interact/data/form/index_test.js");
-require("./actor/interact/data/preload/http_test.js");
+require("./actor/interact/data/form/validate_test.js");
 require("./actor/interact/data/preload/index_test.js");
-require("./actor/interact/data/search/filtered_test.js");
-require("./actor/interact/data/search/realtime_test.js");
+require("./actor/interact/data/preload/http/response_test.js");
 require("./actor/interact/index_test.js");
+require("./actor/interact/http/response_test.js");
 require("./actor/api/router/display_test.js");
 require("./browser/window/router/hash/default_test.js");

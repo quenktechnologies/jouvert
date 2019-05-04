@@ -3,8 +3,8 @@ import {
     LoadListener,
     FinishedListener,
     LoadCase,
-    FinishedCase
-}    from '../../../../../../lib/actor/interact/data/preload';
+    FinishCase
+} from '../../../../../../lib/actor/interact/data/preload';
 import { ActorImpl } from '../../../fixtures/actor';
 
 class Load { display = '?'; }
@@ -65,12 +65,12 @@ describe('app/interact/data/preload', () => {
 
     });
 
-    describe('FinishedCase', () => {
+    describe('FinishCase', () => {
 
         it('should transition to loading', () => {
 
             let m = new PreloadImpl();
-            let c = new FinishedCase(Finish, new Request(), m);
+            let c = new FinishCase(Finish, new Request(), m);
 
             c.match(new Finish());
             must(m.__test.invokes.order()).equate([

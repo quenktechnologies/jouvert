@@ -1,17 +1,11 @@
 /**
- * The interact module provides a set of APIs that provide an opinionated
- * set of tools for designing application work flows.
+ * The interact module provides an opinionated set of actor APIs for desigining
+ * common application workflows.
  *
- * Most of the apis hear are based around the concept of a controlling
- * actor changing it's behaviour due to user interaction and thus updating
- * UI or preforming some task on behalf of the user.
- *
- * An Interact interface is provided as a basic entrypoint, this is an actor
- * that is sleeps (suspended) while not active and resumes providing
- * interactivity when some user even has given it control.
- *
- * Some of the APIs extend this interface, others augment it without explicit
- * re-definition.
+ * The concept of an Interact, is an actor that can be woken up or resumed
+ * to provide some sort of interactive content to the user upon request.
+ * The provision or streaming of this interactivity can be stopped by 
+ * suspending (suspended) the actor.
  */
 /** imports */
 import { Constructor } from '@quenk/noni/lib/data/type/constructor';
@@ -19,8 +13,7 @@ import { Case as Case } from '@quenk/potoo/lib/actor/resident/case';
 import { Actor } from '../';
 
 /**
- * BeforeResumed indicates the actor has a hook that can be invoked
- * before resuming.
+ * BeforeResumed
  */
 export interface BeforeResumed<T> extends Actor {
 
@@ -34,20 +27,19 @@ export interface BeforeResumed<T> extends Actor {
 /**
  * Resumed indicates the actor has a behaviour for being resumed.
  *
- * This is usually the state where the actor is given control of the app.
+ * This is the state where the actor is given control to stream its content.
  */
 export interface Resumed<T, M> extends Actor {
 
     /**
-     * resumed cases provider.
+     * resumed behaviour
      */
     resumed(r: T): Case<M>[]
 
 }
 
 /**
- * BeforeSuspended indicates that the actor has a hook that can be invoked
- * before suspending.
+ * BeforeSuspended 
  */
 export interface BeforeSuspended<T> extends Actor {
 
@@ -62,19 +54,19 @@ export interface BeforeSuspended<T> extends Actor {
  * Suspended indicates that an Interact can be put into a suspended mode.
  *
  * While suspended an Interact is expected to ignore most messages except
- * the one meant for resuming.
+ * the one to continue streaming.
  */
 export interface Suspended<M> extends Actor {
 
     /**
-     * suspended method providing the behaviour.
+     * suspended behaviour.
      */
     suspended(): Case<M>[]
 
 }
 
 /**
- * BeforeExit indicates an actor has a hook to invoke before exiting the actor.
+ * BeforeExit 
  */
 export interface BeforeExit<T> extends Actor {
 
@@ -86,20 +78,19 @@ export interface BeforeExit<T> extends Actor {
 }
 
 /**
- * SuspendListener interface combining BeforeSuspended and Suspended.
+ * SuspendListener for intercepting suspend messages.
  */
 export interface SuspendListener<T, M>
-    extends BeforeSuspended<T>, Suspended< M> { }
+    extends BeforeSuspended<T>, Suspended<M> { }
 
 /**
- * ResumeListener interface combining BeforeResumed and Resumed.
+ * ResumeListener interface for intercepting resume messages.
  */
 export interface ResumeListener<T, M>
     extends BeforeResumed<T>, Resumed<T, M> { }
 
 /**
- * ExitListener indicates the actor can exit on receipt of 
- * a message to do so.
+ * ExitListener for intercepting exit messages.
  */
 export interface ExitListener<T> extends BeforeExit<T> { }
 

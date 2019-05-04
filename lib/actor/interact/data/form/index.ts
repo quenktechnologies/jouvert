@@ -1,18 +1,17 @@
 /**
- * Form interface is for actors that provide form
- * functionality.
+ * A Form interact is one that is used for collecting and saving user input.
  *
- * Forms here are not concerned with the details of design and UX,
- * just the workflow for capturing input.
+ * The APIs here are not concerned with the UX of form design, just the workflow.
+ * Input is expected to be collected while the Form is "resumed" and a "saving"
+ * behaviour is introduced for persisting data on user request.
  *
- * The form apis are designed around a client server model where another
- * interact (the client) yields control to the form and awaits some message 
- * indicating the form has been saved or aborted.
+ * Forms can also be cancellable by implementing the AbortListener interface.
  *
- * Behaviour matrix:
- *             suspended  resume  saving
+ * Behaviour Matrix:
+ *             resumed  saving  suspended
+ * resumed     <Input>  <Save>  <Abort>
+ * saving
  * suspended                     
- * resume      <Abort>    <Input> <Save>   
  */
 
 /** imports */
@@ -20,7 +19,6 @@ import { Constructor } from '@quenk/noni/lib/data/type/constructor';
 import { Case } from '@quenk/potoo/lib/actor/resident/case';
 import { Actor } from '../../../';
 import { Resumed, Suspended } from '../../';
-import { OnInput } from './oninput';
 
 /**
  * ResumedMessages type.
@@ -43,21 +41,20 @@ export interface OnInput<E> extends Actor {
 }
 
 /**
- * BeforeSaving means the actor has a hook to invoke before transitioning
- * to saving.
+ * BeforeSaving
  */
 export interface BeforeSaving<T> extends Actor {
 
     /**
-     * beforeSaving
+     * beforeSaving hook.
      */
     beforeSaving(t: T): BeforeSaving<T>
 
 }
 
 /**
- * Saving indicates an actor has a behaviour it can transition to while
- * saving data either remotely or locally.
+ * Saving indicates an actor has a behaviour it can transition to for
+ * saving data.
  */
 export interface Saving<T, M> {
 
@@ -69,18 +66,18 @@ export interface Saving<T, M> {
 }
 
 /**
- * InputListener
+ * InputListener for capturing user input in the form of messages.
  */
 export interface InputListener<E, T, MResumed>
     extends OnInput<E>, Resumed<T, MResumed> { }
 
 /**
- * SaveListener
+ * SaveListener allows for triggering the save process on user request.
  */
 export interface SaveListener<T, M> extends BeforeSaving<T>, Saving<T, M> { }
 
 /**
- * AbortListener
+ * AbortListener allows for the Form to be suspended on user request.
  */
 export interface AbortListener<A, M> extends Suspended<M> {
 
@@ -92,16 +89,6 @@ export interface AbortListener<A, M> extends Suspended<M> {
 }
 
 /**
- * OnInputForm 
- */
-export interface OnInputForm<E, T, MResumed>
-    extends OnInput<E>, Resumed<T, MResumed> { }
-
-
-export interface Form<E, T, MResumed>
-    extends OnInputForm<E, T, ResumedMessages<E, MResumed>> { }
-
-/**
  * InputCase applies the onInput hook and continues resuming.
  */
 export class InputCase<E, T, MResumed> extends Case<E> {
@@ -111,12 +98,10 @@ export class InputCase<E, T, MResumed> extends Case<E> {
         public token: T,
         public form: InputListener<E, T, MResumed>) {
 
-        super(pattern, (e: E) => {
-
-            form.onInput(e);
-            form.select(form.resumed(token));
-
-        });
+        super(pattern, (e: E) =>
+            form
+                .onInput(e)
+                .select(form.resumed(token)));
 
     }
 
@@ -131,12 +116,10 @@ export class SaveCase<S, MSaving> extends Case<S> {
         public pattern: Constructor<S>,
         public listener: SaveListener<S, MSaving>) {
 
-        super(pattern, (s: S) => {
-
-            listener.beforeSaving(s);
-            listener.select(listener.saving(s));
-
-        });
+        super(pattern, (s: S) =>
+            listener
+                .beforeSaving(s)
+                .select(listener.saving(s)));
 
     }
 
@@ -152,12 +135,10 @@ export class AbortCase<A, MSuspended> extends Case<A> {
         public pattern: Constructor<A>,
         public listener: AbortListener<A, MSuspended>) {
 
-        super(pattern, (a: A) => {
-
-            listener.afterAbort(a);
-            listener.select(listener.suspended());
-
-        });
+        super(pattern, (a: A) =>
+          listener
+          .afterAbort(a)
+        .select(listener.suspended()));
 
     }
 

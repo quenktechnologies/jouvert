@@ -1,17 +1,21 @@
 /**
- * This module provides interfaces that can be implemented for Interacts
- * to hook into common http responses.
+ * Sometimes an Interact needs to receive http responses in order to
+ * properly stream its content.
+ *
+ * This module provides listeners for common http responses. The workflow
+ * here puts the Interact in the resumed behaviour after each response.
  */
 
 /** imports */
 import { Constructor } from '@quenk/noni/lib/data/type/constructor';
 import { Case } from '@quenk/potoo/lib/actor/resident/case';
-import { Resumed } from './';
+import { Resumed } from '../';
 
 /**
  * OkListener
  */
 export interface OkListener<A, R, MResumed> extends Resumed<R, MResumed> {
+
     /**
      * afterOk hook.
      */

@@ -3,13 +3,13 @@ import {
     OkCase,
     CreatedCase,
     NoContentCase,
-    ConflictCase,
+  ConflictCase,
     ForbiddenCase,
     UnauthorizedCase,
     NotFoundCase,
     ServerErrorCase
-} from '../../../../../../lib/actor/interact/data/preload/http';
-import { InteractImpl } from '../../fixtures/interact';
+} from '../../../../../lib/actor/interact/http/response';
+import { InteractImpl } from '../fixtures/interact';
 
 class Response { body = 1; }
 
@@ -65,21 +65,7 @@ class HttpInteract extends InteractImpl<Resume, void, void> {
 
     }
 
-    beforeLoading(_: any) {
-
-        return this.__record('beforeLoading', [_]);
-
-    }
-
-    loading(_: any) {
-
-        this.__record('loading', [_]);
-        return [];
-
-    }
-
 }
-
 const listener = () => new HttpInteract();
 
 describe('app/interact/http', () => {
@@ -95,7 +81,7 @@ describe('app/interact/http', () => {
             c.match(new Response());
             must(m.__test.invokes.order()).equate([
 
-                'afterOk', 'loading', 'select'
+                'afterOk', 'resumed', 'select'
 
             ]);
 
@@ -114,7 +100,7 @@ describe('app/interact/http', () => {
             c.match(new Response());
             must(m.__test.invokes.order()).equate([
 
-                'afterCreated', 'loading', 'select'
+                'afterCreated', 'resumed', 'select'
 
             ]);
 
@@ -133,7 +119,7 @@ describe('app/interact/http', () => {
             c.match(new Response());
             must(m.__test.invokes.order()).equate([
 
-                'afterNoContent', 'loading', 'select'
+                'afterNoContent', 'resumed', 'select'
 
             ]);
 
@@ -152,7 +138,7 @@ describe('app/interact/http', () => {
             c.match(new Response());
             must(m.__test.invokes.order()).equate([
 
-                'afterConflict', 'loading', 'select'
+                'afterConflict', 'resumed', 'select'
 
             ]);
 
@@ -170,7 +156,7 @@ describe('app/interact/http', () => {
 
             c.match(new Response());
             must(m.__test.invokes.order()).equate([
-                'afterForbidden', 'loading', 'select'
+                'afterForbidden', 'resumed', 'select'
             ]);
 
         });
@@ -187,7 +173,7 @@ describe('app/interact/http', () => {
 
             c.match(new Response());
             must(m.__test.invokes.order()).equate([
-                'afterUnauthorized', 'loading', 'select'
+                'afterUnauthorized', 'resumed', 'select'
             ]);
 
         });
@@ -204,7 +190,7 @@ describe('app/interact/http', () => {
 
             c.match(new Response());
             must(m.__test.invokes.order()).equate([
-                'afterNotFound', 'loading', 'select'
+                'afterNotFound', 'resumed', 'select'
             ]);
 
         });
@@ -221,7 +207,7 @@ describe('app/interact/http', () => {
 
             c.match(new Response());
             must(m.__test.invokes.order()).equate([
-                'afterServerError', 'loading', 'select'
+                'afterServerError', 'resumed', 'select'
             ]);
 
         });

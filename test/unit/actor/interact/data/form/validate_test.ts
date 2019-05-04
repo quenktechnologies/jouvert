@@ -1,22 +1,29 @@
 import { must } from '@quenk/must';
-import { Failure } from '@quenk/preconditions/lib/result/failure';
+import { Value } from '@quenk/noni/lib/data/json';
+import { Either, right } from '@quenk/noni/lib/data/either';
 import { gt } from '@quenk/preconditions/lib/number';
 import {
     Validate,
     InputCase,
-} from '../../../../../../../lib/actor/interact/data/form/validate';
-import { ActorImpl } from '../../../../fixtures/actor';
+} from '../../../../../../lib/actor/interact/data/form/validate';
+import { ActorImpl } from '../../../fixtures/actor';
 
 class Request { display = '?'; form = '?'; client = '?' }
 
-class Event { constructor(public name: string, public value: number) { }; }
+class Event { constructor(public name: string, public value: Value) { }; }
 
 class ValidateImpl extends ActorImpl implements Validate<Event, Request, void>{
 
-    validateEvent(e: Event) {
+    validate(_: string, value: Value): Either<string, Value> {
 
-        this.__record('validateEvent', [e]);
-        return gt(1)(e.value);
+        this.__record('validateEvent', [_, value]);
+
+        let e = gt(1)(<number>value);
+
+        if (e.isRight())
+            return right(e.takeRight())
+        else
+            return (e.lmap(() => 'err'));
 
     }
 
@@ -26,15 +33,17 @@ class ValidateImpl extends ActorImpl implements Validate<Event, Request, void>{
 
     }
 
-    afterFieldValid(name: string, value: number, e: Event) {
+    afterFieldValid(name: string, value: Value): ValidateImpl {
 
-        return this.__record('afterFieldValid', [name, value, e]);
+        this.__record('afterFieldValid', [name, value]);
+        return <ValidateImpl>this;
 
     }
 
-    afterFieldInvalid(name: string, f: Failure<number>, e: Event) {
+    afterFieldInvalid(name: string, value: Value, err: string): ValidateImpl {
 
-        return this.__record('afterFieldInvalid', [name, f, e]);
+        this.__record('afterFieldInvalid', [name, value, err]);
+        return <ValidateImpl>this;
 
     }
 

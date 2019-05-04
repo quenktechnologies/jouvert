@@ -1,7 +1,14 @@
-
+/**
+ * This module provides interfaces and cases for loading from http requests
+ * specifically. 
+ *
+ * It differs from the `http/response` module in that responses here
+ * continue the loading behaviour.
+ */
+/** imports */
 import { Constructor } from '@quenk/noni/lib/data/type/constructor';
 import { Case } from '@quenk/potoo/lib/actor/resident/case';
-import { Loading } from './';
+import { Loading } from '../';
 
 /**
  * OkListener

@@ -1,10 +1,27 @@
+/**
+ * A common task before displaying an application is to preload data
+ * from the remote server. This module provides behaviours for doing such.
+ *
+ * The target behaviour is loading where the actor awaits as many load 
+ * operations as needed to complete. Load operations can be execute in 
+ * the beforeLoading() hook. When all loading is done, the <Finish>
+ * message should be used to transition to the resumed behaviour.
+ *
+ * Behaviour Matrix:
+ *           
+ *           ?       loading resumed
+ * loading                   <Finish>
+ * ?         <Load>     
+ *
+ */ 
+/** imports */
 import { Constructor } from '@quenk/noni/lib/data/type/constructor';
 import { Case } from '@quenk/potoo/lib/actor/resident/case';
 import { Actor } from '../../../';
 import { Resumed } from '../../';
 
 /**
- * BeforeLoading indicates an actor has a hook to invoke before loading.
+ * BeforeLoading 
  */
 export interface BeforeLoading<T> extends Actor {
 
@@ -16,8 +33,7 @@ export interface BeforeLoading<T> extends Actor {
 }
 
 /**
- * AfterLoading indicates an actor has hook to invoke after ALL loading
- * has taken place.
+ * AfterLoading 
  */
 export interface AfterLoading<T> extends Actor {
 
@@ -26,8 +42,7 @@ export interface AfterLoading<T> extends Actor {
 }
 
 /**
- * Loading indicates an actor has a behaviour for loading data from some
- * resource.
+ * Loading indicates an actor has a behaviour for loading data.
  */
 export interface Loading<T, M> extends Actor {
 
@@ -71,10 +86,10 @@ export class LoadCase<L, MLoading> extends Case<L> {
 }
 
 /**
- * FinishedCase applies the afterLoading hook then transitions to the 
+ * FinishCase applies the afterLoading hook then transitions to the 
  * resumed behaviour.
  */
-export class FinishedCase<F, T, MResumed> extends Case<F> {
+export class FinishCase<F, T, MResumed> extends Case<F> {
 
     constructor(
         public pattern: Constructor<F>,

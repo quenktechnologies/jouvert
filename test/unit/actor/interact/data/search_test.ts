@@ -1,13 +1,68 @@
 import { must } from '@quenk/must';
 import {
+  ExecuteSyncListener,
+  ExecuteAsyncListener,
     Filtered,
     SetFilterCase,
     RemoveFilterCase,
-    ClearFiltersCase
-} from '../../../../../../lib/actor/interact/data/search/filtered';
-import { ActorImpl } from '../../../fixtures/actor';
+  ClearFiltersCase,
+  ExecuteSyncCase,
+  ExecuteAsyncCase
+} from '../../../../../lib/actor/interact/data/search';
+import { ActorImpl } from '../../fixtures/actor';
 
 class Resume { display = '?'; }
+
+class Exec { value = '?'; }
+
+class SyncImpl 
+extends 
+ActorImpl 
+implements ExecuteSyncListener<Exec,  void>  {
+
+    search(e: Exec) {
+
+        return this.__record('search', [e]);
+
+    }
+
+    beforeSearching(_: Exec)  {
+
+        this.__record('beforeSearching', [_]);
+        return this;
+
+    }
+
+    searching(_: Exec) {
+
+        this.__record('searching', [_]);
+        return [];
+
+    }
+
+
+}
+
+class AsyncImpl 
+extends 
+ActorImpl 
+implements ExecuteAsyncListener<Exec, Resume, void>  {
+
+    search(e: Exec) {
+
+        return this.__record('search', [e]);
+
+    }
+
+    resumed(_: Resume) {
+
+        this.__record('resumed', [_]);
+        return [];
+
+    }
+
+
+}
 
 class Filter { value = '?'; }
 
@@ -41,7 +96,7 @@ class FilteredImpl extends ActorImpl implements Filtered<Filter, Resume, void>  
 
 }
 
-describe('app/interact/data/search/filtered', () => {
+describe('app/interact/data/search', () => {
 
     describe('SetFilterCase', () => {
 
@@ -77,7 +132,7 @@ describe('app/interact/data/search/filtered', () => {
 
     })
 
-    describe('CleanFiltersCase', () => {
+    describe('ClearFiltersCase', () => {
 
         it('should call the clearFilters hook', () => {
 
@@ -94,4 +149,39 @@ describe('app/interact/data/search/filtered', () => {
 
     })
 
+    describe('ExecuteSyncListener', () => {
+
+        it('should call the search hook', () => {
+
+            let m = new SyncImpl();
+            let c = new ExecuteSyncCase(Exec, m);
+
+            c.match(new Exec());
+            must(m.__test.invokes.order()).equate([
+                'search', 'beforeSearching', 'searching','select'
+            ]);
+
+        });
+
+    });
+
+    describe('ExecuteAsyncListener', () => {
+
+        it('should call the search hook', () => {
+
+            let t = new Resume();
+            let m = new AsyncImpl();
+            let c = new ExecuteAsyncCase(Exec, t, m);
+
+            c.match(new Exec());
+            must(m.__test.invokes.order()).equate([
+                'search', 'resumed', 'select'
+            ]);
+
+        });
+
+    });
+
 });
+
+

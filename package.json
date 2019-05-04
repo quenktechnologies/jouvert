@@ -1,7 +1,7 @@
 {
   "name": "@quenk/jouvert",
   "version": "0.0.2",
-  "description": "SPA framework.",
+  "description": "Actor oriented client side toolkit.",
   "author": [
     "Quenk Technologies Limited <info@quenk.com> (https://quenk.com)"
   ],
@@ -23,10 +23,12 @@
     "path-to-regexp": "^3.0.0",
     "qs": "^6.6.0",
     "should": "^13.2.3",
+    "typedoc": "^0.14.2",
     "typescript": "^3.3.3"
   },
   "dependencies": {
-    "@quenk/noni": "^1.18.0",
+    "@quenk/jhr": "^2.4.0",
+    "@quenk/noni": "^1.23.0",
     "@quenk/potoo": "^2.1.5",
     "@quenk/preconditions": "^5.2.2",
     "@quenk/test": "^2.1.0",

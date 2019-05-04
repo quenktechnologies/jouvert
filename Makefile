@@ -1,4 +1,3 @@
-
 ./: lib test
 	touch $@
 
@@ -28,3 +27,14 @@ test/build/run.js: $(shell find test/unit -type f) lib
 clean:
 	@rm -R ./lib || true
 
+.PHONY: docs
+docs: lib
+	./node_modules/.bin/typedoc \
+	--mode modules \
+	--out $@ \
+	--tsconfig lib/tsconfig.json \
+	--theme minimal lib  \
+	--excludeExternals \
+	--excludeNotExported \
+	--excludePrivate && \
+	echo "" > docs/.nojekyll

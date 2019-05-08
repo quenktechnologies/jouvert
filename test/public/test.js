@@ -493,10 +493,14 @@ var InputCase = /** @class */ (function (_super) {
     function InputCase(pattern, token, form) {
         var _this = _super.call(this, pattern, function (e) {
             var either = form.validate(e.name, e.value);
-            if (either.isRight())
-                form.afterFieldValid(e.name, either.takeRight());
-            else
+            if (either.isRight()) {
+                var value = either.takeRight();
+                form.set(e.name, value);
+                form.afterFieldValid(e.name, value);
+            }
+            else {
                 form.afterFieldInvalid(e.name, e.value, either.takeLeft());
+            }
             form.select(form.resumed(token));
         }) || this;
         _this.pattern = pattern;
@@ -518,7 +522,9 @@ var AllForOneInputCase = /** @class */ (function (_super) {
         var _this = _super.call(this, pattern, function (e) {
             var eitherValid = form.validate(e.name, e.value);
             if (eitherValid.isRight()) {
-                form.afterFieldValid(e.name, eitherValid.takeRight());
+                var value = eitherValid.takeRight();
+                form.set(e.name, value);
+                form.afterFieldValid(e.name, value);
                 var eitherFormValid = form.validateAll();
                 if (eitherFormValid.isRight())
                     form.afterFormValid(eitherFormValid.takeRight());
@@ -611,6 +617,24 @@ var NoContentCase = /** @class */ (function (_super) {
     return NoContentCase;
 }(case_1.Case));
 exports.NoContentCase = NoContentCase;
+/**
+ * BadRequestCase dispatches afterBadRequest hook and resumes.
+ */
+var BadRequestCase = /** @class */ (function (_super) {
+    __extends(BadRequestCase, _super);
+    function BadRequestCase(pattern, token, listener) {
+        var _this = _super.call(this, pattern, function (res) {
+            listener.afterBadRequest(res);
+            listener.select(listener.loading(token));
+        }) || this;
+        _this.pattern = pattern;
+        _this.token = token;
+        _this.listener = listener;
+        return _this;
+    }
+    return BadRequestCase;
+}(case_1.Case));
+exports.BadRequestCase = BadRequestCase;
 /**
  * ConflictCase dispatches afterConflict hook and resumes.
  */
@@ -955,6 +979,25 @@ var NoContentCase = /** @class */ (function (_super) {
     return NoContentCase;
 }(case_1.Case));
 exports.NoContentCase = NoContentCase;
+/**
+ * BadRequestCase dispatches afterBadRequest hook and resumes.
+ */
+var BadRequestCase = /** @class */ (function (_super) {
+    __extends(BadRequestCase, _super);
+    function BadRequestCase(pattern, token, listener) {
+        var _this = _super.call(this, pattern, function (res) {
+            return listener
+                .afterBadRequest(res)
+                .select(listener.resumed(token));
+        }) || this;
+        _this.pattern = pattern;
+        _this.token = token;
+        _this.listener = listener;
+        return _this;
+    }
+    return BadRequestCase;
+}(case_1.Case));
+exports.BadRequestCase = BadRequestCase;
 /**
  * ConflictCase dispatches afterConflict hook and resumes.
  */
@@ -3573,6 +3616,12 @@ exports.getId = function (addr) {
 exports.isChild = function (parent, child) {
     return (parent === exports.ADDRESS_SYSTEM) || (parent !== child) && string_1.startsWith(child, parent);
 };
+/**
+ * isGroup determines if an address is a group reference.
+ */
+exports.isGroup = function (addr) {
+    return ((addr[0] === '$') && (addr !== '$'));
+};
 
 },{"@quenk/noni/lib/data/array":18,"@quenk/noni/lib/data/string":24}],29:[function(require,module,exports){
 "use strict";
@@ -3944,7 +3993,8 @@ var AbstractSystem = /** @class */ (function () {
      * spawn a new actor from a template.
      */
     AbstractSystem.prototype.spawn = function (t) {
-        (new this_1.This('$', this)).exec(new scripts_1.SpawnScript('', t));
+        (new this_1.This('$', this))
+            .exec(new scripts_1.SpawnScript('', t));
         return this;
     };
     AbstractSystem.prototype.init = function (c) {
@@ -3987,7 +4037,8 @@ exports.newState = function (sys) { return ({
     contexts: {
         $: sys.allocate(sys, new this_1.This('$', sys), new STemplate())
     },
-    routers: {}
+    routers: {},
+    groups: {}
 }); };
 
 },{"../../address":28,"../state":38,"../vm/runtime/this":62,"./scripts":34,"@quenk/noni/lib/data/maybe":21}],34:[function(require,module,exports){
@@ -4228,7 +4279,7 @@ exports.getParent = function (s, addr) {
 };
 /**
  * getRouter will attempt to provide the
- * routing actor for an Address.
+ * router context for an Address.
  *
  * The value returned depends on whether the given
  * address begins with any of the installed router's address.
@@ -4250,6 +4301,35 @@ exports.putRoute = function (s, target, router) {
  */
 exports.removeRoute = function (s, target) {
     delete s.routers[target];
+    return s;
+};
+/**
+ * getGroup attempts to provide the addresses of actors that have
+ * been assigned to a group.
+ *
+ * Note that groups must be prefixed with a '$' to be resolved.
+ */
+exports.getGroup = function (s, name) {
+    return s.groups.hasOwnProperty(name) ?
+        maybe_1.fromArray(s.groups[name]) : maybe_1.nothing();
+};
+/**
+ * putMember adds an address to a group.
+ *
+ * If the group does not exist, it will be created.
+ */
+exports.putMember = function (s, group, member) {
+    if (s.groups[group] == null)
+        s.groups[group] = [];
+    s.groups[group].push(member);
+    return s;
+};
+/**
+ * removeMember from a group.
+ */
+exports.removeMember = function (s, group, member) {
+    if (s.groups[group] != null)
+        s.groups[group] = s.groups[group].filter(function (m) { return m != member; });
     return s;
 };
 
@@ -4745,6 +4825,10 @@ var Allocate = /** @class */ (function () {
         e.putContext(addr, ctx);
         if (ctx.flags.router === true)
             e.putRoute(addr, addr);
+        if (t.group) {
+            var groups = (typeof t.group === 'string') ? [t.group] : t.group;
+            groups.forEach(function (g) { return e.putMember(g, addr); });
+        }
         curr.pushAddress(addr);
     };
     Allocate.prototype.toLog = function (f) {
@@ -5050,8 +5134,7 @@ var Noop = /** @class */ (function () {
         this.code = _1.OP_CODE_NOOP;
         this.level = _1.Level.Base;
     }
-    Noop.prototype.exec = function (_) {
-    };
+    Noop.prototype.exec = function (_) { };
     Noop.prototype.toLog = function (_) {
         return ['noop', [], []];
     };
@@ -5355,19 +5438,26 @@ var Stop = /** @class */ (function () {
         if (eitherAddress.isLeft())
             return e.raise(eitherAddress.takeLeft());
         var addr = eitherAddress.takeRight();
-        if ((!address_1.isChild(curr.actor, addr)) && (addr !== curr.actor))
-            return e.raise(new error.IllegalStopErr(curr.actor, addr));
-        var maybeChilds = e.getChildren(addr);
-        if (maybeChilds.isJust()) {
-            var ctxs = maybeChilds.get();
-            record_1.map(ctxs, function (c, k) { c.actor.stop(); e.removeContext(k); });
-        }
-        var maybeTarget = e.getContext(addr);
-        if (maybeTarget.isJust()) {
-            maybeTarget.get().actor.stop();
-            e.removeContext(addr);
-        }
-        e.clear();
+        var addrs = address_1.isGroup(addr) ?
+            e.getGroup(addr).orJust(function () { return []; }).get() : [addr];
+        addrs.every(function (a) {
+            if ((!address_1.isChild(curr.actor, a)) && (a !== curr.actor)) {
+                e.raise(new error.IllegalStopErr(curr.actor, a));
+                return false;
+            }
+            var maybeChilds = e.getChildren(a);
+            if (maybeChilds.isJust()) {
+                var ctxs = maybeChilds.get();
+                record_1.map(ctxs, function (c, k) { c.actor.stop(); e.removeContext(k); });
+            }
+            var maybeTarget = e.getContext(a);
+            if (maybeTarget.isJust()) {
+                maybeTarget.get().actor.stop();
+                e.removeContext(a);
+            }
+            e.clear();
+            return true;
+        });
     };
     Stop.prototype.toLog = function (f) {
         return ['stop', [], [f.peek()]];
@@ -5651,6 +5741,9 @@ var This = /** @class */ (function () {
     This.prototype.getRouter = function (addr) {
         return state_1.getRouter(this.system.state, addr);
     };
+    This.prototype.getGroup = function (name) {
+        return state_1.getGroup(this.system.state, name.split('$').join(''));
+    };
     This.prototype.getChildren = function (addr) {
         return maybe_1.fromNullable(state_1.getChildren(this.system.state, addr));
     };
@@ -5668,6 +5761,14 @@ var This = /** @class */ (function () {
     };
     This.prototype.removeRoute = function (target) {
         state_1.removeRoute(this.system.state, target);
+        return this;
+    };
+    This.prototype.putMember = function (group, addr) {
+        state_1.putMember(this.system.state, group, addr);
+        return this;
+    };
+    This.prototype.removeMember = function (group, addr) {
+        state_1.removeMember(this.system.state, group, addr);
         return this;
     };
     This.prototype.push = function (f) {
@@ -14862,12 +14963,15 @@ var ValidateImpl = /** @class */ (function (_super) {
         return _super !== null && _super.apply(this, arguments) || this;
     }
     ValidateImpl.prototype.validate = function (_, value) {
-        this.__record('validateEvent', [_, value]);
+        this.__record('validate', [_, value]);
         var e = number_1.gt(1)(value);
         if (e.isRight())
             return either_1.right(e.takeRight());
         else
             return (e.lmap(function () { return 'err'; }));
+    };
+    ValidateImpl.prototype.set = function (name, value) {
+        return this.__record('set', [name, value]);
     };
     ValidateImpl.prototype.onInput = function (_) {
         return this.__record('onInput', [_]);
@@ -14894,7 +14998,7 @@ describe('app/interact/data/form/validate', function () {
             var c = new validate_1.InputCase(Event, t, m);
             c.match(new Event('name', 12));
             must_1.must(m.__test.invokes.order()).equate([
-                'validateEvent', 'afterFieldValid', 'resumed', 'select'
+                'validate', 'set', 'afterFieldValid', 'resumed', 'select'
             ]);
         });
         it('should invoke the afterFieldInvalid hook', function () {
@@ -14903,7 +15007,7 @@ describe('app/interact/data/form/validate', function () {
             var c = new validate_1.InputCase(Event, t, m);
             c.match(new Event('name', 0));
             must_1.must(m.__test.invokes.order()).equate([
-                'validateEvent', 'afterFieldInvalid', 'resumed', 'select'
+                'validate', 'afterFieldInvalid', 'resumed', 'select'
             ]);
         });
     });

@@ -29,10 +29,11 @@
   "dependencies": {
     "@quenk/jhr": "^2.4.0",
     "@quenk/noni": "^1.23.0",
-    "@quenk/potoo": "^2.1.5",
+    "@quenk/potoo": "^2.2.1",
     "@quenk/preconditions": "^5.2.2",
     "@quenk/test": "^2.1.0",
     "@quenk/wml": "^0.16.3",
+    "@quenk/wml-widgets": "^1.10.0",
     "@types/deep-equal": "^1.0.1",
     "@types/should": "^13.0.0"
   }

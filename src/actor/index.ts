@@ -3,7 +3,7 @@ import { Case } from '@quenk/potoo/lib/actor/resident/case';
 import { Mutable as M, Immutable as I } from '@quenk/potoo/lib/actor/resident';
 import { Template } from '@quenk/potoo/lib/actor/template';
 import { Address } from '@quenk/potoo/lib/actor/address';
-import { Context , App} from '../app';
+import { Context, App } from '../app';
 
 /**
  * Actor interface.
@@ -38,7 +38,7 @@ export class Proxy<A extends App> implements Api<Context, A> {
 
     }
 
-    spawn(t: Template<Context, A>): Address {
+    spawn(t: Template<A>): Address {
 
         return this.instance.spawn(t);
 

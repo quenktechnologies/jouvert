@@ -55,10 +55,23 @@ export interface InputEvent {
 }
 
 /**
+ * Settable 
+ */
+export interface Settable {
+
+    /**
+     * set the value of a field.
+     */
+    set(key: string, value: Value): Settable
+
+}
+
+/**
  * Validate interface validate input as it comes in.
  */
 export interface Validate<E extends InputEvent, R, MResumed>
     extends
+    Settable,
     Resumed<R, MResumed> {
 
     /**
@@ -136,10 +149,18 @@ export class InputCase<E extends InputEvent, R, MResumed>
 
             let either = form.validate(e.name, e.value);
 
-            if (either.isRight())
-                form.afterFieldValid(e.name, either.takeRight());
-            else
+            if (either.isRight()) {
+
+                let value = either.takeRight();
+
+                form.set(e.name, value);
+                form.afterFieldValid(e.name, value);
+
+            } else {
+
                 form.afterFieldInvalid(e.name, e.value, either.takeLeft());
+
+            }
 
             form.select(form.resumed(token));
 
@@ -169,7 +190,10 @@ export class AllForOneInputCase
 
             if (eitherValid.isRight()) {
 
-                form.afterFieldValid(e.name, eitherValid.takeRight());
+                let value = eitherValid.takeRight();
+
+                form.set(e.name, value);
+                form.afterFieldValid(e.name, value);
 
                 let eitherFormValid = form.validateAll();
 

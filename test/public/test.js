@@ -19,10 +19,12 @@ var maybe_1 = require("@quenk/noni/lib/data/maybe");
 var future_1 = require("@quenk/noni/lib/control/monad/future");
 var case_1 = require("@quenk/potoo/lib/actor/resident/case");
 var __1 = require("../../");
-var _1 = require("./");
+var router_1 = require("../../router");
 exports.SUPERVISOR_ID = 'supervisor';
 /**
  * Resume is sent to an actor to indicate it has control.
+ *
+ * It is also used to trigger the DispatchCase.
  */
 var Resume = /** @class */ (function () {
     function Resume(route, request, actor, display, router) {
@@ -75,15 +77,15 @@ var Exp = /** @class */ (function () {
 }());
 exports.Exp = Exp;
 /**
- * Supervisor actor.
+ * Supervisor
  *
- * These are used to isolate communication between the actors and the Router
- * to prevent expired actors from interrupting workflow.
+ * This is used to contain communication between current actors and the router
+ * so that an expired current actor is unable to communicate.
  *
- * Supervisors forward Suspend messages to the controlling actor
- * and any other incomming messages to the router.
- *
- * An Ack message causes the side-effect of the Supervisor exiting.
+ * Supervisors forward Suspend messages to their target actor
+ * and any messages from the target to the router. An Ack message from
+ * the target causes the side-effect of the Supervisor exiting, thus terminating
+ * communication.
  */
 var Supervisor = /** @class */ (function (_super) {
     __extends(Supervisor, _super);
@@ -108,90 +110,18 @@ var Supervisor = /** @class */ (function (_super) {
 }(__1.Immutable));
 exports.Supervisor = Supervisor;
 /**
- * AckProxy
+ * DisplayRouter provides a client side router that allows controller actors
+ * to stream content to a single display upon user request.
  *
- * Acks result in a new Supervisor being spawned for the next controlling actor.
- */
-var AckProxy = /** @class */ (function (_super) {
-    __extends(AckProxy, _super);
-    function AckProxy(next, display, instance) {
-        var _this = _super.call(this, instance) || this;
-        _this.next = next;
-        _this.display = display;
-        _this.instance = instance;
-        return _this;
-    }
-    AckProxy.prototype.routing = function () {
-        return this.instance.routing();
-    };
-    AckProxy.prototype.afterAck = function (_) {
-        var _this = this;
-        this.instance.current = maybe_1.just(this.spawn({
-            id: exports.SUPERVISOR_ID,
-            create: function (h) { return new Supervisor(_this.next, _this.display, _this.self(), h); }
-        }));
-        return this;
-    };
-    return AckProxy;
-}(__1.Proxy));
-exports.AckProxy = AckProxy;
-/**
- * ExpProxy
- *
- * Exps result in the current supervisor being killed off and
- * the route removed from the internal table.
- *
- * A new Supervisor is spawned for the next controlling actor.
- */
-var ExpProxy = /** @class */ (function (_super) {
-    __extends(ExpProxy, _super);
-    function ExpProxy(next, display, instance) {
-        var _this = _super.call(this, instance) || this;
-        _this.next = next;
-        _this.display = display;
-        _this.instance = instance;
-        return _this;
-    }
-    ExpProxy.prototype.routing = function () {
-        return this.instance.routing();
-    };
-    ExpProxy.prototype.afterExpire = function (_a) {
-        var _this = this;
-        var route = _a.route;
-        var routes = this.instance.routes;
-        if (this.instance.current.isJust()) {
-            var addr = this.instance.current.get();
-            this.kill(addr);
-            this.spawn({
-                id: exports.SUPERVISOR_ID,
-                create: function (h) { return new Supervisor(_this.next, _this.display, _this.self(), h); }
-            });
-        }
-        else {
-            this.spawn({
-                id: exports.SUPERVISOR_ID,
-                create: function (h) { return new Supervisor(_this.next, _this.display, _this.self(), h); }
-            });
-        }
-        this.instance.routes = record_1.exclude(routes, route);
-        return this;
-    };
-    return ExpProxy;
-}(__1.Proxy));
-exports.ExpProxy = ExpProxy;
-/**
- * DisplayRouter provides an actor that allows controller style actors to stream
- * content to a display in response to user requests.
- *
- * In order to be a compliant with a Router, a controller actor must:
+ * In order to be a compliant with the DisplayRouter, a controller actor must:
  * 1. Only start streaming when it receives a Resume message from the Router.
  * 2. Stop streaming when it receives a Suspend message from the Router.
- * 3. Reply with an Ack after it has stopped or
- * 4  reply with a Cont if it wishes to not stop.
+ * 3. Reply with an Ack after it has received a Suspend message or
+ * 4. reply with a Cont message to remain in control.
  *
  * Failure to comply with the above will result in the Router "blacklisting"
- * the actor resulting in the real router implementation's onError function being
- * called each time the user requests the route.
+ * the controller in question. Being blacklisted means future requests for that
+ * controller will result in the error handler being invoked.
  */
 var DisplayRouter = /** @class */ (function (_super) {
     __extends(DisplayRouter, _super);
@@ -203,6 +133,7 @@ var DisplayRouter = /** @class */ (function (_super) {
         _this.timeout = timeout;
         _this.current = current;
         _this.system = system;
+        _this.next = maybe_1.nothing();
         return _this;
     }
     DisplayRouter.prototype.beforeRouting = function () {
@@ -211,8 +142,11 @@ var DisplayRouter = /** @class */ (function (_super) {
     DisplayRouter.prototype.routing = function () {
         return exports.whenRouting(this);
     };
-    DisplayRouter.prototype.beforeAwaiting = function (t) {
+    DisplayRouter.prototype.beforeWaiting = function (t) {
         var _this = this;
+        this.next = maybe_1.just(t);
+        if (this.timeout.isJust())
+            setTimeout(function () { return _this.tell(_this.self(), new Exp(t.route)); }, this.timeout.get());
         if (this.current.isJust()) {
             var addr = this.current.get();
             this.tell(addr, new Suspend(addr));
@@ -220,17 +154,41 @@ var DisplayRouter = /** @class */ (function (_super) {
         else {
             this.tell(this.self(), new Ack());
         }
-        this
-            .timeout
-            .map(function (n) {
-            setTimeout(function () { return _this.tell(_this.self(), new Exp(t.route)); }, n);
-        });
         return this;
     };
-    DisplayRouter.prototype.awaiting = function (t) {
-        return exports.whenAwaiting(this, t);
+    DisplayRouter.prototype.waiting = function (_) {
+        return exports.whenAwaiting(this);
     };
     DisplayRouter.prototype.afterContinue = function (_) {
+        return this;
+    };
+    DisplayRouter.prototype.afterAck = function (_) {
+        var _this = this;
+        this.current = maybe_1.just(this.spawn({
+            id: exports.SUPERVISOR_ID,
+            create: function (h) { return new Supervisor(_this.next.get(), _this.display, _this.self(), h); }
+        }));
+        return this;
+    };
+    DisplayRouter.prototype.afterExpire = function (_a) {
+        var _this = this;
+        var route = _a.route;
+        var routes = this.routes;
+        if (this.current.isJust()) {
+            var addr = this.current.get();
+            this.kill(addr);
+            this.spawn({
+                id: exports.SUPERVISOR_ID,
+                create: function (h) { return new Supervisor(_this.next.get(), _this.display, _this.self(), h); }
+            });
+        }
+        else {
+            this.spawn({
+                id: exports.SUPERVISOR_ID,
+                create: function (h) { return new Supervisor(_this.next.get(), _this.display, _this.self(), h); }
+            });
+        }
+        this.routes = record_1.exclude(routes, route);
         return this;
     };
     DisplayRouter.prototype.run = function () {
@@ -256,132 +214,18 @@ exports.DisplayRouter = DisplayRouter;
  * whenRouting behaviour.
  */
 exports.whenRouting = function (r) { return [
-    new _1.DispatchCase(Resume, r)
+    new router_1.DispatchCase(Resume, r)
 ]; };
 /**
  * whenAwaiting behaviour.
  */
-exports.whenAwaiting = function (r, t) { return [
-    new _1.AckCase(Ack, new AckProxy(t, r.display, r)),
-    new _1.ContinueCase(Cont, r),
-    new _1.ExpireCase(Exp, new ExpProxy(t, r.display, r))
+exports.whenAwaiting = function (r) { return [
+    new router_1.AckCase(Ack, r),
+    new router_1.ContinueCase(Cont, r),
+    new router_1.ExpireCase(Exp, r)
 ]; };
 
-},{"../../":3,"./":2,"@quenk/noni/lib/control/monad/future":17,"@quenk/noni/lib/data/maybe":22,"@quenk/noni/lib/data/record":23,"@quenk/potoo/lib/actor/resident/case":31}],2:[function(require,module,exports){
-"use strict";
-var __extends = (this && this.__extends) || (function () {
-    var extendStatics = function (d, b) {
-        extendStatics = Object.setPrototypeOf ||
-            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
-        return extendStatics(d, b);
-    };
-    return function (d, b) {
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
-Object.defineProperty(exports, "__esModule", { value: true });
-var case_1 = require("@quenk/potoo/lib/actor/resident/case");
-/**
- * DispatchCase invokes the beforeAwait hook then transitions
- * to awaiting.
- *
- * Use the beforeAwait to turn off the currently scheduled actor.
- */
-var DispatchCase = /** @class */ (function (_super) {
-    __extends(DispatchCase, _super);
-    function DispatchCase(pattern, listener) {
-        var _this = _super.call(this, pattern, function (t) {
-            return listener
-                .beforeAwaiting(t)
-                .select(listener.awaiting(t));
-        }) || this;
-        _this.pattern = pattern;
-        _this.listener = listener;
-        return _this;
-    }
-    return DispatchCase;
-}(case_1.Case));
-exports.DispatchCase = DispatchCase;
-/**
- * AckCase invokes the afterAck hook then transitions to
- * dispatching.
- */
-var AckCase = /** @class */ (function (_super) {
-    __extends(AckCase, _super);
-    function AckCase(pattern, listener) {
-        var _this = _super.call(this, pattern, function (a) {
-            return listener
-                .afterAck(a)
-                .select(listener.routing());
-        }) || this;
-        _this.pattern = pattern;
-        _this.listener = listener;
-        return _this;
-    }
-    return AckCase;
-}(case_1.Case));
-exports.AckCase = AckCase;
-/**
- * ContinueCase invokes the afterContinue hook then transitions
- * to dispatching.
- */
-var ContinueCase = /** @class */ (function (_super) {
-    __extends(ContinueCase, _super);
-    function ContinueCase(pattern, listener) {
-        var _this = _super.call(this, pattern, function (c) {
-            return listener
-                .afterContinue(c)
-                .select(listener.routing());
-        }) || this;
-        _this.pattern = pattern;
-        _this.listener = listener;
-        return _this;
-    }
-    return ContinueCase;
-}(case_1.Case));
-exports.ContinueCase = ContinueCase;
-/**
- * ExpireCase invokes the afterExpire hook then transitions to dispatching.
- */
-var ExpireCase = /** @class */ (function (_super) {
-    __extends(ExpireCase, _super);
-    function ExpireCase(pattern, listener) {
-        var _this = _super.call(this, pattern, function (e) {
-            return listener
-                .afterExpire(e)
-                .select(listener.routing());
-        }) || this;
-        _this.pattern = pattern;
-        _this.listener = listener;
-        return _this;
-    }
-    return ExpireCase;
-}(case_1.Case));
-exports.ExpireCase = ExpireCase;
-/**
- * MessageCase invokes the afterMessage hook then transitions to
- * dispatching.
- */
-var MessageCase = /** @class */ (function (_super) {
-    __extends(MessageCase, _super);
-    function MessageCase(pattern, listener) {
-        var _this = _super.call(this, pattern, function (m) {
-            return listener
-                .afterMessage(m)
-                .select(listener.routing());
-        }) || this;
-        _this.pattern = pattern;
-        _this.listener = listener;
-        return _this;
-    }
-    return MessageCase;
-}(case_1.Case));
-exports.MessageCase = MessageCase;
-
-},{"@quenk/potoo/lib/actor/resident/case":31}],3:[function(require,module,exports){
+},{"../../":2,"../../router":11,"@quenk/noni/lib/control/monad/future":16,"@quenk/noni/lib/data/maybe":21,"@quenk/noni/lib/data/record":22,"@quenk/potoo/lib/actor/resident/case":30}],2:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -398,6 +242,9 @@ var __extends = (this && this.__extends) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 var resident_1 = require("@quenk/potoo/lib/actor/resident");
+/**
+ * Mutable constrained to Context and App.
+ */
 var Mutable = /** @class */ (function (_super) {
     __extends(Mutable, _super);
     function Mutable() {
@@ -406,6 +253,9 @@ var Mutable = /** @class */ (function (_super) {
     return Mutable;
 }(resident_1.Mutable));
 exports.Mutable = Mutable;
+/**
+ * Immutable constrained to Context and App.
+ */
 var Immutable = /** @class */ (function (_super) {
     __extends(Immutable, _super);
     function Immutable() {
@@ -416,7 +266,7 @@ var Immutable = /** @class */ (function (_super) {
 exports.Immutable = Immutable;
 /**
  * Proxy provides an actor API implementation that delegates
- * all its operations to another actor.
+ * all its operations to a target actor.
  */
 var Proxy = /** @class */ (function () {
     function Proxy(instance) {
@@ -447,7 +297,7 @@ var Proxy = /** @class */ (function () {
 }());
 exports.Proxy = Proxy;
 
-},{"@quenk/potoo/lib/actor/resident":32}],4:[function(require,module,exports){
+},{"@quenk/potoo/lib/actor/resident":31}],3:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -526,23 +376,22 @@ var SavedCase = /** @class */ (function (_super) {
 }(case_1.Case));
 exports.SavedCase = SavedCase;
 
-},{"@quenk/potoo/lib/actor/resident/case":31}],5:[function(require,module,exports){
+},{"@quenk/potoo/lib/actor/resident/case":30}],4:[function(require,module,exports){
 "use strict";
 /**
- * Form interface is for actors that provide form
- * functionality.
+ * A Form interact is one that is used for collecting and saving user input.
  *
- * Forms here are not concerned with the details of design and UX,
- * just the workflow for capturing input.
+ * The APIs here are not concerned with the UX of form design, just the workflow.
+ * Input is expected to be collected while the Form is "resumed" and a "saving"
+ * behaviour is introduced for persisting data on user request.
  *
- * The form apis are designed around a client server model where another
- * interact (the client) yields control to the form and awaits some message
- * indicating the form has been saved or aborted.
+ * Forms can also be cancellable by implementing the AbortListener interface.
  *
- * Behaviour matrix:
- *             suspended  resume  saving
+ * Behaviour Matrix:
+ *             resumed  saving  suspended
+ * resumed     <Input>  <Save>  <Abort>
+ * saving
  * suspended
- * resume      <Abort>    <Input> <Save>
  */
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -566,8 +415,9 @@ var InputCase = /** @class */ (function (_super) {
     __extends(InputCase, _super);
     function InputCase(pattern, token, form) {
         var _this = _super.call(this, pattern, function (e) {
-            form.onInput(e);
-            form.select(form.resumed(token));
+            return form
+                .onInput(e)
+                .select(form.resumed(token));
         }) || this;
         _this.pattern = pattern;
         _this.token = token;
@@ -584,8 +434,9 @@ var SaveCase = /** @class */ (function (_super) {
     __extends(SaveCase, _super);
     function SaveCase(pattern, listener) {
         var _this = _super.call(this, pattern, function (s) {
-            listener.beforeSaving(s);
-            listener.select(listener.saving(s));
+            return listener
+                .beforeSaving(s)
+                .select(listener.saving(s));
         }) || this;
         _this.pattern = pattern;
         _this.listener = listener;
@@ -602,8 +453,9 @@ var AbortCase = /** @class */ (function (_super) {
     __extends(AbortCase, _super);
     function AbortCase(pattern, listener) {
         var _this = _super.call(this, pattern, function (a) {
-            listener.afterAbort(a);
-            listener.select(listener.suspended());
+            return listener
+                .afterAbort(a)
+                .select(listener.suspended());
         }) || this;
         _this.pattern = pattern;
         _this.listener = listener;
@@ -613,7 +465,7 @@ var AbortCase = /** @class */ (function (_super) {
 }(case_1.Case));
 exports.AbortCase = AbortCase;
 
-},{"@quenk/potoo/lib/actor/resident/case":31}],6:[function(require,module,exports){
+},{"@quenk/potoo/lib/actor/resident/case":30}],5:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -633,17 +485,23 @@ var case_1 = require("@quenk/potoo/lib/actor/resident/case");
 /**
  * InputCase
  *
- * Inspects an InputEvent applying the appropriate hook just before resuming.
+ * Inspects an InputEvent an applies the respective hooks before continuing
+ * resumed.
  */
 var InputCase = /** @class */ (function (_super) {
     __extends(InputCase, _super);
     function InputCase(pattern, token, form) {
         var _this = _super.call(this, pattern, function (e) {
-            return form
-                .validateEvent(e)
-                .map(function (v) { return form.afterFieldValid(e.name, v, e); })
-                .orRight(function (f) { return form.afterFieldInvalid(e.name, f, e); })
-                .map(function () { return form.select(form.resumed(token)); });
+            var either = form.validate(e.name, e.value);
+            if (either.isRight()) {
+                var value = either.takeRight();
+                form.set(e.name, value);
+                form.afterFieldValid(e.name, value);
+            }
+            else {
+                form.afterFieldInvalid(e.name, e.value, either.takeLeft());
+            }
+            form.select(form.resumed(token));
         }) || this;
         _this.pattern = pattern;
         _this.token = token;
@@ -653,8 +511,42 @@ var InputCase = /** @class */ (function (_super) {
     return InputCase;
 }(case_1.Case));
 exports.InputCase = InputCase;
+/**
+ * InputCase
+ *
+ * Inspects an InputEvent applying the appropriate hook just before resuming.
+ */
+var AllForOneInputCase = /** @class */ (function (_super) {
+    __extends(AllForOneInputCase, _super);
+    function AllForOneInputCase(pattern, token, form) {
+        var _this = _super.call(this, pattern, function (e) {
+            var eitherValid = form.validate(e.name, e.value);
+            if (eitherValid.isRight()) {
+                var value = eitherValid.takeRight();
+                form.set(e.name, value);
+                form.afterFieldValid(e.name, value);
+                var eitherFormValid = form.validateAll();
+                if (eitherFormValid.isRight())
+                    form.afterFormValid(eitherFormValid.takeRight());
+                else
+                    form.afterFormInvalid();
+            }
+            else {
+                form.afterFieldInvalid(e.name, e.value, eitherValid.takeLeft());
+                form.afterFormInvalid();
+            }
+            form.select(form.resumed(token));
+        }) || this;
+        _this.pattern = pattern;
+        _this.token = token;
+        _this.form = form;
+        return _this;
+    }
+    return AllForOneInputCase;
+}(case_1.Case));
+exports.AllForOneInputCase = AllForOneInputCase;
 
-},{"@quenk/potoo/lib/actor/resident/case":31}],7:[function(require,module,exports){
+},{"@quenk/potoo/lib/actor/resident/case":30}],6:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -725,6 +617,24 @@ var NoContentCase = /** @class */ (function (_super) {
     return NoContentCase;
 }(case_1.Case));
 exports.NoContentCase = NoContentCase;
+/**
+ * BadRequestCase dispatches afterBadRequest hook and resumes.
+ */
+var BadRequestCase = /** @class */ (function (_super) {
+    __extends(BadRequestCase, _super);
+    function BadRequestCase(pattern, token, listener) {
+        var _this = _super.call(this, pattern, function (res) {
+            listener.afterBadRequest(res);
+            listener.select(listener.loading(token));
+        }) || this;
+        _this.pattern = pattern;
+        _this.token = token;
+        _this.listener = listener;
+        return _this;
+    }
+    return BadRequestCase;
+}(case_1.Case));
+exports.BadRequestCase = BadRequestCase;
 /**
  * ConflictCase dispatches afterConflict hook and resumes.
  */
@@ -816,7 +726,7 @@ var ServerErrorCase = /** @class */ (function (_super) {
 }(case_1.Case));
 exports.ServerErrorCase = ServerErrorCase;
 
-},{"@quenk/potoo/lib/actor/resident/case":31}],8:[function(require,module,exports){
+},{"@quenk/potoo/lib/actor/resident/case":30}],7:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -852,12 +762,12 @@ var LoadCase = /** @class */ (function (_super) {
 }(case_1.Case));
 exports.LoadCase = LoadCase;
 /**
- * FinishedCase applies the afterLoading hook then transitions to the
+ * FinishCase applies the afterLoading hook then transitions to the
  * resumed behaviour.
  */
-var FinishedCase = /** @class */ (function (_super) {
-    __extends(FinishedCase, _super);
-    function FinishedCase(pattern, token, listener) {
+var FinishCase = /** @class */ (function (_super) {
+    __extends(FinishCase, _super);
+    function FinishCase(pattern, token, listener) {
         var _this = _super.call(this, pattern, function (f) {
             listener.afterLoading(f);
             listener.select(listener.resumed(token));
@@ -867,11 +777,11 @@ var FinishedCase = /** @class */ (function (_super) {
         _this.listener = listener;
         return _this;
     }
-    return FinishedCase;
+    return FinishCase;
 }(case_1.Case));
-exports.FinishedCase = FinishedCase;
+exports.FinishCase = FinishCase;
 
-},{"@quenk/potoo/lib/actor/resident/case":31}],9:[function(require,module,exports){
+},{"@quenk/potoo/lib/actor/resident/case":30}],8:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -948,49 +858,54 @@ var ClearFiltersCase = /** @class */ (function (_super) {
     return ClearFiltersCase;
 }(case_1.Case));
 exports.ClearFiltersCase = ClearFiltersCase;
-
-},{"@quenk/potoo/lib/actor/resident/case":31}],10:[function(require,module,exports){
-"use strict";
-var __extends = (this && this.__extends) || (function () {
-    var extendStatics = function (d, b) {
-        extendStatics = Object.setPrototypeOf ||
-            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
-        return extendStatics(d, b);
-    };
-    return function (d, b) {
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
-Object.defineProperty(exports, "__esModule", { value: true });
-var case_1 = require("@quenk/potoo/lib/actor/resident/case");
 /**
- * SearchCase invokes the search method before resuming.
+ * ExecuteAsyncCase applies the search() method
+ * then continues resumed.
  */
-var SearchCase = /** @class */ (function (_super) {
-    __extends(SearchCase, _super);
-    function SearchCase(pattern, token, realtime) {
+var ExecuteAsyncCase = /** @class */ (function (_super) {
+    __extends(ExecuteAsyncCase, _super);
+    function ExecuteAsyncCase(pattern, token, listener) {
         var _this = _super.call(this, pattern, function (e) {
-            return realtime
+            return listener
                 .search(e)
-                .select(realtime.resumed(token));
+                .select(listener.resumed(token));
         }) || this;
         _this.pattern = pattern;
         _this.token = token;
-        _this.realtime = realtime;
+        _this.listener = listener;
         return _this;
     }
-    return SearchCase;
+    return ExecuteAsyncCase;
 }(case_1.Case));
-exports.SearchCase = SearchCase;
+exports.ExecuteAsyncCase = ExecuteAsyncCase;
+/**
+ * ExecuteSyncCase invokes the search method before resuming.
+ */
+var ExecuteSyncCase = /** @class */ (function (_super) {
+    __extends(ExecuteSyncCase, _super);
+    function ExecuteSyncCase(pattern, listener) {
+        var _this = _super.call(this, pattern, function (e) {
+            return listener
+                .search(e)
+                .beforeSearching(e)
+                .select(listener.searching(e));
+        }) || this;
+        _this.pattern = pattern;
+        _this.listener = listener;
+        return _this;
+    }
+    return ExecuteSyncCase;
+}(case_1.Case));
+exports.ExecuteSyncCase = ExecuteSyncCase;
 
-},{"@quenk/potoo/lib/actor/resident/case":31}],11:[function(require,module,exports){
+},{"@quenk/potoo/lib/actor/resident/case":30}],9:[function(require,module,exports){
 "use strict";
 /**
- * This module provides interfaces that can be implemented for Interacts
- * to hook into common http responses.
+ * Sometimes an Interact needs to receive http responses in order to
+ * properly stream its content.
+ *
+ * This module provides listeners for common http responses. The workflow
+ * here puts the Interact in the resumed behaviour after each response.
  */
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -1064,6 +979,25 @@ var NoContentCase = /** @class */ (function (_super) {
     return NoContentCase;
 }(case_1.Case));
 exports.NoContentCase = NoContentCase;
+/**
+ * BadRequestCase dispatches afterBadRequest hook and resumes.
+ */
+var BadRequestCase = /** @class */ (function (_super) {
+    __extends(BadRequestCase, _super);
+    function BadRequestCase(pattern, token, listener) {
+        var _this = _super.call(this, pattern, function (res) {
+            return listener
+                .afterBadRequest(res)
+                .select(listener.resumed(token));
+        }) || this;
+        _this.pattern = pattern;
+        _this.token = token;
+        _this.listener = listener;
+        return _this;
+    }
+    return BadRequestCase;
+}(case_1.Case));
+exports.BadRequestCase = BadRequestCase;
 /**
  * ConflictCase dispatches afterConflict hook and resumes.
  */
@@ -1160,7 +1094,7 @@ var ServerErrorCase = /** @class */ (function (_super) {
 }(case_1.Case));
 exports.ServerErrorCase = ServerErrorCase;
 
-},{"@quenk/potoo/lib/actor/resident/case":31}],12:[function(require,module,exports){
+},{"@quenk/potoo/lib/actor/resident/case":30}],10:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -1237,7 +1171,142 @@ var ExitCase = /** @class */ (function (_super) {
 }(case_1.Case));
 exports.ExitCase = ExitCase;
 
-},{"@quenk/potoo/lib/actor/resident/case":31}],13:[function(require,module,exports){
+},{"@quenk/potoo/lib/actor/resident/case":30}],11:[function(require,module,exports){
+"use strict";
+/**
+ * The router module provides interfaces for building client side router actors.
+ *
+ * The approach here is assumed to be one where a single actor acts as a
+ * router that schedules control of the application between other actors.
+ *
+ * At most only one actor is allowed to have control and is referred to as the
+ * the current actor. When the user triggers a request for another
+ * actor (the next actor), the current actor is first relieved of control
+ * then the next actor promoted.
+ *
+ * The transfer of control is "polite" in that it is expected the router
+ * will inform the current actor that it has to give up control. Interfaces
+ * are provided to receive an acknowledgement (Ack) message as well as
+ * listeninig for timeouts via expiration (Exp) messages when things go wrong.
+ *
+ * Behaviour Matrix:
+ *               routing                  waiting
+ * routing       <Message>                <Dispatch>
+ * waiting       <Ack>|<Continue>|<Expire>
+ */
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+        return extendStatics(d, b);
+    };
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
+Object.defineProperty(exports, "__esModule", { value: true });
+var case_1 = require("@quenk/potoo/lib/actor/resident/case");
+/**
+ * DispatchCase invokes the beforeAwait hook then transitions
+ * to awaiting.
+ *
+ * Use the beforeAwait to turn off the currently scheduled actor.
+ */
+var DispatchCase = /** @class */ (function (_super) {
+    __extends(DispatchCase, _super);
+    function DispatchCase(pattern, listener) {
+        var _this = _super.call(this, pattern, function (t) {
+            return listener
+                .beforeWaiting(t)
+                .select(listener.waiting(t));
+        }) || this;
+        _this.pattern = pattern;
+        _this.listener = listener;
+        return _this;
+    }
+    return DispatchCase;
+}(case_1.Case));
+exports.DispatchCase = DispatchCase;
+/**
+ * AckCase invokes the afterAck hook then transitions to
+ * dispatching.
+ */
+var AckCase = /** @class */ (function (_super) {
+    __extends(AckCase, _super);
+    function AckCase(pattern, listener) {
+        var _this = _super.call(this, pattern, function (a) {
+            return listener
+                .afterAck(a)
+                .select(listener.routing());
+        }) || this;
+        _this.pattern = pattern;
+        _this.listener = listener;
+        return _this;
+    }
+    return AckCase;
+}(case_1.Case));
+exports.AckCase = AckCase;
+/**
+ * ContinueCase invokes the afterContinue hook then transitions
+ * to dispatching.
+ */
+var ContinueCase = /** @class */ (function (_super) {
+    __extends(ContinueCase, _super);
+    function ContinueCase(pattern, listener) {
+        var _this = _super.call(this, pattern, function (c) {
+            return listener
+                .afterContinue(c)
+                .select(listener.routing());
+        }) || this;
+        _this.pattern = pattern;
+        _this.listener = listener;
+        return _this;
+    }
+    return ContinueCase;
+}(case_1.Case));
+exports.ContinueCase = ContinueCase;
+/**
+ * ExpireCase invokes the afterExpire hook then transitions to dispatching.
+ */
+var ExpireCase = /** @class */ (function (_super) {
+    __extends(ExpireCase, _super);
+    function ExpireCase(pattern, listener) {
+        var _this = _super.call(this, pattern, function (e) {
+            return listener
+                .afterExpire(e)
+                .select(listener.routing());
+        }) || this;
+        _this.pattern = pattern;
+        _this.listener = listener;
+        return _this;
+    }
+    return ExpireCase;
+}(case_1.Case));
+exports.ExpireCase = ExpireCase;
+/**
+ * MessageCase invokes the afterMessage hook then transitions to
+ * dispatching.
+ */
+var MessageCase = /** @class */ (function (_super) {
+    __extends(MessageCase, _super);
+    function MessageCase(pattern, listener) {
+        var _this = _super.call(this, pattern, function (m) {
+            return listener
+                .afterMessage(m)
+                .select(listener.routing());
+        }) || this;
+        _this.pattern = pattern;
+        _this.listener = listener;
+        return _this;
+    }
+    return MessageCase;
+}(case_1.Case));
+exports.MessageCase = MessageCase;
+
+},{"@quenk/potoo/lib/actor/resident/case":30}],12:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -1298,7 +1367,7 @@ var DefaultHashRouter = /** @class */ (function (_super) {
 }(_1.HashRouter));
 exports.DefaultHashRouter = DefaultHashRouter;
 
-},{"./":14,"@quenk/noni/lib/control/monad/future":17,"@quenk/noni/lib/data/function":21}],14:[function(require,module,exports){
+},{"./":13,"@quenk/noni/lib/control/monad/future":16,"@quenk/noni/lib/data/function":20}],13:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var qs = require("qs");
@@ -1431,7 +1500,7 @@ exports.compile = function (r) {
     });
 };
 
-},{"@quenk/noni/lib/control/monad/future":17,"@quenk/noni/lib/data/function":21,"@quenk/noni/lib/data/record":23,"path-to-regexp":80,"qs":84}],15:[function(require,module,exports){
+},{"@quenk/noni/lib/control/monad/future":16,"@quenk/noni/lib/data/function":20,"@quenk/noni/lib/data/record":22,"path-to-regexp":79,"qs":83}],14:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -1609,7 +1678,7 @@ exports.toString = function (value) {
  */
 exports.must = function (value) { return new Positive(value, true); };
 
-},{"egal":76,"json-stringify-safe":78}],16:[function(require,module,exports){
+},{"egal":75,"json-stringify-safe":77}],15:[function(require,module,exports){
 "use strict";
 /**
  * This module provides functions and types to make dealing with ES errors
@@ -1650,7 +1719,7 @@ exports.attempt = function (f) {
     }
 };
 
-},{"../data/either":20}],17:[function(require,module,exports){
+},{"../data/either":19}],16:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -2144,7 +2213,7 @@ exports.liftP = function (f) { return new Run(function (s) {
     return function_1.noop;
 }); };
 
-},{"../../data/function":21,"../error":16,"../timer":18}],18:[function(require,module,exports){
+},{"../../data/function":20,"../error":15,"../timer":17}],17:[function(require,module,exports){
 (function (process){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
@@ -2157,15 +2226,15 @@ exports.tick = function (f) { return (typeof window == 'undefined') ?
     process.nextTick(f); };
 
 }).call(this,require('_process'))
-},{"_process":81}],19:[function(require,module,exports){
+},{"_process":80}],18:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 /**
  * The array module provides helper functions
  * for working with JS arrays.
  */
-var record_1 = require("./record");
-var math_1 = require("../math");
+var record_1 = require("../record");
+var math_1 = require("../../math");
 /**
  * head returns the item at index 0 of an array
  */
@@ -2205,8 +2274,8 @@ exports.partition = function (list) { return function (f) { return exports.empty
             [yes, exports.concat(no, c)]);
     }, [[], []]); }; };
 /**
- * group the properties of a Record into another Record using a grouping
- * function.
+ * group the elements of an array into a Record where each property
+ * is an array of elements assigned to it's property name.
  */
 exports.group = function (list) { return function (f) {
     return list.reduce(function (p, c, i) {
@@ -2238,7 +2307,7 @@ exports.dedupe = function (list) {
     return list.filter(function (e, i, l) { return l.indexOf(e) === i; });
 };
 
-},{"../math":27,"./record":23}],20:[function(require,module,exports){
+},{"../../math":26,"../record":22}],19:[function(require,module,exports){
 "use strict";
 /**
  * Either represents a value that may be one of two types.
@@ -2433,7 +2502,7 @@ exports.either = function (f) { return function (g) { return function (e) {
     return (e instanceof Right) ? g(e.takeRight()) : f(e.takeLeft());
 }; }; };
 
-},{"./maybe":22}],21:[function(require,module,exports){
+},{"./maybe":21}],20:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 /**
@@ -2492,7 +2561,7 @@ exports.curry5 = function (f) {
  */
 exports.noop = function () { };
 
-},{}],22:[function(require,module,exports){
+},{}],21:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 /**
@@ -2725,7 +2794,7 @@ exports.fromNaN = function (n) {
     return isNaN(n) ? new Nothing() : new Just(n);
 };
 
-},{}],23:[function(require,module,exports){
+},{}],22:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 /**
@@ -2793,6 +2862,15 @@ exports.map = function (o, f) {
  */
 exports.reduce = function (o, accum, f) {
     return exports.keys(o).reduce(function (p, k) { return f(p, o[k], k); }, accum);
+};
+/**
+ * filter the keys of a record using a filter function.
+ */
+exports.filter = function (o, f) {
+    return exports.keys(o).reduce(function (p, k) {
+        var _a;
+        return f(o[k], k, o) ? exports.merge(p, (_a = {}, _a[k] = o[k], _a)) : p;
+    }, {});
 };
 /**
  * merge two objects into one.
@@ -2930,7 +3008,7 @@ var _clone = function (a) {
         return a;
 };
 
-},{"../array":19}],24:[function(require,module,exports){
+},{"../array":18}],23:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 /**
@@ -3051,6 +3129,8 @@ exports.tokenize = function (str) {
  * This function does not check if getting the value succeeded or not.
  */
 exports.unsafeGet = function (path, src) {
+    if (src == null)
+        return undefined;
     var toks = exports.tokenize(path);
     var head = src[toks.shift()];
     return toks.reduce(function (p, c) { return (p == null) ? p : p[c]; }, head);
@@ -3060,6 +3140,21 @@ exports.unsafeGet = function (path, src) {
  */
 exports.get = function (path, src) {
     return maybe_1.fromNullable(exports.unsafeGet(path, src));
+};
+/**
+ * getDefault is like get but takes a default value to return if
+ * the path is not found.
+ */
+exports.getDefault = function (path, src, def) {
+    return exports.get(path, src).orJust(function () { return def; }).get();
+};
+/**
+ * getString casts the resulting value to a string.
+ *
+ * An empty string is provided if the path is not found.
+ */
+exports.getString = function (path, src) {
+    return exports.get(path, src).map(function (v) { return String(v); }).orJust(function () { return ''; }).get();
 };
 /**
  * set sets a value on an object given a path.
@@ -3169,8 +3264,43 @@ var prefix = function (pfix, key) { return (pfix === '') ?
 exports.unflatten = function (r) {
     return _1.reduce(r, {}, function (p, c, k) { return exports.set(k, c, p); });
 };
+/**
+ * intersect set operation between the keys of two records.
+ *
+ * All the properties of the left record that have matching property
+ * names in the right are retained.
+ */
+exports.intersect = function (a, b) {
+    return _1.reduce(a, {}, function (p, c, k) {
+        if (b.hasOwnProperty(k))
+            p[k] = c;
+        return p;
+    });
+};
+/**
+ * difference set operation between the keys of two records.
+ *
+ * All the properties on the left record that do not have matching
+ * property names in the right are retained.
+ */
+exports.difference = function (a, b) {
+    return _1.reduce(a, {}, function (p, c, k) {
+        if (!b.hasOwnProperty(k))
+            p[k] = c;
+        return p;
+    });
+};
+/**
+ * map over the property names of a record.
+ */
+exports.map = function (a, f) {
+    return _1.reduce(a, {}, function (p, c, k) {
+        p[f(k)] = c;
+        return p;
+    });
+};
 
-},{"../maybe":22,"./":23}],25:[function(require,module,exports){
+},{"../maybe":21,"./":22}],24:[function(require,module,exports){
 "use strict";
 /**
  *  Common functions used to manipulate strings.
@@ -3266,7 +3396,7 @@ exports.interpolate = function (str, data, opts) {
     });
 };
 
-},{"./record":23,"./record/path":24}],26:[function(require,module,exports){
+},{"./record":22,"./record/path":23}],25:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var prims = ['string', 'number', 'boolean'];
@@ -3375,7 +3505,7 @@ exports.show = function (value) {
     }
 };
 
-},{}],27:[function(require,module,exports){
+},{}],26:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 /**
@@ -3383,7 +3513,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
  */
 exports.isMultipleOf = function (x, y) { return ((y % x) === 0); };
 
-},{}],28:[function(require,module,exports){
+},{}],27:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var property_seek_1 = require("property-seek");
@@ -3415,7 +3545,7 @@ exports.polate = function (str, data, opts) {
 };
 exports.default = exports.polate;
 
-},{"property-seek":82}],29:[function(require,module,exports){
+},{"property-seek":81}],28:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var array_1 = require("@quenk/noni/lib/data/array");
@@ -3486,8 +3616,14 @@ exports.getId = function (addr) {
 exports.isChild = function (parent, child) {
     return (parent === exports.ADDRESS_SYSTEM) || (parent !== child) && string_1.startsWith(child, parent);
 };
+/**
+ * isGroup determines if an address is a group reference.
+ */
+exports.isGroup = function (addr) {
+    return ((addr[0] === '$') && (addr !== '$'));
+};
 
-},{"@quenk/noni/lib/data/array":19,"@quenk/noni/lib/data/string":25}],30:[function(require,module,exports){
+},{"@quenk/noni/lib/data/array":18,"@quenk/noni/lib/data/string":24}],29:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 /**
@@ -3505,7 +3641,7 @@ var Envelope = /** @class */ (function () {
 }());
 exports.Envelope = Envelope;
 
-},{}],31:[function(require,module,exports){
+},{}],30:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -3566,7 +3702,7 @@ var Default = /** @class */ (function (_super) {
 }(Case));
 exports.Default = Default;
 
-},{"@quenk/noni/lib/data/type":26}],32:[function(require,module,exports){
+},{"@quenk/noni/lib/data/type":25}],31:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -3624,6 +3760,13 @@ var AbstractResident = /** @class */ (function () {
         this.system.exec(this, new scripts_1.StopScript(this.self()));
     };
     AbstractResident.prototype.stop = function () {
+        //XXX: this is a temp hack to avoid the system parameter being of type
+        //System<C>. As much as possibl we want to keep the system type to
+        //make implementing an actor system simple.
+        //
+        //In future revisions we may wrap the system in a Maybe or have
+        //the runtime check if the actor is the valid instance but for now,
+        //we force void. This may result in some crashes if not careful.
         this.system = new system_1.Void();
     };
     return AbstractResident;
@@ -3703,7 +3846,7 @@ exports.ref = function (res, addr) {
     };
 };
 
-},{"../address":29,"../system":37,"../system/framework/scripts":35,"../system/vm/runtime/scripts":62,"./scripts":33,"@quenk/noni/lib/data/either":20,"@quenk/noni/lib/data/function":21,"@quenk/noni/lib/data/maybe":22}],33:[function(require,module,exports){
+},{"../address":28,"../system":36,"../system/framework/scripts":34,"../system/vm/runtime/scripts":61,"./scripts":32,"@quenk/noni/lib/data/either":19,"@quenk/noni/lib/data/function":20,"@quenk/noni/lib/data/maybe":21}],32:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -3804,7 +3947,7 @@ var NotifyScript = /** @class */ (function (_super) {
 }(script_1.Script));
 exports.NotifyScript = NotifyScript;
 
-},{"../system/vm/op/discard":46,"../system/vm/op/drop":47,"../system/vm/op/jump":49,"../system/vm/op/noop":51,"../system/vm/op/push":52,"../system/vm/op/read":53,"../system/vm/op/receive":54,"../system/vm/op/tell":59,"../system/vm/script":64}],34:[function(require,module,exports){
+},{"../system/vm/op/discard":45,"../system/vm/op/drop":46,"../system/vm/op/jump":48,"../system/vm/op/noop":50,"../system/vm/op/push":51,"../system/vm/op/read":52,"../system/vm/op/receive":53,"../system/vm/op/tell":58,"../system/vm/script":63}],33:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var maybe_1 = require("@quenk/noni/lib/data/maybe");
@@ -3850,7 +3993,8 @@ var AbstractSystem = /** @class */ (function () {
      * spawn a new actor from a template.
      */
     AbstractSystem.prototype.spawn = function (t) {
-        (new this_1.This('$', this)).exec(new scripts_1.SpawnScript('', t));
+        (new this_1.This('$', this))
+            .exec(new scripts_1.SpawnScript('', t));
         return this;
     };
     AbstractSystem.prototype.init = function (c) {
@@ -3893,10 +4037,11 @@ exports.newState = function (sys) { return ({
     contexts: {
         $: sys.allocate(sys, new this_1.This('$', sys), new STemplate())
     },
-    routers: {}
+    routers: {},
+    groups: {}
 }); };
 
-},{"../../address":29,"../state":39,"../vm/runtime/this":63,"./scripts":35,"@quenk/noni/lib/data/maybe":22}],35:[function(require,module,exports){
+},{"../../address":28,"../state":38,"../vm/runtime/this":62,"./scripts":34,"@quenk/noni/lib/data/maybe":21}],34:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -3976,7 +4121,7 @@ var SpawnScript = /** @class */ (function (_super) {
 }(script_1.Script));
 exports.SpawnScript = SpawnScript;
 
-},{"../vm/op/add":42,"../vm/op/allocate":43,"../vm/op/call":44,"../vm/op/cmp":45,"../vm/op/jump":49,"../vm/op/load":50,"../vm/op/noop":51,"../vm/op/push":52,"../vm/op/run":56,"../vm/op/store":58,"../vm/op/tempcc":60,"../vm/op/tempchild":61,"../vm/script":64}],36:[function(require,module,exports){
+},{"../vm/op/add":41,"../vm/op/allocate":42,"../vm/op/call":43,"../vm/op/cmp":44,"../vm/op/jump":48,"../vm/op/load":49,"../vm/op/noop":50,"../vm/op/push":51,"../vm/op/run":55,"../vm/op/store":57,"../vm/op/tempcc":59,"../vm/op/tempchild":60,"../vm/script":63}],35:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -4032,7 +4177,7 @@ var TestAbstractSystem = /** @class */ (function (_super) {
 }(_1.AbstractSystem));
 exports.TestAbstractSystem = TestAbstractSystem;
 
-},{"./":34,"@quenk/test/lib/mock":70}],37:[function(require,module,exports){
+},{"./":33,"@quenk/test/lib/mock":69}],36:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var maybe_1 = require("@quenk/noni/lib/data/maybe");
@@ -4062,7 +4207,7 @@ var Void = /** @class */ (function () {
 }());
 exports.Void = Void;
 
-},{"@quenk/noni/lib/data/maybe":22}],38:[function(require,module,exports){
+},{"@quenk/noni/lib/data/maybe":21}],37:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.DEBUG = 7;
@@ -4071,7 +4216,7 @@ exports.NOTICE = 5;
 exports.WARN = 4;
 exports.ERROR = 3;
 
-},{}],39:[function(require,module,exports){
+},{}],38:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var maybe_1 = require("@quenk/noni/lib/data/maybe");
@@ -4134,7 +4279,7 @@ exports.getParent = function (s, addr) {
 };
 /**
  * getRouter will attempt to provide the
- * routing actor for an Address.
+ * router context for an Address.
  *
  * The value returned depends on whether the given
  * address begins with any of the installed router's address.
@@ -4158,8 +4303,37 @@ exports.removeRoute = function (s, target) {
     delete s.routers[target];
     return s;
 };
+/**
+ * getGroup attempts to provide the addresses of actors that have
+ * been assigned to a group.
+ *
+ * Note that groups must be prefixed with a '$' to be resolved.
+ */
+exports.getGroup = function (s, name) {
+    return s.groups.hasOwnProperty(name) ?
+        maybe_1.fromArray(s.groups[name]) : maybe_1.nothing();
+};
+/**
+ * putMember adds an address to a group.
+ *
+ * If the group does not exist, it will be created.
+ */
+exports.putMember = function (s, group, member) {
+    if (s.groups[group] == null)
+        s.groups[group] = [];
+    s.groups[group].push(member);
+    return s;
+};
+/**
+ * removeMember from a group.
+ */
+exports.removeMember = function (s, group, member) {
+    if (s.groups[group] != null)
+        s.groups[group] = s.groups[group].filter(function (m) { return m != member; });
+    return s;
+};
 
-},{"../address":29,"@quenk/noni/lib/data/maybe":22,"@quenk/noni/lib/data/record":23,"@quenk/noni/lib/data/string":25}],40:[function(require,module,exports){
+},{"../address":28,"@quenk/noni/lib/data/maybe":21,"@quenk/noni/lib/data/record":22,"@quenk/noni/lib/data/string":24}],39:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -4341,7 +4515,7 @@ var EmptyMailboxErr = /** @class */ (function (_super) {
 }(Error));
 exports.EmptyMailboxErr = EmptyMailboxErr;
 
-},{"../../address":29}],41:[function(require,module,exports){
+},{"../../address":28}],40:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var error = require("./error");
@@ -4572,7 +4746,7 @@ var Frame = /** @class */ (function () {
 }());
 exports.Frame = Frame;
 
-},{"./error":40,"@quenk/noni/lib/data/either":20,"@quenk/noni/lib/data/maybe":22}],42:[function(require,module,exports){
+},{"./error":39,"@quenk/noni/lib/data/either":19,"@quenk/noni/lib/data/maybe":21}],41:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var _1 = require("./");
@@ -4609,7 +4783,7 @@ var Add = /** @class */ (function () {
 }());
 exports.Add = Add;
 
-},{"./":48}],43:[function(require,module,exports){
+},{"./":47}],42:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var error = require("../error");
@@ -4651,6 +4825,10 @@ var Allocate = /** @class */ (function () {
         e.putContext(addr, ctx);
         if (ctx.flags.router === true)
             e.putRoute(addr, addr);
+        if (t.group) {
+            var groups = (typeof t.group === 'string') ? [t.group] : t.group;
+            groups.forEach(function (g) { return e.putMember(g, addr); });
+        }
         curr.pushAddress(addr);
     };
     Allocate.prototype.toLog = function (f) {
@@ -4660,7 +4838,7 @@ var Allocate = /** @class */ (function () {
 }());
 exports.Allocate = Allocate;
 
-},{"../../../address":29,"../error":40,"./":48}],44:[function(require,module,exports){
+},{"../../../address":28,"../error":39,"./":47}],43:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var frame_1 = require("../frame");
@@ -4702,7 +4880,7 @@ var Call = /** @class */ (function () {
 }());
 exports.Call = Call;
 
-},{"../frame":41,"./":48}],45:[function(require,module,exports){
+},{"../frame":40,"./":47}],44:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var _1 = require("./");
@@ -4746,7 +4924,7 @@ var Cmp = /** @class */ (function () {
 }());
 exports.Cmp = Cmp;
 
-},{"./":48}],46:[function(require,module,exports){
+},{"./":47}],45:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var errors = require("../error");
@@ -4778,7 +4956,7 @@ var Discard = /** @class */ (function () {
 }());
 exports.Discard = Discard;
 
-},{"../error":40,"../frame":41,"./":48,"@quenk/noni/lib/data/maybe":22}],47:[function(require,module,exports){
+},{"../error":39,"../frame":40,"./":47,"@quenk/noni/lib/data/maybe":21}],46:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var _1 = require("./");
@@ -4809,7 +4987,7 @@ var Drop = /** @class */ (function () {
 }());
 exports.Drop = Drop;
 
-},{"./":48}],48:[function(require,module,exports){
+},{"./":47}],47:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var log = require("../../log");
@@ -4856,7 +5034,7 @@ var Level;
     Level[Level["System"] = log.WARN] = "System";
 })(Level = exports.Level || (exports.Level = {}));
 
-},{"../../log":38}],49:[function(require,module,exports){
+},{"../../log":37}],48:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var either_1 = require("@quenk/noni/lib/data/either");
@@ -4915,7 +5093,7 @@ var JumpIfOne = /** @class */ (function () {
 }());
 exports.JumpIfOne = JumpIfOne;
 
-},{"../frame":41,"./":48,"@quenk/noni/lib/data/either":20}],50:[function(require,module,exports){
+},{"../frame":40,"./":47,"@quenk/noni/lib/data/either":19}],49:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var frame_1 = require("../frame");
@@ -4944,7 +5122,7 @@ var Load = /** @class */ (function () {
 }());
 exports.Load = Load;
 
-},{"../frame":41,"./":48}],51:[function(require,module,exports){
+},{"../frame":40,"./":47}],50:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var _1 = require("./");
@@ -4956,8 +5134,7 @@ var Noop = /** @class */ (function () {
         this.code = _1.OP_CODE_NOOP;
         this.level = _1.Level.Base;
     }
-    Noop.prototype.exec = function (_) {
-    };
+    Noop.prototype.exec = function (_) { };
     Noop.prototype.toLog = function (_) {
         return ['noop', [], []];
     };
@@ -4965,7 +5142,7 @@ var Noop = /** @class */ (function () {
 }());
 exports.Noop = Noop;
 
-},{"./":48}],52:[function(require,module,exports){
+},{"./":47}],51:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var frame_1 = require("../frame");
@@ -5079,7 +5256,7 @@ var PushForeign = /** @class */ (function () {
 }());
 exports.PushForeign = PushForeign;
 
-},{"../frame":41,"./":48}],53:[function(require,module,exports){
+},{"../frame":40,"./":47}],52:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var errors = require("../error");
@@ -5132,7 +5309,7 @@ var Read = /** @class */ (function () {
 }());
 exports.Read = Read;
 
-},{"../error":40,"../frame":41,"./":48,"@quenk/noni/lib/data/maybe":22}],54:[function(require,module,exports){
+},{"../error":39,"../frame":40,"./":47,"@quenk/noni/lib/data/maybe":21}],53:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var _1 = require("./");
@@ -5172,7 +5349,7 @@ var Receive = /** @class */ (function () {
 }());
 exports.Receive = Receive;
 
-},{"./":48}],55:[function(require,module,exports){
+},{"./":47}],54:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var _1 = require("./");
@@ -5203,7 +5380,7 @@ var Restart = /** @class */ (function () {
 }());
 exports.Restart = Restart;
 
-},{"./":48}],56:[function(require,module,exports){
+},{"./":47}],55:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var timer_1 = require("@quenk/noni/lib/control/timer");
@@ -5237,7 +5414,7 @@ var Run = /** @class */ (function () {
 }());
 exports.Run = Run;
 
-},{"./":48,"@quenk/noni/lib/control/timer":18}],57:[function(require,module,exports){
+},{"./":47,"@quenk/noni/lib/control/timer":17}],56:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var error = require("../error");
@@ -5261,16 +5438,26 @@ var Stop = /** @class */ (function () {
         if (eitherAddress.isLeft())
             return e.raise(eitherAddress.takeLeft());
         var addr = eitherAddress.takeRight();
-        if ((!address_1.isChild(curr.actor, addr)) && (addr !== curr.actor))
-            return e.raise(new error.IllegalStopErr(curr.actor, addr));
-        var maybeChilds = e.getChildren(addr);
-        if (maybeChilds.isJust()) {
-            var ctxs = maybeChilds.get();
-            record_1.map(ctxs, function (c, k) { c.actor.stop(); e.removeContext(k); });
-        }
-        curr.context.actor.stop();
-        e.removeContext(addr);
-        e.clear();
+        var addrs = address_1.isGroup(addr) ?
+            e.getGroup(addr).orJust(function () { return []; }).get() : [addr];
+        addrs.every(function (a) {
+            if ((!address_1.isChild(curr.actor, a)) && (a !== curr.actor)) {
+                e.raise(new error.IllegalStopErr(curr.actor, a));
+                return false;
+            }
+            var maybeChilds = e.getChildren(a);
+            if (maybeChilds.isJust()) {
+                var ctxs = maybeChilds.get();
+                record_1.map(ctxs, function (c, k) { c.actor.stop(); e.removeContext(k); });
+            }
+            var maybeTarget = e.getContext(a);
+            if (maybeTarget.isJust()) {
+                maybeTarget.get().actor.stop();
+                e.removeContext(a);
+            }
+            e.clear();
+            return true;
+        });
     };
     Stop.prototype.toLog = function (f) {
         return ['stop', [], [f.peek()]];
@@ -5279,7 +5466,7 @@ var Stop = /** @class */ (function () {
 }());
 exports.Stop = Stop;
 
-},{"../../../address":29,"../error":40,"./":48,"@quenk/noni/lib/data/record":23}],58:[function(require,module,exports){
+},{"../../../address":28,"../error":39,"./":47,"@quenk/noni/lib/data/record":22}],57:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var frame_1 = require("../frame");
@@ -5308,7 +5495,7 @@ var Store = /** @class */ (function () {
 }());
 exports.Store = Store;
 
-},{"../frame":41,"./":48}],59:[function(require,module,exports){
+},{"../frame":40,"./":47}],58:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var timer_1 = require("@quenk/noni/lib/control/timer");
@@ -5378,7 +5565,7 @@ var deliver = function (ctx, msg) {
     }
 };
 
-},{"../../../mailbox":30,"./":48,"@quenk/noni/lib/control/timer":18}],60:[function(require,module,exports){
+},{"../../../mailbox":29,"./":47,"@quenk/noni/lib/control/timer":17}],59:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var _1 = require("./");
@@ -5409,7 +5596,7 @@ var TempCC = /** @class */ (function () {
 }());
 exports.TempCC = TempCC;
 
-},{"./":48}],61:[function(require,module,exports){
+},{"./":47}],60:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var error = require("../error");
@@ -5453,7 +5640,7 @@ var TempChild = /** @class */ (function () {
 }());
 exports.TempChild = TempChild;
 
-},{"../error":40,"./":48,"@quenk/noni/lib/data/either":20}],62:[function(require,module,exports){
+},{"../error":39,"./":47,"@quenk/noni/lib/data/either":19}],61:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -5507,7 +5694,7 @@ var RestartScript = /** @class */ (function (_super) {
 }(script_1.Script));
 exports.RestartScript = RestartScript;
 
-},{"../op/push":52,"../op/restart":55,"../op/run":56,"../op/stop":57,"../script":64}],63:[function(require,module,exports){
+},{"../op/push":51,"../op/restart":54,"../op/run":55,"../op/stop":56,"../script":63}],62:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var template = require("../../../template");
@@ -5554,6 +5741,9 @@ var This = /** @class */ (function () {
     This.prototype.getRouter = function (addr) {
         return state_1.getRouter(this.system.state, addr);
     };
+    This.prototype.getGroup = function (name) {
+        return state_1.getGroup(this.system.state, name.split('$').join(''));
+    };
     This.prototype.getChildren = function (addr) {
         return maybe_1.fromNullable(state_1.getChildren(this.system.state, addr));
     };
@@ -5571,6 +5761,14 @@ var This = /** @class */ (function () {
     };
     This.prototype.removeRoute = function (target) {
         state_1.removeRoute(this.system.state, target);
+        return this;
+    };
+    This.prototype.putMember = function (group, addr) {
+        state_1.putMember(this.system.state, group, addr);
+        return this;
+    };
+    This.prototype.removeMember = function (group, addr) {
+        state_1.removeMember(this.system.state, group, addr);
         return this;
     };
     This.prototype.push = function (f) {
@@ -5713,7 +5911,7 @@ var resolveLog = function (f, _a) {
     return [op, operand].concat(stack);
 };
 
-},{"../../../address":29,"../../../template":65,"../../log":38,"../../state":39,"../frame":41,"./scripts":62,"@quenk/noni/lib/control/error":16,"@quenk/noni/lib/data/array":19,"@quenk/noni/lib/data/maybe":22}],64:[function(require,module,exports){
+},{"../../../address":28,"../../../template":64,"../../log":37,"../../state":38,"../frame":40,"./scripts":61,"@quenk/noni/lib/control/error":15,"@quenk/noni/lib/data/array":18,"@quenk/noni/lib/data/maybe":21}],63:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 /**
@@ -5734,7 +5932,7 @@ var Script = /** @class */ (function () {
 }());
 exports.Script = Script;
 
-},{}],65:[function(require,module,exports){
+},{}],64:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ACTION_RAISE = -0x1;
@@ -5742,7 +5940,7 @@ exports.ACTION_IGNORE = 0x0;
 exports.ACTION_RESTART = 0x1;
 exports.ACTION_STOP = 0x2;
 
-},{}],66:[function(require,module,exports){
+},{}],65:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var result_1 = require("./result");
@@ -5786,7 +5984,7 @@ exports.toNumber = function (value) {
     return isNaN(n) ? result_1.fail('NaN', value, {}) : result_1.succeed(n);
 };
 
-},{"./result":68}],67:[function(require,module,exports){
+},{"./result":67}],66:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var polate_1 = require("@quenk/polate");
@@ -5917,7 +6115,7 @@ var DualFailure = /** @class */ (function () {
 }());
 exports.DualFailure = DualFailure;
 
-},{"@quenk/noni/lib/data/record":23,"@quenk/polate":28}],68:[function(require,module,exports){
+},{"@quenk/noni/lib/data/record":22,"@quenk/polate":27}],67:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var either_1 = require("@quenk/noni/lib/data/either");
@@ -5938,7 +6136,7 @@ exports.succeed = function (b) {
     return either_1.right(b);
 };
 
-},{"./failure":67,"@quenk/noni/lib/data/either":20}],69:[function(require,module,exports){
+},{"./failure":66,"@quenk/noni/lib/data/either":19}],68:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -6116,7 +6314,7 @@ exports.toString = function (value) {
  */
 exports.assert = function (value) { return new Positive(value, true); };
 
-},{"deep-equal":73,"json-stringify-safe":78}],70:[function(require,module,exports){
+},{"deep-equal":72,"json-stringify-safe":77}],69:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 /**
@@ -6167,7 +6365,7 @@ var Mock = /** @class */ (function () {
 }());
 exports.Mock = Mock;
 
-},{}],71:[function(require,module,exports){
+},{}],70:[function(require,module,exports){
 'use strict'
 
 exports.byteLength = byteLength
@@ -6320,7 +6518,7 @@ function fromByteArray (uint8) {
   return parts.join('')
 }
 
-},{}],72:[function(require,module,exports){
+},{}],71:[function(require,module,exports){
 /*!
  * The buffer module from node.js, for the browser.
  *
@@ -8099,7 +8297,7 @@ function numberIsNaN (obj) {
   return obj !== obj // eslint-disable-line no-self-compare
 }
 
-},{"base64-js":71,"ieee754":77}],73:[function(require,module,exports){
+},{"base64-js":70,"ieee754":76}],72:[function(require,module,exports){
 var pSlice = Array.prototype.slice;
 var objectKeys = require('./lib/keys.js');
 var isArguments = require('./lib/is_arguments.js');
@@ -8195,7 +8393,7 @@ function objEquiv(a, b, opts) {
   return typeof a === typeof b;
 }
 
-},{"./lib/is_arguments.js":74,"./lib/keys.js":75}],74:[function(require,module,exports){
+},{"./lib/is_arguments.js":73,"./lib/keys.js":74}],73:[function(require,module,exports){
 var supportsArgumentsClass = (function(){
   return Object.prototype.toString.call(arguments)
 })() == '[object Arguments]';
@@ -8217,7 +8415,7 @@ function unsupported(object){
     false;
 };
 
-},{}],75:[function(require,module,exports){
+},{}],74:[function(require,module,exports){
 exports = module.exports = typeof Object.keys === 'function'
   ? Object.keys : shim;
 
@@ -8228,7 +8426,7 @@ function shim (obj) {
   return keys;
 }
 
-},{}],76:[function(require,module,exports){
+},{}],75:[function(require,module,exports){
 var kindof = require("kindof")
 exports = module.exports = egal
 exports.deepEgal = deepEgal
@@ -8350,7 +8548,7 @@ function keys(obj) {
   return all
 }
 
-},{"kindof":79}],77:[function(require,module,exports){
+},{"kindof":78}],76:[function(require,module,exports){
 exports.read = function (buffer, offset, isLE, mLen, nBytes) {
   var e, m
   var eLen = (nBytes * 8) - mLen - 1
@@ -8436,7 +8634,7 @@ exports.write = function (buffer, value, offset, isLE, mLen, nBytes) {
   buffer[offset + i - d] |= s * 128
 }
 
-},{}],78:[function(require,module,exports){
+},{}],77:[function(require,module,exports){
 exports = module.exports = stringify
 exports.getSerialize = serializer
 
@@ -8465,7 +8663,7 @@ function serializer(replacer, cycleReplacer) {
   }
 }
 
-},{}],79:[function(require,module,exports){
+},{}],78:[function(require,module,exports){
 if (typeof module != "undefined") module.exports = kindof
 
 function kindof(obj) {
@@ -8485,7 +8683,7 @@ function kindof(obj) {
   }
 }
 
-},{}],80:[function(require,module,exports){
+},{}],79:[function(require,module,exports){
 /**
  * Expose `pathToRegexp`.
  */
@@ -8854,7 +9052,7 @@ function pathToRegexp (path, keys, options) {
   return stringToRegexp(/** @type {string} */ (path), keys, options)
 }
 
-},{}],81:[function(require,module,exports){
+},{}],80:[function(require,module,exports){
 // shim for using process in browser
 var process = module.exports = {};
 
@@ -9040,7 +9238,7 @@ process.chdir = function (dir) {
 };
 process.umask = function() { return 0; };
 
-},{}],82:[function(require,module,exports){
+},{}],81:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var ESCAPED_SUBS = '@xR25$e!#fda8f623';
@@ -9142,7 +9340,7 @@ function default_1(k, v, o) {
 exports.default = default_1;
 ;
 
-},{}],83:[function(require,module,exports){
+},{}],82:[function(require,module,exports){
 'use strict';
 
 var replace = String.prototype.replace;
@@ -9162,7 +9360,7 @@ module.exports = {
     RFC3986: 'RFC3986'
 };
 
-},{}],84:[function(require,module,exports){
+},{}],83:[function(require,module,exports){
 'use strict';
 
 var stringify = require('./stringify');
@@ -9175,7 +9373,7 @@ module.exports = {
     stringify: stringify
 };
 
-},{"./formats":83,"./parse":85,"./stringify":86}],85:[function(require,module,exports){
+},{"./formats":82,"./parse":84,"./stringify":85}],84:[function(require,module,exports){
 'use strict';
 
 var utils = require('./utils');
@@ -9403,7 +9601,7 @@ module.exports = function (str, opts) {
     return utils.compact(obj);
 };
 
-},{"./utils":87}],86:[function(require,module,exports){
+},{"./utils":86}],85:[function(require,module,exports){
 'use strict';
 
 var utils = require('./utils');
@@ -9647,7 +9845,7 @@ module.exports = function (object, opts) {
     return joined.length > 0 ? prefix + joined : '';
 };
 
-},{"./formats":83,"./utils":87}],87:[function(require,module,exports){
+},{"./formats":82,"./utils":86}],86:[function(require,module,exports){
 'use strict';
 
 var has = Object.prototype.hasOwnProperty;
@@ -9877,7 +10075,7 @@ module.exports = {
     merge: merge
 };
 
-},{}],88:[function(require,module,exports){
+},{}],87:[function(require,module,exports){
 'use strict';
 
 function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'default' in ex) ? ex['default'] : ex; }
@@ -10211,7 +10409,7 @@ function eq(a, b, opts) {
 eq.EQ = EQ;
 
 module.exports = eq;
-},{"should-type":91}],89:[function(require,module,exports){
+},{"should-type":90}],88:[function(require,module,exports){
 'use strict';
 
 function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'default' in ex) ? ex['default'] : ex; }
@@ -10744,7 +10942,7 @@ Formatter.addType(new t.Type(t.OBJECT, t.HOST), function() {
 });
 
 module.exports = defaultFormat;
-},{"should-type":91,"should-type-adaptors":90}],90:[function(require,module,exports){
+},{"should-type":90,"should-type-adaptors":89}],89:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', { value: true });
@@ -11033,7 +11231,7 @@ exports.some = some;
 exports.every = every;
 exports.isIterable = isIterable;
 exports.iterator = iterator;
-},{"should-type":91,"should-util":92}],91:[function(require,module,exports){
+},{"should-type":90,"should-util":91}],90:[function(require,module,exports){
 (function (Buffer){
 'use strict';
 
@@ -11299,7 +11497,7 @@ Object.keys(types).forEach(function(typeName) {
 
 module.exports = getGlobalType;
 }).call(this,require("buffer").Buffer)
-},{"buffer":72}],92:[function(require,module,exports){
+},{"buffer":71}],91:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', { value: true });
@@ -11350,7 +11548,7 @@ exports.propertyIsEnumerable = propertyIsEnumerable;
 exports.merge = merge;
 exports.isIterator = isIterator;
 exports.isGeneratorFunction = isGeneratorFunction;
-},{}],93:[function(require,module,exports){
+},{}],92:[function(require,module,exports){
 (function (global){
 'use strict';
 
@@ -14316,7 +14514,7 @@ try {
 module.exports = should$1;
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"should-equal":88,"should-format":89,"should-type":91,"should-type-adaptors":90,"should-util":92}],94:[function(require,module,exports){
+},{"should-equal":87,"should-format":88,"should-type":90,"should-type-adaptors":89,"should-util":91}],93:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -14337,10 +14535,10 @@ var maybe_1 = require("@quenk/noni/lib/data/maybe");
 var function_1 = require("@quenk/noni/lib/data/function");
 var future_1 = require("@quenk/noni/lib/control/monad/future");
 var case_1 = require("@quenk/potoo/lib/actor/resident/case");
-var default_1 = require("../../../../../../lib/browser/window/router/hash/default");
-var display_1 = require("../../../../../../lib/app/actor/api/router/display");
-var actor_1 = require("../../../../../../lib/app/actor");
-var app_1 = require("../../../fixtures/app");
+var default_1 = require("../../../../../lib/browser/window/router/hash/default");
+var display_1 = require("../../../../../lib/actor/api/router/display");
+var actor_1 = require("../../../../../lib/actor");
+var app_1 = require("../../../app/fixtures/app");
 var Ctrl = /** @class */ (function (_super) {
     __extends(Ctrl, _super);
     function Ctrl(cases, system) {
@@ -14454,7 +14652,7 @@ describe('router', function () {
     });
 });
 
-},{"../../../../../../lib/app/actor":3,"../../../../../../lib/app/actor/api/router/display":1,"../../../../../../lib/browser/window/router/hash/default":13,"../../../fixtures/app":107,"@quenk/noni/lib/control/monad/future":17,"@quenk/noni/lib/data/function":21,"@quenk/noni/lib/data/maybe":22,"@quenk/potoo/lib/actor/resident/case":31,"@quenk/test/lib/assert":69}],95:[function(require,module,exports){
+},{"../../../../../lib/actor":2,"../../../../../lib/actor/api/router/display":1,"../../../../../lib/browser/window/router/hash/default":12,"../../../app/fixtures/app":105,"@quenk/noni/lib/control/monad/future":16,"@quenk/noni/lib/data/function":20,"@quenk/noni/lib/data/maybe":21,"@quenk/potoo/lib/actor/resident/case":30,"@quenk/test/lib/assert":68}],94:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -14470,163 +14668,7 @@ var __extends = (this && this.__extends) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-var must_1 = require("@quenk/must");
-var router_1 = require("../../../../../../lib/app/actor/api/router");
-var actor_1 = require("../../fixtures/actor");
-var Request = /** @class */ (function () {
-    function Request() {
-        this.src = '?';
-    }
-    return Request;
-}());
-var Parent = /** @class */ (function () {
-    function Parent(actor) {
-        this.actor = actor;
-    }
-    return Parent;
-}());
-var Ack = /** @class */ (function (_super) {
-    __extends(Ack, _super);
-    function Ack() {
-        var _this = _super !== null && _super.apply(this, arguments) || this;
-        _this.ack = 'yes';
-        return _this;
-    }
-    return Ack;
-}(Parent));
-var Exp = /** @class */ (function (_super) {
-    __extends(Exp, _super);
-    function Exp() {
-        var _this = _super !== null && _super.apply(this, arguments) || this;
-        _this.ts = 100;
-        return _this;
-    }
-    return Exp;
-}(Parent));
-var Cont = /** @class */ (function (_super) {
-    __extends(Cont, _super);
-    function Cont() {
-        var _this = _super !== null && _super.apply(this, arguments) || this;
-        _this.retry = false;
-        return _this;
-    }
-    return Cont;
-}(Parent));
-var Message = /** @class */ (function (_super) {
-    __extends(Message, _super);
-    function Message() {
-        var _this = _super !== null && _super.apply(this, arguments) || this;
-        _this.value = 12;
-        return _this;
-    }
-    return Message;
-}(Parent));
-var Rout = /** @class */ (function (_super) {
-    __extends(Rout, _super);
-    function Rout() {
-        var _this = _super !== null && _super.apply(this, arguments) || this;
-        _this.current = 'x';
-        return _this;
-    }
-    Rout.prototype.beforeRouting = function () {
-        this.__record('routing', []);
-        return this;
-    };
-    Rout.prototype.beforeAwaiting = function (_) {
-        return this.__record('beforeWait', [_]);
-    };
-    Rout.prototype.awaiting = function (_) {
-        this.__record('waiting', [_]);
-        return [];
-    };
-    Rout.prototype.afterAck = function (_) {
-        return this.__record('afterAck', [_]);
-    };
-    Rout.prototype.afterContinue = function (_) {
-        return this.__record('afterContinue', [_]);
-    };
-    Rout.prototype.afterExpire = function (_) {
-        return this.__record('afterExpire', [_]);
-    };
-    Rout.prototype.afterMessage = function (_) {
-        return this.__record('afterMessage', [_]);
-    };
-    Rout.prototype.routing = function () {
-        this.__record('scheduling', []);
-        return [];
-    };
-    return Rout;
-}(actor_1.ActorImpl));
-describe('router', function () {
-    describe('DispatchCase', function () {
-        it('should transition to waiting()', function () {
-            var s = new Rout();
-            var c = new router_1.DispatchCase(Request, s);
-            c.match(new Request());
-            must_1.must(s.__test.invokes.order()).equate([
-                'beforeWait', 'waiting', 'select'
-            ]);
-        });
-    });
-    describe('AckCase', function () {
-        it('should transition to scheduling()', function () {
-            var s = new Rout();
-            var c = new router_1.AckCase(Ack, s);
-            c.match(new Ack('x'));
-            must_1.must(s.__test.invokes.order()).equate([
-                'afterAck', 'scheduling', 'select'
-            ]);
-        });
-    });
-    describe('ContinueCase', function () {
-        it('should transition to scheduling()', function () {
-            var s = new Rout();
-            var c = new router_1.ContinueCase(Cont, s);
-            c.match(new Cont('x'));
-            must_1.must(s.__test.invokes.order()).equate([
-                'afterContinue', 'scheduling', 'select'
-            ]);
-        });
-    });
-    describe('ExpireCase', function () {
-        it('should transition to scheduling()', function () {
-            var s = new Rout();
-            var c = new router_1.ExpireCase(Exp, s);
-            c.match(new Exp('x'));
-            must_1.must(s.__test.invokes.order()).equate([
-                'afterExpire', 'scheduling', 'select'
-            ]);
-        });
-    });
-    describe('MessageCase', function () {
-        it('should transition to scheduling()', function () {
-            var s = new Rout();
-            var c = new router_1.MessageCase(Message, s);
-            c.match(new Message('x'));
-            must_1.must(s.__test.invokes.order()).equate([
-                'afterMessage', 'scheduling', 'select'
-            ]);
-        });
-    });
-});
-
-},{"../../../../../../lib/app/actor/api/router":2,"../../fixtures/actor":96,"@quenk/must":15}],96:[function(require,module,exports){
-"use strict";
-var __extends = (this && this.__extends) || (function () {
-    var extendStatics = function (d, b) {
-        extendStatics = Object.setPrototypeOf ||
-            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
-        return extendStatics(d, b);
-    };
-    return function (d, b) {
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
-Object.defineProperty(exports, "__esModule", { value: true });
-var mock_1 = require("../../../fixtures/mock");
+var mock_1 = require("../../fixtures/mock");
 var ActorImpl = /** @class */ (function (_super) {
     __extends(ActorImpl, _super);
     function ActorImpl() {
@@ -14662,7 +14704,7 @@ var ActorImpl = /** @class */ (function (_super) {
 }(mock_1.Mock));
 exports.ActorImpl = ActorImpl;
 
-},{"../../../fixtures/mock":109}],97:[function(require,module,exports){
+},{"../../fixtures/mock":107}],95:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -14679,7 +14721,7 @@ var __extends = (this && this.__extends) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 var must_1 = require("@quenk/must");
-var client_1 = require("../../../../../../../lib/app/actor/interact/data/form/client");
+var client_1 = require("../../../../../../lib/actor/interact/data/form/client");
 var actor_1 = require("../../../fixtures/actor");
 var Request = /** @class */ (function () {
     function Request() {
@@ -14771,7 +14813,7 @@ describe('app/interact/data/form/client', function () {
     });
 });
 
-},{"../../../../../../../lib/app/actor/interact/data/form/client":4,"../../../fixtures/actor":96,"@quenk/must":15}],98:[function(require,module,exports){
+},{"../../../../../../lib/actor/interact/data/form/client":3,"../../../fixtures/actor":94,"@quenk/must":14}],96:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -14788,7 +14830,7 @@ var __extends = (this && this.__extends) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 var must_1 = require("@quenk/must");
-var form_1 = require("../../../../../../../lib/app/actor/interact/data/form");
+var form_1 = require("../../../../../../lib/actor/interact/data/form");
 var actor_1 = require("../../../fixtures/actor");
 var Request = /** @class */ (function () {
     function Request() {
@@ -14878,7 +14920,7 @@ describe('app/interact/data/form', function () {
     });
 });
 
-},{"../../../../../../../lib/app/actor/interact/data/form":5,"../../../fixtures/actor":96,"@quenk/must":15}],99:[function(require,module,exports){
+},{"../../../../../../lib/actor/interact/data/form":4,"../../../fixtures/actor":94,"@quenk/must":14}],97:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -14895,9 +14937,10 @@ var __extends = (this && this.__extends) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 var must_1 = require("@quenk/must");
+var either_1 = require("@quenk/noni/lib/data/either");
 var number_1 = require("@quenk/preconditions/lib/number");
-var validate_1 = require("../../../../../../../../lib/app/actor/interact/data/form/validate");
-var actor_1 = require("../../../../fixtures/actor");
+var validate_1 = require("../../../../../../lib/actor/interact/data/form/validate");
+var actor_1 = require("../../../fixtures/actor");
 var Request = /** @class */ (function () {
     function Request() {
         this.display = '?';
@@ -14919,18 +14962,27 @@ var ValidateImpl = /** @class */ (function (_super) {
     function ValidateImpl() {
         return _super !== null && _super.apply(this, arguments) || this;
     }
-    ValidateImpl.prototype.validateEvent = function (e) {
-        this.__record('validateEvent', [e]);
-        return number_1.gt(1)(e.value);
+    ValidateImpl.prototype.validate = function (_, value) {
+        this.__record('validate', [_, value]);
+        var e = number_1.gt(1)(value);
+        if (e.isRight())
+            return either_1.right(e.takeRight());
+        else
+            return (e.lmap(function () { return 'err'; }));
+    };
+    ValidateImpl.prototype.set = function (name, value) {
+        return this.__record('set', [name, value]);
     };
     ValidateImpl.prototype.onInput = function (_) {
         return this.__record('onInput', [_]);
     };
-    ValidateImpl.prototype.afterFieldValid = function (name, value, e) {
-        return this.__record('afterFieldValid', [name, value, e]);
+    ValidateImpl.prototype.afterFieldValid = function (name, value) {
+        this.__record('afterFieldValid', [name, value]);
+        return this;
     };
-    ValidateImpl.prototype.afterFieldInvalid = function (name, f, e) {
-        return this.__record('afterFieldInvalid', [name, f, e]);
+    ValidateImpl.prototype.afterFieldInvalid = function (name, value, err) {
+        this.__record('afterFieldInvalid', [name, value, err]);
+        return this;
     };
     ValidateImpl.prototype.resumed = function (_) {
         this.__record('resumed', [_]);
@@ -14946,7 +14998,7 @@ describe('app/interact/data/form/validate', function () {
             var c = new validate_1.InputCase(Event, t, m);
             c.match(new Event('name', 12));
             must_1.must(m.__test.invokes.order()).equate([
-                'validateEvent', 'afterFieldValid', 'resumed', 'select'
+                'validate', 'set', 'afterFieldValid', 'resumed', 'select'
             ]);
         });
         it('should invoke the afterFieldInvalid hook', function () {
@@ -14955,13 +15007,13 @@ describe('app/interact/data/form/validate', function () {
             var c = new validate_1.InputCase(Event, t, m);
             c.match(new Event('name', 0));
             must_1.must(m.__test.invokes.order()).equate([
-                'validateEvent', 'afterFieldInvalid', 'resumed', 'select'
+                'validate', 'afterFieldInvalid', 'resumed', 'select'
             ]);
         });
     });
 });
 
-},{"../../../../../../../../lib/app/actor/interact/data/form/validate":6,"../../../../fixtures/actor":96,"@quenk/must":15,"@quenk/preconditions/lib/number":66}],100:[function(require,module,exports){
+},{"../../../../../../lib/actor/interact/data/form/validate":5,"../../../fixtures/actor":94,"@quenk/must":14,"@quenk/noni/lib/data/either":19,"@quenk/preconditions/lib/number":65}],98:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -14978,8 +15030,8 @@ var __extends = (this && this.__extends) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 var must_1 = require("@quenk/must");
-var http_1 = require("../../../../../../../lib/app/actor/interact/data/preload/http");
-var interact_1 = require("../../fixtures/interact");
+var response_1 = require("../../../../../../../lib/actor/interact/data/preload/http/response");
+var interact_1 = require("../../../fixtures/interact");
 var Response = /** @class */ (function () {
     function Response() {
         this.body = 1;
@@ -15036,7 +15088,7 @@ describe('app/interact/http', function () {
         it('should resume the Interact', function () {
             var t = new Resume();
             var m = listener();
-            var c = new http_1.OkCase(Response, t, m);
+            var c = new response_1.OkCase(Response, t, m);
             c.match(new Response());
             must_1.must(m.__test.invokes.order()).equate([
                 'afterOk', 'loading', 'select'
@@ -15047,7 +15099,7 @@ describe('app/interact/http', function () {
         it('should resume the Interact', function () {
             var t = new Resume();
             var m = listener();
-            var c = new http_1.CreatedCase(Response, t, m);
+            var c = new response_1.CreatedCase(Response, t, m);
             c.match(new Response());
             must_1.must(m.__test.invokes.order()).equate([
                 'afterCreated', 'loading', 'select'
@@ -15058,7 +15110,7 @@ describe('app/interact/http', function () {
         it('should resume the Interact', function () {
             var t = new Resume();
             var m = listener();
-            var c = new http_1.NoContentCase(Response, t, m);
+            var c = new response_1.NoContentCase(Response, t, m);
             c.match(new Response());
             must_1.must(m.__test.invokes.order()).equate([
                 'afterNoContent', 'loading', 'select'
@@ -15069,7 +15121,7 @@ describe('app/interact/http', function () {
         it('should resume the Interact', function () {
             var t = new Resume();
             var m = listener();
-            var c = new http_1.ConflictCase(Response, t, m);
+            var c = new response_1.ConflictCase(Response, t, m);
             c.match(new Response());
             must_1.must(m.__test.invokes.order()).equate([
                 'afterConflict', 'loading', 'select'
@@ -15080,7 +15132,7 @@ describe('app/interact/http', function () {
         it('should resume the Interact', function () {
             var t = new Resume();
             var m = listener();
-            var c = new http_1.ForbiddenCase(Response, t, m);
+            var c = new response_1.ForbiddenCase(Response, t, m);
             c.match(new Response());
             must_1.must(m.__test.invokes.order()).equate([
                 'afterForbidden', 'loading', 'select'
@@ -15091,7 +15143,7 @@ describe('app/interact/http', function () {
         it('should resume the Interact', function () {
             var t = new Resume();
             var m = listener();
-            var c = new http_1.UnauthorizedCase(Response, t, m);
+            var c = new response_1.UnauthorizedCase(Response, t, m);
             c.match(new Response());
             must_1.must(m.__test.invokes.order()).equate([
                 'afterUnauthorized', 'loading', 'select'
@@ -15102,7 +15154,7 @@ describe('app/interact/http', function () {
         it('should resume the Interact', function () {
             var t = new Resume();
             var m = listener();
-            var c = new http_1.NotFoundCase(Response, t, m);
+            var c = new response_1.NotFoundCase(Response, t, m);
             c.match(new Response());
             must_1.must(m.__test.invokes.order()).equate([
                 'afterNotFound', 'loading', 'select'
@@ -15113,7 +15165,7 @@ describe('app/interact/http', function () {
         it('should resume the Interact', function () {
             var t = new Resume();
             var m = listener();
-            var c = new http_1.ServerErrorCase(Response, t, m);
+            var c = new response_1.ServerErrorCase(Response, t, m);
             c.match(new Response());
             must_1.must(m.__test.invokes.order()).equate([
                 'afterServerError', 'loading', 'select'
@@ -15122,7 +15174,7 @@ describe('app/interact/http', function () {
     });
 });
 
-},{"../../../../../../../lib/app/actor/interact/data/preload/http":7,"../../fixtures/interact":104,"@quenk/must":15}],101:[function(require,module,exports){
+},{"../../../../../../../lib/actor/interact/data/preload/http/response":6,"../../../fixtures/interact":101,"@quenk/must":14}],99:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -15139,7 +15191,7 @@ var __extends = (this && this.__extends) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 var must_1 = require("@quenk/must");
-var preload_1 = require("../../../../../../../lib/app/actor/interact/data/preload");
+var preload_1 = require("../../../../../../lib/actor/interact/data/preload");
 var actor_1 = require("../../../fixtures/actor");
 var Load = /** @class */ (function () {
     function Load() {
@@ -15190,10 +15242,10 @@ describe('app/interact/data/preload', function () {
             ]);
         });
     });
-    describe('FinishedCase', function () {
+    describe('FinishCase', function () {
         it('should transition to loading', function () {
             var m = new PreloadImpl();
-            var c = new preload_1.FinishedCase(Finish, new Request(), m);
+            var c = new preload_1.FinishCase(Finish, new Request(), m);
             c.match(new Finish());
             must_1.must(m.__test.invokes.order()).equate([
                 'afterLoading', 'resumed', 'select'
@@ -15202,7 +15254,7 @@ describe('app/interact/data/preload', function () {
     });
 });
 
-},{"../../../../../../../lib/app/actor/interact/data/preload":8,"../../../fixtures/actor":96,"@quenk/must":15}],102:[function(require,module,exports){
+},{"../../../../../../lib/actor/interact/data/preload":7,"../../../fixtures/actor":94,"@quenk/must":14}],100:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -15219,14 +15271,52 @@ var __extends = (this && this.__extends) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 var must_1 = require("@quenk/must");
-var filtered_1 = require("../../../../../../../lib/app/actor/interact/data/search/filtered");
-var actor_1 = require("../../../fixtures/actor");
+var search_1 = require("../../../../../lib/actor/interact/data/search");
+var actor_1 = require("../../fixtures/actor");
 var Resume = /** @class */ (function () {
     function Resume() {
         this.display = '?';
     }
     return Resume;
 }());
+var Exec = /** @class */ (function () {
+    function Exec() {
+        this.value = '?';
+    }
+    return Exec;
+}());
+var SyncImpl = /** @class */ (function (_super) {
+    __extends(SyncImpl, _super);
+    function SyncImpl() {
+        return _super !== null && _super.apply(this, arguments) || this;
+    }
+    SyncImpl.prototype.search = function (e) {
+        return this.__record('search', [e]);
+    };
+    SyncImpl.prototype.beforeSearching = function (_) {
+        this.__record('beforeSearching', [_]);
+        return this;
+    };
+    SyncImpl.prototype.searching = function (_) {
+        this.__record('searching', [_]);
+        return [];
+    };
+    return SyncImpl;
+}(actor_1.ActorImpl));
+var AsyncImpl = /** @class */ (function (_super) {
+    __extends(AsyncImpl, _super);
+    function AsyncImpl() {
+        return _super !== null && _super.apply(this, arguments) || this;
+    }
+    AsyncImpl.prototype.search = function (e) {
+        return this.__record('search', [e]);
+    };
+    AsyncImpl.prototype.resumed = function (_) {
+        this.__record('resumed', [_]);
+        return [];
+    };
+    return AsyncImpl;
+}(actor_1.ActorImpl));
 var Filter = /** @class */ (function () {
     function Filter() {
         this.value = '?';
@@ -15253,12 +15343,12 @@ var FilteredImpl = /** @class */ (function (_super) {
     };
     return FilteredImpl;
 }(actor_1.ActorImpl));
-describe('app/interact/data/search/filtered', function () {
+describe('app/interact/data/search', function () {
     describe('SetFilterCase', function () {
         it('should call the setFilter hook', function () {
             var t = new Resume();
             var m = new FilteredImpl();
-            var c = new filtered_1.SetFilterCase(Filter, t, m);
+            var c = new search_1.SetFilterCase(Filter, t, m);
             c.match(new Filter());
             must_1.must(m.__test.invokes.order()).equate([
                 'setFilter', 'resumed', 'select'
@@ -15269,77 +15359,39 @@ describe('app/interact/data/search/filtered', function () {
         it('should call the removeFilter hook', function () {
             var t = new Resume();
             var m = new FilteredImpl();
-            var c = new filtered_1.RemoveFilterCase(Filter, t, m);
+            var c = new search_1.RemoveFilterCase(Filter, t, m);
             c.match(new Filter());
             must_1.must(m.__test.invokes.order()).equate([
                 'removeFilter', 'resumed', 'select'
             ]);
         });
     });
-    describe('CleanFiltersCase', function () {
+    describe('ClearFiltersCase', function () {
         it('should call the clearFilters hook', function () {
             var t = new Resume();
             var m = new FilteredImpl();
-            var c = new filtered_1.ClearFiltersCase(Filter, t, m);
+            var c = new search_1.ClearFiltersCase(Filter, t, m);
             c.match(new Filter());
             must_1.must(m.__test.invokes.order()).equate([
                 'clearFilters', 'resumed', 'select'
             ]);
         });
     });
-});
-
-},{"../../../../../../../lib/app/actor/interact/data/search/filtered":9,"../../../fixtures/actor":96,"@quenk/must":15}],103:[function(require,module,exports){
-"use strict";
-var __extends = (this && this.__extends) || (function () {
-    var extendStatics = function (d, b) {
-        extendStatics = Object.setPrototypeOf ||
-            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
-        return extendStatics(d, b);
-    };
-    return function (d, b) {
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
-Object.defineProperty(exports, "__esModule", { value: true });
-var must_1 = require("@quenk/must");
-var realtime_1 = require("../../../../../../../lib/app/actor/interact/data/search/realtime");
-var actor_1 = require("../../../fixtures/actor");
-var Resume = /** @class */ (function () {
-    function Resume() {
-        this.display = '?';
-    }
-    return Resume;
-}());
-var Exec = /** @class */ (function () {
-    function Exec() {
-        this.value = '?';
-    }
-    return Exec;
-}());
-var RealtimeImpl = /** @class */ (function (_super) {
-    __extends(RealtimeImpl, _super);
-    function RealtimeImpl() {
-        return _super !== null && _super.apply(this, arguments) || this;
-    }
-    RealtimeImpl.prototype.search = function (e) {
-        return this.__record('search', [e]);
-    };
-    RealtimeImpl.prototype.resumed = function (_) {
-        this.__record('resumed', [_]);
-        return [];
-    };
-    return RealtimeImpl;
-}(actor_1.ActorImpl));
-describe('app/interact/data/search/realtime', function () {
-    describe('SearchCase', function () {
+    describe('ExecuteSyncListener', function () {
+        it('should call the search hook', function () {
+            var m = new SyncImpl();
+            var c = new search_1.ExecuteSyncCase(Exec, m);
+            c.match(new Exec());
+            must_1.must(m.__test.invokes.order()).equate([
+                'search', 'beforeSearching', 'searching', 'select'
+            ]);
+        });
+    });
+    describe('ExecuteAsyncListener', function () {
         it('should call the search hook', function () {
             var t = new Resume();
-            var m = new RealtimeImpl();
-            var c = new realtime_1.SearchCase(Exec, t, m);
+            var m = new AsyncImpl();
+            var c = new search_1.ExecuteAsyncCase(Exec, t, m);
             c.match(new Exec());
             must_1.must(m.__test.invokes.order()).equate([
                 'search', 'resumed', 'select'
@@ -15348,7 +15400,7 @@ describe('app/interact/data/search/realtime', function () {
     });
 });
 
-},{"../../../../../../../lib/app/actor/interact/data/search/realtime":10,"../../../fixtures/actor":96,"@quenk/must":15}],104:[function(require,module,exports){
+},{"../../../../../lib/actor/interact/data/search":8,"../../fixtures/actor":94,"@quenk/must":14}],101:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -15390,7 +15442,7 @@ var InteractImpl = /** @class */ (function (_super) {
 }(actor_1.ActorImpl));
 exports.InteractImpl = InteractImpl;
 
-},{"../../fixtures/actor":96}],105:[function(require,module,exports){
+},{"../../fixtures/actor":94}],102:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -15407,8 +15459,8 @@ var __extends = (this && this.__extends) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 var must_1 = require("@quenk/must");
-var http_1 = require("../../../../../lib/app/actor/interact/http");
-var interact_1 = require("./fixtures/interact");
+var response_1 = require("../../../../../lib/actor/interact/http/response");
+var interact_1 = require("../fixtures/interact");
 var Response = /** @class */ (function () {
     function Response() {
         this.body = 1;
@@ -15458,7 +15510,7 @@ describe('app/interact/http', function () {
         it('should resume the Interact', function () {
             var t = new Resume();
             var m = listener();
-            var c = new http_1.OkCase(Response, t, m);
+            var c = new response_1.OkCase(Response, t, m);
             c.match(new Response());
             must_1.must(m.__test.invokes.order()).equate([
                 'afterOk', 'resumed', 'select'
@@ -15469,7 +15521,7 @@ describe('app/interact/http', function () {
         it('should resume the Interact', function () {
             var t = new Resume();
             var m = listener();
-            var c = new http_1.CreatedCase(Response, t, m);
+            var c = new response_1.CreatedCase(Response, t, m);
             c.match(new Response());
             must_1.must(m.__test.invokes.order()).equate([
                 'afterCreated', 'resumed', 'select'
@@ -15480,7 +15532,7 @@ describe('app/interact/http', function () {
         it('should resume the Interact', function () {
             var t = new Resume();
             var m = listener();
-            var c = new http_1.NoContentCase(Response, t, m);
+            var c = new response_1.NoContentCase(Response, t, m);
             c.match(new Response());
             must_1.must(m.__test.invokes.order()).equate([
                 'afterNoContent', 'resumed', 'select'
@@ -15491,7 +15543,7 @@ describe('app/interact/http', function () {
         it('should resume the Interact', function () {
             var t = new Resume();
             var m = listener();
-            var c = new http_1.ConflictCase(Response, t, m);
+            var c = new response_1.ConflictCase(Response, t, m);
             c.match(new Response());
             must_1.must(m.__test.invokes.order()).equate([
                 'afterConflict', 'resumed', 'select'
@@ -15502,7 +15554,7 @@ describe('app/interact/http', function () {
         it('should resume the Interact', function () {
             var t = new Resume();
             var m = listener();
-            var c = new http_1.ForbiddenCase(Response, t, m);
+            var c = new response_1.ForbiddenCase(Response, t, m);
             c.match(new Response());
             must_1.must(m.__test.invokes.order()).equate([
                 'afterForbidden', 'resumed', 'select'
@@ -15513,7 +15565,7 @@ describe('app/interact/http', function () {
         it('should resume the Interact', function () {
             var t = new Resume();
             var m = listener();
-            var c = new http_1.UnauthorizedCase(Response, t, m);
+            var c = new response_1.UnauthorizedCase(Response, t, m);
             c.match(new Response());
             must_1.must(m.__test.invokes.order()).equate([
                 'afterUnauthorized', 'resumed', 'select'
@@ -15524,7 +15576,7 @@ describe('app/interact/http', function () {
         it('should resume the Interact', function () {
             var t = new Resume();
             var m = listener();
-            var c = new http_1.NotFoundCase(Response, t, m);
+            var c = new response_1.NotFoundCase(Response, t, m);
             c.match(new Response());
             must_1.must(m.__test.invokes.order()).equate([
                 'afterNotFound', 'resumed', 'select'
@@ -15535,7 +15587,7 @@ describe('app/interact/http', function () {
         it('should resume the Interact', function () {
             var t = new Resume();
             var m = listener();
-            var c = new http_1.ServerErrorCase(Response, t, m);
+            var c = new response_1.ServerErrorCase(Response, t, m);
             c.match(new Response());
             must_1.must(m.__test.invokes.order()).equate([
                 'afterServerError', 'resumed', 'select'
@@ -15544,7 +15596,7 @@ describe('app/interact/http', function () {
     });
 });
 
-},{"../../../../../lib/app/actor/interact/http":11,"./fixtures/interact":104,"@quenk/must":15}],106:[function(require,module,exports){
+},{"../../../../../lib/actor/interact/http/response":9,"../fixtures/interact":101,"@quenk/must":14}],103:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -15562,7 +15614,7 @@ var __extends = (this && this.__extends) || (function () {
 Object.defineProperty(exports, "__esModule", { value: true });
 var must_1 = require("@quenk/must");
 var actor_1 = require("../fixtures/actor");
-var interact_1 = require("../../../../../lib/app/actor/interact");
+var interact_1 = require("../../../../lib/actor/interact");
 var Resume = /** @class */ (function () {
     function Resume(display) {
         this.display = display;
@@ -15640,7 +15692,163 @@ describe('app/interact', function () {
     });
 });
 
-},{"../../../../../lib/app/actor/interact":12,"../fixtures/actor":96,"@quenk/must":15}],107:[function(require,module,exports){
+},{"../../../../lib/actor/interact":10,"../fixtures/actor":94,"@quenk/must":14}],104:[function(require,module,exports){
+"use strict";
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+        return extendStatics(d, b);
+    };
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
+Object.defineProperty(exports, "__esModule", { value: true });
+var must_1 = require("@quenk/must");
+var router_1 = require("../../../lib/actor/router");
+var actor_1 = require("./fixtures/actor");
+var Request = /** @class */ (function () {
+    function Request() {
+        this.src = '?';
+    }
+    return Request;
+}());
+var Parent = /** @class */ (function () {
+    function Parent(actor) {
+        this.actor = actor;
+    }
+    return Parent;
+}());
+var Ack = /** @class */ (function (_super) {
+    __extends(Ack, _super);
+    function Ack() {
+        var _this = _super !== null && _super.apply(this, arguments) || this;
+        _this.ack = 'yes';
+        return _this;
+    }
+    return Ack;
+}(Parent));
+var Exp = /** @class */ (function (_super) {
+    __extends(Exp, _super);
+    function Exp() {
+        var _this = _super !== null && _super.apply(this, arguments) || this;
+        _this.ts = 100;
+        return _this;
+    }
+    return Exp;
+}(Parent));
+var Cont = /** @class */ (function (_super) {
+    __extends(Cont, _super);
+    function Cont() {
+        var _this = _super !== null && _super.apply(this, arguments) || this;
+        _this.retry = false;
+        return _this;
+    }
+    return Cont;
+}(Parent));
+var Message = /** @class */ (function (_super) {
+    __extends(Message, _super);
+    function Message() {
+        var _this = _super !== null && _super.apply(this, arguments) || this;
+        _this.value = 12;
+        return _this;
+    }
+    return Message;
+}(Parent));
+var Rout = /** @class */ (function (_super) {
+    __extends(Rout, _super);
+    function Rout() {
+        var _this = _super !== null && _super.apply(this, arguments) || this;
+        _this.current = 'x';
+        return _this;
+    }
+    Rout.prototype.beforeRouting = function () {
+        this.__record('routing', []);
+        return this;
+    };
+    Rout.prototype.beforeWaiting = function (_) {
+        return this.__record('beforeWait', [_]);
+    };
+    Rout.prototype.waiting = function (_) {
+        this.__record('waiting', [_]);
+        return [];
+    };
+    Rout.prototype.afterAck = function (_) {
+        return this.__record('afterAck', [_]);
+    };
+    Rout.prototype.afterContinue = function (_) {
+        return this.__record('afterContinue', [_]);
+    };
+    Rout.prototype.afterExpire = function (_) {
+        return this.__record('afterExpire', [_]);
+    };
+    Rout.prototype.afterMessage = function (_) {
+        return this.__record('afterMessage', [_]);
+    };
+    Rout.prototype.routing = function () {
+        this.__record('scheduling', []);
+        return [];
+    };
+    return Rout;
+}(actor_1.ActorImpl));
+describe('router', function () {
+    describe('DispatchCase', function () {
+        it('should transition to waiting()', function () {
+            var s = new Rout();
+            var c = new router_1.DispatchCase(Request, s);
+            c.match(new Request());
+            must_1.must(s.__test.invokes.order()).equate([
+                'beforeWait', 'waiting', 'select'
+            ]);
+        });
+    });
+    describe('AckCase', function () {
+        it('should transition to scheduling()', function () {
+            var s = new Rout();
+            var c = new router_1.AckCase(Ack, s);
+            c.match(new Ack('x'));
+            must_1.must(s.__test.invokes.order()).equate([
+                'afterAck', 'scheduling', 'select'
+            ]);
+        });
+    });
+    describe('ContinueCase', function () {
+        it('should transition to scheduling()', function () {
+            var s = new Rout();
+            var c = new router_1.ContinueCase(Cont, s);
+            c.match(new Cont('x'));
+            must_1.must(s.__test.invokes.order()).equate([
+                'afterContinue', 'scheduling', 'select'
+            ]);
+        });
+    });
+    describe('ExpireCase', function () {
+        it('should transition to scheduling()', function () {
+            var s = new Rout();
+            var c = new router_1.ExpireCase(Exp, s);
+            c.match(new Exp('x'));
+            must_1.must(s.__test.invokes.order()).equate([
+                'afterExpire', 'scheduling', 'select'
+            ]);
+        });
+    });
+    describe('MessageCase', function () {
+        it('should transition to scheduling()', function () {
+            var s = new Rout();
+            var c = new router_1.MessageCase(Message, s);
+            c.match(new Message('x'));
+            must_1.must(s.__test.invokes.order()).equate([
+                'afterMessage', 'scheduling', 'select'
+            ]);
+        });
+    });
+});
+
+},{"../../../lib/actor/router":11,"./fixtures/actor":94,"@quenk/must":14}],105:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -15676,7 +15884,7 @@ var TestApp = /** @class */ (function (_super) {
 }(test_1.TestAbstractSystem));
 exports.TestApp = TestApp;
 
-},{"@quenk/potoo/lib/actor/system/framework":34,"@quenk/potoo/lib/actor/system/framework/test":36}],108:[function(require,module,exports){
+},{"@quenk/potoo/lib/actor/system/framework":33,"@quenk/potoo/lib/actor/system/framework/test":35}],106:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var must = require("should");
@@ -15789,7 +15997,7 @@ describe('router', function () {
     });
 });
 
-},{"../../../../../../lib/browser/window/router/hash/default":13,"@quenk/noni/lib/control/monad/future":17,"@quenk/noni/lib/data/function":21,"should":93}],109:[function(require,module,exports){
+},{"../../../../../../lib/browser/window/router/hash/default":12,"@quenk/noni/lib/control/monad/future":16,"@quenk/noni/lib/data/function":20,"should":92}],107:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var Invoke = /** @class */ (function () {
@@ -15832,18 +16040,17 @@ var Mock = /** @class */ (function () {
 }());
 exports.Mock = Mock;
 
-},{}],110:[function(require,module,exports){
+},{}],108:[function(require,module,exports){
+require("./actor/router_test.js");
+require("./actor/interact/data/search_test.js");
+require("./actor/interact/data/form/client_test.js");
+require("./actor/interact/data/form/index_test.js");
+require("./actor/interact/data/form/validate_test.js");
+require("./actor/interact/data/preload/index_test.js");
+require("./actor/interact/data/preload/http/response_test.js");
+require("./actor/interact/index_test.js");
+require("./actor/interact/http/response_test.js");
+require("./actor/api/router/display_test.js");
 require("./browser/window/router/hash/default_test.js");
-require("./app/actor/interact/http_test.js");
-require("./app/actor/interact/data/form/client_test.js");
-require("./app/actor/interact/data/form/validate/index_test.js");
-require("./app/actor/interact/data/form/index_test.js");
-require("./app/actor/interact/data/preload/http_test.js");
-require("./app/actor/interact/data/preload/index_test.js");
-require("./app/actor/interact/data/search/filtered_test.js");
-require("./app/actor/interact/data/search/realtime_test.js");
-require("./app/actor/interact/index_test.js");
-require("./app/actor/api/router/display_test.js");
-require("./app/actor/api/router/index_test.js");
 
-},{"./app/actor/api/router/display_test.js":94,"./app/actor/api/router/index_test.js":95,"./app/actor/interact/data/form/client_test.js":97,"./app/actor/interact/data/form/index_test.js":98,"./app/actor/interact/data/form/validate/index_test.js":99,"./app/actor/interact/data/preload/http_test.js":100,"./app/actor/interact/data/preload/index_test.js":101,"./app/actor/interact/data/search/filtered_test.js":102,"./app/actor/interact/data/search/realtime_test.js":103,"./app/actor/interact/http_test.js":105,"./app/actor/interact/index_test.js":106,"./browser/window/router/hash/default_test.js":108}]},{},[110]);
+},{"./actor/api/router/display_test.js":93,"./actor/interact/data/form/client_test.js":95,"./actor/interact/data/form/index_test.js":96,"./actor/interact/data/form/validate_test.js":97,"./actor/interact/data/preload/http/response_test.js":98,"./actor/interact/data/preload/index_test.js":99,"./actor/interact/data/search_test.js":100,"./actor/interact/http/response_test.js":102,"./actor/interact/index_test.js":103,"./actor/router_test.js":104,"./browser/window/router/hash/default_test.js":106}]},{},[108]);

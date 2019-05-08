@@ -46,6 +46,18 @@ export interface NoContentListener<R, T, MLoading> extends Loading<T, MLoading> 
 }
 
 /**
+ * BadRequestListener
+ */
+export interface BadRequestListener<R, T, MLoading> extends Loading<T, MLoading> {
+
+    /**
+     * afterBadRequest hook.
+     */
+    afterBadRequest(res: R): BadRequestListener<R, T, MLoading>
+
+}
+
+/**
  * ConflictListener
  */
 export interface ConflictListener<R, T, MLoading> extends Loading<T, MLoading> {
@@ -160,6 +172,27 @@ export class NoContentCase<R, T, MLoading> extends Case<R> {
         super(pattern, (res: R) => {
 
             listener.afterNoContent(res);
+            listener.select(listener.loading(token));
+
+        });
+
+    }
+
+}
+
+/**
+ * BadRequestCase dispatches afterBadRequest hook and resumes.
+ */
+export class BadRequestCase<R, T, MLoading> extends Case<R> {
+
+    constructor(
+        public pattern: Constructor<R>,
+        public token: T,
+        public listener: BadRequestListener<R, T, MLoading>) {
+
+        super(pattern, (res: R) => {
+
+            listener.afterBadRequest(res);
             listener.select(listener.loading(token));
 
         });

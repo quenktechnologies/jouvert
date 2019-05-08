@@ -16,7 +16,7 @@ class ValidateImpl extends ActorImpl implements Validate<Event, Request, void>{
 
     validate(_: string, value: Value): Either<string, Value> {
 
-        this.__record('validateEvent', [_, value]);
+        this.__record('validate', [_, value]);
 
         let e = gt(1)(<number>value);
 
@@ -24,6 +24,12 @@ class ValidateImpl extends ActorImpl implements Validate<Event, Request, void>{
             return right(e.takeRight())
         else
             return (e.lmap(() => 'err'));
+
+    }
+
+    set(name: string, value: Value): ValidateImpl {
+
+        return this.__record('set', [name, value]);
 
     }
 
@@ -68,7 +74,7 @@ describe('app/interact/data/form/validate', () => {
 
             c.match(new Event('name', 12));
             must(m.__test.invokes.order()).equate([
-                'validateEvent', 'afterFieldValid', 'resumed', 'select'
+                'validate', 'set', 'afterFieldValid', 'resumed', 'select'
             ]);
 
         });
@@ -81,7 +87,7 @@ describe('app/interact/data/form/validate', () => {
 
             c.match(new Event('name', 0));
             must(m.__test.invokes.order()).equate([
-                'validateEvent', 'afterFieldInvalid', 'resumed', 'select'
+                'validate', 'afterFieldInvalid', 'resumed', 'select'
             ]);
 
         });

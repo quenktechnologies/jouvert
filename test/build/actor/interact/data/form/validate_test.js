@@ -40,12 +40,15 @@ var ValidateImpl = /** @class */ (function (_super) {
         return _super !== null && _super.apply(this, arguments) || this;
     }
     ValidateImpl.prototype.validate = function (_, value) {
-        this.__record('validateEvent', [_, value]);
+        this.__record('validate', [_, value]);
         var e = number_1.gt(1)(value);
         if (e.isRight())
             return either_1.right(e.takeRight());
         else
             return (e.lmap(function () { return 'err'; }));
+    };
+    ValidateImpl.prototype.set = function (name, value) {
+        return this.__record('set', [name, value]);
     };
     ValidateImpl.prototype.onInput = function (_) {
         return this.__record('onInput', [_]);
@@ -72,7 +75,7 @@ describe('app/interact/data/form/validate', function () {
             var c = new validate_1.InputCase(Event, t, m);
             c.match(new Event('name', 12));
             must_1.must(m.__test.invokes.order()).equate([
-                'validateEvent', 'afterFieldValid', 'resumed', 'select'
+                'validate', 'set', 'afterFieldValid', 'resumed', 'select'
             ]);
         });
         it('should invoke the afterFieldInvalid hook', function () {
@@ -81,7 +84,7 @@ describe('app/interact/data/form/validate', function () {
             var c = new validate_1.InputCase(Event, t, m);
             c.match(new Event('name', 0));
             must_1.must(m.__test.invokes.order()).equate([
-                'validateEvent', 'afterFieldInvalid', 'resumed', 'select'
+                'validate', 'afterFieldInvalid', 'resumed', 'select'
             ]);
         });
     });

@@ -136,9 +136,9 @@ export class AbortCase<A, MSuspended> extends Case<A> {
         public listener: AbortListener<A, MSuspended>) {
 
         super(pattern, (a: A) =>
-          listener
-          .afterAbort(a)
-        .select(listener.suspended()));
+            listener
+                .afterAbort(a)
+                .select(listener.suspended()));
 
     }
 

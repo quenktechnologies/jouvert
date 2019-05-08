@@ -48,6 +48,18 @@ export interface NoContentListener<A, R, MResumed> extends Resumed<R, MResumed> 
 }
 
 /**
+ * BadRequestListener
+ */
+export interface BadRequestListener<A, R, MResumed> extends Resumed<R, MResumed> {
+
+    /**
+     * afterBadRequest hook.
+     */
+    afterBadRequest(res: A): BadRequestListener<A, R, MResumed>
+
+}
+
+/**
  * ConflictListener
  */
 export interface ConflictListener<A, R, MResumed> extends Resumed<R, MResumed> {
@@ -91,7 +103,7 @@ export interface NotFoundListener<A, R, MResumed> extends Resumed<R, MResumed> {
     /**
      * afterNotFound hook.
      */
-  afterNotFound(res: A): NotFoundListener<A,R,MResumed>;
+    afterNotFound(res: A): NotFoundListener<A, R, MResumed>;
 
 }
 
@@ -103,7 +115,7 @@ export interface ServerErrorListener<A, R, MResumed> extends Resumed<R, MResumed
     /**
      * afterServerError hook.
      */
-  afterServerError(res: A): ServerErrorListener<A,R,MResumed>;
+    afterServerError(res: A): ServerErrorListener<A, R, MResumed>;
 
 }
 
@@ -158,6 +170,25 @@ export class NoContentCase<A, R, MResumed> extends Case<A> {
         super(pattern, (res: A) =>
             listener
                 .afterNoContent(res)
+                .select(listener.resumed(token)));
+
+    }
+
+}
+
+/**
+ * BadRequestCase dispatches afterBadRequest hook and resumes.
+ */
+export class BadRequestCase<A, R, MResumed> extends Case<A> {
+
+    constructor(
+        public pattern: Constructor<A>,
+        public token: R,
+        public listener: BadRequestListener<A, R, MResumed>) {
+
+        super(pattern, (res: A) =>
+            listener
+                .afterBadRequest(res)
                 .select(listener.resumed(token)));
 
     }

@@ -111,21 +111,26 @@ export abstract class AbstractWorkflow<Req, Body>
     killGroup: Maybe<Group> = nothing();
 
     /**
-     * preload is the address of the actor that does the initial fetching
+     * prefetch is the address of the actor that does the initial fetching
      * of data.
      *
      * It should be spawned in the beforeFetch() hook.
      */
-    preload: Address = '?';
+    abstract prefetch: Address;
 
     /**
-     * tmpview is the address of the actor that streams the initial
+     * contentLoading is the address of the actor that streams the initial
      * view while we load data.
      *
      * It should be spawned in the beforeFetch() hook.
      */
-    tmpview: Address = '?';
+    abstract contentLoading: Address;
 
+    /**
+     * beforeFetch hook.
+     *
+     * Applied during the beforeResumed hook.
+     */
     abstract beforeFetch(r: Resume<Req>): AbstractWorkflow<Req, Body>;
 
     /**
@@ -134,8 +139,8 @@ export abstract class AbstractWorkflow<Req, Body>
     beforeResumed(r: Resume<Req>): AbstractWorkflow<Req, Body> {
 
         this.beforeFetch(r);
-        this.tell(this.tmpview, new Stream());
-        this.tell(this.preload, new Start());
+        this.tell(this.contentLoading, new Stream());
+        this.tell(this.prefetch, new Start());
         return this;
 
     }

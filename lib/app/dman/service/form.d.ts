@@ -14,17 +14,17 @@ import { Mutable } from '../../../actor';
 import { App } from '../../';
 export { Event };
 /**
- * SuspendedMessages
+ * SuspendedMessages type.
  */
 export declare type SuspendedMessages<D extends Object> = Request<D> | Suspend;
 /**
- * SavingMessages
+ * SavingMessages type.
  */
 export declare type SavingMessages<ConflictBody, OkBody, CreatedBody> = Conflict<ConflictBody> | Ok<OkBody> | Created<CreatedBody> | Unauthorized<object> | Forbidden<object> | NotFound<object> | ServerError<object>;
 /**
  * ResumedMessages
  */
-export declare type ResumedMessages = InputEvent | Suspend | Abort | Save | Suspend;
+export declare type ResumedMessages<M> = InputEvent | Suspend | Abort | Save | Suspend | M;
 /**
  * Request
  */
@@ -81,12 +81,12 @@ export declare class FormSaved {
  *
  * A FormSaved or FormAborted message is sent to the parent.
  */
-export interface FormService<D extends Object, ConflictBody, OkBody, CreatedBody> extends ResumeListener<Request<D>, ResumedMessages>, Validate<InputEvent, Request<D>, ResumedMessages>, AbortListener<FormAborted, SuspendedMessages<D>>, SaveListener<Save, SavingMessages<ConflictBody, OkBody, CreatedBody>>, ConflictListener<Conflict<ConflictBody>, Request<D>, ResumedMessages>, OkListener<Ok<OkBody>, Request<D>, ResumedMessages>, CreatedListener<Created<CreatedBody>, Request<D>, ResumedMessages>, UnauthorizedListener<Unauthorized<object>, Request<D>, ResumedMessages>, ForbiddenListener<Forbidden<object>, Request<D>, ResumedMessages>, NotFoundListener<NotFound<object>, Request<D>, ResumedMessages>, ServerErrorListener<ServerError<object>, Request<D>, ResumedMessages>, SuspendListener<Suspend, SuspendedMessages<D>> {
+export interface FormService<D extends Object, ConflictBody, OkBody, CreatedBody, Resumed> extends ResumeListener<Request<D>, ResumedMessages<Resumed>>, Validate<InputEvent, Request<D>, ResumedMessages<Resumed>>, AbortListener<FormAborted, SuspendedMessages<D>>, SaveListener<Save, SavingMessages<ConflictBody, OkBody, CreatedBody>>, ConflictListener<Conflict<ConflictBody>, Request<D>, ResumedMessages<Resumed>>, OkListener<Ok<OkBody>, Request<D>, ResumedMessages<Resumed>>, CreatedListener<Created<CreatedBody>, Request<D>, ResumedMessages<Resumed>>, UnauthorizedListener<Unauthorized<object>, Request<D>, ResumedMessages<Resumed>>, ForbiddenListener<Forbidden<object>, Request<D>, ResumedMessages<Resumed>>, NotFoundListener<NotFound<object>, Request<D>, ResumedMessages<Resumed>>, ServerErrorListener<ServerError<object>, Request<D>, ResumedMessages<Resumed>>, SuspendListener<Suspend, SuspendedMessages<D>> {
 }
 /**
  * AbstractFormService provides an interact for collecting user input.
  */
-export declare abstract class AbstractFormService<D extends Object, ConflictBody, OkBody, CreatedBody> extends Mutable implements FormService<D, ConflictBody, OkBody, CreatedBody> {
+export declare abstract class AbstractFormService<D extends Object, ConflictBody, OkBody, CreatedBody, Resumed> extends Mutable implements FormService<D, ConflictBody, OkBody, CreatedBody, Resumed> {
     display: Address;
     client: Address;
     system: App;
@@ -98,64 +98,64 @@ export declare abstract class AbstractFormService<D extends Object, ConflictBody
     /**
      * beforeResumed should be use to set up the UI etc.
      */
-    abstract beforeResumed(r: Request<D>): AbstractFormService<D, ConflictBody, OkBody, CreatedBody>;
-    resumed(r: Request<D>): Case<ResumedMessages>[];
-    beforeSuspended(_: Suspend): AbstractFormService<D, ConflictBody, OkBody, CreatedBody>;
+    abstract beforeResumed(r: Request<D>): AbstractFormService<D, ConflictBody, OkBody, CreatedBody, Resumed>;
+    resumed(r: Request<D>): Case<ResumedMessages<Resumed>>[];
+    beforeSuspended(_: Suspend): AbstractFormService<D, ConflictBody, OkBody, CreatedBody, Resumed>;
     suspended(): Case<SuspendedMessages<D>>[];
-    abstract set(name: string, value: Value): AbstractFormService<D, ConflictBody, OkBody, CreatedBody>;
+    abstract set(name: string, value: Value): AbstractFormService<D, ConflictBody, OkBody, CreatedBody, Resumed>;
     validate(_name: string, value: Value): Either<Message, Value>;
-    afterFieldValid(_name: string, _value: Value): AbstractFormService<D, ConflictBody, OkBody, CreatedBody>;
-    afterFieldInvalid(_name: string, _value: Value, _err: Message): AbstractFormService<D, ConflictBody, OkBody, CreatedBody>;
+    afterFieldValid(_name: string, _value: Value): AbstractFormService<D, ConflictBody, OkBody, CreatedBody, Resumed>;
+    afterFieldInvalid(_name: string, _value: Value, _err: Message): AbstractFormService<D, ConflictBody, OkBody, CreatedBody, Resumed>;
     /**
      * beforeSaving should contain the logic for submitting the form data.
      */
-    abstract beforeSaving(_: Save): AbstractFormService<D, ConflictBody, OkBody, CreatedBody>;
+    abstract beforeSaving(_: Save): AbstractFormService<D, ConflictBody, OkBody, CreatedBody, Resumed>;
     saving(_: Save): Case<SavingMessages<ConflictBody, OkBody, CreatedBody>>[];
-    afterAbort(_: Abort): AbstractFormService<D, ConflictBody, OkBody, CreatedBody>;
+    afterAbort(_: Abort): AbstractFormService<D, ConflictBody, OkBody, CreatedBody, Resumed>;
     /**
      * afterConflict handles a 409 response.
      */
-    abstract afterConflict(_: Conflict<ConflictBody>): AbstractFormService<D, ConflictBody, OkBody, CreatedBody>;
+    abstract afterConflict(_: Conflict<ConflictBody>): AbstractFormService<D, ConflictBody, OkBody, CreatedBody, Resumed>;
     /**
      * afterCreated handles a 201 response.
      */
-    abstract afterCreated(_: Created<CreatedBody>): AbstractFormService<D, ConflictBody, OkBody, CreatedBody>;
+    abstract afterCreated(_: Created<CreatedBody>): AbstractFormService<D, ConflictBody, OkBody, CreatedBody, Resumed>;
     /**
      * afterOk handles a 200 response.
      */
-    abstract afterOk(_: Ok<OkBody>): AbstractFormService<D, ConflictBody, OkBody, CreatedBody>;
+    abstract afterOk(_: Ok<OkBody>): AbstractFormService<D, ConflictBody, OkBody, CreatedBody, Resumed>;
     /***
      * afterUnauthorized handles the 401 response.
      */
-    afterUnauthorized(_: Unauthorized<object>): AbstractFormService<D, ConflictBody, OkBody, CreatedBody>;
+    afterUnauthorized(_: Unauthorized<object>): AbstractFormService<D, ConflictBody, OkBody, CreatedBody, Resumed>;
     /**
      * afterForbidden handles the 403 response.
      */
-    afterForbidden(_: Forbidden<object>): AbstractFormService<D, ConflictBody, OkBody, CreatedBody>;
+    afterForbidden(_: Forbidden<object>): AbstractFormService<D, ConflictBody, OkBody, CreatedBody, Resumed>;
     /**
      * afterNotFound handles the 404 response.
      */
-    afterNotFound(_: NotFound<object>): AbstractFormService<D, ConflictBody, OkBody, CreatedBody>;
+    afterNotFound(_: NotFound<object>): AbstractFormService<D, ConflictBody, OkBody, CreatedBody, Resumed>;
     /**
      * afterServerError handles the 500 response.
      */
-    afterServerError(_: ServerError<object>): AbstractFormService<D, ConflictBody, OkBody, CreatedBody>;
+    afterServerError(_: ServerError<object>): AbstractFormService<D, ConflictBody, OkBody, CreatedBody, Resumed>;
 }
 /**
  * whenSuspended
  *           resumed       suspended
  * suspended <FormRequest> <Suspended>
  */
-export declare const whenSuspended: <D extends Object, ConflictBody, OkBody, CreatedBody>(cf: FormService<D, ConflictBody, OkBody, CreatedBody>) => Case<SuspendedMessages<D>>[];
+export declare const whenSuspended: <D extends Object, ConflictBody, OkBody, CreatedBody, Resumed>(cf: FormService<D, ConflictBody, OkBody, CreatedBody, Resumed>) => Case<SuspendedMessages<D>>[];
 /**
  * whenResumed
  *         resumed        suspended
  * resumed <Input>|<Save> <Abort>|<Suspend>
  */
-export declare const whenResumed: <D extends Object, ConflictBody, OkBody, CreatedBody>(cf: FormService<D, ConflictBody, OkBody, CreatedBody>, fr: Request<D>) => Case<ResumedMessages>[];
+export declare const whenResumed: <D extends Object, ConflictBody, OkBody, CreatedBody, Resumed>(cf: FormService<D, ConflictBody, OkBody, CreatedBody, Resumed>, fr: Request<D>) => Case<ResumedMessages<Resumed>>[];
 /**
  * whenSaving
  *        resumed    suspended
  * saving <Conflict> <Created>|<Ok>|<Suspend>
  */
-export declare const whenSaving: <D extends Object, ConflictBody, OkBody, CreatedBody>(cf: FormService<D, ConflictBody, OkBody, CreatedBody>, r: Request<D>) => Case<SavingMessages<ConflictBody, OkBody, CreatedBody>>[];
+export declare const whenSaving: <D extends Object, ConflictBody, OkBody, CreatedBody, Resumed>(cf: FormService<D, ConflictBody, OkBody, CreatedBody, Resumed>, r: Request<D>) => Case<SavingMessages<ConflictBody, OkBody, CreatedBody>>[];

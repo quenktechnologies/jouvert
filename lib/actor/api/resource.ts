@@ -1,4 +1,5 @@
 import { Err } from '@quenk/noni/lib/control/error';
+import { isObject } from '@quenk/noni/lib/data/type';
 import { Case } from '@quenk/potoo/lib/actor/resident/case';
 import { Agent } from '@quenk/jhr/lib/agent';
 import {
@@ -12,7 +13,7 @@ import {
 } from '@quenk/jhr/lib/request';
 import { Response } from '@quenk/jhr/lib/response';
 import { App } from '../../app';
-import {  Immutable } from '../';
+import { Immutable } from '../';
 
 /**
  * Aborted indicates a request did not successfully complete.
@@ -55,8 +56,8 @@ export class TransportError {
  * 500   - When an internal error occurs.
  * error - When a transport error occurs.
  */
-export class Resource<ReqRaw, ResParsed, >
-  extends Immutable<Request<ReqRaw>> {
+export class Resource<ReqRaw, ResParsed,>
+    extends Immutable<Request<ReqRaw>> {
 
     constructor(
         public agent: Agent<ReqRaw, ResParsed>,
@@ -64,12 +65,13 @@ export class Resource<ReqRaw, ResParsed, >
 
     send = (req: Request<ReqRaw>) => {
 
-        let client = (req.options.tags.client != null) ?
+        let client = (isObject(req.options.tags) &&
+            req.options.tags.client != null) ?
             '' + req.options.tags.client : '?';
 
         let onErr = (e: Err) => {
 
-            if (req.options.tags.error != null) {
+            if (isObject(req.options.tags) && req.options.tags.error != null) {
 
                 this.tell('' + req.options.tags.error, new TransportError(e));
                 this.tell(client, new Aborted(req));

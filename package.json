@@ -27,7 +27,7 @@
     "typescript": "^3.3.3"
   },
   "dependencies": {
-    "@quenk/jhr": "^2.4.0",
+    "@quenk/jhr": "^2.4.1",
     "@quenk/noni": "^1.23.0",
     "@quenk/potoo": "^2.2.1",
     "@quenk/preconditions": "^5.2.2",

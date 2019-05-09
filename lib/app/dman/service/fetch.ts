@@ -171,6 +171,7 @@ export class FetchService<B>
 
         this.requests.forEach(r => {
 
+            r.options.tags = r.options.tags || {};
             r.options.tags.client = this.self();
             this.tell(this.resource, r);
 

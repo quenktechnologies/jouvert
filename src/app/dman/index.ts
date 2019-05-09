@@ -104,12 +104,12 @@ export abstract class AbstractWorkflow<Req, Body, Resumed>
     Workflow<Req, Body, Resumed> {
 
     /**
-     * killGroup if provided is the name of a group of actors to kill
+     * group if provided is the name of a group of actors to stop
      * each time the AbstractWorkflow suspends.
      *
      * Use it to kill supporting actors that are respawnend on each resume.
      */
-    killGroup: Maybe<Group> = nothing();
+    abstract group: Maybe<Group>;
 
     /**
      * prefetch is the address of the actor that does the initial fetching
@@ -188,8 +188,8 @@ export abstract class AbstractWorkflow<Req, Body, Resumed>
      */
     beforeSuspended(s: Suspend): AbstractWorkflow<Req, Body, Resumed> {
 
-        if (this.killGroup.isJust())
-            this.kill(this.killGroup.get());
+        if (this.group.isJust())
+            this.kill(this.group.get());
 
         this.tell(s.router, new Ack());
 

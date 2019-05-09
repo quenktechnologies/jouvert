@@ -57,12 +57,12 @@ export interface Workflow<Req, Body, Resumed> extends ResumeListener<Resume<Req>
  */
 export declare abstract class AbstractWorkflow<Req, Body, Resumed> extends Mutable implements Workflow<Req, Body, Resumed> {
     /**
-     * killGroup if provided is the name of a group of actors to kill
+     * group if provided is the name of a group of actors to stop
      * each time the AbstractWorkflow suspends.
      *
      * Use it to kill supporting actors that are respawnend on each resume.
      */
-    killGroup: Maybe<Group>;
+    abstract group: Maybe<Group>;
     /**
      * prefetch is the address of the actor that does the initial fetching
      * of data.

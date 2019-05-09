@@ -145,7 +145,7 @@ export class FetchService<B>
 
         if (this.responses.length === this.requests.length) {
 
-            this.tell(this.parent,
+            this.tell(this.self(),
                 new FetchFinishOk(this.name, this.responses.slice()));
 
             this.responses = [];

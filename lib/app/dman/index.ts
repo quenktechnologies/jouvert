@@ -66,22 +66,23 @@ export type SuspendedMessages<Req>
 /**
  * ResumedMessages
  */
-export type ResumedMessages<B>
+export type ResumedMessages<B, M>
     = FetchFinishError
     | FetchFinishOk<B>
     | Suspend
+    | M
     ;
 
 /**
  * Workflow describes an interact for managing data fetched from the
  * remote host.
  */
-export interface Workflow<Req, Body>
+export interface Workflow<Req, Body, Resumed>
     extends
-    ResumeListener<Resume<Req>, ResumedMessages<Body>>,
-    FetchFinishListener<Body, Resume<Req>, ResumedMessages<Body>>,
-    AbortedListener<FormAborted, Resume<Req>, ResumedMessages<Body>>,
-    SavedListener<FormSaved, Resume<Req>, ResumedMessages<Body>>,
+    ResumeListener<Resume<Req>, ResumedMessages<Body, Resumed>>,
+    FetchFinishListener<Body, Resume<Req>, ResumedMessages<Body, Resumed>>,
+    AbortedListener<FormAborted, Resume<Req>, ResumedMessages<Body, Resumed>>,
+    SavedListener<FormSaved, Resume<Req>, ResumedMessages<Body, Resumed>>,
     SuspendListener<Suspend, SuspendedMessages<Req>> {
 
     /**
@@ -89,18 +90,18 @@ export interface Workflow<Req, Body>
      *
      * Use this hook to spawn any supporting actors and setup loading UI.
      */
-    beforeFetch(r: Resume<Req>): Workflow<Req, Body>
+    beforeFetch(r: Resume<Req>): Workflow<Req, Body, Resumed>
 
 }
 
 /**
  * AbstractWorkflow implementation.
  */
-export abstract class AbstractWorkflow<Req, Body>
+export abstract class AbstractWorkflow<Req, Body, Resumed>
     extends
     Mutable
     implements
-    Workflow<Req, Body> {
+    Workflow<Req, Body, Resumed> {
 
     /**
      * killGroup if provided is the name of a group of actors to kill
@@ -131,12 +132,12 @@ export abstract class AbstractWorkflow<Req, Body>
      *
      * Applied during the beforeResumed hook.
      */
-    abstract beforeFetch(r: Resume<Req>): AbstractWorkflow<Req, Body>;
+    abstract beforeFetch(r: Resume<Req>): AbstractWorkflow<Req, Body, Resumed>;
 
     /**
      * beforeResumed sets up the tmp UI and initiates the fetch.
      */
-    beforeResumed(r: Resume<Req>): AbstractWorkflow<Req, Body> {
+    beforeResumed(r: Resume<Req>): AbstractWorkflow<Req, Body, Resumed> {
 
         this.beforeFetch(r);
         this.tell(this.contentLoading, new Stream());
@@ -145,7 +146,7 @@ export abstract class AbstractWorkflow<Req, Body>
 
     }
 
-    resumed(r: Resume<Req>): Case<ResumedMessages<Body>>[] {
+    resumed(r: Resume<Req>): Case<ResumedMessages<Body, Resumed>>[] {
 
         return whenResumed(this, r);
 
@@ -155,18 +156,18 @@ export abstract class AbstractWorkflow<Req, Body>
      * afterFetchFinishError handles the failed initial fetch.
      */
     abstract afterFetchFinishError(r: FetchFinishError)
-        : AbstractWorkflow<Req, Body>
+        : AbstractWorkflow<Req, Body, Resumed>
 
     /**
      * afterFetchFinishOk handles the successful initial fetch.
      */
     abstract afterFetchFinishOk(r: FetchFinishOk<Body>)
-        : AbstractWorkflow<Req, Body>
+        : AbstractWorkflow<Req, Body, Resumed>
 
     /**
      * afterFormAborted handles aborted form messages.
      */
-    afterFormAborted(_: FormAborted): AbstractWorkflow<Req, Body> {
+    afterFormAborted(_: FormAborted): AbstractWorkflow<Req, Body, Resumed> {
 
         return this;
 
@@ -175,7 +176,7 @@ export abstract class AbstractWorkflow<Req, Body>
     /**
      * afterFormSaved handles saved form messages.
      */
-    afterFormSaved(_: FormSaved): AbstractWorkflow<Req, Body> {
+    afterFormSaved(_: FormSaved): AbstractWorkflow<Req, Body, Resumed> {
 
         return this;
 
@@ -185,7 +186,7 @@ export abstract class AbstractWorkflow<Req, Body>
      * beforeSuspended kills supporting actors (if configured)
      * and acknowledges the request.
      */
-    beforeSuspended(s: Suspend): AbstractWorkflow<Req, Body> {
+    beforeSuspended(s: Suspend): AbstractWorkflow<Req, Body, Resumed> {
 
         if (this.killGroup.isJust())
             this.kill(this.killGroup.get());
@@ -209,10 +210,11 @@ export abstract class AbstractWorkflow<Req, Body>
  *           resumed   suspended
  * suspended <Resume>  <Suspend>
  */
-export const whenSuspended = <Req, Body>
-    (c: AbstractWorkflow<Req, Body>): Case<SuspendedMessages<Req>>[] => [
+export const whenSuspended = <Req, Body, Resumed>
+    (c: AbstractWorkflow<Req, Body, Resumed>)
+    : Case<SuspendedMessages<Req>>[] => [
 
-        new ResumeCase<Resume<Req>, ResumedMessages<Body>>(Resume, c),
+        new ResumeCase<Resume<Req>, ResumedMessages<Body, Resumed>>(Resume, c),
 
         new SuspendCase(Suspend, c)
 
@@ -225,10 +227,10 @@ export const whenSuspended = <Req, Body>
  * resumed                            <Suspend>
  * suspended
  */
-export const whenResumed = <Req, Body>
-    (c: AbstractWorkflow<Req, Body>, r: Resume<Req>)
-    : Case<ResumedMessages<Body>>[] =>
-    <Case<ResumedMessages<Body>>[]>[
+export const whenResumed = <Req, Body, Resumed>
+    (c: AbstractWorkflow<Req, Body, Resumed>, r: Resume<Req>)
+    : Case<ResumedMessages<Body, Resumed>>[] =>
+    <Case<ResumedMessages<Body, Resumed>>[]>[
 
         new FetchFinishErrorCase(r, c),
 

@@ -19,7 +19,7 @@
  * It is up to implementations to decide how to treat with those messages.
  */
 /** imports */
-import { Maybe, nothing } from '@quenk/noni/lib/data/maybe';
+import { Maybe } from '@quenk/noni/lib/data/maybe';
 import { Address } from '@quenk/potoo/lib/actor/address';
 import { Case } from '@quenk/potoo/lib/actor/resident/case';
 import {

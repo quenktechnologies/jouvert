@@ -25,14 +25,14 @@ export declare class TransportError {
     constructor(error: Err);
 }
 /**
- * Resource represents the host server (or other http remote).
+ * AbstractResource represents the host server (or other http remote).
  *
  * A Resource forwards HTTP requests from the @quenk/jhr library to the
  * agent it is configured to use.
  *
  * How responses are handled are left up to implementors.
  */
-export declare abstract class Resource<ReqRaw, ResParsed> extends Immutable<Request<ReqRaw>> {
+export declare abstract class AbstractResource<ReqRaw, ResParsed> extends Immutable<Request<ReqRaw>> {
     agent: Agent<ReqRaw, ResParsed>;
     system: App;
     constructor(agent: Agent<ReqRaw, ResParsed>, system: App);
@@ -42,17 +42,17 @@ export declare abstract class Resource<ReqRaw, ResParsed> extends Immutable<Requ
      * This is used to intercept transport level errors such
      * as no connectivity.
      */
-    abstract onError(e: Err, req: Request<ReqRaw>): Resource<ReqRaw, ResParsed>;
+    abstract onError(e: Err, req: Request<ReqRaw>): AbstractResource<ReqRaw, ResParsed>;
     /**
      * afterResponse hook.
      *
      * This is used to handle the actual responses.
      */
-    abstract afterResponse(res: Response<ResParsed>, req: Request<ReqRaw>): Resource<ReqRaw, ResParsed>;
+    abstract afterResponse(res: Response<ResParsed>, req: Request<ReqRaw>): AbstractResource<ReqRaw, ResParsed>;
     send: (req: Request<ReqRaw>) => void;
 }
 /**
- * DefaultResource is a default Resource implementation.
+ * DefaultResource is a default AbstractResource implementation.
  *
  * Tag requests with a client property to indicate which actor to send
  * responses to.
@@ -60,7 +60,7 @@ export declare abstract class Resource<ReqRaw, ResParsed> extends Immutable<Requ
  * If an Error occurs while attempting to send the request a TransportError
  * will be sent to the client instead of a response.
  */
-export declare class DefaultResource<ReqRaw, ResParsed> extends Resource<ReqRaw, ResParsed> {
+export declare class DefaultResource<ReqRaw, ResParsed> extends AbstractResource<ReqRaw, ResParsed> {
     agent: Agent<ReqRaw, ResParsed>;
     system: App;
     constructor(agent: Agent<ReqRaw, ResParsed>, system: App);
@@ -71,4 +71,4 @@ export declare class DefaultResource<ReqRaw, ResParsed> extends Resource<ReqRaw,
 /**
  * whenReceive
  */
-export declare const whenReceive: <ReqRaw, ResParsed>(r: Resource<ReqRaw, ResParsed>) => Case<Request<ReqRaw>>[];
+export declare const whenReceive: <ReqRaw, ResParsed>(r: AbstractResource<ReqRaw, ResParsed>) => Case<Request<ReqRaw>>[];

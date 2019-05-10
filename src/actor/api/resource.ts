@@ -39,14 +39,14 @@ export class TransportError {
 }
 
 /**
- * Resource represents the host server (or other http remote).
+ * AbstractResource represents the host server (or other http remote).
  *
  * A Resource forwards HTTP requests from the @quenk/jhr library to the
  * agent it is configured to use.
  *
  * How responses are handled are left up to implementors.
  */
-export abstract class Resource<ReqRaw, ResParsed>
+export abstract class AbstractResource<ReqRaw, ResParsed>
     extends Immutable<Request<ReqRaw>> {
 
     constructor(
@@ -59,7 +59,7 @@ export abstract class Resource<ReqRaw, ResParsed>
      * This is used to intercept transport level errors such 
      * as no connectivity.
      */
-    abstract onError(e: Err, req: Request<ReqRaw>): Resource<ReqRaw, ResParsed>
+    abstract onError(e: Err, req: Request<ReqRaw>): AbstractResource<ReqRaw, ResParsed>
 
     /**
      * afterResponse hook.
@@ -67,7 +67,7 @@ export abstract class Resource<ReqRaw, ResParsed>
      * This is used to handle the actual responses.
      */
     abstract afterResponse(res: Response<ResParsed>, req: Request<ReqRaw>)
-        : Resource<ReqRaw, ResParsed>
+        : AbstractResource<ReqRaw, ResParsed>
 
     send = (req: Request<ReqRaw>) => {
 
@@ -83,7 +83,7 @@ export abstract class Resource<ReqRaw, ResParsed>
 }
 
 /**
- * DefaultResource is a default Resource implementation.
+ * DefaultResource is a default AbstractResource implementation.
  *
  * Tag requests with a client property to indicate which actor to send
  * responses to.
@@ -93,7 +93,7 @@ export abstract class Resource<ReqRaw, ResParsed>
  */
 export class DefaultResource<ReqRaw, ResParsed>
     extends
-    Resource<ReqRaw, ResParsed> {
+    AbstractResource<ReqRaw, ResParsed> {
 
     constructor(
         public agent: Agent<ReqRaw, ResParsed>,
@@ -137,7 +137,7 @@ const getClient = <B>(req: Request<B>): string =>
  * whenReceive
  */
 export const whenReceive = <ReqRaw, ResParsed>
-    (r: Resource<ReqRaw, ResParsed>): Case<Request<ReqRaw>>[] =>
+    (r: AbstractResource<ReqRaw, ResParsed>): Case<Request<ReqRaw>>[] =>
 
     <Case<Request<ReqRaw>>[]>[
 

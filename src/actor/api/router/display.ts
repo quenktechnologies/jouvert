@@ -2,6 +2,7 @@ import { map, exclude } from '@quenk/noni/lib/data/record';
 import { Maybe, nothing, just } from '@quenk/noni/lib/data/maybe';
 import { pure } from '@quenk/noni/lib/control/monad/future';
 import { Case, Default } from '@quenk/potoo/lib/actor/resident/case';
+import { Message } from '@quenk/potoo/lib/actor/message';
 import { Address } from '@quenk/potoo/lib/actor/address';
 import { Router as RealRouter } from '../../../browser/window/router';
 import { App } from '../../../app';
@@ -11,6 +12,8 @@ import {
     DispatchCase,
     AckListener,
     AckCase,
+    MessageListener,
+    MessageCase,
     ContinueListener,
     ContinueCase,
     ExpireListener,
@@ -43,6 +46,7 @@ export type WaitingMessages
  */
 export type RoutingMessages<T>
     = T
+    | Forward
     ;
 
 /**
@@ -109,6 +113,15 @@ export class Exp {
 }
 
 /**
+ * Forward is used to forward a message to the current actor.
+ */
+export class Forward {
+
+    constructor(public message: Message) { }
+
+}
+
+/**
  * Supervisor
  *
  * This is used to contain communication between current actors and the router
@@ -170,7 +183,8 @@ export class DisplayRouter<R> extends Mutable
     Routing<RoutingMessages<Resume<R>>>,
     AckListener<Ack, RoutingMessages<Resume<R>>>,
     ExpireListener<Exp, RoutingMessages<Resume<R>>>,
-    ContinueListener<Cont, RoutingMessages<Resume<R>>> {
+    ContinueListener<Cont, RoutingMessages<Resume<R>>>,
+    MessageListener<Forward, RoutingMessages<Resume<R>>> {
 
     constructor(
         public display: Address,
@@ -191,6 +205,15 @@ export class DisplayRouter<R> extends Mutable
     routing(): Case<RoutingMessages<Resume<R>>>[] {
 
         return whenRouting(this);
+
+    }
+
+    afterMessage(f: Forward): DisplayRouter<R> {
+
+        if (this.next.isJust())
+            this.tell(this.next.get().actor, f.message);
+
+        return this;
 
     }
 
@@ -220,7 +243,7 @@ export class DisplayRouter<R> extends Mutable
 
     waiting(_: Resume<R>): Case<WaitingMessages>[] {
 
-        return whenAwaiting(this);
+        return whenWaiting(this);
 
     }
 
@@ -324,16 +347,19 @@ export class DisplayRouter<R> extends Mutable
  * whenRouting behaviour.
  */
 export const whenRouting = <R>(r: DisplayRouter<R>)
-    : Case<RoutingMessages<Resume<R>>>[] => [
+    : Case<RoutingMessages<Resume<R>>>[] =>
+    <Case<RoutingMessages<Resume<R>>>[]>[
 
-        new DispatchCase<Resume<R>, WaitingMessages>(Resume, r)
+        new DispatchCase<Resume<R>, WaitingMessages>(Resume, r),
+
+        new MessageCase<Forward, RoutingMessages<Resume<R>>>(Forward, r)
 
     ];
 
 /**
- * whenAwaiting behaviour.
+ * whenWaiting behaviour.
  */
-export const whenAwaiting = <R>(r: DisplayRouter<R>)
+export const whenWaiting = <R>(r: DisplayRouter<R>)
     : Case<WaitingMessages>[] => <Case<WaitingMessages>[]>[
 
         new AckCase(Ack, r),

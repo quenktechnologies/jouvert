@@ -1,4 +1,3 @@
-import { Get } from '@quenk/jhr/lib/request';
 import { Response } from '@quenk/jhr/lib/response';
 import { NoContent, Ok, BadRequest, Unauthorized, Forbidden, NotFound, ServerError } from '@quenk/jhr/lib/response';
 import { Address } from '@quenk/potoo/lib/actor/address';
@@ -65,48 +64,48 @@ export declare class FetchFinishOk<B> {
  * Once all requests are complete it responds with FetchFinishOk or
  * FetchFinishError if any respond with a supported error status.
  */
-export declare class FetchService<B> extends Mutable implements LoadListener<Start, LoadingMessages<B>>, OkListener<Ok<B>, Start, LoadingMessages<B>>, NoContentListener<NoContent<B>, Start, LoadingMessages<B>>, BadRequestListener<BadRequest<void>, Start, LoadingMessages<B>>, UnauthorizedListener<Unauthorized<void>, Start, LoadingMessages<B>>, ForbiddenListener<Forbidden<void>, Start, LoadingMessages<B>>, NotFoundListener<NotFound<void>, Start, LoadingMessages<B>>, ServerErrorListener<ServerError<void>, Start, LoadingMessages<B>>, ResumeListener<Start, ResumedMessages>, SuspendListener<Suspend, SuspendedMessages> {
+export declare class FetchService<R, B> extends Mutable implements LoadListener<Start, LoadingMessages<B>>, OkListener<Ok<B>, Start, LoadingMessages<B>>, NoContentListener<NoContent<B>, Start, LoadingMessages<B>>, BadRequestListener<BadRequest<void>, Start, LoadingMessages<B>>, UnauthorizedListener<Unauthorized<void>, Start, LoadingMessages<B>>, ForbiddenListener<Forbidden<void>, Start, LoadingMessages<B>>, NotFoundListener<NotFound<void>, Start, LoadingMessages<B>>, ServerErrorListener<ServerError<void>, Start, LoadingMessages<B>>, ResumeListener<Start, ResumedMessages>, SuspendListener<Suspend, SuspendedMessages> {
     name: Name;
     display: Address;
-    requests: Get[];
+    requests: R[];
     resource: Address;
     parent: Address;
     system: App;
-    constructor(name: Name, display: Address, requests: Get[], resource: Address, parent: Address, system: App);
+    constructor(name: Name, display: Address, requests: R[], resource: Address, parent: Address, system: App);
     responses: Response<B>[];
-    enqueue(r: Response<B>): FetchService<B>;
-    bail(r: Response<void>): FetchService<B>;
+    enqueue(r: Response<B>): FetchService<R, B>;
+    bail(r: Response<void>): FetchService<R, B>;
     /**
      * beforeLoading hook fires off the requests.
      */
-    beforeLoading(_: Start): FetchService<B>;
-    afterNoContent(r: NoContent<B>): FetchService<B>;
-    afterOk(r: Ok<B>): FetchService<B>;
-    afterBadRequest(r: BadRequest<void>): FetchService<B>;
-    afterUnauthorized(r: Unauthorized<void>): FetchService<B>;
-    afterForbidden(r: Forbidden<void>): FetchService<B>;
-    afterNotFound(r: NotFound<void>): FetchService<B>;
-    afterServerError(r: ServerError<void>): FetchService<B>;
+    beforeLoading(_: Start): FetchService<R, B>;
+    afterNoContent(r: NoContent<B>): FetchService<R, B>;
+    afterOk(r: Ok<B>): FetchService<R, B>;
+    afterBadRequest(r: BadRequest<void>): FetchService<R, B>;
+    afterUnauthorized(r: Unauthorized<void>): FetchService<R, B>;
+    afterForbidden(r: Forbidden<void>): FetchService<R, B>;
+    afterNotFound(r: NotFound<void>): FetchService<R, B>;
+    afterServerError(r: ServerError<void>): FetchService<R, B>;
     loading(r: Start): Case<LoadingMessages<B>>[];
-    beforeResumed(_: Start): FetchService<B>;
+    beforeResumed(_: Start): FetchService<R, B>;
     resumed(_: Start): Case<ResumedMessages>[];
-    beforeSuspended(_: Suspend): FetchService<B>;
+    beforeSuspended(_: Suspend): FetchService<R, B>;
     suspended(): Case<SuspendedMessages>[];
     run(): void;
 }
 /**
  * InternalFinishOkCase
  */
-export declare class InternalFinishOkCase<B> extends Case<FetchFinishOk<B>> {
-    self: FetchService<B>;
-    constructor(self: FetchService<B>);
+export declare class InternalFinishOkCase<R, B> extends Case<FetchFinishOk<B>> {
+    self: FetchService<R, B>;
+    constructor(self: FetchService<R, B>);
 }
 /**
  * InternalFinishErrorCase
  */
-export declare class InternalFinishErrorCase<B> extends Case<FetchFinishError> {
-    self: FetchService<B>;
-    constructor(self: FetchService<B>);
+export declare class InternalFinishErrorCase<R, B> extends Case<FetchFinishError> {
+    self: FetchService<R, B>;
+    constructor(self: FetchService<R, B>);
 }
 /**
  * FetchFinishOkCase
@@ -129,16 +128,16 @@ export declare class FetchFinishErrorCase<B, T, M> extends Case<FetchFinishError
  *           loading  suspended
  * suspended <Start>  <Suspend>
  */
-export declare const whenSuspended: <B>(c: FetchService<B>) => Case<Start>[];
+export declare const whenSuspended: <R, B>(c: FetchService<R, B>) => Case<Start>[];
 /**
  * whenLoading
  *         resumed           suspended
  * loading <Response>        <Suspend>
  */
-export declare const whenLoading: <B>(c: FetchService<B>, r: Start) => Case<LoadingMessages<B>>[];
+export declare const whenLoading: <R, B>(c: FetchService<R, B>, r: Start) => Case<LoadingMessages<B>>[];
 /**
  * whenResumed
  *         suspended
  * resumed <Suspend>
  */
-export declare const whenResumed: <B>(c: FetchService<B>) => Case<Suspend>[];
+export declare const whenResumed: <R, B>(c: FetchService<R, B>) => Case<Suspend>[];

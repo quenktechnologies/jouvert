@@ -41,81 +41,111 @@ export class TransportError {
 /**
  * Resource represents the host server (or other http remote).
  *
- * HTTP requests sent to this actor will be forwarded to the host it
- * is configured for.
+ * A Resource forwards HTTP requests from the @quenk/jhr library to the
+ * agent it is configured to use.
  *
- * In order to receive the response, set the "client" tag to
- * the actor that will receive it.
- *
- * Additionally, you can use the following tags to forward the responses
- * for the bellow conditions. The client will receive an Aborted message:
- *
- * 401   - When the request is Unauthorized.
- * 403   - When the request is forbidden.
- * 404   - When the resource is not found.
- * 500   - When an internal error occurs.
- * error - When a transport error occurs.
+ * How responses are handled are left up to implementors.
  */
-export class Resource<ReqRaw, ResParsed,>
+export abstract class Resource<ReqRaw, ResParsed>
     extends Immutable<Request<ReqRaw>> {
 
     constructor(
         public agent: Agent<ReqRaw, ResParsed>,
         public system: App) { super(system); }
 
+    /**
+     * onError handler.
+     *
+     * This is used to intercept transport level errors such 
+     * as no connectivity.
+     */
+    abstract onError(e: Err, req: Request<ReqRaw>): Resource<ReqRaw, ResParsed>
+
+    /**
+     * afterResponse hook.
+     *
+     * This is used to handle the actual responses.
+     */
+    abstract afterResponse(res: Response<ResParsed>, req: Request<ReqRaw>)
+        : Resource<ReqRaw, ResParsed>
+
     send = (req: Request<ReqRaw>) => {
-
-        let client = (isObject(req.options.tags) &&
-            req.options.tags.client != null) ?
-            '' + req.options.tags.client : '?';
-
-        let onErr = (e: Err) => {
-
-            if (isObject(req.options.tags) && req.options.tags.error != null) {
-
-                this.tell('' + req.options.tags.error, new TransportError(e));
-                this.tell(client, new Aborted(req));
-
-            } else {
-
-                this.tell(client, new TransportError(e));
-
-            }
-
-        };
-
-        let onSucc = (res: Response<ResParsed>) => {
-
-            if ((res.code >= 400) &&
-                res.options.tags.hasOwnProperty('' + res.code)) {
-
-                this.tell(<string>res.options.tags['' + res.code], res);
-                this.tell(client, new Aborted(req));
-
-            } else {
-
-                this.tell(client, res);
-
-            }
-
-        };
 
         this
             .agent
             .send(req)
-            .fork(onErr, onSucc);
+            .fork(
+                (e: Err) => this.onError(e, req),
+                (r: Response<ResParsed>) => this.afterResponse(r, req));
 
     }
 
-    receive: Case<Request<ReqRaw>>[] = <Case<Request<ReqRaw>>[]>[
+}
 
-        new Case(Head, this.send),
-        new Case(Get, this.send),
-        new Case(Post, this.send),
-        new Case(Put, this.send),
-        new Case(Patch, this.send),
-        new Case(Delete, this.send)
+/**
+ * DefaultResource is a default Resource implementation.
+ *
+ * Tag requests with a client property to indicate which actor to send
+ * responses to.
+ *
+ * If an Error occurs while attempting to send the request a TransportError
+ * will be sent to the client instead of a response.
+ */
+export class DefaultResource<ReqRaw, ResParsed>
+    extends
+    Resource<ReqRaw, ResParsed> {
 
-    ]
+    constructor(
+        public agent: Agent<ReqRaw, ResParsed>,
+        public system: App) {
+
+        super(agent, system);
+
+    }
+
+    receive: Case<Request<ReqRaw>>[] = whenReceive(this);
+
+    onError(e: Err, req: Request<ReqRaw>): DefaultResource<ReqRaw, ResParsed> {
+
+        let client = getClient(req);
+
+        this.tell(client, new TransportError(e));
+
+        return this;
+
+    }
+
+    afterResponse(res: Response<ResParsed>, req: Request<ReqRaw>)
+        : DefaultResource<ReqRaw, ResParsed> {
+
+        let client = getClient(req);
+
+        this.tell(client, res);
+
+        return this;
+
+    }
 
 }
+
+const getClient = <B>(req: Request<B>): string =>
+    (isObject(req.options.tags) &&
+        req.options.tags.client != null) ?
+        '' + req.options.tags.client : '?';
+
+/**
+ * whenReceive
+ */
+export const whenReceive = <ReqRaw, ResParsed>
+    (r: Resource<ReqRaw, ResParsed>): Case<Request<ReqRaw>>[] =>
+
+    <Case<Request<ReqRaw>>[]>[
+
+        new Case(Head, r.send),
+        new Case(Get, r.send),
+        new Case(Post, r.send),
+        new Case(Put, r.send),
+        new Case(Patch, r.send),
+        new Case(Delete, r.send)
+
+    ];

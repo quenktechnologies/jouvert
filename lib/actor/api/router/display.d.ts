@@ -1,10 +1,11 @@
 import { Maybe } from '@quenk/noni/lib/data/maybe';
 import { Case } from '@quenk/potoo/lib/actor/resident/case';
+import { Message } from '@quenk/potoo/lib/actor/message';
 import { Address } from '@quenk/potoo/lib/actor/address';
 import { Router as RealRouter } from '../../../browser/window/router';
 import { App } from '../../../app';
 import { Mutable, Immutable } from '../../';
-import { Routing, AckListener, ContinueListener, ExpireListener } from '../../router';
+import { Routing, AckListener, MessageListener, ContinueListener, ExpireListener } from '../../router';
 export declare const SUPERVISOR_ID = "supervisor";
 /**
  * TimeLimit type.
@@ -21,7 +22,7 @@ export declare type WaitingMessages = Ack | Cont | Exp;
 /**
  * RoutingMessages type.
  */
-export declare type RoutingMessages<T> = T;
+export declare type RoutingMessages<T> = T | Forward;
 /**
  * SupervisorMessages type.
  */
@@ -71,6 +72,13 @@ export declare class Exp {
     constructor(route: Route);
 }
 /**
+ * Forward is used to forward a message to the current actor.
+ */
+export declare class Forward {
+    message: Message;
+    constructor(message: Message);
+}
+/**
  * Supervisor
  *
  * This is used to contain communication between current actors and the router
@@ -104,7 +112,7 @@ export declare class Supervisor<R> extends Immutable<SupervisorMessages> {
  * the controller in question. Being blacklisted means future requests for that
  * controller will result in the error handler being invoked.
  */
-export declare class DisplayRouter<R> extends Mutable implements Routing<RoutingMessages<Resume<R>>>, AckListener<Ack, RoutingMessages<Resume<R>>>, ExpireListener<Exp, RoutingMessages<Resume<R>>>, ContinueListener<Cont, RoutingMessages<Resume<R>>> {
+export declare class DisplayRouter<R> extends Mutable implements Routing<RoutingMessages<Resume<R>>>, AckListener<Ack, RoutingMessages<Resume<R>>>, ExpireListener<Exp, RoutingMessages<Resume<R>>>, ContinueListener<Cont, RoutingMessages<Resume<R>>>, MessageListener<Forward, RoutingMessages<Resume<R>>> {
     display: Address;
     routes: Routes;
     router: RealRouter<R>;
@@ -115,6 +123,7 @@ export declare class DisplayRouter<R> extends Mutable implements Routing<Routing
     next: Maybe<Resume<R>>;
     beforeRouting(): DisplayRouter<R>;
     routing(): Case<RoutingMessages<Resume<R>>>[];
+    afterMessage(f: Forward): DisplayRouter<R>;
     beforeWaiting(t: Resume<R>): DisplayRouter<R>;
     waiting(_: Resume<R>): Case<WaitingMessages>[];
     afterContinue(_: Cont): DisplayRouter<R>;
@@ -125,8 +134,8 @@ export declare class DisplayRouter<R> extends Mutable implements Routing<Routing
 /**
  * whenRouting behaviour.
  */
-export declare const whenRouting: <R>(r: DisplayRouter<R>) => Case<Resume<R>>[];
+export declare const whenRouting: <R>(r: DisplayRouter<R>) => Case<RoutingMessages<Resume<R>>>[];
 /**
- * whenAwaiting behaviour.
+ * whenWaiting behaviour.
  */
-export declare const whenAwaiting: <R>(r: DisplayRouter<R>) => Case<WaitingMessages>[];
+export declare const whenWaiting: <R>(r: DisplayRouter<R>) => Case<WaitingMessages>[];

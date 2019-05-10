@@ -77,6 +77,16 @@ var Exp = /** @class */ (function () {
 }());
 exports.Exp = Exp;
 /**
+ * Forward is used to forward a message to the current actor.
+ */
+var Forward = /** @class */ (function () {
+    function Forward(message) {
+        this.message = message;
+    }
+    return Forward;
+}());
+exports.Forward = Forward;
+/**
  * Supervisor
  *
  * This is used to contain communication between current actors and the router
@@ -142,6 +152,11 @@ var DisplayRouter = /** @class */ (function (_super) {
     DisplayRouter.prototype.routing = function () {
         return exports.whenRouting(this);
     };
+    DisplayRouter.prototype.afterMessage = function (f) {
+        if (this.next.isJust())
+            this.tell(this.next.get().actor, f.message);
+        return this;
+    };
     DisplayRouter.prototype.beforeWaiting = function (t) {
         var _this = this;
         this.next = maybe_1.just(t);
@@ -157,7 +172,7 @@ var DisplayRouter = /** @class */ (function (_super) {
         return this;
     };
     DisplayRouter.prototype.waiting = function (_) {
-        return exports.whenAwaiting(this);
+        return exports.whenWaiting(this);
     };
     DisplayRouter.prototype.afterContinue = function (_) {
         return this;
@@ -213,13 +228,16 @@ exports.DisplayRouter = DisplayRouter;
 /**
  * whenRouting behaviour.
  */
-exports.whenRouting = function (r) { return [
-    new router_1.DispatchCase(Resume, r)
-]; };
+exports.whenRouting = function (r) {
+    return [
+        new router_1.DispatchCase(Resume, r),
+        new router_1.MessageCase(Forward, r)
+    ];
+};
 /**
- * whenAwaiting behaviour.
+ * whenWaiting behaviour.
  */
-exports.whenAwaiting = function (r) { return [
+exports.whenWaiting = function (r) { return [
     new router_1.AckCase(Ack, r),
     new router_1.ContinueCase(Cont, r),
     new router_1.ExpireCase(Exp, r)

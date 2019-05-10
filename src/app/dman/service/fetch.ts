@@ -1,4 +1,3 @@
-import { Get } from '@quenk/jhr/lib/request';
 import { Response } from '@quenk/jhr/lib/response';
 import {
     NoContent,
@@ -114,7 +113,7 @@ export class FetchFinishOk<B> {
  * Once all requests are complete it responds with FetchFinishOk or 
  * FetchFinishError if any respond with a supported error status.
  */
-export class FetchService<B>
+export class FetchService<R, B>
     extends
     Mutable
     implements
@@ -132,14 +131,14 @@ export class FetchService<B>
     constructor(
         public name: Name,
         public display: Address,
-        public requests: Get[],
+        public requests: R[],
         public resource: Address,
         public parent: Address,
         public system: App) { super(system); }
 
     responses: Response<B>[] = [];
 
-    enqueue(r: Response<B>): FetchService<B> {
+    enqueue(r: Response<B>): FetchService<R, B> {
 
         this.responses.push(r);
 
@@ -156,7 +155,7 @@ export class FetchService<B>
 
     }
 
-    bail(r: Response<void>): FetchService<B> {
+    bail(r: Response<void>): FetchService<R, B> {
 
         this.tell(this.self(), new FetchFinishError(this.name, r));
         this.responses = [];
@@ -167,57 +166,50 @@ export class FetchService<B>
     /**
      * beforeLoading hook fires off the requests.
      */
-    beforeLoading(_: Start): FetchService<B> {
+    beforeLoading(_: Start): FetchService<R, B> {
 
-        this.requests.forEach(r => {
-
-            r.options.tags = r.options.tags || {};
-            r.options.tags.client = this.self();
-            this.tell(this.resource, r);
-
-        });
-
+        this.requests.forEach(r => this.tell(this.resource, r));
         return this;
 
     }
 
-    afterNoContent(r: NoContent<B>): FetchService<B> {
+    afterNoContent(r: NoContent<B>): FetchService<R, B> {
 
         return this.enqueue(r);
 
     }
 
-    afterOk(r: Ok<B>): FetchService<B> {
+    afterOk(r: Ok<B>): FetchService<R, B> {
 
         return this.enqueue(r);
 
     }
 
-    afterBadRequest(r: BadRequest<void>): FetchService<B> {
+    afterBadRequest(r: BadRequest<void>): FetchService<R, B> {
 
         return this.bail(r);
 
     }
 
-    afterUnauthorized(r: Unauthorized<void>): FetchService<B> {
+    afterUnauthorized(r: Unauthorized<void>): FetchService<R, B> {
 
         return this.bail(r);
 
     }
 
-    afterForbidden(r: Forbidden<void>): FetchService<B> {
+    afterForbidden(r: Forbidden<void>): FetchService<R, B> {
 
         return this.bail(r);
 
     }
 
-    afterNotFound(r: NotFound<void>): FetchService<B> {
+    afterNotFound(r: NotFound<void>): FetchService<R, B> {
 
         return this.bail(r);
 
     }
 
-    afterServerError(r: ServerError<void>): FetchService<B> {
+    afterServerError(r: ServerError<void>): FetchService<R, B> {
 
         return this.bail(r);
 
@@ -229,7 +221,7 @@ export class FetchService<B>
 
     }
 
-    beforeResumed(_: Start): FetchService<B> {
+    beforeResumed(_: Start): FetchService<R, B> {
 
         this.tell(this.self(), new Suspend('?'));
         return this;
@@ -242,7 +234,7 @@ export class FetchService<B>
 
     }
 
-    beforeSuspended(_: Suspend): FetchService<B> {
+    beforeSuspended(_: Suspend): FetchService<R, B> {
 
         return this;
 
@@ -265,9 +257,9 @@ export class FetchService<B>
 /**
  * InternalFinishOkCase
  */
-export class InternalFinishOkCase<B> extends Case<FetchFinishOk<B>> {
+export class InternalFinishOkCase<R, B> extends Case<FetchFinishOk<B>> {
 
-    constructor(public self: FetchService<B>) {
+    constructor(public self: FetchService<R, B>) {
 
         super(FetchFinishOk, (r: FetchFinishOk<B>) => {
 
@@ -284,9 +276,9 @@ export class InternalFinishOkCase<B> extends Case<FetchFinishOk<B>> {
 /**
  * InternalFinishErrorCase
  */
-export class InternalFinishErrorCase<B> extends Case<FetchFinishError> {
+export class InternalFinishErrorCase<R, B> extends Case<FetchFinishError> {
 
-    constructor(public self: FetchService<B>) {
+    constructor(public self: FetchService<R, B>) {
 
         super(FetchFinishError, (r: FetchFinishError) => {
 
@@ -348,7 +340,7 @@ export class FetchFinishErrorCase<B, T, M> extends Case<FetchFinishError> {
  * suspended <Start>  <Suspend>
  */
 export const whenSuspended =
-    <B>(c: FetchService<B>): Case<SuspendedMessages>[] =>
+    <R, B>(c: FetchService<R, B>): Case<SuspendedMessages>[] =>
         <Case<SuspendedMessages>[]>[
 
             new LoadCase<Start, LoadingMessages<B>>(Start, c),
@@ -363,7 +355,7 @@ export const whenSuspended =
  * loading <Response>        <Suspend>
  */
 export const whenLoading =
-    <B>(c: FetchService<B>, r: Start): Case<LoadingMessages<B>>[] =>
+    <R, B>(c: FetchService<R, B>, r: Start): Case<LoadingMessages<B>>[] =>
         <Case<LoadingMessages<B>>[]>[
 
             new OkCase(Ok, r, c),
@@ -400,7 +392,7 @@ export const whenLoading =
  * resumed <Suspend>
  */
 export const whenResumed =
-    <B>(c: FetchService<B>): Case<ResumedMessages>[] =>
+    <R, B>(c: FetchService<R, B>): Case<ResumedMessages>[] =>
         <Case<ResumedMessages>[]>[
 
             new SuspendCase<Suspend, SuspendedMessages>(Suspend, c),

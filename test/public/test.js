@@ -5618,7 +5618,6 @@ exports.TempCC = TempCC;
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var error = require("../error");
-var either_1 = require("@quenk/noni/lib/data/either");
 var _1 = require("./");
 /**
  * TempChild copies a template's child onto the heap.
@@ -5634,22 +5633,21 @@ var TempChild = /** @class */ (function () {
     }
     TempChild.prototype.exec = function (e) {
         var curr = e.current().get();
-        curr
-            .resolveTemplate(curr.pop())
-            .chain(function (t) {
-            return curr
-                .resolveNumber(curr.pop())
-                .chain(function (n) {
-                if ((t.children && t.children.length > n) && (n > 0)) {
-                    var _a = curr.allocateTemplate(t.children[n]), value = _a[0], type = _a[1], location_1 = _a[2];
-                    return either_1.right(curr.push(value, type, location_1));
-                }
-                else {
-                    return either_1.left(new error.NullTemplatePointerErr(n));
-                }
-            });
-        })
-            .lmap(function (err) { return e.raise(err); });
+        var eitherTemplate = curr.resolveTemplate(curr.pop());
+        if (eitherTemplate.isLeft())
+            return e.raise(eitherTemplate.takeLeft());
+        var t = eitherTemplate.takeRight();
+        var eitherNum = curr.resolveNumber(curr.pop());
+        if (eitherNum.isLeft())
+            return e.raise(eitherNum.takeLeft());
+        var n = eitherNum.takeRight();
+        if ((t.children && t.children.length > n) && (n > 0)) {
+            var _a = curr.allocateTemplate(t.children[n]), value = _a[0], type = _a[1], location_1 = _a[2];
+            curr.push(value, type, location_1);
+        }
+        else {
+            e.raise(new error.NullTemplatePointerErr(n));
+        }
     };
     TempChild.prototype.toLog = function (f) {
         return ['tempchild', [], [f.peek(), f.peek(1)]];
@@ -5658,7 +5656,7 @@ var TempChild = /** @class */ (function () {
 }());
 exports.TempChild = TempChild;
 
-},{"../error":39,"./":47,"@quenk/noni/lib/data/either":19}],61:[function(require,module,exports){
+},{"../error":39,"./":47}],61:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {

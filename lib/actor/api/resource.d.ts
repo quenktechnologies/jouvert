@@ -21,9 +21,10 @@ export declare class Aborted<B> {
  * Indicates we were unable to send the request for some reason.
  * Example: Coors restriction.
  */
-export declare class TransportError {
+export declare class TransportError<B> {
     error: Err;
-    constructor(error: Err);
+    request: Request<B>;
+    constructor(error: Err, request: Request<B>);
 }
 /**
  * Resource represents the host server (or other http remote).

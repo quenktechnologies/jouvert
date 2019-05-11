@@ -35,9 +35,9 @@ export class Aborted<B> {
  * Indicates we were unable to send the request for some reason.
  * Example: Coors restriction.
  */
-export class TransportError {
+export class TransportError<B> {
 
-    constructor(public error: Err) { }
+    constructor(public error: Err, public request: Request<B>) { }
 
 }
 
@@ -77,12 +77,12 @@ export class Resource<ReqRaw, ResParsed,>
 
             if (isObject(req.options.tags) && req.options.tags.error != null) {
 
-                this.tell('' + req.options.tags.error, new TransportError(e));
+                this.tell('' + req.options.tags.error, new TransportError(e, req));
                 this.tell(client, new Aborted(req));
 
             } else {
 
-                this.tell(client, new TransportError(e));
+                this.tell(client, new TransportError(e, req));
 
             }
 

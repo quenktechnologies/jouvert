@@ -87,6 +87,15 @@ var Forward = /** @class */ (function () {
 }());
 exports.Forward = Forward;
 /**
+ * Refresh
+ */
+var Refresh = /** @class */ (function () {
+    function Refresh() {
+    }
+    return Refresh;
+}());
+exports.Refresh = Refresh;
+/**
  * Supervisor
  *
  * This is used to contain communication between current actors and the router
@@ -109,6 +118,9 @@ var Supervisor = /** @class */ (function (_super) {
             new case_1.Case(Suspend, function (s) { return _this.tell(_this.resume.actor, s); }),
             new case_1.Case(Ack, function (a) { return _this.tell(_this.parent, a).exit(); }),
             new case_1.Case(Cont, function (c) { return _this.tell(_this.parent, c); }),
+            new case_1.Case(Refresh, function () { return _this
+                .tell(_this.resume.actor, new Suspend('?'))
+                .tell(_this.resume.actor, _this.resume); }),
             new case_1.Default(function (m) { return _this.tell(_this.display, m); })
         ];
         return _this;
@@ -231,7 +243,8 @@ exports.DisplayRouter = DisplayRouter;
 exports.whenRouting = function (r) {
     return [
         new router_1.DispatchCase(Resume, r),
-        new router_1.MessageCase(Forward, r)
+        new router_1.MessageCase(Forward, r),
+        new case_1.Case(Refresh, function (ref) { return r.tell(r.current.get(), ref); })
     ];
 };
 /**

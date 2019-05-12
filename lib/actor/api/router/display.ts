@@ -122,6 +122,11 @@ export class Forward {
 }
 
 /**
+ * Refresh 
+ */
+export class Refresh { }
+
+/**
  * Supervisor
  *
  * This is used to contain communication between current actors and the router
@@ -151,6 +156,10 @@ export class Supervisor<R> extends Immutable<SupervisorMessages> {
         new Case(Ack, (a: Ack) => this.tell(this.parent, a).exit()),
 
         new Case(Cont, (c: Cont) => this.tell(this.parent, c)),
+
+        new Case(Refresh, () => this
+            .tell(this.resume.actor, new Suspend('?'))
+            .tell(this.resume.actor, this.resume)),
 
         new Default(m => this.tell(this.display, m))
 
@@ -352,7 +361,9 @@ export const whenRouting = <R>(r: DisplayRouter<R>)
 
         new DispatchCase<Resume<R>, WaitingMessages>(Resume, r),
 
-        new MessageCase<Forward, RoutingMessages<Resume<R>>>(Forward, r)
+        new MessageCase<Forward, RoutingMessages<Resume<R>>>(Forward, r),
+
+        new Case(Refresh, (ref: Refresh) => r.tell(r.current.get(), ref))
 
     ];
 

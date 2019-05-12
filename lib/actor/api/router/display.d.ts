@@ -79,6 +79,11 @@ export declare class Forward {
     constructor(message: Message);
 }
 /**
+ * Refresh
+ */
+export declare class Refresh {
+}
+/**
  * Supervisor
  *
  * This is used to contain communication between current actors and the router

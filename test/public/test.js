@@ -244,7 +244,9 @@ exports.whenRouting = function (r) {
     return [
         new router_1.DispatchCase(Resume, r),
         new router_1.MessageCase(Forward, r),
-        new case_1.Case(Refresh, function (ref) { return r.tell(r.current.get(), ref); })
+        new case_1.Case(Refresh, function (ref) {
+            return r.tell(r.current.get(), ref).select(r.routing());
+        })
     ];
 };
 /**

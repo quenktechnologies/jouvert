@@ -363,7 +363,8 @@ export const whenRouting = <R>(r: DisplayRouter<R>)
 
         new MessageCase<Forward, RoutingMessages<Resume<R>>>(Forward, r),
 
-        new Case(Refresh, (ref: Refresh) => r.tell(r.current.get(), ref))
+        new Case(Refresh, (ref: Refresh) =>
+            r.tell(r.current.get(), ref).select(r.routing()))
 
     ];
 

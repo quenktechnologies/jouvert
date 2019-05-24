@@ -1,4 +1,7 @@
+import { map } from '@quenk/noni/lib/data/record';
+import { Err } from '@quenk/noni/lib/control/error';
 import { Case } from '@quenk/potoo/lib/actor/resident/case';
+import { AddressMap } from '@quenk/potoo/lib/actor/address';
 import { Template } from '../../../../lib/app';
 import { Actor } from '../../../../lib/actor';
 import { Mock } from '../../fixtures/mock';
@@ -28,6 +31,13 @@ export class ActorImpl extends Mock implements Actor {
 
     }
 
+    spawnGroup(name: string | string[], tmpls: { [key: string]: Template }): AddressMap {
+
+        this.__record('spawnGroup', [name, tmpls]);
+        return map(tmpls, () => '?');
+
+    }
+
     tell<M>(_: string, __: M): ActorImpl {
 
         return this.__record('tell', [_, __]);
@@ -37,6 +47,13 @@ export class ActorImpl extends Mock implements Actor {
     select<T>(_: Case<T>[]): ActorImpl {
 
         return this.__record('select', [_]);
+
+    }
+
+    raise(e: Err): ActorImpl {
+
+        return this.__record('raise', [e]);
+        return this;
 
     }
 

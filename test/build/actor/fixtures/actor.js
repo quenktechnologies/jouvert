@@ -13,6 +13,7 @@ var __extends = (this && this.__extends) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
+var record_1 = require("@quenk/noni/lib/data/record");
 var mock_1 = require("../../fixtures/mock");
 var ActorImpl = /** @class */ (function (_super) {
     __extends(ActorImpl, _super);
@@ -33,11 +34,19 @@ var ActorImpl = /** @class */ (function (_super) {
         this.__record('spawn', [t]);
         return t.id;
     };
+    ActorImpl.prototype.spawnGroup = function (name, tmpls) {
+        this.__record('spawnGroup', [name, tmpls]);
+        return record_1.map(tmpls, function () { return '?'; });
+    };
     ActorImpl.prototype.tell = function (_, __) {
         return this.__record('tell', [_, __]);
     };
     ActorImpl.prototype.select = function (_) {
         return this.__record('select', [_]);
+    };
+    ActorImpl.prototype.raise = function (e) {
+        return this.__record('raise', [e]);
+        return this;
     };
     ActorImpl.prototype.kill = function (_) {
         return this.__record('kill', [_]);

@@ -1,8 +1,9 @@
+import { Err } from '@quenk/noni/lib/control/error';
 import { Api } from '@quenk/potoo/lib/actor/resident/api';
 import { Case } from '@quenk/potoo/lib/actor/resident/case';
 import { Mutable as M, Immutable as I } from '@quenk/potoo/lib/actor/resident';
-import { Template } from '@quenk/potoo/lib/actor/template';
-import { Address } from '@quenk/potoo/lib/actor/address';
+import { Templates, Template } from '@quenk/potoo/lib/actor/template';
+import { AddressMap, Address } from '@quenk/potoo/lib/actor/address';
 import { Context, App } from '../app';
 /**
  * Actor interface.
@@ -32,8 +33,10 @@ export declare class Proxy<A extends App> implements Api<Context, A> {
     constructor(instance: Api<Context, A>);
     self(): Address;
     spawn(t: Template<A>): Address;
+    spawnGroup(name: string | string[], tmpls: Templates<A>): AddressMap;
     tell<M>(actor: Address, m: M): Proxy<A>;
     select<T>(c: Case<T>[]): Proxy<A>;
+    raise(e: Err): Proxy<A>;
     kill(addr: Address): Proxy<A>;
     exit(): void;
 }

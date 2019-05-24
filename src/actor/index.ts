@@ -1,8 +1,9 @@
+import { Err } from '@quenk/noni/lib/control/error';
 import { Api } from '@quenk/potoo/lib/actor/resident/api';
 import { Case } from '@quenk/potoo/lib/actor/resident/case';
 import { Mutable as M, Immutable as I } from '@quenk/potoo/lib/actor/resident';
-import { Template } from '@quenk/potoo/lib/actor/template';
-import { Address } from '@quenk/potoo/lib/actor/address';
+import { Templates, Template } from '@quenk/potoo/lib/actor/template';
+import { AddressMap, Address } from '@quenk/potoo/lib/actor/address';
 import { Context, App } from '../app';
 
 /**
@@ -44,6 +45,12 @@ export class Proxy<A extends App> implements Api<Context, A> {
 
     }
 
+    spawnGroup(name: string | string[], tmpls: Templates<A>): AddressMap {
+
+        return this.instance.spawnGroup(name, tmpls);
+
+    }
+
     tell<M>(actor: Address, m: M): Proxy<A> {
 
         this.instance.tell(actor, m);
@@ -54,6 +61,13 @@ export class Proxy<A extends App> implements Api<Context, A> {
     select<T>(c: Case<T>[]): Proxy<A> {
 
         this.instance.select(c);
+        return this;
+
+    }
+
+    raise(e: Err): Proxy<A> {
+
+        this.instance.raise(e);
         return this;
 
     }

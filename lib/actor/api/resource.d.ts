@@ -3,6 +3,7 @@ import { Case } from '@quenk/potoo/lib/actor/resident/case';
 import { Address } from '@quenk/potoo/lib/actor/address';
 import { Agent } from '@quenk/jhr/lib/agent';
 import { Request } from '@quenk/jhr/lib/request';
+import { Response } from '@quenk/jhr/lib/response';
 import { App } from '../../app';
 import { Immutable } from '../';
 export declare const CLIENT_TAG_KEY = "$client";
@@ -13,6 +14,14 @@ export declare class Send<B> {
     client: Address;
     request: Request<B>;
     constructor(client: Address, request: Request<B>);
+}
+/**
+ * BatchSend
+ */
+export declare class BatchSend<B> {
+    client: Address;
+    requests: Request<B>[];
+    constructor(client: Address, requests: Request<B>[]);
 }
 /**
  * Aborted indicates a request did not successfully complete.
@@ -33,6 +42,14 @@ export declare class TransportError<B> {
     error: Err;
     request: Request<B>;
     constructor(error: Err, request: Request<B>);
+    readonly message: string;
+}
+/**
+ * BatchResponse
+ */
+export declare class BatchResponse<B> {
+    responses: Response<B>[];
+    constructor(responses: Response<B>[]);
 }
 /**
  * Resource represents the host server (or other http remote).
@@ -57,6 +74,7 @@ export declare class Resource<ReqRaw, ResParsed> extends Immutable<Request<ReqRa
     client: Address;
     system: App;
     constructor(agent: Agent<ReqRaw, ResParsed>, client: Address, system: App);
+    batchSend: ({ client, requests }: BatchSend<ReqRaw>) => void;
     send: ({ client, request }: Send<ReqRaw>) => void;
     transmit: (req: Request<ReqRaw>) => void;
     receive: Case<Request<ReqRaw>>[];

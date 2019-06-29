@@ -15,6 +15,7 @@ import {
 import { Response } from '@quenk/jhr/lib/response';
 import { App } from '../../app';
 import { Immutable } from '../';
+import { parallel, raise } from '@quenk/noni/lib/control/monad/future';
 
 export const CLIENT_TAG_KEY = '$client';
 
@@ -24,6 +25,15 @@ export const CLIENT_TAG_KEY = '$client';
 export class Send<B> {
 
     constructor(public client: Address, public request: Request<B>) { }
+
+}
+
+/**
+ * BatchSend
+ */
+export class BatchSend<B> {
+
+    constructor(public client: Address, public requests: Request<B>[]) { }
 
 }
 
@@ -47,6 +57,21 @@ export class Aborted<B> {
 export class TransportError<B> {
 
     constructor(public error: Err, public request: Request<B>) { }
+
+    get message() {
+
+        return this.error.message;
+
+    }
+
+}
+
+/**
+ * BatchResponse
+ */
+export class BatchResponse<B> {
+
+    constructor(public responses: Response<B>[]) { }
 
 }
 
@@ -75,6 +100,29 @@ export class Resource<ReqRaw, ResParsed,>
         public agent: Agent<ReqRaw, ResParsed>,
         public client: Address,
         public system: App) { super(system); }
+
+    batchSend = ({ client, requests }: BatchSend<ReqRaw>) => {
+
+        let { agent } = this;
+
+        let onErr = (e: Err) => {
+
+            this.tell(client, e);
+
+        };
+
+        let onSucc = (res: Response<ResParsed>[]) => {
+
+            this.tell(client, new BatchResponse(res));
+
+        }
+
+        let rs = requests.map((r: Request<ReqRaw>) =>
+            agent.send(r).catch(e => raise(new TransportError(e, r))));
+
+        parallel(rs).fork(onErr, onSucc);
+
+    }
 
     send = ({ client, request }: Send<ReqRaw>) => {
 
@@ -144,6 +192,7 @@ export class Resource<ReqRaw, ResParsed,>
     receive: Case<Request<ReqRaw>>[] = <Case<Request<ReqRaw>>[]>[
 
         new Case(Send, this.send),
+        new Case(BatchSend, this.batchSend),
         new Case(Head, this.transmit),
         new Case(Get, this.transmit),
         new Case(Post, this.transmit),

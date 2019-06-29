@@ -7,6 +7,14 @@ import { App } from '../../app';
 import { Immutable } from '../';
 export declare const CLIENT_TAG_KEY = "$client";
 /**
+ * Send
+ */
+export declare class Send<B> {
+    client: Address;
+    request: Request<B>;
+    constructor(client: Address, request: Request<B>);
+}
+/**
  * Aborted indicates a request did not successfully complete.
  *
  * This is sent to the client.
@@ -49,6 +57,7 @@ export declare class Resource<ReqRaw, ResParsed> extends Immutable<Request<ReqRa
     client: Address;
     system: App;
     constructor(agent: Agent<ReqRaw, ResParsed>, client: Address, system: App);
-    send: (req: Request<ReqRaw>) => void;
+    send: ({ client, request }: Send<ReqRaw>) => void;
+    transmit: (req: Request<ReqRaw>) => void;
     receive: Case<Request<ReqRaw>>[];
 }

@@ -19,6 +19,15 @@ import { Immutable } from '../';
 export const CLIENT_TAG_KEY = '$client';
 
 /**
+ * Send
+ */
+export class Send<B> {
+
+    constructor(public client: Address, public request: Request<B>) { }
+
+}
+
+/**
  * Aborted indicates a request did not successfully complete.
  *
  * This is sent to the client.
@@ -67,7 +76,28 @@ export class Resource<ReqRaw, ResParsed,>
         public client: Address,
         public system: App) { super(system); }
 
-    send = (req: Request<ReqRaw>) => {
+    send = ({ client, request }: Send<ReqRaw>) => {
+
+        let onErr = (e: Err) => {
+
+            this.tell(client, new TransportError(e, request));
+
+        };
+
+        let onSucc = (res: Response<ResParsed>) => {
+
+            this.tell(client, res);
+
+        }
+
+        this
+            .agent
+            .send(request)
+            .fork(onErr, onSucc);
+
+    }
+
+    transmit = (req: Request<ReqRaw>) => {
 
         let client = (isObject(req.options.tags) &&
             req.options.tags.hasOwnProperty(CLIENT_TAG_KEY)) ?
@@ -113,12 +143,13 @@ export class Resource<ReqRaw, ResParsed,>
 
     receive: Case<Request<ReqRaw>>[] = <Case<Request<ReqRaw>>[]>[
 
-        new Case(Head, this.send),
-        new Case(Get, this.send),
-        new Case(Post, this.send),
-        new Case(Put, this.send),
-        new Case(Patch, this.send),
-        new Case(Delete, this.send)
+        new Case(Send, this.send),
+        new Case(Head, this.transmit),
+        new Case(Get, this.transmit),
+        new Case(Post, this.transmit),
+        new Case(Put, this.transmit),
+        new Case(Patch, this.transmit),
+        new Case(Delete, this.transmit)
 
     ]
 

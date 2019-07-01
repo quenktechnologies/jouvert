@@ -928,6 +928,9 @@ img { max-width: 100%; }
 				<li class=" tsd-kind-method tsd-parent-kind-class">
 					<a href="_actor_index_.proxy.html#kill" class="tsd-kind-icon">kill</a>
 				</li>
+				<li class=" tsd-kind-method tsd-parent-kind-class">
+					<a href="_actor_index_.proxy.html#raise" class="tsd-kind-icon">raise</a>
+				</li>
 				<li class=" tsd-kind-method tsd-parent-kind-class tsd-has-type-parameter">
 					<a href="_actor_index_.proxy.html#select" class="tsd-kind-icon">select</a>
 				</li>
@@ -936,6 +939,9 @@ img { max-width: 100%; }
 				</li>
 				<li class=" tsd-kind-method tsd-parent-kind-class">
 					<a href="_actor_index_.proxy.html#spawn" class="tsd-kind-icon">spawn</a>
+				</li>
+				<li class=" tsd-kind-method tsd-parent-kind-class">
+					<a href="_actor_index_.proxy.html#spawngroup" class="tsd-kind-icon">spawn<wbr>Group</a>
 				</li>
 				<li class=" tsd-kind-method tsd-parent-kind-class tsd-has-type-parameter">
 					<a href="_actor_index_.proxy.html#tell" class="tsd-kind-icon">tell</a>
@@ -1000,9 +1006,11 @@ img { max-width: 100%; }
 						<ul class="tsd-index-list">
 							<li class="tsd-kind-method tsd-parent-kind-class"><a href="_actor_index_.proxy.html#exit" class="tsd-kind-icon">exit</a></li>
 							<li class="tsd-kind-method tsd-parent-kind-class"><a href="_actor_index_.proxy.html#kill" class="tsd-kind-icon">kill</a></li>
+							<li class="tsd-kind-method tsd-parent-kind-class"><a href="_actor_index_.proxy.html#raise" class="tsd-kind-icon">raise</a></li>
 							<li class="tsd-kind-method tsd-parent-kind-class tsd-has-type-parameter"><a href="_actor_index_.proxy.html#select" class="tsd-kind-icon">select</a></li>
 							<li class="tsd-kind-method tsd-parent-kind-class"><a href="_actor_index_.proxy.html#self" class="tsd-kind-icon">self</a></li>
 							<li class="tsd-kind-method tsd-parent-kind-class"><a href="_actor_index_.proxy.html#spawn" class="tsd-kind-icon">spawn</a></li>
+							<li class="tsd-kind-method tsd-parent-kind-class"><a href="_actor_index_.proxy.html#spawngroup" class="tsd-kind-icon">spawn<wbr>Group</a></li>
 							<li class="tsd-kind-method tsd-parent-kind-class tsd-has-type-parameter"><a href="_actor_index_.proxy.html#tell" class="tsd-kind-icon">tell</a></li>
 						</ul>
 					</section>
@@ -1021,7 +1029,7 @@ img { max-width: 100%; }
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/b32a4f4/lib/actor/index.ts#L31">actor/index.ts:31</a></li>
+								<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/7a2c3da/lib/actor/index.ts#L32">actor/index.ts:32</a></li>
 							</ul>
 						</aside>
 						<h4 class="tsd-parameters-title">Parameters</h4>
@@ -1043,7 +1051,7 @@ img { max-width: 100%; }
 				<div class="tsd-signature tsd-kind-icon">instance<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Api</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Context</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">A</span><span class="tsd-signature-symbol">&gt;</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/b32a4f4/lib/actor/index.ts#L33">actor/index.ts:33</a></li>
+						<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/7a2c3da/lib/actor/index.ts#L34">actor/index.ts:34</a></li>
 					</ul>
 				</aside>
 			</section>
@@ -1060,7 +1068,7 @@ img { max-width: 100%; }
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/b32a4f4/lib/actor/index.ts#L68">actor/index.ts:68</a></li>
+								<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/7a2c3da/lib/actor/index.ts#L82">actor/index.ts:82</a></li>
 							</ul>
 						</aside>
 						<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
@@ -1077,13 +1085,36 @@ img { max-width: 100%; }
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/b32a4f4/lib/actor/index.ts#L61">actor/index.ts:61</a></li>
+								<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/7a2c3da/lib/actor/index.ts#L75">actor/index.ts:75</a></li>
 							</ul>
 						</aside>
 						<h4 class="tsd-parameters-title">Parameters</h4>
 						<ul class="tsd-parameters">
 							<li>
 								<h5>addr: <span class="tsd-signature-type">Address</span></h5>
+							</li>
+						</ul>
+						<h4 class="tsd-returns-title">Returns <a href="_actor_index_.proxy.html" class="tsd-signature-type">Proxy</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">A</span><span class="tsd-signature-symbol">&gt;</span></h4>
+					</li>
+				</ul>
+			</section>
+			<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
+				<a name="raise" class="tsd-anchor"></a>
+				<h3>raise</h3>
+				<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
+					<li class="tsd-signature tsd-kind-icon">raise<span class="tsd-signature-symbol">(</span>e<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Err</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="_actor_index_.proxy.html" class="tsd-signature-type">Proxy</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">A</span><span class="tsd-signature-symbol">&gt;</span></li>
+				</ul>
+				<ul class="tsd-descriptions">
+					<li class="tsd-description">
+						<aside class="tsd-sources">
+							<ul>
+								<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/7a2c3da/lib/actor/index.ts#L68">actor/index.ts:68</a></li>
+							</ul>
+						</aside>
+						<h4 class="tsd-parameters-title">Parameters</h4>
+						<ul class="tsd-parameters">
+							<li>
+								<h5>e: <span class="tsd-signature-type">Err</span></h5>
 							</li>
 						</ul>
 						<h4 class="tsd-returns-title">Returns <a href="_actor_index_.proxy.html" class="tsd-signature-type">Proxy</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">A</span><span class="tsd-signature-symbol">&gt;</span></h4>
@@ -1100,7 +1131,7 @@ img { max-width: 100%; }
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/b32a4f4/lib/actor/index.ts#L54">actor/index.ts:54</a></li>
+								<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/7a2c3da/lib/actor/index.ts#L61">actor/index.ts:61</a></li>
 							</ul>
 						</aside>
 						<h4 class="tsd-type-parameters-title">Type parameters</h4>
@@ -1129,7 +1160,7 @@ img { max-width: 100%; }
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/b32a4f4/lib/actor/index.ts#L35">actor/index.ts:35</a></li>
+								<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/7a2c3da/lib/actor/index.ts#L36">actor/index.ts:36</a></li>
 							</ul>
 						</aside>
 						<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Address</span></h4>
@@ -1146,7 +1177,7 @@ img { max-width: 100%; }
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/b32a4f4/lib/actor/index.ts#L41">actor/index.ts:41</a></li>
+								<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/7a2c3da/lib/actor/index.ts#L42">actor/index.ts:42</a></li>
 							</ul>
 						</aside>
 						<h4 class="tsd-parameters-title">Parameters</h4>
@@ -1156,6 +1187,32 @@ img { max-width: 100%; }
 							</li>
 						</ul>
 						<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Address</span></h4>
+					</li>
+				</ul>
+			</section>
+			<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
+				<a name="spawngroup" class="tsd-anchor"></a>
+				<h3>spawn<wbr>Group</h3>
+				<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
+					<li class="tsd-signature tsd-kind-icon">spawn<wbr>Group<span class="tsd-signature-symbol">(</span>name<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">[]</span>, tmpls<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Templates</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">A</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">AddressMap</span></li>
+				</ul>
+				<ul class="tsd-descriptions">
+					<li class="tsd-description">
+						<aside class="tsd-sources">
+							<ul>
+								<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/7a2c3da/lib/actor/index.ts#L48">actor/index.ts:48</a></li>
+							</ul>
+						</aside>
+						<h4 class="tsd-parameters-title">Parameters</h4>
+						<ul class="tsd-parameters">
+							<li>
+								<h5>name: <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">[]</span></h5>
+							</li>
+							<li>
+								<h5>tmpls: <span class="tsd-signature-type">Templates</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">A</span><span class="tsd-signature-symbol">&gt;</span></h5>
+							</li>
+						</ul>
+						<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">AddressMap</span></h4>
 					</li>
 				</ul>
 			</section>
@@ -1169,7 +1226,7 @@ img { max-width: 100%; }
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/b32a4f4/lib/actor/index.ts#L47">actor/index.ts:47</a></li>
+								<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/7a2c3da/lib/actor/index.ts#L54">actor/index.ts:54</a></li>
 							</ul>
 						</aside>
 						<h4 class="tsd-type-parameters-title">Type parameters</h4>

@@ -911,9 +911,18 @@ img { max-width: 100%; }
 			<a href="_actor_api_resource_.aborted.html" class="tsd-kind-icon">Aborted</a>
 		</li>
 		<li class=" tsd-kind-class tsd-parent-kind-external-module tsd-has-type-parameter">
+			<a href="_actor_api_resource_.batchresponse.html" class="tsd-kind-icon">Batch<wbr>Response</a>
+		</li>
+		<li class=" tsd-kind-class tsd-parent-kind-external-module tsd-has-type-parameter">
+			<a href="_actor_api_resource_.batchsend.html" class="tsd-kind-icon">Batch<wbr>Send</a>
+		</li>
+		<li class=" tsd-kind-class tsd-parent-kind-external-module tsd-has-type-parameter">
 			<a href="_actor_api_resource_.resource.html" class="tsd-kind-icon">Resource</a>
 		</li>
-		<li class="current tsd-kind-class tsd-parent-kind-external-module">
+		<li class=" tsd-kind-class tsd-parent-kind-external-module tsd-has-type-parameter">
+			<a href="_actor_api_resource_.send.html" class="tsd-kind-icon">Send</a>
+		</li>
+		<li class="current tsd-kind-class tsd-parent-kind-external-module tsd-has-type-parameter">
 			<a href="_actor_api_resource_.transporterror.html" class="tsd-kind-icon">Transport<wbr>Error</a>
 			<ul>
 				<li class=" tsd-kind-constructor tsd-parent-kind-class">
@@ -922,7 +931,16 @@ img { max-width: 100%; }
 				<li class=" tsd-kind-property tsd-parent-kind-class">
 					<a href="_actor_api_resource_.transporterror.html#error" class="tsd-kind-icon">error</a>
 				</li>
+				<li class=" tsd-kind-property tsd-parent-kind-class">
+					<a href="_actor_api_resource_.transporterror.html#request" class="tsd-kind-icon">request</a>
+				</li>
+				<li class=" tsd-kind-get-signature tsd-parent-kind-class">
+					<a href="_actor_api_resource_.transporterror.html#message" class="tsd-kind-icon">message</a>
+				</li>
 			</ul>
+		</li>
+		<li class=" tsd-kind-variable tsd-parent-kind-external-module">
+			<a href="../modules/_actor_api_resource_.html#client_tag_key" class="tsd-kind-icon">CLIENT_<wbr>TAG_<wbr>KEY</a>
 		</li>
 	</ul>
 </nav>
@@ -936,6 +954,14 @@ img { max-width: 100%; }
 				<p>Indicates we were unable to send the request for some reason.
 				Example: Coors restriction.</p>
 			</div>
+		</section>
+		<section class="tsd-panel tsd-type-parameters">
+			<h3>Type parameters</h3>
+			<ul class="tsd-type-parameters">
+				<li>
+					<h4>B</h4>
+				</li>
+			</ul>
 		</section>
 		<section class="tsd-panel tsd-hierarchy">
 			<h3>Hierarchy</h3>
@@ -959,6 +985,13 @@ img { max-width: 100%; }
 						<h3>Properties</h3>
 						<ul class="tsd-index-list">
 							<li class="tsd-kind-property tsd-parent-kind-class"><a href="_actor_api_resource_.transporterror.html#error" class="tsd-kind-icon">error</a></li>
+							<li class="tsd-kind-property tsd-parent-kind-class"><a href="_actor_api_resource_.transporterror.html#request" class="tsd-kind-icon">request</a></li>
+						</ul>
+					</section>
+					<section class="tsd-index-section ">
+						<h3>Accessors</h3>
+						<ul class="tsd-index-list">
+							<li class="tsd-kind-get-signature tsd-parent-kind-class"><a href="_actor_api_resource_.transporterror.html#message" class="tsd-kind-icon">message</a></li>
 						</ul>
 					</section>
 				</div>
@@ -970,19 +1003,22 @@ img { max-width: 100%; }
 				<a name="constructor" class="tsd-anchor"></a>
 				<h3>constructor</h3>
 				<ul class="tsd-signatures tsd-kind-constructor tsd-parent-kind-class">
-					<li class="tsd-signature tsd-kind-icon">new <wbr>Transport<wbr>Error<span class="tsd-signature-symbol">(</span>error<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Err</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="_actor_api_resource_.transporterror.html" class="tsd-signature-type">TransportError</a></li>
+					<li class="tsd-signature tsd-kind-icon">new <wbr>Transport<wbr>Error<span class="tsd-signature-symbol">(</span>error<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Err</span>, request<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Request</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">B</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="_actor_api_resource_.transporterror.html" class="tsd-signature-type">TransportError</a></li>
 				</ul>
 				<ul class="tsd-descriptions">
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/b32a4f4/lib/actor/api/resource.ts#L34">actor/api/resource.ts:34</a></li>
+								<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/7a2c3da/lib/actor/api/resource.ts#L57">actor/api/resource.ts:57</a></li>
 							</ul>
 						</aside>
 						<h4 class="tsd-parameters-title">Parameters</h4>
 						<ul class="tsd-parameters">
 							<li>
 								<h5>error: <span class="tsd-signature-type">Err</span></h5>
+							</li>
+							<li>
+								<h5>request: <span class="tsd-signature-type">Request</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">B</span><span class="tsd-signature-symbol">&gt;</span></h5>
 							</li>
 						</ul>
 						<h4 class="tsd-returns-title">Returns <a href="_actor_api_resource_.transporterror.html" class="tsd-signature-type">TransportError</a></h4>
@@ -998,7 +1034,30 @@ img { max-width: 100%; }
 				<div class="tsd-signature tsd-kind-icon">error<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Err</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/b32a4f4/lib/actor/api/resource.ts#L36">actor/api/resource.ts:36</a></li>
+						<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/7a2c3da/lib/actor/api/resource.ts#L59">actor/api/resource.ts:59</a></li>
+					</ul>
+				</aside>
+			</section>
+			<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class">
+				<a name="request" class="tsd-anchor"></a>
+				<h3>request</h3>
+				<div class="tsd-signature tsd-kind-icon">request<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Request</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">B</span><span class="tsd-signature-symbol">&gt;</span></div>
+				<aside class="tsd-sources">
+					<ul>
+						<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/7a2c3da/lib/actor/api/resource.ts#L59">actor/api/resource.ts:59</a></li>
+					</ul>
+				</aside>
+			</section>
+		</section>
+		<section class="tsd-panel-group tsd-member-group ">
+			<h2>Accessors</h2>
+			<section class="tsd-panel tsd-member tsd-kind-get-signature tsd-parent-kind-class">
+				<a name="message" class="tsd-anchor"></a>
+				<h3>message</h3>
+				<div class="tsd-signature tsd-kind-icon">message<span class="tsd-signature-symbol">:</span> </div>
+				<aside class="tsd-sources">
+					<ul>
+						<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/7a2c3da/lib/actor/api/resource.ts#L61">actor/api/resource.ts:61</a></li>
 					</ul>
 				</aside>
 			</section>

@@ -940,6 +940,9 @@ img { max-width: 100%; }
 				<li class=" tsd-kind-method tsd-parent-kind-interface tsd-is-inherited">
 					<a href="_actor_interact_index_.resumed.html#kill" class="tsd-kind-icon">kill</a>
 				</li>
+				<li class=" tsd-kind-method tsd-parent-kind-interface tsd-is-inherited">
+					<a href="_actor_interact_index_.resumed.html#raise" class="tsd-kind-icon">raise</a>
+				</li>
 				<li class=" tsd-kind-method tsd-parent-kind-interface">
 					<a href="_actor_interact_index_.resumed.html#resumed" class="tsd-kind-icon">resumed</a>
 				</li>
@@ -951,6 +954,9 @@ img { max-width: 100%; }
 				</li>
 				<li class=" tsd-kind-method tsd-parent-kind-interface tsd-is-inherited">
 					<a href="_actor_interact_index_.resumed.html#spawn" class="tsd-kind-icon">spawn</a>
+				</li>
+				<li class=" tsd-kind-method tsd-parent-kind-interface tsd-is-inherited">
+					<a href="_actor_interact_index_.resumed.html#spawngroup" class="tsd-kind-icon">spawn<wbr>Group</a>
 				</li>
 				<li class=" tsd-kind-method tsd-parent-kind-interface tsd-has-type-parameter tsd-is-inherited">
 					<a href="_actor_interact_index_.resumed.html#tell" class="tsd-kind-icon">tell</a>
@@ -1064,10 +1070,12 @@ img { max-width: 100%; }
 						<ul class="tsd-index-list">
 							<li class="tsd-kind-method tsd-parent-kind-interface tsd-is-inherited"><a href="_actor_interact_index_.resumed.html#exit" class="tsd-kind-icon">exit</a></li>
 							<li class="tsd-kind-method tsd-parent-kind-interface tsd-is-inherited"><a href="_actor_interact_index_.resumed.html#kill" class="tsd-kind-icon">kill</a></li>
+							<li class="tsd-kind-method tsd-parent-kind-interface tsd-is-inherited"><a href="_actor_interact_index_.resumed.html#raise" class="tsd-kind-icon">raise</a></li>
 							<li class="tsd-kind-method tsd-parent-kind-interface"><a href="_actor_interact_index_.resumed.html#resumed" class="tsd-kind-icon">resumed</a></li>
 							<li class="tsd-kind-method tsd-parent-kind-interface tsd-has-type-parameter tsd-is-inherited"><a href="_actor_interact_index_.resumed.html#select" class="tsd-kind-icon">select</a></li>
 							<li class="tsd-kind-method tsd-parent-kind-interface tsd-is-inherited"><a href="_actor_interact_index_.resumed.html#self" class="tsd-kind-icon">self</a></li>
 							<li class="tsd-kind-method tsd-parent-kind-interface tsd-is-inherited"><a href="_actor_interact_index_.resumed.html#spawn" class="tsd-kind-icon">spawn</a></li>
+							<li class="tsd-kind-method tsd-parent-kind-interface tsd-is-inherited"><a href="_actor_interact_index_.resumed.html#spawngroup" class="tsd-kind-icon">spawn<wbr>Group</a></li>
 							<li class="tsd-kind-method tsd-parent-kind-interface tsd-has-type-parameter tsd-is-inherited"><a href="_actor_interact_index_.resumed.html#tell" class="tsd-kind-icon">tell</a></li>
 						</ul>
 					</section>
@@ -1087,7 +1095,7 @@ img { max-width: 100%; }
 						<aside class="tsd-sources">
 							<p>Inherited from Api.exit</p>
 							<ul>
-								<li>Defined in /home/master/Documents/code/development/node/jouvert/node_modules/@quenk/potoo/lib/actor/resident/api.ts:42</li>
+								<li>Defined in /home/master/Documents/code/development/node/jouvert/node_modules/@quenk/potoo/lib/actor/resident/api.ts:53</li>
 							</ul>
 						</aside>
 						<div class="tsd-comment tsd-typography">
@@ -1110,7 +1118,7 @@ img { max-width: 100%; }
 						<aside class="tsd-sources">
 							<p>Inherited from Api.kill</p>
 							<ul>
-								<li>Defined in /home/master/Documents/code/development/node/jouvert/node_modules/@quenk/potoo/lib/actor/resident/api.ts:37</li>
+								<li>Defined in /home/master/Documents/code/development/node/jouvert/node_modules/@quenk/potoo/lib/actor/resident/api.ts:48</li>
 							</ul>
 						</aside>
 						<div class="tsd-comment tsd-typography">
@@ -1128,6 +1136,35 @@ img { max-width: 100%; }
 					</li>
 				</ul>
 			</section>
+			<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-interface tsd-is-inherited">
+				<a name="raise" class="tsd-anchor"></a>
+				<h3>raise</h3>
+				<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-interface tsd-is-inherited">
+					<li class="tsd-signature tsd-kind-icon">raise<span class="tsd-signature-symbol">(</span>e<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Err</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Api</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Context</span><span class="tsd-signature-symbol">, </span><a href="_app_index_.app.html" class="tsd-signature-type">App</a><span class="tsd-signature-symbol">&gt;</span></li>
+				</ul>
+				<ul class="tsd-descriptions">
+					<li class="tsd-description">
+						<aside class="tsd-sources">
+							<p>Inherited from Api.raise</p>
+							<ul>
+								<li>Defined in /home/master/Documents/code/development/node/jouvert/node_modules/@quenk/potoo/lib/actor/resident/api.ts:43</li>
+							</ul>
+						</aside>
+						<div class="tsd-comment tsd-typography">
+							<div class="lead">
+								<p>raise an error triggering the systems error handling mechanism.</p>
+							</div>
+						</div>
+						<h4 class="tsd-parameters-title">Parameters</h4>
+						<ul class="tsd-parameters">
+							<li>
+								<h5>e: <span class="tsd-signature-type">Err</span></h5>
+							</li>
+						</ul>
+						<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Api</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Context</span><span class="tsd-signature-symbol">, </span><a href="_app_index_.app.html" class="tsd-signature-type">App</a><span class="tsd-signature-symbol">&gt;</span></h4>
+					</li>
+				</ul>
+			</section>
 			<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-interface">
 				<a name="resumed" class="tsd-anchor"></a>
 				<h3>resumed</h3>
@@ -1138,7 +1175,7 @@ img { max-width: 100%; }
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/b32a4f4/lib/actor/interact/index.ts#L37">actor/interact/index.ts:37</a></li>
+								<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/7a2c3da/lib/actor/interact/index.ts#L37">actor/interact/index.ts:37</a></li>
 							</ul>
 						</aside>
 						<div class="tsd-comment tsd-typography">
@@ -1167,7 +1204,7 @@ img { max-width: 100%; }
 						<aside class="tsd-sources">
 							<p>Inherited from Api.select</p>
 							<ul>
-								<li>Defined in /home/master/Documents/code/development/node/jouvert/node_modules/@quenk/potoo/lib/actor/resident/api.ts:32</li>
+								<li>Defined in /home/master/Documents/code/development/node/jouvert/node_modules/@quenk/potoo/lib/actor/resident/api.ts:38</li>
 							</ul>
 						</aside>
 						<div class="tsd-comment tsd-typography">
@@ -1203,7 +1240,7 @@ img { max-width: 100%; }
 						<aside class="tsd-sources">
 							<p>Inherited from Api.self</p>
 							<ul>
-								<li>Defined in /home/master/Documents/code/development/node/jouvert/node_modules/@quenk/potoo/lib/actor/resident/api.ts:16</li>
+								<li>Defined in /home/master/Documents/code/development/node/jouvert/node_modules/@quenk/potoo/lib/actor/resident/api.ts:17</li>
 							</ul>
 						</aside>
 						<div class="tsd-comment tsd-typography">
@@ -1226,7 +1263,7 @@ img { max-width: 100%; }
 						<aside class="tsd-sources">
 							<p>Inherited from Api.spawn</p>
 							<ul>
-								<li>Defined in /home/master/Documents/code/development/node/jouvert/node_modules/@quenk/potoo/lib/actor/resident/api.ts:21</li>
+								<li>Defined in /home/master/Documents/code/development/node/jouvert/node_modules/@quenk/potoo/lib/actor/resident/api.ts:22</li>
 							</ul>
 						</aside>
 						<div class="tsd-comment tsd-typography">
@@ -1244,6 +1281,38 @@ img { max-width: 100%; }
 					</li>
 				</ul>
 			</section>
+			<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-interface tsd-is-inherited">
+				<a name="spawngroup" class="tsd-anchor"></a>
+				<h3>spawn<wbr>Group</h3>
+				<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-interface tsd-is-inherited">
+					<li class="tsd-signature tsd-kind-icon">spawn<wbr>Group<span class="tsd-signature-symbol">(</span>name<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">[]</span>, tmpls<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Templates</span><span class="tsd-signature-symbol">&lt;</span><a href="_app_index_.app.html" class="tsd-signature-type">App</a><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">AddressMap</span></li>
+				</ul>
+				<ul class="tsd-descriptions">
+					<li class="tsd-description">
+						<aside class="tsd-sources">
+							<p>Inherited from Api.spawnGroup</p>
+							<ul>
+								<li>Defined in /home/master/Documents/code/development/node/jouvert/node_modules/@quenk/potoo/lib/actor/resident/api.ts:27</li>
+							</ul>
+						</aside>
+						<div class="tsd-comment tsd-typography">
+							<div class="lead">
+								<p>spawnGroup spawns a map of actors assigning them to the specified group.</p>
+							</div>
+						</div>
+						<h4 class="tsd-parameters-title">Parameters</h4>
+						<ul class="tsd-parameters">
+							<li>
+								<h5>name: <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">[]</span></h5>
+							</li>
+							<li>
+								<h5>tmpls: <span class="tsd-signature-type">Templates</span><span class="tsd-signature-symbol">&lt;</span><a href="_app_index_.app.html" class="tsd-signature-type">App</a><span class="tsd-signature-symbol">&gt;</span></h5>
+							</li>
+						</ul>
+						<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">AddressMap</span></h4>
+					</li>
+				</ul>
+			</section>
 			<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-interface tsd-has-type-parameter tsd-is-inherited">
 				<a name="tell" class="tsd-anchor"></a>
 				<h3>tell</h3>
@@ -1255,7 +1324,7 @@ img { max-width: 100%; }
 						<aside class="tsd-sources">
 							<p>Inherited from Api.tell</p>
 							<ul>
-								<li>Defined in /home/master/Documents/code/development/node/jouvert/node_modules/@quenk/potoo/lib/actor/resident/api.ts:26</li>
+								<li>Defined in /home/master/Documents/code/development/node/jouvert/node_modules/@quenk/potoo/lib/actor/resident/api.ts:32</li>
 							</ul>
 						</aside>
 						<div class="tsd-comment tsd-typography">

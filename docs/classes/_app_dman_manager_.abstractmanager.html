@@ -914,19 +914,19 @@ img { max-width: 100%; }
 					<a href="_app_dman_manager_.abstractmanager.html#constructor" class="tsd-kind-icon">constructor</a>
 				</li>
 				<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-inherited">
-					<a href="_app_dman_manager_.abstractmanager.html#killgroup" class="tsd-kind-icon">kill<wbr>Group</a>
+					<a href="_app_dman_manager_.abstractmanager.html#contentloading" class="tsd-kind-icon">content<wbr>Loading</a>
 				</li>
 				<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-inherited">
-					<a href="_app_dman_manager_.abstractmanager.html#preload" class="tsd-kind-icon">preload</a>
+					<a href="_app_dman_manager_.abstractmanager.html#group" class="tsd-kind-icon">group</a>
+				</li>
+				<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-inherited">
+					<a href="_app_dman_manager_.abstractmanager.html#prefetch" class="tsd-kind-icon">prefetch</a>
 				</li>
 				<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-inherited">
 					<a href="_app_dman_manager_.abstractmanager.html#receive" class="tsd-kind-icon">receive</a>
 				</li>
 				<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-inherited">
 					<a href="_app_dman_manager_.abstractmanager.html#system" class="tsd-kind-icon">system</a>
-				</li>
-				<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-inherited">
-					<a href="_app_dman_manager_.abstractmanager.html#tmpview" class="tsd-kind-icon">tmpview</a>
 				</li>
 				<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
 					<a href="_app_dman_manager_.abstractmanager.html#accept" class="tsd-kind-icon">accept</a>
@@ -965,6 +965,9 @@ img { max-width: 100%; }
 					<a href="_app_dman_manager_.abstractmanager.html#notify" class="tsd-kind-icon">notify</a>
 				</li>
 				<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
+					<a href="_app_dman_manager_.abstractmanager.html#raise" class="tsd-kind-icon">raise</a>
+				</li>
+				<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
 					<a href="_app_dman_manager_.abstractmanager.html#resumed" class="tsd-kind-icon">resumed</a>
 				</li>
 				<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
@@ -978,6 +981,9 @@ img { max-width: 100%; }
 				</li>
 				<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
 					<a href="_app_dman_manager_.abstractmanager.html#spawn" class="tsd-kind-icon">spawn</a>
+				</li>
+				<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
+					<a href="_app_dman_manager_.abstractmanager.html#spawngroup" class="tsd-kind-icon">spawn<wbr>Group</a>
 				</li>
 				<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
 					<a href="_app_dman_manager_.abstractmanager.html#stop" class="tsd-kind-icon">stop</a>
@@ -1017,13 +1023,16 @@ img { max-width: 100%; }
 				<li>
 					<h4>Body</h4>
 				</li>
+				<li>
+					<h4>Resumed</h4>
+				</li>
 			</ul>
 		</section>
 		<section class="tsd-panel tsd-hierarchy">
 			<h3>Hierarchy</h3>
 			<ul class="tsd-hierarchy">
 				<li>
-					<a href="_app_dman_index_.abstractworkflow.html" class="tsd-signature-type">AbstractWorkflow</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Req</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">Body</span><span class="tsd-signature-symbol">&gt;</span>
+					<a href="_app_dman_index_.abstractworkflow.html" class="tsd-signature-type">AbstractWorkflow</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Req</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">Body</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">Resumed</span><span class="tsd-signature-symbol">&gt;</span>
 					<ul class="tsd-hierarchy">
 						<li>
 							<span class="target">AbstractManager</span>
@@ -1036,7 +1045,7 @@ img { max-width: 100%; }
 			<h3>Implements</h3>
 			<ul class="tsd-hierarchy">
 				<li><span class="tsd-signature-type">Resident</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Context</span><span class="tsd-signature-symbol">, </span><a href="../interfaces/_app_index_.app.html" class="tsd-signature-type">App</a><span class="tsd-signature-symbol">&gt;</span></li>
-				<li><a href="../interfaces/_app_dman_index_.workflow.html" class="tsd-signature-type">Workflow</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Req</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">Body</span><span class="tsd-signature-symbol">&gt;</span></li>
+				<li><a href="../interfaces/_app_dman_index_.workflow.html" class="tsd-signature-type">Workflow</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Req</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">Body</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">Resumed</span><span class="tsd-signature-symbol">&gt;</span></li>
 			</ul>
 		</section>
 		<section class="tsd-panel-group tsd-index-group">
@@ -1052,11 +1061,11 @@ img { max-width: 100%; }
 					<section class="tsd-index-section tsd-is-inherited">
 						<h3>Properties</h3>
 						<ul class="tsd-index-list">
-							<li class="tsd-kind-property tsd-parent-kind-class tsd-is-inherited"><a href="_app_dman_manager_.abstractmanager.html#killgroup" class="tsd-kind-icon">kill<wbr>Group</a></li>
-							<li class="tsd-kind-property tsd-parent-kind-class tsd-is-inherited"><a href="_app_dman_manager_.abstractmanager.html#preload" class="tsd-kind-icon">preload</a></li>
+							<li class="tsd-kind-property tsd-parent-kind-class tsd-is-inherited"><a href="_app_dman_manager_.abstractmanager.html#contentloading" class="tsd-kind-icon">content<wbr>Loading</a></li>
+							<li class="tsd-kind-property tsd-parent-kind-class tsd-is-inherited"><a href="_app_dman_manager_.abstractmanager.html#group" class="tsd-kind-icon">group</a></li>
+							<li class="tsd-kind-property tsd-parent-kind-class tsd-is-inherited"><a href="_app_dman_manager_.abstractmanager.html#prefetch" class="tsd-kind-icon">prefetch</a></li>
 							<li class="tsd-kind-property tsd-parent-kind-class tsd-is-inherited"><a href="_app_dman_manager_.abstractmanager.html#receive" class="tsd-kind-icon">receive</a></li>
 							<li class="tsd-kind-property tsd-parent-kind-class tsd-is-inherited"><a href="_app_dman_manager_.abstractmanager.html#system" class="tsd-kind-icon">system</a></li>
-							<li class="tsd-kind-property tsd-parent-kind-class tsd-is-inherited"><a href="_app_dman_manager_.abstractmanager.html#tmpview" class="tsd-kind-icon">tmpview</a></li>
 						</ul>
 					</section>
 					<section class="tsd-index-section tsd-is-inherited">
@@ -1074,11 +1083,13 @@ img { max-width: 100%; }
 							<li class="tsd-kind-method tsd-parent-kind-class tsd-is-overwrite tsd-is-inherited"><a href="_app_dman_manager_.abstractmanager.html#init" class="tsd-kind-icon">init</a></li>
 							<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="_app_dman_manager_.abstractmanager.html#kill" class="tsd-kind-icon">kill</a></li>
 							<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="_app_dman_manager_.abstractmanager.html#notify" class="tsd-kind-icon">notify</a></li>
+							<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="_app_dman_manager_.abstractmanager.html#raise" class="tsd-kind-icon">raise</a></li>
 							<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="_app_dman_manager_.abstractmanager.html#resumed" class="tsd-kind-icon">resumed</a></li>
 							<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="_app_dman_manager_.abstractmanager.html#run" class="tsd-kind-icon">run</a></li>
 							<li class="tsd-kind-method tsd-parent-kind-class tsd-has-type-parameter tsd-is-overwrite tsd-is-inherited"><a href="_app_dman_manager_.abstractmanager.html#select" class="tsd-kind-icon">select</a></li>
 							<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="_app_dman_manager_.abstractmanager.html#self" class="tsd-kind-icon">self</a></li>
 							<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="_app_dman_manager_.abstractmanager.html#spawn" class="tsd-kind-icon">spawn</a></li>
+							<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="_app_dman_manager_.abstractmanager.html#spawngroup" class="tsd-kind-icon">spawn<wbr>Group</a></li>
 							<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="_app_dman_manager_.abstractmanager.html#stop" class="tsd-kind-icon">stop</a></li>
 							<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="_app_dman_manager_.abstractmanager.html#suspended" class="tsd-kind-icon">suspended</a></li>
 							<li class="tsd-kind-method tsd-parent-kind-class tsd-has-type-parameter tsd-is-inherited"><a href="_app_dman_manager_.abstractmanager.html#tell" class="tsd-kind-icon">tell</a></li>
@@ -1100,7 +1111,7 @@ img { max-width: 100%; }
 						<aside class="tsd-sources">
 							<p>Inherited from AbstractResident.__constructor</p>
 							<ul>
-								<li>Defined in /home/master/Documents/code/development/node/jouvert/node_modules/@quenk/potoo/lib/actor/resident/index.ts:31</li>
+								<li>Defined in /home/master/Documents/code/development/node/jouvert/node_modules/@quenk/potoo/lib/actor/resident/index.ts:45</li>
 							</ul>
 						</aside>
 						<h4 class="tsd-parameters-title">Parameters</h4>
@@ -1117,36 +1128,54 @@ img { max-width: 100%; }
 		<section class="tsd-panel-group tsd-member-group tsd-is-inherited">
 			<h2>Properties</h2>
 			<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-inherited">
-				<a name="killgroup" class="tsd-anchor"></a>
-				<h3>kill<wbr>Group</h3>
-				<div class="tsd-signature tsd-kind-icon">kill<wbr>Group<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Maybe</span><span class="tsd-signature-symbol">&lt;</span><a href="../modules/_app_dman_index_.html#group" class="tsd-signature-type">Group</a><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol"> =&nbsp;nothing()</span></div>
+				<a name="contentloading" class="tsd-anchor"></a>
+				<h3><span class="tsd-flag ts-flagAbstract">Abstract</span> content<wbr>Loading</h3>
+				<div class="tsd-signature tsd-kind-icon">content<wbr>Loading<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Address</span></div>
 				<aside class="tsd-sources">
-					<p>Inherited from <a href="_app_dman_index_.abstractworkflow.html">AbstractWorkflow</a>.<a href="_app_dman_index_.abstractworkflow.html#killgroup">killGroup</a></p>
+					<p>Inherited from <a href="_app_dman_index_.abstractworkflow.html">AbstractWorkflow</a>.<a href="_app_dman_index_.abstractworkflow.html#contentloading">contentLoading</a></p>
 					<ul>
-						<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/b32a4f4/lib/app/dman/index.ts#L111">app/dman/index.ts:111</a></li>
+						<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/7a2c3da/lib/app/dman/index.ts#L128">app/dman/index.ts:128</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-comment tsd-typography">
 					<div class="lead">
-						<p>killGroup if provided is the name of a group of actors to kill
+						<p>contentLoading is the address of the actor that streams the initial
+						view while we load data.</p>
+					</div>
+					<p>It should be spawned in the beforeFetch() hook.</p>
+				</div>
+			</section>
+			<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-inherited">
+				<a name="group" class="tsd-anchor"></a>
+				<h3><span class="tsd-flag ts-flagAbstract">Abstract</span> group</h3>
+				<div class="tsd-signature tsd-kind-icon">group<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Maybe</span><span class="tsd-signature-symbol">&lt;</span><a href="../modules/_app_dman_index_.html#group" class="tsd-signature-type">Group</a><span class="tsd-signature-symbol">&gt;</span></div>
+				<aside class="tsd-sources">
+					<p>Inherited from <a href="_app_dman_index_.abstractworkflow.html">AbstractWorkflow</a>.<a href="_app_dman_index_.abstractworkflow.html#group">group</a></p>
+					<ul>
+						<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/7a2c3da/lib/app/dman/index.ts#L112">app/dman/index.ts:112</a></li>
+					</ul>
+				</aside>
+				<div class="tsd-comment tsd-typography">
+					<div class="lead">
+						<p>group if provided is the name of a group of actors to stop
 						each time the AbstractWorkflow suspends.</p>
 					</div>
 					<p>Use it to kill supporting actors that are respawnend on each resume.</p>
 				</div>
 			</section>
 			<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-inherited">
-				<a name="preload" class="tsd-anchor"></a>
-				<h3>preload</h3>
-				<div class="tsd-signature tsd-kind-icon">preload<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Address</span><span class="tsd-signature-symbol"> =&nbsp;&quot;?&quot;</span></div>
+				<a name="prefetch" class="tsd-anchor"></a>
+				<h3><span class="tsd-flag ts-flagAbstract">Abstract</span> prefetch</h3>
+				<div class="tsd-signature tsd-kind-icon">prefetch<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Address</span></div>
 				<aside class="tsd-sources">
-					<p>Inherited from <a href="_app_dman_index_.abstractworkflow.html">AbstractWorkflow</a>.<a href="_app_dman_index_.abstractworkflow.html#preload">preload</a></p>
+					<p>Inherited from <a href="_app_dman_index_.abstractworkflow.html">AbstractWorkflow</a>.<a href="_app_dman_index_.abstractworkflow.html#prefetch">prefetch</a></p>
 					<ul>
-						<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/b32a4f4/lib/app/dman/index.ts#L119">app/dman/index.ts:119</a></li>
+						<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/7a2c3da/lib/app/dman/index.ts#L120">app/dman/index.ts:120</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-comment tsd-typography">
 					<div class="lead">
-						<p>preload is the address of the actor that does the initial fetching
+						<p>prefetch is the address of the actor that does the initial fetching
 						of data.</p>
 					</div>
 					<p>It should be spawned in the beforeFetch() hook.</p>
@@ -1159,7 +1188,7 @@ img { max-width: 100%; }
 				<aside class="tsd-sources">
 					<p>Inherited from Mutable.receive</p>
 					<ul>
-						<li>Defined in /home/master/Documents/code/development/node/jouvert/node_modules/@quenk/potoo/lib/actor/resident/index.ts:150</li>
+						<li>Defined in /home/master/Documents/code/development/node/jouvert/node_modules/@quenk/potoo/lib/actor/resident/index.ts:177</li>
 					</ul>
 				</aside>
 			</section>
@@ -1170,27 +1199,9 @@ img { max-width: 100%; }
 				<aside class="tsd-sources">
 					<p>Inherited from AbstractResident.system</p>
 					<ul>
-						<li>Defined in /home/master/Documents/code/development/node/jouvert/node_modules/@quenk/potoo/lib/actor/resident/index.ts:33</li>
+						<li>Defined in /home/master/Documents/code/development/node/jouvert/node_modules/@quenk/potoo/lib/actor/resident/index.ts:47</li>
 					</ul>
 				</aside>
-			</section>
-			<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-inherited">
-				<a name="tmpview" class="tsd-anchor"></a>
-				<h3>tmpview</h3>
-				<div class="tsd-signature tsd-kind-icon">tmpview<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Address</span><span class="tsd-signature-symbol"> =&nbsp;&quot;?&quot;</span></div>
-				<aside class="tsd-sources">
-					<p>Inherited from <a href="_app_dman_index_.abstractworkflow.html">AbstractWorkflow</a>.<a href="_app_dman_index_.abstractworkflow.html#tmpview">tmpview</a></p>
-					<ul>
-						<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/b32a4f4/lib/app/dman/index.ts#L127">app/dman/index.ts:127</a></li>
-					</ul>
-				</aside>
-				<div class="tsd-comment tsd-typography">
-					<div class="lead">
-						<p>tmpview is the address of the actor that streams the initial
-						view while we load data.</p>
-					</div>
-					<p>It should be spawned in the beforeFetch() hook.</p>
-				</div>
 			</section>
 		</section>
 		<section class="tsd-panel-group tsd-member-group tsd-is-inherited">
@@ -1206,7 +1217,7 @@ img { max-width: 100%; }
 						<aside class="tsd-sources">
 							<p>Inherited from AbstractResident.accept</p>
 							<ul>
-								<li>Defined in /home/master/Documents/code/development/node/jouvert/node_modules/@quenk/potoo/lib/actor/resident/index.ts:53</li>
+								<li>Defined in /home/master/Documents/code/development/node/jouvert/node_modules/@quenk/potoo/lib/actor/resident/index.ts:67</li>
 							</ul>
 						</aside>
 						<h4 class="tsd-parameters-title">Parameters</h4>
@@ -1223,7 +1234,7 @@ img { max-width: 100%; }
 				<a name="afterfetchfinisherror" class="tsd-anchor"></a>
 				<h3><span class="tsd-flag ts-flagAbstract">Abstract</span> after<wbr>Fetch<wbr>Finish<wbr>Error</h3>
 				<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
-					<li class="tsd-signature tsd-kind-icon">after<wbr>Fetch<wbr>Finish<wbr>Error<span class="tsd-signature-symbol">(</span>r<span class="tsd-signature-symbol">: </span><a href="_app_dman_service_fetch_.fetchfinisherror.html" class="tsd-signature-type">FetchFinishError</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="_app_dman_index_.abstractworkflow.html" class="tsd-signature-type">AbstractWorkflow</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Req</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">Body</span><span class="tsd-signature-symbol">&gt;</span></li>
+					<li class="tsd-signature tsd-kind-icon">after<wbr>Fetch<wbr>Finish<wbr>Error<span class="tsd-signature-symbol">(</span>r<span class="tsd-signature-symbol">: </span><a href="_app_dman_service_fetch_.fetchfinisherror.html" class="tsd-signature-type">FetchFinishError</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="_app_dman_index_.abstractworkflow.html" class="tsd-signature-type">AbstractWorkflow</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Req</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">Body</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">Resumed</span><span class="tsd-signature-symbol">&gt;</span></li>
 				</ul>
 				<ul class="tsd-descriptions">
 					<li class="tsd-description">
@@ -1231,7 +1242,7 @@ img { max-width: 100%; }
 							<p>Implementation of <a href="../interfaces/_app_dman_index_.workflow.html">Workflow</a>.<a href="../interfaces/_app_dman_index_.workflow.html#afterfetchfinisherror">afterFetchFinishError</a></p>
 							<p>Inherited from <a href="_app_dman_index_.abstractworkflow.html">AbstractWorkflow</a>.<a href="_app_dman_index_.abstractworkflow.html#afterfetchfinisherror">afterFetchFinishError</a></p>
 							<ul>
-								<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/b32a4f4/lib/app/dman/index.ts#L152">app/dman/index.ts:152</a></li>
+								<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/7a2c3da/lib/app/dman/index.ts#L158">app/dman/index.ts:158</a></li>
 							</ul>
 						</aside>
 						<div class="tsd-comment tsd-typography">
@@ -1245,7 +1256,7 @@ img { max-width: 100%; }
 								<h5>r: <a href="_app_dman_service_fetch_.fetchfinisherror.html" class="tsd-signature-type">FetchFinishError</a></h5>
 							</li>
 						</ul>
-						<h4 class="tsd-returns-title">Returns <a href="_app_dman_index_.abstractworkflow.html" class="tsd-signature-type">AbstractWorkflow</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Req</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">Body</span><span class="tsd-signature-symbol">&gt;</span></h4>
+						<h4 class="tsd-returns-title">Returns <a href="_app_dman_index_.abstractworkflow.html" class="tsd-signature-type">AbstractWorkflow</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Req</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">Body</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">Resumed</span><span class="tsd-signature-symbol">&gt;</span></h4>
 					</li>
 				</ul>
 			</section>
@@ -1253,7 +1264,7 @@ img { max-width: 100%; }
 				<a name="afterfetchfinishok" class="tsd-anchor"></a>
 				<h3><span class="tsd-flag ts-flagAbstract">Abstract</span> after<wbr>Fetch<wbr>Finish<wbr>Ok</h3>
 				<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
-					<li class="tsd-signature tsd-kind-icon">after<wbr>Fetch<wbr>Finish<wbr>Ok<span class="tsd-signature-symbol">(</span>r<span class="tsd-signature-symbol">: </span><a href="_app_dman_service_fetch_.fetchfinishok.html" class="tsd-signature-type">FetchFinishOk</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Body</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="_app_dman_index_.abstractworkflow.html" class="tsd-signature-type">AbstractWorkflow</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Req</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">Body</span><span class="tsd-signature-symbol">&gt;</span></li>
+					<li class="tsd-signature tsd-kind-icon">after<wbr>Fetch<wbr>Finish<wbr>Ok<span class="tsd-signature-symbol">(</span>r<span class="tsd-signature-symbol">: </span><a href="_app_dman_service_fetch_.fetchfinishok.html" class="tsd-signature-type">FetchFinishOk</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Body</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="_app_dman_index_.abstractworkflow.html" class="tsd-signature-type">AbstractWorkflow</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Req</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">Body</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">Resumed</span><span class="tsd-signature-symbol">&gt;</span></li>
 				</ul>
 				<ul class="tsd-descriptions">
 					<li class="tsd-description">
@@ -1261,7 +1272,7 @@ img { max-width: 100%; }
 							<p>Implementation of <a href="../interfaces/_app_dman_index_.workflow.html">Workflow</a>.<a href="../interfaces/_app_dman_index_.workflow.html#afterfetchfinishok">afterFetchFinishOk</a></p>
 							<p>Inherited from <a href="_app_dman_index_.abstractworkflow.html">AbstractWorkflow</a>.<a href="_app_dman_index_.abstractworkflow.html#afterfetchfinishok">afterFetchFinishOk</a></p>
 							<ul>
-								<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/b32a4f4/lib/app/dman/index.ts#L158">app/dman/index.ts:158</a></li>
+								<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/7a2c3da/lib/app/dman/index.ts#L164">app/dman/index.ts:164</a></li>
 							</ul>
 						</aside>
 						<div class="tsd-comment tsd-typography">
@@ -1275,7 +1286,7 @@ img { max-width: 100%; }
 								<h5>r: <a href="_app_dman_service_fetch_.fetchfinishok.html" class="tsd-signature-type">FetchFinishOk</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Body</span><span class="tsd-signature-symbol">&gt;</span></h5>
 							</li>
 						</ul>
-						<h4 class="tsd-returns-title">Returns <a href="_app_dman_index_.abstractworkflow.html" class="tsd-signature-type">AbstractWorkflow</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Req</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">Body</span><span class="tsd-signature-symbol">&gt;</span></h4>
+						<h4 class="tsd-returns-title">Returns <a href="_app_dman_index_.abstractworkflow.html" class="tsd-signature-type">AbstractWorkflow</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Req</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">Body</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">Resumed</span><span class="tsd-signature-symbol">&gt;</span></h4>
 					</li>
 				</ul>
 			</section>
@@ -1283,7 +1294,7 @@ img { max-width: 100%; }
 				<a name="afterformaborted" class="tsd-anchor"></a>
 				<h3>after<wbr>Form<wbr>Aborted</h3>
 				<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
-					<li class="tsd-signature tsd-kind-icon">after<wbr>Form<wbr>Aborted<span class="tsd-signature-symbol">(</span>_<span class="tsd-signature-symbol">: </span><a href="_app_dman_service_form_.formaborted.html" class="tsd-signature-type">FormAborted</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="_app_dman_index_.abstractworkflow.html" class="tsd-signature-type">AbstractWorkflow</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Req</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">Body</span><span class="tsd-signature-symbol">&gt;</span></li>
+					<li class="tsd-signature tsd-kind-icon">after<wbr>Form<wbr>Aborted<span class="tsd-signature-symbol">(</span>_<span class="tsd-signature-symbol">: </span><a href="_app_dman_service_form_.formaborted.html" class="tsd-signature-type">FormAborted</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="_app_dman_index_.abstractworkflow.html" class="tsd-signature-type">AbstractWorkflow</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Req</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">Body</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">Resumed</span><span class="tsd-signature-symbol">&gt;</span></li>
 				</ul>
 				<ul class="tsd-descriptions">
 					<li class="tsd-description">
@@ -1291,7 +1302,7 @@ img { max-width: 100%; }
 							<p>Implementation of <a href="../interfaces/_app_dman_index_.workflow.html">Workflow</a>.<a href="../interfaces/_app_dman_index_.workflow.html#afterformaborted">afterFormAborted</a></p>
 							<p>Inherited from <a href="_app_dman_index_.abstractworkflow.html">AbstractWorkflow</a>.<a href="_app_dman_index_.abstractworkflow.html#afterformaborted">afterFormAborted</a></p>
 							<ul>
-								<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/b32a4f4/lib/app/dman/index.ts#L164">app/dman/index.ts:164</a></li>
+								<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/7a2c3da/lib/app/dman/index.ts#L170">app/dman/index.ts:170</a></li>
 							</ul>
 						</aside>
 						<div class="tsd-comment tsd-typography">
@@ -1305,7 +1316,7 @@ img { max-width: 100%; }
 								<h5>_: <a href="_app_dman_service_form_.formaborted.html" class="tsd-signature-type">FormAborted</a></h5>
 							</li>
 						</ul>
-						<h4 class="tsd-returns-title">Returns <a href="_app_dman_index_.abstractworkflow.html" class="tsd-signature-type">AbstractWorkflow</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Req</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">Body</span><span class="tsd-signature-symbol">&gt;</span></h4>
+						<h4 class="tsd-returns-title">Returns <a href="_app_dman_index_.abstractworkflow.html" class="tsd-signature-type">AbstractWorkflow</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Req</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">Body</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">Resumed</span><span class="tsd-signature-symbol">&gt;</span></h4>
 					</li>
 				</ul>
 			</section>
@@ -1313,7 +1324,7 @@ img { max-width: 100%; }
 				<a name="afterformsaved" class="tsd-anchor"></a>
 				<h3>after<wbr>Form<wbr>Saved</h3>
 				<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
-					<li class="tsd-signature tsd-kind-icon">after<wbr>Form<wbr>Saved<span class="tsd-signature-symbol">(</span>_<span class="tsd-signature-symbol">: </span><a href="_app_dman_service_form_.formsaved.html" class="tsd-signature-type">FormSaved</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="_app_dman_index_.abstractworkflow.html" class="tsd-signature-type">AbstractWorkflow</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Req</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">Body</span><span class="tsd-signature-symbol">&gt;</span></li>
+					<li class="tsd-signature tsd-kind-icon">after<wbr>Form<wbr>Saved<span class="tsd-signature-symbol">(</span>_<span class="tsd-signature-symbol">: </span><a href="_app_dman_service_form_.formsaved.html" class="tsd-signature-type">FormSaved</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="_app_dman_index_.abstractworkflow.html" class="tsd-signature-type">AbstractWorkflow</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Req</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">Body</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">Resumed</span><span class="tsd-signature-symbol">&gt;</span></li>
 				</ul>
 				<ul class="tsd-descriptions">
 					<li class="tsd-description">
@@ -1321,7 +1332,7 @@ img { max-width: 100%; }
 							<p>Implementation of <a href="../interfaces/_app_dman_index_.workflow.html">Workflow</a>.<a href="../interfaces/_app_dman_index_.workflow.html#afterformsaved">afterFormSaved</a></p>
 							<p>Inherited from <a href="_app_dman_index_.abstractworkflow.html">AbstractWorkflow</a>.<a href="_app_dman_index_.abstractworkflow.html#afterformsaved">afterFormSaved</a></p>
 							<ul>
-								<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/b32a4f4/lib/app/dman/index.ts#L173">app/dman/index.ts:173</a></li>
+								<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/7a2c3da/lib/app/dman/index.ts#L179">app/dman/index.ts:179</a></li>
 							</ul>
 						</aside>
 						<div class="tsd-comment tsd-typography">
@@ -1335,7 +1346,7 @@ img { max-width: 100%; }
 								<h5>_: <a href="_app_dman_service_form_.formsaved.html" class="tsd-signature-type">FormSaved</a></h5>
 							</li>
 						</ul>
-						<h4 class="tsd-returns-title">Returns <a href="_app_dman_index_.abstractworkflow.html" class="tsd-signature-type">AbstractWorkflow</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Req</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">Body</span><span class="tsd-signature-symbol">&gt;</span></h4>
+						<h4 class="tsd-returns-title">Returns <a href="_app_dman_index_.abstractworkflow.html" class="tsd-signature-type">AbstractWorkflow</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Req</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">Body</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">Resumed</span><span class="tsd-signature-symbol">&gt;</span></h4>
 					</li>
 				</ul>
 			</section>
@@ -1343,7 +1354,7 @@ img { max-width: 100%; }
 				<a name="beforefetch" class="tsd-anchor"></a>
 				<h3><span class="tsd-flag ts-flagAbstract">Abstract</span> before<wbr>Fetch</h3>
 				<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
-					<li class="tsd-signature tsd-kind-icon">before<wbr>Fetch<span class="tsd-signature-symbol">(</span>r<span class="tsd-signature-symbol">: </span><a href="_actor_api_router_display_.resume.html" class="tsd-signature-type">Resume</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Req</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="_app_dman_index_.abstractworkflow.html" class="tsd-signature-type">AbstractWorkflow</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Req</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">Body</span><span class="tsd-signature-symbol">&gt;</span></li>
+					<li class="tsd-signature tsd-kind-icon">before<wbr>Fetch<span class="tsd-signature-symbol">(</span>r<span class="tsd-signature-symbol">: </span><a href="_actor_api_router_display_.resume.html" class="tsd-signature-type">Resume</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Req</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="_app_dman_index_.abstractworkflow.html" class="tsd-signature-type">AbstractWorkflow</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Req</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">Body</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">Resumed</span><span class="tsd-signature-symbol">&gt;</span></li>
 				</ul>
 				<ul class="tsd-descriptions">
 					<li class="tsd-description">
@@ -1351,16 +1362,22 @@ img { max-width: 100%; }
 							<p>Implementation of <a href="../interfaces/_app_dman_index_.workflow.html">Workflow</a>.<a href="../interfaces/_app_dman_index_.workflow.html#beforefetch">beforeFetch</a></p>
 							<p>Inherited from <a href="_app_dman_index_.abstractworkflow.html">AbstractWorkflow</a>.<a href="_app_dman_index_.abstractworkflow.html#beforefetch">beforeFetch</a></p>
 							<ul>
-								<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/b32a4f4/lib/app/dman/index.ts#L129">app/dman/index.ts:129</a></li>
+								<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/7a2c3da/lib/app/dman/index.ts#L135">app/dman/index.ts:135</a></li>
 							</ul>
 						</aside>
+						<div class="tsd-comment tsd-typography">
+							<div class="lead">
+								<p>beforeFetch hook.</p>
+							</div>
+							<p>Applied during the beforeResumed hook.</p>
+						</div>
 						<h4 class="tsd-parameters-title">Parameters</h4>
 						<ul class="tsd-parameters">
 							<li>
 								<h5>r: <a href="_actor_api_router_display_.resume.html" class="tsd-signature-type">Resume</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Req</span><span class="tsd-signature-symbol">&gt;</span></h5>
 							</li>
 						</ul>
-						<h4 class="tsd-returns-title">Returns <a href="_app_dman_index_.abstractworkflow.html" class="tsd-signature-type">AbstractWorkflow</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Req</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">Body</span><span class="tsd-signature-symbol">&gt;</span></h4>
+						<h4 class="tsd-returns-title">Returns <a href="_app_dman_index_.abstractworkflow.html" class="tsd-signature-type">AbstractWorkflow</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Req</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">Body</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">Resumed</span><span class="tsd-signature-symbol">&gt;</span></h4>
 					</li>
 				</ul>
 			</section>
@@ -1368,7 +1385,7 @@ img { max-width: 100%; }
 				<a name="beforeresumed" class="tsd-anchor"></a>
 				<h3>before<wbr>Resumed</h3>
 				<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
-					<li class="tsd-signature tsd-kind-icon">before<wbr>Resumed<span class="tsd-signature-symbol">(</span>r<span class="tsd-signature-symbol">: </span><a href="_actor_api_router_display_.resume.html" class="tsd-signature-type">Resume</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Req</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="_app_dman_index_.abstractworkflow.html" class="tsd-signature-type">AbstractWorkflow</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Req</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">Body</span><span class="tsd-signature-symbol">&gt;</span></li>
+					<li class="tsd-signature tsd-kind-icon">before<wbr>Resumed<span class="tsd-signature-symbol">(</span>r<span class="tsd-signature-symbol">: </span><a href="_actor_api_router_display_.resume.html" class="tsd-signature-type">Resume</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Req</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="_app_dman_index_.abstractworkflow.html" class="tsd-signature-type">AbstractWorkflow</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Req</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">Body</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">Resumed</span><span class="tsd-signature-symbol">&gt;</span></li>
 				</ul>
 				<ul class="tsd-descriptions">
 					<li class="tsd-description">
@@ -1376,7 +1393,7 @@ img { max-width: 100%; }
 							<p>Implementation of <a href="../interfaces/_app_dman_index_.workflow.html">Workflow</a>.<a href="../interfaces/_app_dman_index_.workflow.html#beforeresumed">beforeResumed</a></p>
 							<p>Inherited from <a href="_app_dman_index_.abstractworkflow.html">AbstractWorkflow</a>.<a href="_app_dman_index_.abstractworkflow.html#beforeresumed">beforeResumed</a></p>
 							<ul>
-								<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/b32a4f4/lib/app/dman/index.ts#L134">app/dman/index.ts:134</a></li>
+								<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/7a2c3da/lib/app/dman/index.ts#L140">app/dman/index.ts:140</a></li>
 							</ul>
 						</aside>
 						<div class="tsd-comment tsd-typography">
@@ -1390,7 +1407,7 @@ img { max-width: 100%; }
 								<h5>r: <a href="_actor_api_router_display_.resume.html" class="tsd-signature-type">Resume</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Req</span><span class="tsd-signature-symbol">&gt;</span></h5>
 							</li>
 						</ul>
-						<h4 class="tsd-returns-title">Returns <a href="_app_dman_index_.abstractworkflow.html" class="tsd-signature-type">AbstractWorkflow</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Req</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">Body</span><span class="tsd-signature-symbol">&gt;</span></h4>
+						<h4 class="tsd-returns-title">Returns <a href="_app_dman_index_.abstractworkflow.html" class="tsd-signature-type">AbstractWorkflow</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Req</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">Body</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">Resumed</span><span class="tsd-signature-symbol">&gt;</span></h4>
 					</li>
 				</ul>
 			</section>
@@ -1398,7 +1415,7 @@ img { max-width: 100%; }
 				<a name="beforesuspended" class="tsd-anchor"></a>
 				<h3>before<wbr>Suspended</h3>
 				<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
-					<li class="tsd-signature tsd-kind-icon">before<wbr>Suspended<span class="tsd-signature-symbol">(</span>s<span class="tsd-signature-symbol">: </span><a href="_actor_api_router_display_.suspend.html" class="tsd-signature-type">Suspend</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="_app_dman_index_.abstractworkflow.html" class="tsd-signature-type">AbstractWorkflow</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Req</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">Body</span><span class="tsd-signature-symbol">&gt;</span></li>
+					<li class="tsd-signature tsd-kind-icon">before<wbr>Suspended<span class="tsd-signature-symbol">(</span>s<span class="tsd-signature-symbol">: </span><a href="_actor_api_router_display_.suspend.html" class="tsd-signature-type">Suspend</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="_app_dman_index_.abstractworkflow.html" class="tsd-signature-type">AbstractWorkflow</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Req</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">Body</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">Resumed</span><span class="tsd-signature-symbol">&gt;</span></li>
 				</ul>
 				<ul class="tsd-descriptions">
 					<li class="tsd-description">
@@ -1406,7 +1423,7 @@ img { max-width: 100%; }
 							<p>Implementation of <a href="../interfaces/_app_dman_index_.workflow.html">Workflow</a>.<a href="../interfaces/_app_dman_index_.workflow.html#beforesuspended">beforeSuspended</a></p>
 							<p>Inherited from <a href="_app_dman_index_.abstractworkflow.html">AbstractWorkflow</a>.<a href="_app_dman_index_.abstractworkflow.html#beforesuspended">beforeSuspended</a></p>
 							<ul>
-								<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/b32a4f4/lib/app/dman/index.ts#L183">app/dman/index.ts:183</a></li>
+								<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/7a2c3da/lib/app/dman/index.ts#L189">app/dman/index.ts:189</a></li>
 							</ul>
 						</aside>
 						<div class="tsd-comment tsd-typography">
@@ -1421,7 +1438,7 @@ img { max-width: 100%; }
 								<h5>s: <a href="_actor_api_router_display_.suspend.html" class="tsd-signature-type">Suspend</a></h5>
 							</li>
 						</ul>
-						<h4 class="tsd-returns-title">Returns <a href="_app_dman_index_.abstractworkflow.html" class="tsd-signature-type">AbstractWorkflow</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Req</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">Body</span><span class="tsd-signature-symbol">&gt;</span></h4>
+						<h4 class="tsd-returns-title">Returns <a href="_app_dman_index_.abstractworkflow.html" class="tsd-signature-type">AbstractWorkflow</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Req</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">Body</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">Resumed</span><span class="tsd-signature-symbol">&gt;</span></h4>
 					</li>
 				</ul>
 			</section>
@@ -1437,7 +1454,7 @@ img { max-width: 100%; }
 							<p>Implementation of <a href="../interfaces/_app_dman_index_.workflow.html">Workflow</a>.<a href="../interfaces/_app_dman_index_.workflow.html#exit">exit</a></p>
 							<p>Inherited from AbstractResident.exit</p>
 							<ul>
-								<li>Defined in /home/master/Documents/code/development/node/jouvert/node_modules/@quenk/potoo/lib/actor/resident/index.ts:84</li>
+								<li>Defined in /home/master/Documents/code/development/node/jouvert/node_modules/@quenk/potoo/lib/actor/resident/index.ts:111</li>
 							</ul>
 						</aside>
 						<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
@@ -1456,7 +1473,7 @@ img { max-width: 100%; }
 							<p>Inherited from Mutable.init</p>
 							<p>Overrides AbstractResident.init</p>
 							<ul>
-								<li>Defined in /home/master/Documents/code/development/node/jouvert/node_modules/@quenk/potoo/lib/actor/resident/index.ts:152</li>
+								<li>Defined in /home/master/Documents/code/development/node/jouvert/node_modules/@quenk/potoo/lib/actor/resident/index.ts:179</li>
 							</ul>
 						</aside>
 						<h4 class="tsd-parameters-title">Parameters</h4>
@@ -1481,7 +1498,7 @@ img { max-width: 100%; }
 							<p>Implementation of <a href="../interfaces/_app_dman_index_.workflow.html">Workflow</a>.<a href="../interfaces/_app_dman_index_.workflow.html#kill">kill</a></p>
 							<p>Inherited from AbstractResident.kill</p>
 							<ul>
-								<li>Defined in /home/master/Documents/code/development/node/jouvert/node_modules/@quenk/potoo/lib/actor/resident/index.ts:77</li>
+								<li>Defined in /home/master/Documents/code/development/node/jouvert/node_modules/@quenk/potoo/lib/actor/resident/index.ts:104</li>
 							</ul>
 						</aside>
 						<h4 class="tsd-parameters-title">Parameters</h4>
@@ -1505,7 +1522,7 @@ img { max-width: 100%; }
 						<aside class="tsd-sources">
 							<p>Inherited from AbstractResident.notify</p>
 							<ul>
-								<li>Defined in /home/master/Documents/code/development/node/jouvert/node_modules/@quenk/potoo/lib/actor/resident/index.ts:41</li>
+								<li>Defined in /home/master/Documents/code/development/node/jouvert/node_modules/@quenk/potoo/lib/actor/resident/index.ts:55</li>
 							</ul>
 						</aside>
 						<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
@@ -1513,10 +1530,35 @@ img { max-width: 100%; }
 				</ul>
 			</section>
 			<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
+				<a name="raise" class="tsd-anchor"></a>
+				<h3>raise</h3>
+				<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
+					<li class="tsd-signature tsd-kind-icon">raise<span class="tsd-signature-symbol">(</span>e<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Err</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">AbstractResident</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Context</span><span class="tsd-signature-symbol">, </span><a href="../interfaces/_app_index_.app.html" class="tsd-signature-type">App</a><span class="tsd-signature-symbol">&gt;</span></li>
+				</ul>
+				<ul class="tsd-descriptions">
+					<li class="tsd-description">
+						<aside class="tsd-sources">
+							<p>Implementation of <a href="../interfaces/_app_dman_index_.workflow.html">Workflow</a>.<a href="../interfaces/_app_dman_index_.workflow.html#raise">raise</a></p>
+							<p>Inherited from AbstractResident.raise</p>
+							<ul>
+								<li>Defined in /home/master/Documents/code/development/node/jouvert/node_modules/@quenk/potoo/lib/actor/resident/index.ts:97</li>
+							</ul>
+						</aside>
+						<h4 class="tsd-parameters-title">Parameters</h4>
+						<ul class="tsd-parameters">
+							<li>
+								<h5>e: <span class="tsd-signature-type">Err</span></h5>
+							</li>
+						</ul>
+						<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">AbstractResident</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Context</span><span class="tsd-signature-symbol">, </span><a href="../interfaces/_app_index_.app.html" class="tsd-signature-type">App</a><span class="tsd-signature-symbol">&gt;</span></h4>
+					</li>
+				</ul>
+			</section>
+			<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
 				<a name="resumed" class="tsd-anchor"></a>
 				<h3>resumed</h3>
 				<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
-					<li class="tsd-signature tsd-kind-icon">resumed<span class="tsd-signature-symbol">(</span>r<span class="tsd-signature-symbol">: </span><a href="_actor_api_router_display_.resume.html" class="tsd-signature-type">Resume</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Req</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Case</span><span class="tsd-signature-symbol">&lt;</span><a href="../modules/_app_dman_manager_.html#resumedmessages" class="tsd-signature-type">ResumedMessages</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Body</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">[]</span></li>
+					<li class="tsd-signature tsd-kind-icon">resumed<span class="tsd-signature-symbol">(</span>r<span class="tsd-signature-symbol">: </span><a href="_actor_api_router_display_.resume.html" class="tsd-signature-type">Resume</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Req</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Case</span><span class="tsd-signature-symbol">&lt;</span><a href="../modules/_app_dman_manager_.html#resumedmessages" class="tsd-signature-type">ResumedMessages</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Body</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">Resumed</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">[]</span></li>
 				</ul>
 				<ul class="tsd-descriptions">
 					<li class="tsd-description">
@@ -1524,7 +1566,7 @@ img { max-width: 100%; }
 							<p>Implementation of <a href="../interfaces/_app_dman_index_.workflow.html">Workflow</a>.<a href="../interfaces/_app_dman_index_.workflow.html#resumed">resumed</a></p>
 							<p>Inherited from <a href="_app_dman_index_.abstractworkflow.html">AbstractWorkflow</a>.<a href="_app_dman_index_.abstractworkflow.html#resumed">resumed</a></p>
 							<ul>
-								<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/b32a4f4/lib/app/dman/index.ts#L143">app/dman/index.ts:143</a></li>
+								<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/7a2c3da/lib/app/dman/index.ts#L149">app/dman/index.ts:149</a></li>
 							</ul>
 						</aside>
 						<h4 class="tsd-parameters-title">Parameters</h4>
@@ -1533,7 +1575,7 @@ img { max-width: 100%; }
 								<h5>r: <a href="_actor_api_router_display_.resume.html" class="tsd-signature-type">Resume</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Req</span><span class="tsd-signature-symbol">&gt;</span></h5>
 							</li>
 						</ul>
-						<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Case</span><span class="tsd-signature-symbol">&lt;</span><a href="../modules/_app_dman_manager_.html#resumedmessages" class="tsd-signature-type">ResumedMessages</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Body</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">[]</span></h4>
+						<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Case</span><span class="tsd-signature-symbol">&lt;</span><a href="../modules/_app_dman_manager_.html#resumedmessages" class="tsd-signature-type">ResumedMessages</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Body</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">Resumed</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">[]</span></h4>
 					</li>
 				</ul>
 			</section>
@@ -1548,7 +1590,7 @@ img { max-width: 100%; }
 						<aside class="tsd-sources">
 							<p>Inherited from AbstractResident.run</p>
 							<ul>
-								<li>Defined in /home/master/Documents/code/development/node/jouvert/node_modules/@quenk/potoo/lib/actor/resident/index.ts:39</li>
+								<li>Defined in /home/master/Documents/code/development/node/jouvert/node_modules/@quenk/potoo/lib/actor/resident/index.ts:53</li>
 							</ul>
 						</aside>
 						<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
@@ -1568,7 +1610,7 @@ img { max-width: 100%; }
 							<p>Inherited from Mutable.select</p>
 							<p>Overrides AbstractResident.select</p>
 							<ul>
-								<li>Defined in /home/master/Documents/code/development/node/jouvert/node_modules/@quenk/potoo/lib/actor/resident/index.ts:165</li>
+								<li>Defined in /home/master/Documents/code/development/node/jouvert/node_modules/@quenk/potoo/lib/actor/resident/index.ts:192</li>
 							</ul>
 						</aside>
 						<div class="tsd-comment tsd-typography">
@@ -1604,7 +1646,7 @@ img { max-width: 100%; }
 							<p>Implementation of <a href="../interfaces/_app_dman_index_.workflow.html">Workflow</a>.<a href="../interfaces/_app_dman_index_.workflow.html#self">self</a></p>
 							<p>Inherited from AbstractResident.self</p>
 							<ul>
-								<li>Defined in /home/master/Documents/code/development/node/jouvert/node_modules/@quenk/potoo/lib/actor/resident/index.ts:47</li>
+								<li>Defined in /home/master/Documents/code/development/node/jouvert/node_modules/@quenk/potoo/lib/actor/resident/index.ts:61</li>
 							</ul>
 						</aside>
 						<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">string</span></h4>
@@ -1623,7 +1665,7 @@ img { max-width: 100%; }
 							<p>Implementation of <a href="../interfaces/_app_dman_index_.workflow.html">Workflow</a>.<a href="../interfaces/_app_dman_index_.workflow.html#spawn">spawn</a></p>
 							<p>Inherited from AbstractResident.spawn</p>
 							<ul>
-								<li>Defined in /home/master/Documents/code/development/node/jouvert/node_modules/@quenk/potoo/lib/actor/resident/index.ts:59</li>
+								<li>Defined in /home/master/Documents/code/development/node/jouvert/node_modules/@quenk/potoo/lib/actor/resident/index.ts:73</li>
 							</ul>
 						</aside>
 						<h4 class="tsd-parameters-title">Parameters</h4>
@@ -1633,6 +1675,34 @@ img { max-width: 100%; }
 							</li>
 						</ul>
 						<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Address</span></h4>
+					</li>
+				</ul>
+			</section>
+			<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
+				<a name="spawngroup" class="tsd-anchor"></a>
+				<h3>spawn<wbr>Group</h3>
+				<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
+					<li class="tsd-signature tsd-kind-icon">spawn<wbr>Group<span class="tsd-signature-symbol">(</span>name<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">[]</span>, tmpls<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Templates</span><span class="tsd-signature-symbol">&lt;</span><a href="../interfaces/_app_index_.app.html" class="tsd-signature-type">App</a><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">AddressMap</span></li>
+				</ul>
+				<ul class="tsd-descriptions">
+					<li class="tsd-description">
+						<aside class="tsd-sources">
+							<p>Implementation of <a href="../interfaces/_app_dman_index_.workflow.html">Workflow</a>.<a href="../interfaces/_app_dman_index_.workflow.html#spawngroup">spawnGroup</a></p>
+							<p>Inherited from AbstractResident.spawnGroup</p>
+							<ul>
+								<li>Defined in /home/master/Documents/code/development/node/jouvert/node_modules/@quenk/potoo/lib/actor/resident/index.ts:83</li>
+							</ul>
+						</aside>
+						<h4 class="tsd-parameters-title">Parameters</h4>
+						<ul class="tsd-parameters">
+							<li>
+								<h5>name: <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">[]</span></h5>
+							</li>
+							<li>
+								<h5>tmpls: <span class="tsd-signature-type">Templates</span><span class="tsd-signature-symbol">&lt;</span><a href="../interfaces/_app_index_.app.html" class="tsd-signature-type">App</a><span class="tsd-signature-symbol">&gt;</span></h5>
+							</li>
+						</ul>
+						<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">AddressMap</span></h4>
 					</li>
 				</ul>
 			</section>
@@ -1647,7 +1717,7 @@ img { max-width: 100%; }
 						<aside class="tsd-sources">
 							<p>Inherited from AbstractResident.stop</p>
 							<ul>
-								<li>Defined in /home/master/Documents/code/development/node/jouvert/node_modules/@quenk/potoo/lib/actor/resident/index.ts:90</li>
+								<li>Defined in /home/master/Documents/code/development/node/jouvert/node_modules/@quenk/potoo/lib/actor/resident/index.ts:117</li>
 							</ul>
 						</aside>
 						<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
@@ -1666,7 +1736,7 @@ img { max-width: 100%; }
 							<p>Implementation of <a href="../interfaces/_app_dman_index_.workflow.html">Workflow</a>.<a href="../interfaces/_app_dman_index_.workflow.html#suspended">suspended</a></p>
 							<p>Inherited from <a href="_app_dman_index_.abstractworkflow.html">AbstractWorkflow</a>.<a href="_app_dman_index_.abstractworkflow.html#suspended">suspended</a></p>
 							<ul>
-								<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/b32a4f4/lib/app/dman/index.ts#L194">app/dman/index.ts:194</a></li>
+								<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/7a2c3da/lib/app/dman/index.ts#L200">app/dman/index.ts:200</a></li>
 							</ul>
 						</aside>
 						<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Case</span><span class="tsd-signature-symbol">&lt;</span><a href="../modules/_app_dman_manager_.html#suspendedmessages" class="tsd-signature-type">SuspendedMessages</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Req</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">[]</span></h4>
@@ -1684,7 +1754,7 @@ img { max-width: 100%; }
 						<aside class="tsd-sources">
 							<p>Inherited from AbstractResident.tell</p>
 							<ul>
-								<li>Defined in /home/master/Documents/code/development/node/jouvert/node_modules/@quenk/potoo/lib/actor/resident/index.ts:69</li>
+								<li>Defined in /home/master/Documents/code/development/node/jouvert/node_modules/@quenk/potoo/lib/actor/resident/index.ts:90</li>
 							</ul>
 						</aside>
 						<h4 class="tsd-type-parameters-title">Type parameters</h4>

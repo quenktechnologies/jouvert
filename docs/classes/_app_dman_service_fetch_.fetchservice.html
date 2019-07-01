@@ -1003,6 +1003,9 @@ img { max-width: 100%; }
 				<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
 					<a href="_app_dman_service_fetch_.fetchservice.html#notify" class="tsd-kind-icon">notify</a>
 				</li>
+				<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
+					<a href="_app_dman_service_fetch_.fetchservice.html#raise" class="tsd-kind-icon">raise</a>
+				</li>
 				<li class=" tsd-kind-method tsd-parent-kind-class">
 					<a href="_app_dman_service_fetch_.fetchservice.html#resumed" class="tsd-kind-icon">resumed</a>
 				</li>
@@ -1017,6 +1020,9 @@ img { max-width: 100%; }
 				</li>
 				<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
 					<a href="_app_dman_service_fetch_.fetchservice.html#spawn" class="tsd-kind-icon">spawn</a>
+				</li>
+				<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
+					<a href="_app_dman_service_fetch_.fetchservice.html#spawngroup" class="tsd-kind-icon">spawn<wbr>Group</a>
 				</li>
 				<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
 					<a href="_app_dman_service_fetch_.fetchservice.html#stop" class="tsd-kind-icon">stop</a>
@@ -1078,6 +1084,9 @@ img { max-width: 100%; }
 		<section class="tsd-panel tsd-type-parameters">
 			<h3>Type parameters</h3>
 			<ul class="tsd-type-parameters">
+				<li>
+					<h4>R</h4>
+				</li>
 				<li>
 					<h4>B</h4>
 				</li>
@@ -1156,11 +1165,13 @@ img { max-width: 100%; }
 							<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="_app_dman_service_fetch_.fetchservice.html#kill" class="tsd-kind-icon">kill</a></li>
 							<li class="tsd-kind-method tsd-parent-kind-class"><a href="_app_dman_service_fetch_.fetchservice.html#loading" class="tsd-kind-icon">loading</a></li>
 							<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="_app_dman_service_fetch_.fetchservice.html#notify" class="tsd-kind-icon">notify</a></li>
+							<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="_app_dman_service_fetch_.fetchservice.html#raise" class="tsd-kind-icon">raise</a></li>
 							<li class="tsd-kind-method tsd-parent-kind-class"><a href="_app_dman_service_fetch_.fetchservice.html#resumed" class="tsd-kind-icon">resumed</a></li>
 							<li class="tsd-kind-method tsd-parent-kind-class tsd-is-overwrite"><a href="_app_dman_service_fetch_.fetchservice.html#run" class="tsd-kind-icon">run</a></li>
 							<li class="tsd-kind-method tsd-parent-kind-class tsd-has-type-parameter tsd-is-overwrite tsd-is-inherited"><a href="_app_dman_service_fetch_.fetchservice.html#select" class="tsd-kind-icon">select</a></li>
 							<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="_app_dman_service_fetch_.fetchservice.html#self" class="tsd-kind-icon">self</a></li>
 							<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="_app_dman_service_fetch_.fetchservice.html#spawn" class="tsd-kind-icon">spawn</a></li>
+							<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="_app_dman_service_fetch_.fetchservice.html#spawngroup" class="tsd-kind-icon">spawn<wbr>Group</a></li>
 							<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="_app_dman_service_fetch_.fetchservice.html#stop" class="tsd-kind-icon">stop</a></li>
 							<li class="tsd-kind-method tsd-parent-kind-class"><a href="_app_dman_service_fetch_.fetchservice.html#suspended" class="tsd-kind-icon">suspended</a></li>
 							<li class="tsd-kind-method tsd-parent-kind-class tsd-has-type-parameter tsd-is-inherited"><a href="_app_dman_service_fetch_.fetchservice.html#tell" class="tsd-kind-icon">tell</a></li>
@@ -1175,14 +1186,14 @@ img { max-width: 100%; }
 				<a name="constructor" class="tsd-anchor"></a>
 				<h3>constructor</h3>
 				<ul class="tsd-signatures tsd-kind-constructor tsd-parent-kind-class tsd-is-overwrite">
-					<li class="tsd-signature tsd-kind-icon">new <wbr>Fetch<wbr>Service<span class="tsd-signature-symbol">(</span>name<span class="tsd-signature-symbol">: </span><a href="../modules/_app_dman_service_fetch_.html#name" class="tsd-signature-type">Name</a>, display<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Address</span>, requests<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Get</span><span class="tsd-signature-symbol">[]</span>, resource<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Address</span>, parent<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Address</span>, system<span class="tsd-signature-symbol">: </span><a href="../interfaces/_app_index_.app.html" class="tsd-signature-type">App</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="_app_dman_service_fetch_.fetchservice.html" class="tsd-signature-type">FetchService</a></li>
+					<li class="tsd-signature tsd-kind-icon">new <wbr>Fetch<wbr>Service<span class="tsd-signature-symbol">(</span>name<span class="tsd-signature-symbol">: </span><a href="../modules/_app_dman_service_fetch_.html#name" class="tsd-signature-type">Name</a>, display<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Address</span>, requests<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">R</span><span class="tsd-signature-symbol">[]</span>, resource<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Address</span>, parent<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Address</span>, system<span class="tsd-signature-symbol">: </span><a href="../interfaces/_app_index_.app.html" class="tsd-signature-type">App</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="_app_dman_service_fetch_.fetchservice.html" class="tsd-signature-type">FetchService</a></li>
 				</ul>
 				<ul class="tsd-descriptions">
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<p>Overrides AbstractResident.__constructor</p>
 							<ul>
-								<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/b32a4f4/lib/app/dman/service/fetch.ts#L130">app/dman/service/fetch.ts:130</a></li>
+								<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/7a2c3da/lib/app/dman/service/fetch.ts#L129">app/dman/service/fetch.ts:129</a></li>
 							</ul>
 						</aside>
 						<h4 class="tsd-parameters-title">Parameters</h4>
@@ -1194,7 +1205,7 @@ img { max-width: 100%; }
 								<h5>display: <span class="tsd-signature-type">Address</span></h5>
 							</li>
 							<li>
-								<h5>requests: <span class="tsd-signature-type">Get</span><span class="tsd-signature-symbol">[]</span></h5>
+								<h5>requests: <span class="tsd-signature-type">R</span><span class="tsd-signature-symbol">[]</span></h5>
 							</li>
 							<li>
 								<h5>resource: <span class="tsd-signature-type">Address</span></h5>
@@ -1219,7 +1230,7 @@ img { max-width: 100%; }
 				<div class="tsd-signature tsd-kind-icon">display<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Address</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/b32a4f4/lib/app/dman/service/fetch.ts#L134">app/dman/service/fetch.ts:134</a></li>
+						<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/7a2c3da/lib/app/dman/service/fetch.ts#L133">app/dman/service/fetch.ts:133</a></li>
 					</ul>
 				</aside>
 			</section>
@@ -1229,7 +1240,7 @@ img { max-width: 100%; }
 				<div class="tsd-signature tsd-kind-icon">name<span class="tsd-signature-symbol">:</span> <a href="../modules/_app_dman_service_fetch_.html#name" class="tsd-signature-type">Name</a></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/b32a4f4/lib/app/dman/service/fetch.ts#L133">app/dman/service/fetch.ts:133</a></li>
+						<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/7a2c3da/lib/app/dman/service/fetch.ts#L132">app/dman/service/fetch.ts:132</a></li>
 					</ul>
 				</aside>
 			</section>
@@ -1239,7 +1250,7 @@ img { max-width: 100%; }
 				<div class="tsd-signature tsd-kind-icon">parent<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Address</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/b32a4f4/lib/app/dman/service/fetch.ts#L137">app/dman/service/fetch.ts:137</a></li>
+						<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/7a2c3da/lib/app/dman/service/fetch.ts#L136">app/dman/service/fetch.ts:136</a></li>
 					</ul>
 				</aside>
 			</section>
@@ -1250,17 +1261,17 @@ img { max-width: 100%; }
 				<aside class="tsd-sources">
 					<p>Inherited from Mutable.receive</p>
 					<ul>
-						<li>Defined in /home/master/Documents/code/development/node/jouvert/node_modules/@quenk/potoo/lib/actor/resident/index.ts:150</li>
+						<li>Defined in /home/master/Documents/code/development/node/jouvert/node_modules/@quenk/potoo/lib/actor/resident/index.ts:177</li>
 					</ul>
 				</aside>
 			</section>
 			<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class">
 				<a name="requests" class="tsd-anchor"></a>
 				<h3>requests</h3>
-				<div class="tsd-signature tsd-kind-icon">requests<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Get</span><span class="tsd-signature-symbol">[]</span></div>
+				<div class="tsd-signature tsd-kind-icon">requests<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">R</span><span class="tsd-signature-symbol">[]</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/b32a4f4/lib/app/dman/service/fetch.ts#L135">app/dman/service/fetch.ts:135</a></li>
+						<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/7a2c3da/lib/app/dman/service/fetch.ts#L134">app/dman/service/fetch.ts:134</a></li>
 					</ul>
 				</aside>
 			</section>
@@ -1270,7 +1281,7 @@ img { max-width: 100%; }
 				<div class="tsd-signature tsd-kind-icon">resource<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Address</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/b32a4f4/lib/app/dman/service/fetch.ts#L136">app/dman/service/fetch.ts:136</a></li>
+						<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/7a2c3da/lib/app/dman/service/fetch.ts#L135">app/dman/service/fetch.ts:135</a></li>
 					</ul>
 				</aside>
 			</section>
@@ -1280,7 +1291,7 @@ img { max-width: 100%; }
 				<div class="tsd-signature tsd-kind-icon">responses<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Response</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">B</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol"> =&nbsp;[]</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/b32a4f4/lib/app/dman/service/fetch.ts#L140">app/dman/service/fetch.ts:140</a></li>
+						<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/7a2c3da/lib/app/dman/service/fetch.ts#L139">app/dman/service/fetch.ts:139</a></li>
 					</ul>
 				</aside>
 			</section>
@@ -1291,7 +1302,7 @@ img { max-width: 100%; }
 				<aside class="tsd-sources">
 					<p>Overrides AbstractResident.system</p>
 					<ul>
-						<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/b32a4f4/lib/app/dman/service/fetch.ts#L138">app/dman/service/fetch.ts:138</a></li>
+						<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/7a2c3da/lib/app/dman/service/fetch.ts#L137">app/dman/service/fetch.ts:137</a></li>
 					</ul>
 				</aside>
 			</section>
@@ -1309,7 +1320,7 @@ img { max-width: 100%; }
 						<aside class="tsd-sources">
 							<p>Inherited from AbstractResident.accept</p>
 							<ul>
-								<li>Defined in /home/master/Documents/code/development/node/jouvert/node_modules/@quenk/potoo/lib/actor/resident/index.ts:53</li>
+								<li>Defined in /home/master/Documents/code/development/node/jouvert/node_modules/@quenk/potoo/lib/actor/resident/index.ts:67</li>
 							</ul>
 						</aside>
 						<h4 class="tsd-parameters-title">Parameters</h4>
@@ -1326,13 +1337,13 @@ img { max-width: 100%; }
 				<a name="afterbadrequest" class="tsd-anchor"></a>
 				<h3>after<wbr>Bad<wbr>Request</h3>
 				<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
-					<li class="tsd-signature tsd-kind-icon">after<wbr>Bad<wbr>Request<span class="tsd-signature-symbol">(</span>r<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">BadRequest</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="_app_dman_service_fetch_.fetchservice.html" class="tsd-signature-type">FetchService</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">B</span><span class="tsd-signature-symbol">&gt;</span></li>
+					<li class="tsd-signature tsd-kind-icon">after<wbr>Bad<wbr>Request<span class="tsd-signature-symbol">(</span>r<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">BadRequest</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="_app_dman_service_fetch_.fetchservice.html" class="tsd-signature-type">FetchService</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">R</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">B</span><span class="tsd-signature-symbol">&gt;</span></li>
 				</ul>
 				<ul class="tsd-descriptions">
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/b32a4f4/lib/app/dman/service/fetch.ts#L195">app/dman/service/fetch.ts:195</a></li>
+								<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/7a2c3da/lib/app/dman/service/fetch.ts#L188">app/dman/service/fetch.ts:188</a></li>
 							</ul>
 						</aside>
 						<h4 class="tsd-parameters-title">Parameters</h4>
@@ -1341,7 +1352,7 @@ img { max-width: 100%; }
 								<h5>r: <span class="tsd-signature-type">BadRequest</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">&gt;</span></h5>
 							</li>
 						</ul>
-						<h4 class="tsd-returns-title">Returns <a href="_app_dman_service_fetch_.fetchservice.html" class="tsd-signature-type">FetchService</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">B</span><span class="tsd-signature-symbol">&gt;</span></h4>
+						<h4 class="tsd-returns-title">Returns <a href="_app_dman_service_fetch_.fetchservice.html" class="tsd-signature-type">FetchService</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">R</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">B</span><span class="tsd-signature-symbol">&gt;</span></h4>
 					</li>
 				</ul>
 			</section>
@@ -1349,13 +1360,13 @@ img { max-width: 100%; }
 				<a name="afterforbidden" class="tsd-anchor"></a>
 				<h3>after<wbr>Forbidden</h3>
 				<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
-					<li class="tsd-signature tsd-kind-icon">after<wbr>Forbidden<span class="tsd-signature-symbol">(</span>r<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Forbidden</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="_app_dman_service_fetch_.fetchservice.html" class="tsd-signature-type">FetchService</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">B</span><span class="tsd-signature-symbol">&gt;</span></li>
+					<li class="tsd-signature tsd-kind-icon">after<wbr>Forbidden<span class="tsd-signature-symbol">(</span>r<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Forbidden</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="_app_dman_service_fetch_.fetchservice.html" class="tsd-signature-type">FetchService</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">R</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">B</span><span class="tsd-signature-symbol">&gt;</span></li>
 				</ul>
 				<ul class="tsd-descriptions">
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/b32a4f4/lib/app/dman/service/fetch.ts#L207">app/dman/service/fetch.ts:207</a></li>
+								<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/7a2c3da/lib/app/dman/service/fetch.ts#L200">app/dman/service/fetch.ts:200</a></li>
 							</ul>
 						</aside>
 						<h4 class="tsd-parameters-title">Parameters</h4>
@@ -1364,7 +1375,7 @@ img { max-width: 100%; }
 								<h5>r: <span class="tsd-signature-type">Forbidden</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">&gt;</span></h5>
 							</li>
 						</ul>
-						<h4 class="tsd-returns-title">Returns <a href="_app_dman_service_fetch_.fetchservice.html" class="tsd-signature-type">FetchService</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">B</span><span class="tsd-signature-symbol">&gt;</span></h4>
+						<h4 class="tsd-returns-title">Returns <a href="_app_dman_service_fetch_.fetchservice.html" class="tsd-signature-type">FetchService</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">R</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">B</span><span class="tsd-signature-symbol">&gt;</span></h4>
 					</li>
 				</ul>
 			</section>
@@ -1372,13 +1383,13 @@ img { max-width: 100%; }
 				<a name="afternocontent" class="tsd-anchor"></a>
 				<h3>after<wbr>NoContent</h3>
 				<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
-					<li class="tsd-signature tsd-kind-icon">after<wbr>NoContent<span class="tsd-signature-symbol">(</span>r<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">NoContent</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">B</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="_app_dman_service_fetch_.fetchservice.html" class="tsd-signature-type">FetchService</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">B</span><span class="tsd-signature-symbol">&gt;</span></li>
+					<li class="tsd-signature tsd-kind-icon">after<wbr>NoContent<span class="tsd-signature-symbol">(</span>r<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">NoContent</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">B</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="_app_dman_service_fetch_.fetchservice.html" class="tsd-signature-type">FetchService</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">R</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">B</span><span class="tsd-signature-symbol">&gt;</span></li>
 				</ul>
 				<ul class="tsd-descriptions">
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/b32a4f4/lib/app/dman/service/fetch.ts#L183">app/dman/service/fetch.ts:183</a></li>
+								<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/7a2c3da/lib/app/dman/service/fetch.ts#L176">app/dman/service/fetch.ts:176</a></li>
 							</ul>
 						</aside>
 						<h4 class="tsd-parameters-title">Parameters</h4>
@@ -1387,7 +1398,7 @@ img { max-width: 100%; }
 								<h5>r: <span class="tsd-signature-type">NoContent</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">B</span><span class="tsd-signature-symbol">&gt;</span></h5>
 							</li>
 						</ul>
-						<h4 class="tsd-returns-title">Returns <a href="_app_dman_service_fetch_.fetchservice.html" class="tsd-signature-type">FetchService</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">B</span><span class="tsd-signature-symbol">&gt;</span></h4>
+						<h4 class="tsd-returns-title">Returns <a href="_app_dman_service_fetch_.fetchservice.html" class="tsd-signature-type">FetchService</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">R</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">B</span><span class="tsd-signature-symbol">&gt;</span></h4>
 					</li>
 				</ul>
 			</section>
@@ -1395,13 +1406,13 @@ img { max-width: 100%; }
 				<a name="afternotfound" class="tsd-anchor"></a>
 				<h3>after<wbr>Not<wbr>Found</h3>
 				<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
-					<li class="tsd-signature tsd-kind-icon">after<wbr>Not<wbr>Found<span class="tsd-signature-symbol">(</span>r<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">NotFound</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="_app_dman_service_fetch_.fetchservice.html" class="tsd-signature-type">FetchService</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">B</span><span class="tsd-signature-symbol">&gt;</span></li>
+					<li class="tsd-signature tsd-kind-icon">after<wbr>Not<wbr>Found<span class="tsd-signature-symbol">(</span>r<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">NotFound</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="_app_dman_service_fetch_.fetchservice.html" class="tsd-signature-type">FetchService</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">R</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">B</span><span class="tsd-signature-symbol">&gt;</span></li>
 				</ul>
 				<ul class="tsd-descriptions">
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/b32a4f4/lib/app/dman/service/fetch.ts#L213">app/dman/service/fetch.ts:213</a></li>
+								<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/7a2c3da/lib/app/dman/service/fetch.ts#L206">app/dman/service/fetch.ts:206</a></li>
 							</ul>
 						</aside>
 						<h4 class="tsd-parameters-title">Parameters</h4>
@@ -1410,7 +1421,7 @@ img { max-width: 100%; }
 								<h5>r: <span class="tsd-signature-type">NotFound</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">&gt;</span></h5>
 							</li>
 						</ul>
-						<h4 class="tsd-returns-title">Returns <a href="_app_dman_service_fetch_.fetchservice.html" class="tsd-signature-type">FetchService</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">B</span><span class="tsd-signature-symbol">&gt;</span></h4>
+						<h4 class="tsd-returns-title">Returns <a href="_app_dman_service_fetch_.fetchservice.html" class="tsd-signature-type">FetchService</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">R</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">B</span><span class="tsd-signature-symbol">&gt;</span></h4>
 					</li>
 				</ul>
 			</section>
@@ -1418,13 +1429,13 @@ img { max-width: 100%; }
 				<a name="afterok" class="tsd-anchor"></a>
 				<h3>after<wbr>Ok</h3>
 				<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
-					<li class="tsd-signature tsd-kind-icon">after<wbr>Ok<span class="tsd-signature-symbol">(</span>r<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Ok</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">B</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="_app_dman_service_fetch_.fetchservice.html" class="tsd-signature-type">FetchService</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">B</span><span class="tsd-signature-symbol">&gt;</span></li>
+					<li class="tsd-signature tsd-kind-icon">after<wbr>Ok<span class="tsd-signature-symbol">(</span>r<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Ok</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">B</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="_app_dman_service_fetch_.fetchservice.html" class="tsd-signature-type">FetchService</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">R</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">B</span><span class="tsd-signature-symbol">&gt;</span></li>
 				</ul>
 				<ul class="tsd-descriptions">
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/b32a4f4/lib/app/dman/service/fetch.ts#L189">app/dman/service/fetch.ts:189</a></li>
+								<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/7a2c3da/lib/app/dman/service/fetch.ts#L182">app/dman/service/fetch.ts:182</a></li>
 							</ul>
 						</aside>
 						<h4 class="tsd-parameters-title">Parameters</h4>
@@ -1433,7 +1444,7 @@ img { max-width: 100%; }
 								<h5>r: <span class="tsd-signature-type">Ok</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">B</span><span class="tsd-signature-symbol">&gt;</span></h5>
 							</li>
 						</ul>
-						<h4 class="tsd-returns-title">Returns <a href="_app_dman_service_fetch_.fetchservice.html" class="tsd-signature-type">FetchService</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">B</span><span class="tsd-signature-symbol">&gt;</span></h4>
+						<h4 class="tsd-returns-title">Returns <a href="_app_dman_service_fetch_.fetchservice.html" class="tsd-signature-type">FetchService</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">R</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">B</span><span class="tsd-signature-symbol">&gt;</span></h4>
 					</li>
 				</ul>
 			</section>
@@ -1441,13 +1452,13 @@ img { max-width: 100%; }
 				<a name="afterservererror" class="tsd-anchor"></a>
 				<h3>after<wbr>Server<wbr>Error</h3>
 				<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
-					<li class="tsd-signature tsd-kind-icon">after<wbr>Server<wbr>Error<span class="tsd-signature-symbol">(</span>r<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">ServerError</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="_app_dman_service_fetch_.fetchservice.html" class="tsd-signature-type">FetchService</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">B</span><span class="tsd-signature-symbol">&gt;</span></li>
+					<li class="tsd-signature tsd-kind-icon">after<wbr>Server<wbr>Error<span class="tsd-signature-symbol">(</span>r<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">ServerError</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="_app_dman_service_fetch_.fetchservice.html" class="tsd-signature-type">FetchService</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">R</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">B</span><span class="tsd-signature-symbol">&gt;</span></li>
 				</ul>
 				<ul class="tsd-descriptions">
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/b32a4f4/lib/app/dman/service/fetch.ts#L219">app/dman/service/fetch.ts:219</a></li>
+								<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/7a2c3da/lib/app/dman/service/fetch.ts#L212">app/dman/service/fetch.ts:212</a></li>
 							</ul>
 						</aside>
 						<h4 class="tsd-parameters-title">Parameters</h4>
@@ -1456,7 +1467,7 @@ img { max-width: 100%; }
 								<h5>r: <span class="tsd-signature-type">ServerError</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">&gt;</span></h5>
 							</li>
 						</ul>
-						<h4 class="tsd-returns-title">Returns <a href="_app_dman_service_fetch_.fetchservice.html" class="tsd-signature-type">FetchService</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">B</span><span class="tsd-signature-symbol">&gt;</span></h4>
+						<h4 class="tsd-returns-title">Returns <a href="_app_dman_service_fetch_.fetchservice.html" class="tsd-signature-type">FetchService</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">R</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">B</span><span class="tsd-signature-symbol">&gt;</span></h4>
 					</li>
 				</ul>
 			</section>
@@ -1464,13 +1475,13 @@ img { max-width: 100%; }
 				<a name="afterunauthorized" class="tsd-anchor"></a>
 				<h3>after<wbr>Unauthorized</h3>
 				<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
-					<li class="tsd-signature tsd-kind-icon">after<wbr>Unauthorized<span class="tsd-signature-symbol">(</span>r<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Unauthorized</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="_app_dman_service_fetch_.fetchservice.html" class="tsd-signature-type">FetchService</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">B</span><span class="tsd-signature-symbol">&gt;</span></li>
+					<li class="tsd-signature tsd-kind-icon">after<wbr>Unauthorized<span class="tsd-signature-symbol">(</span>r<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Unauthorized</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="_app_dman_service_fetch_.fetchservice.html" class="tsd-signature-type">FetchService</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">R</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">B</span><span class="tsd-signature-symbol">&gt;</span></li>
 				</ul>
 				<ul class="tsd-descriptions">
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/b32a4f4/lib/app/dman/service/fetch.ts#L201">app/dman/service/fetch.ts:201</a></li>
+								<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/7a2c3da/lib/app/dman/service/fetch.ts#L194">app/dman/service/fetch.ts:194</a></li>
 							</ul>
 						</aside>
 						<h4 class="tsd-parameters-title">Parameters</h4>
@@ -1479,7 +1490,7 @@ img { max-width: 100%; }
 								<h5>r: <span class="tsd-signature-type">Unauthorized</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">&gt;</span></h5>
 							</li>
 						</ul>
-						<h4 class="tsd-returns-title">Returns <a href="_app_dman_service_fetch_.fetchservice.html" class="tsd-signature-type">FetchService</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">B</span><span class="tsd-signature-symbol">&gt;</span></h4>
+						<h4 class="tsd-returns-title">Returns <a href="_app_dman_service_fetch_.fetchservice.html" class="tsd-signature-type">FetchService</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">R</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">B</span><span class="tsd-signature-symbol">&gt;</span></h4>
 					</li>
 				</ul>
 			</section>
@@ -1487,13 +1498,13 @@ img { max-width: 100%; }
 				<a name="bail" class="tsd-anchor"></a>
 				<h3>bail</h3>
 				<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
-					<li class="tsd-signature tsd-kind-icon">bail<span class="tsd-signature-symbol">(</span>r<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Response</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="_app_dman_service_fetch_.fetchservice.html" class="tsd-signature-type">FetchService</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">B</span><span class="tsd-signature-symbol">&gt;</span></li>
+					<li class="tsd-signature tsd-kind-icon">bail<span class="tsd-signature-symbol">(</span>r<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Response</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="_app_dman_service_fetch_.fetchservice.html" class="tsd-signature-type">FetchService</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">R</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">B</span><span class="tsd-signature-symbol">&gt;</span></li>
 				</ul>
 				<ul class="tsd-descriptions">
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/b32a4f4/lib/app/dman/service/fetch.ts#L159">app/dman/service/fetch.ts:159</a></li>
+								<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/7a2c3da/lib/app/dman/service/fetch.ts#L158">app/dman/service/fetch.ts:158</a></li>
 							</ul>
 						</aside>
 						<h4 class="tsd-parameters-title">Parameters</h4>
@@ -1502,7 +1513,7 @@ img { max-width: 100%; }
 								<h5>r: <span class="tsd-signature-type">Response</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">&gt;</span></h5>
 							</li>
 						</ul>
-						<h4 class="tsd-returns-title">Returns <a href="_app_dman_service_fetch_.fetchservice.html" class="tsd-signature-type">FetchService</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">B</span><span class="tsd-signature-symbol">&gt;</span></h4>
+						<h4 class="tsd-returns-title">Returns <a href="_app_dman_service_fetch_.fetchservice.html" class="tsd-signature-type">FetchService</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">R</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">B</span><span class="tsd-signature-symbol">&gt;</span></h4>
 					</li>
 				</ul>
 			</section>
@@ -1510,13 +1521,13 @@ img { max-width: 100%; }
 				<a name="beforeloading" class="tsd-anchor"></a>
 				<h3>before<wbr>Loading</h3>
 				<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
-					<li class="tsd-signature tsd-kind-icon">before<wbr>Loading<span class="tsd-signature-symbol">(</span>_<span class="tsd-signature-symbol">: </span><a href="_app_dman_service_fetch_.start.html" class="tsd-signature-type">Start</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="_app_dman_service_fetch_.fetchservice.html" class="tsd-signature-type">FetchService</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">B</span><span class="tsd-signature-symbol">&gt;</span></li>
+					<li class="tsd-signature tsd-kind-icon">before<wbr>Loading<span class="tsd-signature-symbol">(</span>_<span class="tsd-signature-symbol">: </span><a href="_app_dman_service_fetch_.start.html" class="tsd-signature-type">Start</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="_app_dman_service_fetch_.fetchservice.html" class="tsd-signature-type">FetchService</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">R</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">B</span><span class="tsd-signature-symbol">&gt;</span></li>
 				</ul>
 				<ul class="tsd-descriptions">
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/b32a4f4/lib/app/dman/service/fetch.ts#L170">app/dman/service/fetch.ts:170</a></li>
+								<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/7a2c3da/lib/app/dman/service/fetch.ts#L169">app/dman/service/fetch.ts:169</a></li>
 							</ul>
 						</aside>
 						<div class="tsd-comment tsd-typography">
@@ -1530,7 +1541,7 @@ img { max-width: 100%; }
 								<h5>_: <a href="_app_dman_service_fetch_.start.html" class="tsd-signature-type">Start</a></h5>
 							</li>
 						</ul>
-						<h4 class="tsd-returns-title">Returns <a href="_app_dman_service_fetch_.fetchservice.html" class="tsd-signature-type">FetchService</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">B</span><span class="tsd-signature-symbol">&gt;</span></h4>
+						<h4 class="tsd-returns-title">Returns <a href="_app_dman_service_fetch_.fetchservice.html" class="tsd-signature-type">FetchService</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">R</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">B</span><span class="tsd-signature-symbol">&gt;</span></h4>
 					</li>
 				</ul>
 			</section>
@@ -1538,13 +1549,13 @@ img { max-width: 100%; }
 				<a name="beforeresumed" class="tsd-anchor"></a>
 				<h3>before<wbr>Resumed</h3>
 				<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
-					<li class="tsd-signature tsd-kind-icon">before<wbr>Resumed<span class="tsd-signature-symbol">(</span>_<span class="tsd-signature-symbol">: </span><a href="_app_dman_service_fetch_.start.html" class="tsd-signature-type">Start</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="_app_dman_service_fetch_.fetchservice.html" class="tsd-signature-type">FetchService</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">B</span><span class="tsd-signature-symbol">&gt;</span></li>
+					<li class="tsd-signature tsd-kind-icon">before<wbr>Resumed<span class="tsd-signature-symbol">(</span>_<span class="tsd-signature-symbol">: </span><a href="_app_dman_service_fetch_.start.html" class="tsd-signature-type">Start</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="_app_dman_service_fetch_.fetchservice.html" class="tsd-signature-type">FetchService</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">R</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">B</span><span class="tsd-signature-symbol">&gt;</span></li>
 				</ul>
 				<ul class="tsd-descriptions">
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/b32a4f4/lib/app/dman/service/fetch.ts#L231">app/dman/service/fetch.ts:231</a></li>
+								<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/7a2c3da/lib/app/dman/service/fetch.ts#L224">app/dman/service/fetch.ts:224</a></li>
 							</ul>
 						</aside>
 						<h4 class="tsd-parameters-title">Parameters</h4>
@@ -1553,7 +1564,7 @@ img { max-width: 100%; }
 								<h5>_: <a href="_app_dman_service_fetch_.start.html" class="tsd-signature-type">Start</a></h5>
 							</li>
 						</ul>
-						<h4 class="tsd-returns-title">Returns <a href="_app_dman_service_fetch_.fetchservice.html" class="tsd-signature-type">FetchService</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">B</span><span class="tsd-signature-symbol">&gt;</span></h4>
+						<h4 class="tsd-returns-title">Returns <a href="_app_dman_service_fetch_.fetchservice.html" class="tsd-signature-type">FetchService</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">R</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">B</span><span class="tsd-signature-symbol">&gt;</span></h4>
 					</li>
 				</ul>
 			</section>
@@ -1561,13 +1572,13 @@ img { max-width: 100%; }
 				<a name="beforesuspended" class="tsd-anchor"></a>
 				<h3>before<wbr>Suspended</h3>
 				<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
-					<li class="tsd-signature tsd-kind-icon">before<wbr>Suspended<span class="tsd-signature-symbol">(</span>_<span class="tsd-signature-symbol">: </span><a href="_actor_api_router_display_.suspend.html" class="tsd-signature-type">Suspend</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="_app_dman_service_fetch_.fetchservice.html" class="tsd-signature-type">FetchService</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">B</span><span class="tsd-signature-symbol">&gt;</span></li>
+					<li class="tsd-signature tsd-kind-icon">before<wbr>Suspended<span class="tsd-signature-symbol">(</span>_<span class="tsd-signature-symbol">: </span><a href="_actor_api_router_display_.suspend.html" class="tsd-signature-type">Suspend</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="_app_dman_service_fetch_.fetchservice.html" class="tsd-signature-type">FetchService</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">R</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">B</span><span class="tsd-signature-symbol">&gt;</span></li>
 				</ul>
 				<ul class="tsd-descriptions">
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/b32a4f4/lib/app/dman/service/fetch.ts#L244">app/dman/service/fetch.ts:244</a></li>
+								<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/7a2c3da/lib/app/dman/service/fetch.ts#L237">app/dman/service/fetch.ts:237</a></li>
 							</ul>
 						</aside>
 						<h4 class="tsd-parameters-title">Parameters</h4>
@@ -1576,7 +1587,7 @@ img { max-width: 100%; }
 								<h5>_: <a href="_actor_api_router_display_.suspend.html" class="tsd-signature-type">Suspend</a></h5>
 							</li>
 						</ul>
-						<h4 class="tsd-returns-title">Returns <a href="_app_dman_service_fetch_.fetchservice.html" class="tsd-signature-type">FetchService</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">B</span><span class="tsd-signature-symbol">&gt;</span></h4>
+						<h4 class="tsd-returns-title">Returns <a href="_app_dman_service_fetch_.fetchservice.html" class="tsd-signature-type">FetchService</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">R</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">B</span><span class="tsd-signature-symbol">&gt;</span></h4>
 					</li>
 				</ul>
 			</section>
@@ -1584,13 +1595,13 @@ img { max-width: 100%; }
 				<a name="enqueue" class="tsd-anchor"></a>
 				<h3>enqueue</h3>
 				<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
-					<li class="tsd-signature tsd-kind-icon">enqueue<span class="tsd-signature-symbol">(</span>r<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Response</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">B</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="_app_dman_service_fetch_.fetchservice.html" class="tsd-signature-type">FetchService</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">B</span><span class="tsd-signature-symbol">&gt;</span></li>
+					<li class="tsd-signature tsd-kind-icon">enqueue<span class="tsd-signature-symbol">(</span>r<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Response</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">B</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="_app_dman_service_fetch_.fetchservice.html" class="tsd-signature-type">FetchService</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">R</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">B</span><span class="tsd-signature-symbol">&gt;</span></li>
 				</ul>
 				<ul class="tsd-descriptions">
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/b32a4f4/lib/app/dman/service/fetch.ts#L142">app/dman/service/fetch.ts:142</a></li>
+								<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/7a2c3da/lib/app/dman/service/fetch.ts#L141">app/dman/service/fetch.ts:141</a></li>
 							</ul>
 						</aside>
 						<h4 class="tsd-parameters-title">Parameters</h4>
@@ -1599,7 +1610,7 @@ img { max-width: 100%; }
 								<h5>r: <span class="tsd-signature-type">Response</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">B</span><span class="tsd-signature-symbol">&gt;</span></h5>
 							</li>
 						</ul>
-						<h4 class="tsd-returns-title">Returns <a href="_app_dman_service_fetch_.fetchservice.html" class="tsd-signature-type">FetchService</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">B</span><span class="tsd-signature-symbol">&gt;</span></h4>
+						<h4 class="tsd-returns-title">Returns <a href="_app_dman_service_fetch_.fetchservice.html" class="tsd-signature-type">FetchService</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">R</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">B</span><span class="tsd-signature-symbol">&gt;</span></h4>
 					</li>
 				</ul>
 			</section>
@@ -1615,7 +1626,7 @@ img { max-width: 100%; }
 							<p>Implementation of <a href="../interfaces/_actor_interact_index_.suspendlistener.html">SuspendListener</a>.<a href="../interfaces/_actor_interact_index_.suspendlistener.html#exit">exit</a></p>
 							<p>Inherited from AbstractResident.exit</p>
 							<ul>
-								<li>Defined in /home/master/Documents/code/development/node/jouvert/node_modules/@quenk/potoo/lib/actor/resident/index.ts:84</li>
+								<li>Defined in /home/master/Documents/code/development/node/jouvert/node_modules/@quenk/potoo/lib/actor/resident/index.ts:111</li>
 							</ul>
 						</aside>
 						<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
@@ -1634,7 +1645,7 @@ img { max-width: 100%; }
 							<p>Inherited from Mutable.init</p>
 							<p>Overrides AbstractResident.init</p>
 							<ul>
-								<li>Defined in /home/master/Documents/code/development/node/jouvert/node_modules/@quenk/potoo/lib/actor/resident/index.ts:152</li>
+								<li>Defined in /home/master/Documents/code/development/node/jouvert/node_modules/@quenk/potoo/lib/actor/resident/index.ts:179</li>
 							</ul>
 						</aside>
 						<h4 class="tsd-parameters-title">Parameters</h4>
@@ -1659,7 +1670,7 @@ img { max-width: 100%; }
 							<p>Implementation of <a href="../interfaces/_actor_interact_index_.suspendlistener.html">SuspendListener</a>.<a href="../interfaces/_actor_interact_index_.suspendlistener.html#kill">kill</a></p>
 							<p>Inherited from AbstractResident.kill</p>
 							<ul>
-								<li>Defined in /home/master/Documents/code/development/node/jouvert/node_modules/@quenk/potoo/lib/actor/resident/index.ts:77</li>
+								<li>Defined in /home/master/Documents/code/development/node/jouvert/node_modules/@quenk/potoo/lib/actor/resident/index.ts:104</li>
 							</ul>
 						</aside>
 						<h4 class="tsd-parameters-title">Parameters</h4>
@@ -1682,7 +1693,7 @@ img { max-width: 100%; }
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/b32a4f4/lib/app/dman/service/fetch.ts#L225">app/dman/service/fetch.ts:225</a></li>
+								<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/7a2c3da/lib/app/dman/service/fetch.ts#L218">app/dman/service/fetch.ts:218</a></li>
 							</ul>
 						</aside>
 						<h4 class="tsd-parameters-title">Parameters</h4>
@@ -1706,10 +1717,35 @@ img { max-width: 100%; }
 						<aside class="tsd-sources">
 							<p>Inherited from AbstractResident.notify</p>
 							<ul>
-								<li>Defined in /home/master/Documents/code/development/node/jouvert/node_modules/@quenk/potoo/lib/actor/resident/index.ts:41</li>
+								<li>Defined in /home/master/Documents/code/development/node/jouvert/node_modules/@quenk/potoo/lib/actor/resident/index.ts:55</li>
 							</ul>
 						</aside>
 						<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
+					</li>
+				</ul>
+			</section>
+			<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
+				<a name="raise" class="tsd-anchor"></a>
+				<h3>raise</h3>
+				<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
+					<li class="tsd-signature tsd-kind-icon">raise<span class="tsd-signature-symbol">(</span>e<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Err</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">AbstractResident</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Context</span><span class="tsd-signature-symbol">, </span><a href="../interfaces/_app_index_.app.html" class="tsd-signature-type">App</a><span class="tsd-signature-symbol">&gt;</span></li>
+				</ul>
+				<ul class="tsd-descriptions">
+					<li class="tsd-description">
+						<aside class="tsd-sources">
+							<p>Implementation of <a href="../interfaces/_actor_interact_index_.suspendlistener.html">SuspendListener</a>.<a href="../interfaces/_actor_interact_index_.suspendlistener.html#raise">raise</a></p>
+							<p>Inherited from AbstractResident.raise</p>
+							<ul>
+								<li>Defined in /home/master/Documents/code/development/node/jouvert/node_modules/@quenk/potoo/lib/actor/resident/index.ts:97</li>
+							</ul>
+						</aside>
+						<h4 class="tsd-parameters-title">Parameters</h4>
+						<ul class="tsd-parameters">
+							<li>
+								<h5>e: <span class="tsd-signature-type">Err</span></h5>
+							</li>
+						</ul>
+						<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">AbstractResident</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Context</span><span class="tsd-signature-symbol">, </span><a href="../interfaces/_app_index_.app.html" class="tsd-signature-type">App</a><span class="tsd-signature-symbol">&gt;</span></h4>
 					</li>
 				</ul>
 			</section>
@@ -1723,7 +1759,7 @@ img { max-width: 100%; }
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/b32a4f4/lib/app/dman/service/fetch.ts#L238">app/dman/service/fetch.ts:238</a></li>
+								<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/7a2c3da/lib/app/dman/service/fetch.ts#L231">app/dman/service/fetch.ts:231</a></li>
 							</ul>
 						</aside>
 						<h4 class="tsd-parameters-title">Parameters</h4>
@@ -1747,7 +1783,7 @@ img { max-width: 100%; }
 						<aside class="tsd-sources">
 							<p>Overrides AbstractResident.run</p>
 							<ul>
-								<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/b32a4f4/lib/app/dman/service/fetch.ts#L256">app/dman/service/fetch.ts:256</a></li>
+								<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/7a2c3da/lib/app/dman/service/fetch.ts#L249">app/dman/service/fetch.ts:249</a></li>
 							</ul>
 						</aside>
 						<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
@@ -1767,7 +1803,7 @@ img { max-width: 100%; }
 							<p>Inherited from Mutable.select</p>
 							<p>Overrides AbstractResident.select</p>
 							<ul>
-								<li>Defined in /home/master/Documents/code/development/node/jouvert/node_modules/@quenk/potoo/lib/actor/resident/index.ts:165</li>
+								<li>Defined in /home/master/Documents/code/development/node/jouvert/node_modules/@quenk/potoo/lib/actor/resident/index.ts:192</li>
 							</ul>
 						</aside>
 						<div class="tsd-comment tsd-typography">
@@ -1803,7 +1839,7 @@ img { max-width: 100%; }
 							<p>Implementation of <a href="../interfaces/_actor_interact_index_.suspendlistener.html">SuspendListener</a>.<a href="../interfaces/_actor_interact_index_.suspendlistener.html#self">self</a></p>
 							<p>Inherited from AbstractResident.self</p>
 							<ul>
-								<li>Defined in /home/master/Documents/code/development/node/jouvert/node_modules/@quenk/potoo/lib/actor/resident/index.ts:47</li>
+								<li>Defined in /home/master/Documents/code/development/node/jouvert/node_modules/@quenk/potoo/lib/actor/resident/index.ts:61</li>
 							</ul>
 						</aside>
 						<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">string</span></h4>
@@ -1822,7 +1858,7 @@ img { max-width: 100%; }
 							<p>Implementation of <a href="../interfaces/_actor_interact_index_.suspendlistener.html">SuspendListener</a>.<a href="../interfaces/_actor_interact_index_.suspendlistener.html#spawn">spawn</a></p>
 							<p>Inherited from AbstractResident.spawn</p>
 							<ul>
-								<li>Defined in /home/master/Documents/code/development/node/jouvert/node_modules/@quenk/potoo/lib/actor/resident/index.ts:59</li>
+								<li>Defined in /home/master/Documents/code/development/node/jouvert/node_modules/@quenk/potoo/lib/actor/resident/index.ts:73</li>
 							</ul>
 						</aside>
 						<h4 class="tsd-parameters-title">Parameters</h4>
@@ -1832,6 +1868,34 @@ img { max-width: 100%; }
 							</li>
 						</ul>
 						<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Address</span></h4>
+					</li>
+				</ul>
+			</section>
+			<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
+				<a name="spawngroup" class="tsd-anchor"></a>
+				<h3>spawn<wbr>Group</h3>
+				<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
+					<li class="tsd-signature tsd-kind-icon">spawn<wbr>Group<span class="tsd-signature-symbol">(</span>name<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">[]</span>, tmpls<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Templates</span><span class="tsd-signature-symbol">&lt;</span><a href="../interfaces/_app_index_.app.html" class="tsd-signature-type">App</a><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">AddressMap</span></li>
+				</ul>
+				<ul class="tsd-descriptions">
+					<li class="tsd-description">
+						<aside class="tsd-sources">
+							<p>Implementation of <a href="../interfaces/_actor_interact_index_.suspendlistener.html">SuspendListener</a>.<a href="../interfaces/_actor_interact_index_.suspendlistener.html#spawngroup">spawnGroup</a></p>
+							<p>Inherited from AbstractResident.spawnGroup</p>
+							<ul>
+								<li>Defined in /home/master/Documents/code/development/node/jouvert/node_modules/@quenk/potoo/lib/actor/resident/index.ts:83</li>
+							</ul>
+						</aside>
+						<h4 class="tsd-parameters-title">Parameters</h4>
+						<ul class="tsd-parameters">
+							<li>
+								<h5>name: <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">[]</span></h5>
+							</li>
+							<li>
+								<h5>tmpls: <span class="tsd-signature-type">Templates</span><span class="tsd-signature-symbol">&lt;</span><a href="../interfaces/_app_index_.app.html" class="tsd-signature-type">App</a><span class="tsd-signature-symbol">&gt;</span></h5>
+							</li>
+						</ul>
+						<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">AddressMap</span></h4>
 					</li>
 				</ul>
 			</section>
@@ -1846,7 +1910,7 @@ img { max-width: 100%; }
 						<aside class="tsd-sources">
 							<p>Inherited from AbstractResident.stop</p>
 							<ul>
-								<li>Defined in /home/master/Documents/code/development/node/jouvert/node_modules/@quenk/potoo/lib/actor/resident/index.ts:90</li>
+								<li>Defined in /home/master/Documents/code/development/node/jouvert/node_modules/@quenk/potoo/lib/actor/resident/index.ts:117</li>
 							</ul>
 						</aside>
 						<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
@@ -1864,7 +1928,7 @@ img { max-width: 100%; }
 						<aside class="tsd-sources">
 							<p>Implementation of <a href="../interfaces/_actor_interact_index_.suspendlistener.html">SuspendListener</a>.<a href="../interfaces/_actor_interact_index_.suspendlistener.html#suspended">suspended</a></p>
 							<ul>
-								<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/b32a4f4/lib/app/dman/service/fetch.ts#L250">app/dman/service/fetch.ts:250</a></li>
+								<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/7a2c3da/lib/app/dman/service/fetch.ts#L243">app/dman/service/fetch.ts:243</a></li>
 							</ul>
 						</aside>
 						<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Case</span><span class="tsd-signature-symbol">&lt;</span><a href="../modules/_app_dman_service_fetch_.html#suspendedmessages" class="tsd-signature-type">SuspendedMessages</a><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">[]</span></h4>
@@ -1882,7 +1946,7 @@ img { max-width: 100%; }
 						<aside class="tsd-sources">
 							<p>Inherited from AbstractResident.tell</p>
 							<ul>
-								<li>Defined in /home/master/Documents/code/development/node/jouvert/node_modules/@quenk/potoo/lib/actor/resident/index.ts:69</li>
+								<li>Defined in /home/master/Documents/code/development/node/jouvert/node_modules/@quenk/potoo/lib/actor/resident/index.ts:90</li>
 							</ul>
 						</aside>
 						<h4 class="tsd-type-parameters-title">Type parameters</h4>

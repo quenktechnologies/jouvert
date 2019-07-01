@@ -910,6 +910,12 @@ img { max-width: 100%; }
 		<li class=" tsd-kind-class tsd-parent-kind-external-module tsd-has-type-parameter">
 			<a href="_actor_api_resource_.aborted.html" class="tsd-kind-icon">Aborted</a>
 		</li>
+		<li class=" tsd-kind-class tsd-parent-kind-external-module tsd-has-type-parameter">
+			<a href="_actor_api_resource_.batchresponse.html" class="tsd-kind-icon">Batch<wbr>Response</a>
+		</li>
+		<li class=" tsd-kind-class tsd-parent-kind-external-module tsd-has-type-parameter">
+			<a href="_actor_api_resource_.batchsend.html" class="tsd-kind-icon">Batch<wbr>Send</a>
+		</li>
 		<li class="current tsd-kind-class tsd-parent-kind-external-module tsd-has-type-parameter">
 			<a href="_actor_api_resource_.resource.html" class="tsd-kind-icon">Resource</a>
 			<ul>
@@ -919,6 +925,9 @@ img { max-width: 100%; }
 				<li class=" tsd-kind-property tsd-parent-kind-class">
 					<a href="_actor_api_resource_.resource.html#agent" class="tsd-kind-icon">agent</a>
 				</li>
+				<li class=" tsd-kind-property tsd-parent-kind-class">
+					<a href="_actor_api_resource_.resource.html#client" class="tsd-kind-icon">client</a>
+				</li>
 				<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-overwrite">
 					<a href="_actor_api_resource_.resource.html#receive" class="tsd-kind-icon">receive</a>
 				</li>
@@ -927,6 +936,9 @@ img { max-width: 100%; }
 				</li>
 				<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
 					<a href="_actor_api_resource_.resource.html#accept" class="tsd-kind-icon">accept</a>
+				</li>
+				<li class=" tsd-kind-method tsd-parent-kind-class">
+					<a href="_actor_api_resource_.resource.html#batchsend" class="tsd-kind-icon">batch<wbr>Send</a>
 				</li>
 				<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
 					<a href="_actor_api_resource_.resource.html#exit" class="tsd-kind-icon">exit</a>
@@ -939,6 +951,9 @@ img { max-width: 100%; }
 				</li>
 				<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
 					<a href="_actor_api_resource_.resource.html#notify" class="tsd-kind-icon">notify</a>
+				</li>
+				<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
+					<a href="_actor_api_resource_.resource.html#raise" class="tsd-kind-icon">raise</a>
 				</li>
 				<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-overwrite tsd-is-inherited">
 					<a href="_actor_api_resource_.resource.html#run" class="tsd-kind-icon">run</a>
@@ -956,15 +971,27 @@ img { max-width: 100%; }
 					<a href="_actor_api_resource_.resource.html#spawn" class="tsd-kind-icon">spawn</a>
 				</li>
 				<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
+					<a href="_actor_api_resource_.resource.html#spawngroup" class="tsd-kind-icon">spawn<wbr>Group</a>
+				</li>
+				<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
 					<a href="_actor_api_resource_.resource.html#stop" class="tsd-kind-icon">stop</a>
 				</li>
 				<li class=" tsd-kind-method tsd-parent-kind-class tsd-has-type-parameter tsd-is-inherited">
 					<a href="_actor_api_resource_.resource.html#tell" class="tsd-kind-icon">tell</a>
 				</li>
+				<li class=" tsd-kind-method tsd-parent-kind-class">
+					<a href="_actor_api_resource_.resource.html#transmit" class="tsd-kind-icon">transmit</a>
+				</li>
 			</ul>
 		</li>
-		<li class=" tsd-kind-class tsd-parent-kind-external-module">
+		<li class=" tsd-kind-class tsd-parent-kind-external-module tsd-has-type-parameter">
+			<a href="_actor_api_resource_.send.html" class="tsd-kind-icon">Send</a>
+		</li>
+		<li class=" tsd-kind-class tsd-parent-kind-external-module tsd-has-type-parameter">
 			<a href="_actor_api_resource_.transporterror.html" class="tsd-kind-icon">Transport<wbr>Error</a>
+		</li>
+		<li class=" tsd-kind-variable tsd-parent-kind-external-module">
+			<a href="../modules/_actor_api_resource_.html#client_tag_key" class="tsd-kind-icon">CLIENT_<wbr>TAG_<wbr>KEY</a>
 		</li>
 	</ul>
 </nav>
@@ -975,17 +1002,22 @@ img { max-width: 100%; }
 				<div class="lead">
 					<p>Resource represents the host server (or other http remote).</p>
 				</div>
-				<p>HTTP requests sent to this actor will be forwarded to the host it
+				<p>HTTP requests sent to this actor will be forwarded to the host the agent
 				is configured for.</p>
-				<p>In order to receive the response, set the &quot;client&quot; tag to
-				the actor that will receive it.</p>
+				<p>By default, responses are sent to the client address however this can be
+				overridden per request by using the CLIENT_TAG_KEY tag on a request.</p>
 				<p>Additionally, you can use the following tags to forward the responses
-				for the bellow conditions. The client will receive an Aborted message:</p>
+				for the below conditions. The client will receive an Aborted message:</p>
 				<p>401   - When the request is Unauthorized.
 					403   - When the request is forbidden.
 					404   - When the resource is not found.
 					500   - When an internal error occurs.
 				error - When a transport error occurs.</p>
+				<dl class="tsd-comment-tags">
+					<dt>deprecated</dt>
+					<dd><p>use remote instead.</p>
+					</dd>
+				</dl>
 			</div>
 		</section>
 		<section class="tsd-panel tsd-type-parameters">
@@ -1032,6 +1064,7 @@ img { max-width: 100%; }
 						<h3>Properties</h3>
 						<ul class="tsd-index-list">
 							<li class="tsd-kind-property tsd-parent-kind-class"><a href="_actor_api_resource_.resource.html#agent" class="tsd-kind-icon">agent</a></li>
+							<li class="tsd-kind-property tsd-parent-kind-class"><a href="_actor_api_resource_.resource.html#client" class="tsd-kind-icon">client</a></li>
 							<li class="tsd-kind-property tsd-parent-kind-class tsd-is-overwrite"><a href="_actor_api_resource_.resource.html#receive" class="tsd-kind-icon">receive</a></li>
 							<li class="tsd-kind-property tsd-parent-kind-class tsd-is-overwrite"><a href="_actor_api_resource_.resource.html#system" class="tsd-kind-icon">system</a></li>
 						</ul>
@@ -1040,17 +1073,21 @@ img { max-width: 100%; }
 						<h3>Methods</h3>
 						<ul class="tsd-index-list">
 							<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="_actor_api_resource_.resource.html#accept" class="tsd-kind-icon">accept</a></li>
+							<li class="tsd-kind-method tsd-parent-kind-class"><a href="_actor_api_resource_.resource.html#batchsend" class="tsd-kind-icon">batch<wbr>Send</a></li>
 							<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="_actor_api_resource_.resource.html#exit" class="tsd-kind-icon">exit</a></li>
 							<li class="tsd-kind-method tsd-parent-kind-class tsd-is-overwrite tsd-is-inherited"><a href="_actor_api_resource_.resource.html#init" class="tsd-kind-icon">init</a></li>
 							<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="_actor_api_resource_.resource.html#kill" class="tsd-kind-icon">kill</a></li>
 							<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="_actor_api_resource_.resource.html#notify" class="tsd-kind-icon">notify</a></li>
+							<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="_actor_api_resource_.resource.html#raise" class="tsd-kind-icon">raise</a></li>
 							<li class="tsd-kind-method tsd-parent-kind-class tsd-is-overwrite tsd-is-inherited"><a href="_actor_api_resource_.resource.html#run" class="tsd-kind-icon">run</a></li>
 							<li class="tsd-kind-method tsd-parent-kind-class tsd-has-type-parameter tsd-is-overwrite tsd-is-inherited"><a href="_actor_api_resource_.resource.html#select" class="tsd-kind-icon">select</a></li>
 							<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="_actor_api_resource_.resource.html#self" class="tsd-kind-icon">self</a></li>
 							<li class="tsd-kind-method tsd-parent-kind-class"><a href="_actor_api_resource_.resource.html#send" class="tsd-kind-icon">send</a></li>
 							<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="_actor_api_resource_.resource.html#spawn" class="tsd-kind-icon">spawn</a></li>
+							<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="_actor_api_resource_.resource.html#spawngroup" class="tsd-kind-icon">spawn<wbr>Group</a></li>
 							<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="_actor_api_resource_.resource.html#stop" class="tsd-kind-icon">stop</a></li>
 							<li class="tsd-kind-method tsd-parent-kind-class tsd-has-type-parameter tsd-is-inherited"><a href="_actor_api_resource_.resource.html#tell" class="tsd-kind-icon">tell</a></li>
+							<li class="tsd-kind-method tsd-parent-kind-class"><a href="_actor_api_resource_.resource.html#transmit" class="tsd-kind-icon">transmit</a></li>
 						</ul>
 					</section>
 				</div>
@@ -1062,20 +1099,23 @@ img { max-width: 100%; }
 				<a name="constructor" class="tsd-anchor"></a>
 				<h3>constructor</h3>
 				<ul class="tsd-signatures tsd-kind-constructor tsd-parent-kind-class tsd-is-overwrite">
-					<li class="tsd-signature tsd-kind-icon">new <wbr>Resource<span class="tsd-signature-symbol">(</span>agent<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Agent</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">ReqRaw</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">ResParsed</span><span class="tsd-signature-symbol">&gt;</span>, system<span class="tsd-signature-symbol">: </span><a href="../interfaces/_app_index_.app.html" class="tsd-signature-type">App</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="_actor_api_resource_.resource.html" class="tsd-signature-type">Resource</a></li>
+					<li class="tsd-signature tsd-kind-icon">new <wbr>Resource<span class="tsd-signature-symbol">(</span>agent<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Agent</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">ReqRaw</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">ResParsed</span><span class="tsd-signature-symbol">&gt;</span>, client<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Address</span>, system<span class="tsd-signature-symbol">: </span><a href="../interfaces/_app_index_.app.html" class="tsd-signature-type">App</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="_actor_api_resource_.resource.html" class="tsd-signature-type">Resource</a></li>
 				</ul>
 				<ul class="tsd-descriptions">
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<p>Overrides AbstractResident.__constructor</p>
 							<ul>
-								<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/b32a4f4/lib/actor/api/resource.ts#L59">actor/api/resource.ts:59</a></li>
+								<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/7a2c3da/lib/actor/api/resource.ts#L98">actor/api/resource.ts:98</a></li>
 							</ul>
 						</aside>
 						<h4 class="tsd-parameters-title">Parameters</h4>
 						<ul class="tsd-parameters">
 							<li>
 								<h5>agent: <span class="tsd-signature-type">Agent</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">ReqRaw</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">ResParsed</span><span class="tsd-signature-symbol">&gt;</span></h5>
+							</li>
+							<li>
+								<h5>client: <span class="tsd-signature-type">Address</span></h5>
 							</li>
 							<li>
 								<h5>system: <a href="../interfaces/_app_index_.app.html" class="tsd-signature-type">App</a></h5>
@@ -1094,18 +1134,28 @@ img { max-width: 100%; }
 				<div class="tsd-signature tsd-kind-icon">agent<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Agent</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">ReqRaw</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">ResParsed</span><span class="tsd-signature-symbol">&gt;</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/b32a4f4/lib/actor/api/resource.ts#L62">actor/api/resource.ts:62</a></li>
+						<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/7a2c3da/lib/actor/api/resource.ts#L101">actor/api/resource.ts:101</a></li>
+					</ul>
+				</aside>
+			</section>
+			<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class">
+				<a name="client" class="tsd-anchor"></a>
+				<h3>client</h3>
+				<div class="tsd-signature tsd-kind-icon">client<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Address</span></div>
+				<aside class="tsd-sources">
+					<ul>
+						<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/7a2c3da/lib/actor/api/resource.ts#L102">actor/api/resource.ts:102</a></li>
 					</ul>
 				</aside>
 			</section>
 			<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-overwrite">
 				<a name="receive" class="tsd-anchor"></a>
 				<h3>receive</h3>
-				<div class="tsd-signature tsd-kind-icon">receive<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Case</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Request</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">ReqRaw</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol"> =&nbsp;&lt;Case&lt;Request&lt;ReqRaw&gt;&gt;[]&gt;[new Case(Head, this.send),new Case(Get, this.send),new Case(Post, this.send),new Case(Put, this.send),new Case(Patch, this.send),new Case(Delete, this.send)]</span></div>
+				<div class="tsd-signature tsd-kind-icon">receive<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Case</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Request</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">ReqRaw</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol"> =&nbsp;&lt;Case&lt;Request&lt;ReqRaw&gt;&gt;[]&gt;[new Case(Send, this.send),new Case(BatchSend, this.batchSend),new Case(Head, this.transmit),new Case(Get, this.transmit),new Case(Post, this.transmit),new Case(Put, this.transmit),new Case(Patch, this.transmit),new Case(Delete, this.transmit)]</span></div>
 				<aside class="tsd-sources">
 					<p>Overrides Immutable.receive</p>
 					<ul>
-						<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/b32a4f4/lib/actor/api/resource.ts#L108">actor/api/resource.ts:108</a></li>
+						<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/7a2c3da/lib/actor/api/resource.ts#L193">actor/api/resource.ts:193</a></li>
 					</ul>
 				</aside>
 			</section>
@@ -1116,7 +1166,7 @@ img { max-width: 100%; }
 				<aside class="tsd-sources">
 					<p>Overrides AbstractResident.system</p>
 					<ul>
-						<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/b32a4f4/lib/actor/api/resource.ts#L63">actor/api/resource.ts:63</a></li>
+						<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/7a2c3da/lib/actor/api/resource.ts#L103">actor/api/resource.ts:103</a></li>
 					</ul>
 				</aside>
 			</section>
@@ -1134,13 +1184,38 @@ img { max-width: 100%; }
 						<aside class="tsd-sources">
 							<p>Inherited from AbstractResident.accept</p>
 							<ul>
-								<li>Defined in /home/master/Documents/code/development/node/jouvert/node_modules/@quenk/potoo/lib/actor/resident/index.ts:53</li>
+								<li>Defined in /home/master/Documents/code/development/node/jouvert/node_modules/@quenk/potoo/lib/actor/resident/index.ts:67</li>
 							</ul>
 						</aside>
 						<h4 class="tsd-parameters-title">Parameters</h4>
 						<ul class="tsd-parameters">
 							<li>
 								<h5>m: <a href="../modules/_actor_interact_data_form_validate_.html#message" class="tsd-signature-type">Message</a></h5>
+							</li>
+						</ul>
+						<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
+					</li>
+				</ul>
+			</section>
+			<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
+				<a name="batchsend" class="tsd-anchor"></a>
+				<h3>batch<wbr>Send</h3>
+				<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
+					<li class="tsd-signature tsd-kind-icon">batch<wbr>Send<span class="tsd-signature-symbol">(</span>__namedParameters<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">object</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
+				</ul>
+				<ul class="tsd-descriptions">
+					<li class="tsd-description">
+						<aside class="tsd-sources">
+							<ul>
+								<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/7a2c3da/lib/actor/api/resource.ts#L105">actor/api/resource.ts:105</a></li>
+							</ul>
+						</aside>
+						<h4 class="tsd-parameters-title">Parameters</h4>
+						<ul class="tsd-parameters">
+							<li>
+								<h5>__namedParameters: <span class="tsd-signature-type">object</span></h5>
+								<ul class="tsd-parameters">
+								</ul>
 							</li>
 						</ul>
 						<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
@@ -1158,7 +1233,7 @@ img { max-width: 100%; }
 						<aside class="tsd-sources">
 							<p>Inherited from AbstractResident.exit</p>
 							<ul>
-								<li>Defined in /home/master/Documents/code/development/node/jouvert/node_modules/@quenk/potoo/lib/actor/resident/index.ts:84</li>
+								<li>Defined in /home/master/Documents/code/development/node/jouvert/node_modules/@quenk/potoo/lib/actor/resident/index.ts:111</li>
 							</ul>
 						</aside>
 						<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
@@ -1177,7 +1252,7 @@ img { max-width: 100%; }
 							<p>Inherited from Immutable.init</p>
 							<p>Overrides AbstractResident.init</p>
 							<ul>
-								<li>Defined in /home/master/Documents/code/development/node/jouvert/node_modules/@quenk/potoo/lib/actor/resident/index.ts:121</li>
+								<li>Defined in /home/master/Documents/code/development/node/jouvert/node_modules/@quenk/potoo/lib/actor/resident/index.ts:148</li>
 							</ul>
 						</aside>
 						<h4 class="tsd-parameters-title">Parameters</h4>
@@ -1201,7 +1276,7 @@ img { max-width: 100%; }
 						<aside class="tsd-sources">
 							<p>Inherited from AbstractResident.kill</p>
 							<ul>
-								<li>Defined in /home/master/Documents/code/development/node/jouvert/node_modules/@quenk/potoo/lib/actor/resident/index.ts:77</li>
+								<li>Defined in /home/master/Documents/code/development/node/jouvert/node_modules/@quenk/potoo/lib/actor/resident/index.ts:104</li>
 							</ul>
 						</aside>
 						<h4 class="tsd-parameters-title">Parameters</h4>
@@ -1225,10 +1300,34 @@ img { max-width: 100%; }
 						<aside class="tsd-sources">
 							<p>Inherited from AbstractResident.notify</p>
 							<ul>
-								<li>Defined in /home/master/Documents/code/development/node/jouvert/node_modules/@quenk/potoo/lib/actor/resident/index.ts:41</li>
+								<li>Defined in /home/master/Documents/code/development/node/jouvert/node_modules/@quenk/potoo/lib/actor/resident/index.ts:55</li>
 							</ul>
 						</aside>
 						<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
+					</li>
+				</ul>
+			</section>
+			<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
+				<a name="raise" class="tsd-anchor"></a>
+				<h3>raise</h3>
+				<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
+					<li class="tsd-signature tsd-kind-icon">raise<span class="tsd-signature-symbol">(</span>e<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Err</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">AbstractResident</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Context</span><span class="tsd-signature-symbol">, </span><a href="../interfaces/_app_index_.app.html" class="tsd-signature-type">App</a><span class="tsd-signature-symbol">&gt;</span></li>
+				</ul>
+				<ul class="tsd-descriptions">
+					<li class="tsd-description">
+						<aside class="tsd-sources">
+							<p>Inherited from AbstractResident.raise</p>
+							<ul>
+								<li>Defined in /home/master/Documents/code/development/node/jouvert/node_modules/@quenk/potoo/lib/actor/resident/index.ts:97</li>
+							</ul>
+						</aside>
+						<h4 class="tsd-parameters-title">Parameters</h4>
+						<ul class="tsd-parameters">
+							<li>
+								<h5>e: <span class="tsd-signature-type">Err</span></h5>
+							</li>
+						</ul>
+						<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">AbstractResident</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Context</span><span class="tsd-signature-symbol">, </span><a href="../interfaces/_app_index_.app.html" class="tsd-signature-type">App</a><span class="tsd-signature-symbol">&gt;</span></h4>
 					</li>
 				</ul>
 			</section>
@@ -1244,7 +1343,7 @@ img { max-width: 100%; }
 							<p>Inherited from Immutable.run</p>
 							<p>Overrides AbstractResident.run</p>
 							<ul>
-								<li>Defined in /home/master/Documents/code/development/node/jouvert/node_modules/@quenk/potoo/lib/actor/resident/index.ts:140</li>
+								<li>Defined in /home/master/Documents/code/development/node/jouvert/node_modules/@quenk/potoo/lib/actor/resident/index.ts:167</li>
 							</ul>
 						</aside>
 						<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
@@ -1263,7 +1362,7 @@ img { max-width: 100%; }
 							<p>Inherited from Immutable.select</p>
 							<p>Overrides AbstractResident.select</p>
 							<ul>
-								<li>Defined in /home/master/Documents/code/development/node/jouvert/node_modules/@quenk/potoo/lib/actor/resident/index.ts:134</li>
+								<li>Defined in /home/master/Documents/code/development/node/jouvert/node_modules/@quenk/potoo/lib/actor/resident/index.ts:161</li>
 							</ul>
 						</aside>
 						<div class="tsd-comment tsd-typography">
@@ -1298,7 +1397,7 @@ img { max-width: 100%; }
 						<aside class="tsd-sources">
 							<p>Inherited from AbstractResident.self</p>
 							<ul>
-								<li>Defined in /home/master/Documents/code/development/node/jouvert/node_modules/@quenk/potoo/lib/actor/resident/index.ts:47</li>
+								<li>Defined in /home/master/Documents/code/development/node/jouvert/node_modules/@quenk/potoo/lib/actor/resident/index.ts:61</li>
 							</ul>
 						</aside>
 						<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">string</span></h4>
@@ -1309,19 +1408,21 @@ img { max-width: 100%; }
 				<a name="send" class="tsd-anchor"></a>
 				<h3>send</h3>
 				<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
-					<li class="tsd-signature tsd-kind-icon">send<span class="tsd-signature-symbol">(</span>req<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Request</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">ReqRaw</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
+					<li class="tsd-signature tsd-kind-icon">send<span class="tsd-signature-symbol">(</span>__namedParameters<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">object</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
 				</ul>
 				<ul class="tsd-descriptions">
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/b32a4f4/lib/actor/api/resource.ts#L65">actor/api/resource.ts:65</a></li>
+								<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/7a2c3da/lib/actor/api/resource.ts#L128">actor/api/resource.ts:128</a></li>
 							</ul>
 						</aside>
 						<h4 class="tsd-parameters-title">Parameters</h4>
 						<ul class="tsd-parameters">
 							<li>
-								<h5>req: <span class="tsd-signature-type">Request</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">ReqRaw</span><span class="tsd-signature-symbol">&gt;</span></h5>
+								<h5>__namedParameters: <span class="tsd-signature-type">object</span></h5>
+								<ul class="tsd-parameters">
+								</ul>
 							</li>
 						</ul>
 						<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
@@ -1339,7 +1440,7 @@ img { max-width: 100%; }
 						<aside class="tsd-sources">
 							<p>Inherited from AbstractResident.spawn</p>
 							<ul>
-								<li>Defined in /home/master/Documents/code/development/node/jouvert/node_modules/@quenk/potoo/lib/actor/resident/index.ts:59</li>
+								<li>Defined in /home/master/Documents/code/development/node/jouvert/node_modules/@quenk/potoo/lib/actor/resident/index.ts:73</li>
 							</ul>
 						</aside>
 						<h4 class="tsd-parameters-title">Parameters</h4>
@@ -1349,6 +1450,33 @@ img { max-width: 100%; }
 							</li>
 						</ul>
 						<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Address</span></h4>
+					</li>
+				</ul>
+			</section>
+			<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
+				<a name="spawngroup" class="tsd-anchor"></a>
+				<h3>spawn<wbr>Group</h3>
+				<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
+					<li class="tsd-signature tsd-kind-icon">spawn<wbr>Group<span class="tsd-signature-symbol">(</span>name<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">[]</span>, tmpls<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Templates</span><span class="tsd-signature-symbol">&lt;</span><a href="../interfaces/_app_index_.app.html" class="tsd-signature-type">App</a><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">AddressMap</span></li>
+				</ul>
+				<ul class="tsd-descriptions">
+					<li class="tsd-description">
+						<aside class="tsd-sources">
+							<p>Inherited from AbstractResident.spawnGroup</p>
+							<ul>
+								<li>Defined in /home/master/Documents/code/development/node/jouvert/node_modules/@quenk/potoo/lib/actor/resident/index.ts:83</li>
+							</ul>
+						</aside>
+						<h4 class="tsd-parameters-title">Parameters</h4>
+						<ul class="tsd-parameters">
+							<li>
+								<h5>name: <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">[]</span></h5>
+							</li>
+							<li>
+								<h5>tmpls: <span class="tsd-signature-type">Templates</span><span class="tsd-signature-symbol">&lt;</span><a href="../interfaces/_app_index_.app.html" class="tsd-signature-type">App</a><span class="tsd-signature-symbol">&gt;</span></h5>
+							</li>
+						</ul>
+						<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">AddressMap</span></h4>
 					</li>
 				</ul>
 			</section>
@@ -1363,7 +1491,7 @@ img { max-width: 100%; }
 						<aside class="tsd-sources">
 							<p>Inherited from AbstractResident.stop</p>
 							<ul>
-								<li>Defined in /home/master/Documents/code/development/node/jouvert/node_modules/@quenk/potoo/lib/actor/resident/index.ts:90</li>
+								<li>Defined in /home/master/Documents/code/development/node/jouvert/node_modules/@quenk/potoo/lib/actor/resident/index.ts:117</li>
 							</ul>
 						</aside>
 						<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
@@ -1381,7 +1509,7 @@ img { max-width: 100%; }
 						<aside class="tsd-sources">
 							<p>Inherited from AbstractResident.tell</p>
 							<ul>
-								<li>Defined in /home/master/Documents/code/development/node/jouvert/node_modules/@quenk/potoo/lib/actor/resident/index.ts:69</li>
+								<li>Defined in /home/master/Documents/code/development/node/jouvert/node_modules/@quenk/potoo/lib/actor/resident/index.ts:90</li>
 							</ul>
 						</aside>
 						<h4 class="tsd-type-parameters-title">Type parameters</h4>
@@ -1400,6 +1528,29 @@ img { max-width: 100%; }
 							</li>
 						</ul>
 						<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">AbstractResident</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Context</span><span class="tsd-signature-symbol">, </span><a href="../interfaces/_app_index_.app.html" class="tsd-signature-type">App</a><span class="tsd-signature-symbol">&gt;</span></h4>
+					</li>
+				</ul>
+			</section>
+			<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
+				<a name="transmit" class="tsd-anchor"></a>
+				<h3>transmit</h3>
+				<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
+					<li class="tsd-signature tsd-kind-icon">transmit<span class="tsd-signature-symbol">(</span>req<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Request</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">ReqRaw</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
+				</ul>
+				<ul class="tsd-descriptions">
+					<li class="tsd-description">
+						<aside class="tsd-sources">
+							<ul>
+								<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/7a2c3da/lib/actor/api/resource.ts#L149">actor/api/resource.ts:149</a></li>
+							</ul>
+						</aside>
+						<h4 class="tsd-parameters-title">Parameters</h4>
+						<ul class="tsd-parameters">
+							<li>
+								<h5>req: <span class="tsd-signature-type">Request</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">ReqRaw</span><span class="tsd-signature-symbol">&gt;</span></h5>
+							</li>
+						</ul>
+						<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
 					</li>
 				</ul>
 			</section>

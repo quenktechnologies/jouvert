@@ -919,6 +919,12 @@ img { max-width: 100%; }
 		<li class=" tsd-kind-class tsd-parent-kind-external-module">
 			<a href="../classes/_actor_api_router_display_.exp.html" class="tsd-kind-icon">Exp</a>
 		</li>
+		<li class=" tsd-kind-class tsd-parent-kind-external-module">
+			<a href="../classes/_actor_api_router_display_.forward.html" class="tsd-kind-icon">Forward</a>
+		</li>
+		<li class=" tsd-kind-class tsd-parent-kind-external-module">
+			<a href="../classes/_actor_api_router_display_.refresh.html" class="tsd-kind-icon">Refresh</a>
+		</li>
 		<li class=" tsd-kind-class tsd-parent-kind-external-module tsd-has-type-parameter">
 			<a href="../classes/_actor_api_router_display_.resume.html" class="tsd-kind-icon">Resume</a>
 		</li>
@@ -950,10 +956,10 @@ img { max-width: 100%; }
 			<a href="_actor_api_router_display_.html#supervisor_id" class="tsd-kind-icon">SUPERVISOR_<wbr>ID</a>
 		</li>
 		<li class=" tsd-kind-function tsd-parent-kind-external-module tsd-has-type-parameter">
-			<a href="_actor_api_router_display_.html#whenawaiting" class="tsd-kind-icon">when<wbr>Awaiting</a>
+			<a href="_actor_api_router_display_.html#whenrouting" class="tsd-kind-icon">when<wbr>Routing</a>
 		</li>
 		<li class=" tsd-kind-function tsd-parent-kind-external-module tsd-has-type-parameter">
-			<a href="_actor_api_router_display_.html#whenrouting" class="tsd-kind-icon">when<wbr>Routing</a>
+			<a href="_actor_api_router_display_.html#whenwaiting" class="tsd-kind-icon">when<wbr>Waiting</a>
 		</li>
 	</ul>
 </nav>
@@ -970,6 +976,8 @@ img { max-width: 100%; }
 							<li class="tsd-kind-class tsd-parent-kind-external-module"><a href="../classes/_actor_api_router_display_.cont.html" class="tsd-kind-icon">Cont</a></li>
 							<li class="tsd-kind-class tsd-parent-kind-external-module tsd-has-type-parameter"><a href="../classes/_actor_api_router_display_.displayrouter.html" class="tsd-kind-icon">Display<wbr>Router</a></li>
 							<li class="tsd-kind-class tsd-parent-kind-external-module"><a href="../classes/_actor_api_router_display_.exp.html" class="tsd-kind-icon">Exp</a></li>
+							<li class="tsd-kind-class tsd-parent-kind-external-module"><a href="../classes/_actor_api_router_display_.forward.html" class="tsd-kind-icon">Forward</a></li>
+							<li class="tsd-kind-class tsd-parent-kind-external-module"><a href="../classes/_actor_api_router_display_.refresh.html" class="tsd-kind-icon">Refresh</a></li>
 							<li class="tsd-kind-class tsd-parent-kind-external-module tsd-has-type-parameter"><a href="../classes/_actor_api_router_display_.resume.html" class="tsd-kind-icon">Resume</a></li>
 							<li class="tsd-kind-class tsd-parent-kind-external-module tsd-has-type-parameter"><a href="../classes/_actor_api_router_display_.supervisor.html" class="tsd-kind-icon">Supervisor</a></li>
 							<li class="tsd-kind-class tsd-parent-kind-external-module"><a href="../classes/_actor_api_router_display_.suspend.html" class="tsd-kind-icon">Suspend</a></li>
@@ -1000,8 +1008,8 @@ img { max-width: 100%; }
 					<section class="tsd-index-section ">
 						<h3>Functions</h3>
 						<ul class="tsd-index-list">
-							<li class="tsd-kind-function tsd-parent-kind-external-module tsd-has-type-parameter"><a href="_actor_api_router_display_.html#whenawaiting" class="tsd-kind-icon">when<wbr>Awaiting</a></li>
 							<li class="tsd-kind-function tsd-parent-kind-external-module tsd-has-type-parameter"><a href="_actor_api_router_display_.html#whenrouting" class="tsd-kind-icon">when<wbr>Routing</a></li>
+							<li class="tsd-kind-function tsd-parent-kind-external-module tsd-has-type-parameter"><a href="_actor_api_router_display_.html#whenwaiting" class="tsd-kind-icon">when<wbr>Waiting</a></li>
 						</ul>
 					</section>
 				</div>
@@ -1015,7 +1023,7 @@ img { max-width: 100%; }
 				<div class="tsd-signature tsd-kind-icon">Route<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/b32a4f4/lib/actor/api/router/display.ts#L30">actor/api/router/display.ts:30</a></li>
+						<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/7a2c3da/lib/actor/api/router/display.ts#L33">actor/api/router/display.ts:33</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-comment tsd-typography">
@@ -1027,10 +1035,10 @@ img { max-width: 100%; }
 			<section class="tsd-panel tsd-member tsd-kind-type-alias tsd-parent-kind-external-module tsd-has-type-parameter">
 				<a name="routingmessages" class="tsd-anchor"></a>
 				<h3>Routing<wbr>Messages</h3>
-				<div class="tsd-signature tsd-kind-icon">Routing<wbr>Messages<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">T</span></div>
+				<div class="tsd-signature tsd-kind-icon">Routing<wbr>Messages<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">T</span><span class="tsd-signature-symbol"> | </span><a href="../classes/_actor_api_router_display_.forward.html" class="tsd-signature-type">Forward</a></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/b32a4f4/lib/actor/api/router/display.ts#L44">actor/api/router/display.ts:44</a></li>
+						<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/7a2c3da/lib/actor/api/router/display.ts#L47">actor/api/router/display.ts:47</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-comment tsd-typography">
@@ -1045,7 +1053,7 @@ img { max-width: 100%; }
 				<div class="tsd-signature tsd-kind-icon">Supervisor<wbr>Messages<span class="tsd-signature-symbol">:</span> <a href="../classes/_actor_api_router_display_.suspend.html" class="tsd-signature-type">Suspend</a><span class="tsd-signature-symbol"> | </span><a href="../classes/_actor_api_router_display_.ack.html" class="tsd-signature-type">Ack</a><span class="tsd-signature-symbol"> | </span><a href="../classes/_actor_api_router_display_.cont.html" class="tsd-signature-type">Cont</a></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/b32a4f4/lib/actor/api/router/display.ts#L51">actor/api/router/display.ts:51</a></li>
+						<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/7a2c3da/lib/actor/api/router/display.ts#L55">actor/api/router/display.ts:55</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-comment tsd-typography">
@@ -1060,7 +1068,7 @@ img { max-width: 100%; }
 				<div class="tsd-signature tsd-kind-icon">Time<wbr>Limit<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/b32a4f4/lib/actor/api/router/display.ts#L25">actor/api/router/display.ts:25</a></li>
+						<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/7a2c3da/lib/actor/api/router/display.ts#L28">actor/api/router/display.ts:28</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-comment tsd-typography">
@@ -1075,7 +1083,7 @@ img { max-width: 100%; }
 				<div class="tsd-signature tsd-kind-icon">Waiting<wbr>Messages<span class="tsd-signature-symbol">:</span> <a href="../classes/_actor_api_router_display_.ack.html" class="tsd-signature-type">Ack</a><span class="tsd-signature-symbol"> | </span><a href="../classes/_actor_api_router_display_.cont.html" class="tsd-signature-type">Cont</a><span class="tsd-signature-symbol"> | </span><a href="../classes/_actor_api_router_display_.exp.html" class="tsd-signature-type">Exp</a></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/b32a4f4/lib/actor/api/router/display.ts#L35">actor/api/router/display.ts:35</a></li>
+						<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/7a2c3da/lib/actor/api/router/display.ts#L38">actor/api/router/display.ts:38</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-comment tsd-typography">
@@ -1093,47 +1101,13 @@ img { max-width: 100%; }
 				<div class="tsd-signature tsd-kind-icon">SUPERVISOR_<wbr>ID<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">"supervisor"</span><span class="tsd-signature-symbol"> =&nbsp;&quot;supervisor&quot;</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/b32a4f4/lib/actor/api/router/display.ts#L20">actor/api/router/display.ts:20</a></li>
+						<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/7a2c3da/lib/actor/api/router/display.ts#L23">actor/api/router/display.ts:23</a></li>
 					</ul>
 				</aside>
 			</section>
 		</section>
 		<section class="tsd-panel-group tsd-member-group ">
 			<h2>Functions</h2>
-			<section class="tsd-panel tsd-member tsd-kind-function tsd-parent-kind-external-module tsd-has-type-parameter">
-				<a name="whenawaiting" class="tsd-anchor"></a>
-				<h3><span class="tsd-flag ts-flagConst">Const</span> when<wbr>Awaiting</h3>
-				<ul class="tsd-signatures tsd-kind-function tsd-parent-kind-external-module tsd-has-type-parameter">
-					<li class="tsd-signature tsd-kind-icon">when<wbr>Awaiting&lt;R&gt;<span class="tsd-signature-symbol">(</span>r<span class="tsd-signature-symbol">: </span><a href="../classes/_actor_api_router_display_.displayrouter.html" class="tsd-signature-type">DisplayRouter</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">R</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Case</span><span class="tsd-signature-symbol">&lt;</span><a href="_actor_api_router_display_.html#waitingmessages" class="tsd-signature-type">WaitingMessages</a><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">[]</span></li>
-				</ul>
-				<ul class="tsd-descriptions">
-					<li class="tsd-description">
-						<aside class="tsd-sources">
-							<ul>
-								<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/b32a4f4/lib/actor/api/router/display.ts#L336">actor/api/router/display.ts:336</a></li>
-							</ul>
-						</aside>
-						<div class="tsd-comment tsd-typography">
-							<div class="lead">
-								<p>whenAwaiting behaviour.</p>
-							</div>
-						</div>
-						<h4 class="tsd-type-parameters-title">Type parameters</h4>
-						<ul class="tsd-type-parameters">
-							<li>
-								<h4>R</h4>
-							</li>
-						</ul>
-						<h4 class="tsd-parameters-title">Parameters</h4>
-						<ul class="tsd-parameters">
-							<li>
-								<h5>r: <a href="../classes/_actor_api_router_display_.displayrouter.html" class="tsd-signature-type">DisplayRouter</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">R</span><span class="tsd-signature-symbol">&gt;</span></h5>
-							</li>
-						</ul>
-						<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Case</span><span class="tsd-signature-symbol">&lt;</span><a href="_actor_api_router_display_.html#waitingmessages" class="tsd-signature-type">WaitingMessages</a><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">[]</span></h4>
-					</li>
-				</ul>
-			</section>
 			<section class="tsd-panel tsd-member tsd-kind-function tsd-parent-kind-external-module tsd-has-type-parameter">
 				<a name="whenrouting" class="tsd-anchor"></a>
 				<h3><span class="tsd-flag ts-flagConst">Const</span> when<wbr>Routing</h3>
@@ -1144,7 +1118,7 @@ img { max-width: 100%; }
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/b32a4f4/lib/actor/api/router/display.ts#L326">actor/api/router/display.ts:326</a></li>
+								<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/7a2c3da/lib/actor/api/router/display.ts#L358">actor/api/router/display.ts:358</a></li>
 							</ul>
 						</aside>
 						<div class="tsd-comment tsd-typography">
@@ -1165,6 +1139,40 @@ img { max-width: 100%; }
 							</li>
 						</ul>
 						<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Case</span><span class="tsd-signature-symbol">&lt;</span><a href="_actor_api_router_display_.html#routingmessages" class="tsd-signature-type">RoutingMessages</a><span class="tsd-signature-symbol">&lt;</span><a href="../classes/_actor_api_router_display_.resume.html" class="tsd-signature-type">Resume</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">R</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">[]</span></h4>
+					</li>
+				</ul>
+			</section>
+			<section class="tsd-panel tsd-member tsd-kind-function tsd-parent-kind-external-module tsd-has-type-parameter">
+				<a name="whenwaiting" class="tsd-anchor"></a>
+				<h3><span class="tsd-flag ts-flagConst">Const</span> when<wbr>Waiting</h3>
+				<ul class="tsd-signatures tsd-kind-function tsd-parent-kind-external-module tsd-has-type-parameter">
+					<li class="tsd-signature tsd-kind-icon">when<wbr>Waiting&lt;R&gt;<span class="tsd-signature-symbol">(</span>r<span class="tsd-signature-symbol">: </span><a href="../classes/_actor_api_router_display_.displayrouter.html" class="tsd-signature-type">DisplayRouter</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">R</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Case</span><span class="tsd-signature-symbol">&lt;</span><a href="_actor_api_router_display_.html#waitingmessages" class="tsd-signature-type">WaitingMessages</a><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">[]</span></li>
+				</ul>
+				<ul class="tsd-descriptions">
+					<li class="tsd-description">
+						<aside class="tsd-sources">
+							<ul>
+								<li>Defined in <a href="https://github.com/quenktechnologies/jouvert/blob/7a2c3da/lib/actor/api/router/display.ts#L374">actor/api/router/display.ts:374</a></li>
+							</ul>
+						</aside>
+						<div class="tsd-comment tsd-typography">
+							<div class="lead">
+								<p>whenWaiting behaviour.</p>
+							</div>
+						</div>
+						<h4 class="tsd-type-parameters-title">Type parameters</h4>
+						<ul class="tsd-type-parameters">
+							<li>
+								<h4>R</h4>
+							</li>
+						</ul>
+						<h4 class="tsd-parameters-title">Parameters</h4>
+						<ul class="tsd-parameters">
+							<li>
+								<h5>r: <a href="../classes/_actor_api_router_display_.displayrouter.html" class="tsd-signature-type">DisplayRouter</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">R</span><span class="tsd-signature-symbol">&gt;</span></h5>
+							</li>
+						</ul>
+						<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Case</span><span class="tsd-signature-symbol">&lt;</span><a href="_actor_api_router_display_.html#waitingmessages" class="tsd-signature-type">WaitingMessages</a><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">[]</span></h4>
 					</li>
 				</ul>
 			</section>

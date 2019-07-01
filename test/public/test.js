@@ -258,7 +258,7 @@ exports.whenWaiting = function (r) { return [
     new router_1.ExpireCase(Exp, r)
 ]; };
 
-},{"../../":2,"../../router":11,"@quenk/noni/lib/control/monad/future":16,"@quenk/noni/lib/data/maybe":21,"@quenk/noni/lib/data/record":22,"@quenk/potoo/lib/actor/resident/case":30}],2:[function(require,module,exports){
+},{"../../":2,"../../router":11,"@quenk/noni/lib/control/monad/future":17,"@quenk/noni/lib/data/maybe":22,"@quenk/noni/lib/data/record":23,"@quenk/potoo/lib/actor/resident/case":31}],2:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -337,7 +337,7 @@ var Proxy = /** @class */ (function () {
 }());
 exports.Proxy = Proxy;
 
-},{"@quenk/potoo/lib/actor/resident":31}],3:[function(require,module,exports){
+},{"@quenk/potoo/lib/actor/resident":32}],3:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -416,7 +416,7 @@ var SavedCase = /** @class */ (function (_super) {
 }(case_1.Case));
 exports.SavedCase = SavedCase;
 
-},{"@quenk/potoo/lib/actor/resident/case":30}],4:[function(require,module,exports){
+},{"@quenk/potoo/lib/actor/resident/case":31}],4:[function(require,module,exports){
 "use strict";
 /**
  * A Form interact is one that is used for collecting and saving user input.
@@ -505,7 +505,7 @@ var AbortCase = /** @class */ (function (_super) {
 }(case_1.Case));
 exports.AbortCase = AbortCase;
 
-},{"@quenk/potoo/lib/actor/resident/case":30}],5:[function(require,module,exports){
+},{"@quenk/potoo/lib/actor/resident/case":31}],5:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -586,7 +586,7 @@ var AllForOneInputCase = /** @class */ (function (_super) {
 }(case_1.Case));
 exports.AllForOneInputCase = AllForOneInputCase;
 
-},{"@quenk/potoo/lib/actor/resident/case":30}],6:[function(require,module,exports){
+},{"@quenk/potoo/lib/actor/resident/case":31}],6:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -766,7 +766,7 @@ var ServerErrorCase = /** @class */ (function (_super) {
 }(case_1.Case));
 exports.ServerErrorCase = ServerErrorCase;
 
-},{"@quenk/potoo/lib/actor/resident/case":30}],7:[function(require,module,exports){
+},{"@quenk/potoo/lib/actor/resident/case":31}],7:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -821,7 +821,7 @@ var FinishCase = /** @class */ (function (_super) {
 }(case_1.Case));
 exports.FinishCase = FinishCase;
 
-},{"@quenk/potoo/lib/actor/resident/case":30}],8:[function(require,module,exports){
+},{"@quenk/potoo/lib/actor/resident/case":31}],8:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -938,7 +938,7 @@ var ExecuteSyncCase = /** @class */ (function (_super) {
 }(case_1.Case));
 exports.ExecuteSyncCase = ExecuteSyncCase;
 
-},{"@quenk/potoo/lib/actor/resident/case":30}],9:[function(require,module,exports){
+},{"@quenk/potoo/lib/actor/resident/case":31}],9:[function(require,module,exports){
 "use strict";
 /**
  * Sometimes an Interact needs to receive http responses in order to
@@ -1134,7 +1134,7 @@ var ServerErrorCase = /** @class */ (function (_super) {
 }(case_1.Case));
 exports.ServerErrorCase = ServerErrorCase;
 
-},{"@quenk/potoo/lib/actor/resident/case":30}],10:[function(require,module,exports){
+},{"@quenk/potoo/lib/actor/resident/case":31}],10:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -1211,7 +1211,7 @@ var ExitCase = /** @class */ (function (_super) {
 }(case_1.Case));
 exports.ExitCase = ExitCase;
 
-},{"@quenk/potoo/lib/actor/resident/case":30}],11:[function(require,module,exports){
+},{"@quenk/potoo/lib/actor/resident/case":31}],11:[function(require,module,exports){
 "use strict";
 /**
  * The router module provides interfaces for building client side router actors.
@@ -1346,7 +1346,346 @@ var MessageCase = /** @class */ (function (_super) {
 }(case_1.Case));
 exports.MessageCase = MessageCase;
 
-},{"@quenk/potoo/lib/actor/resident/case":30}],12:[function(require,module,exports){
+},{"@quenk/potoo/lib/actor/resident/case":31}],12:[function(require,module,exports){
+"use strict";
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+        return extendStatics(d, b);
+    };
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
+Object.defineProperty(exports, "__esModule", { value: true });
+/**
+ * This module provides an API for what could be described as building
+ * a "display router".
+ *
+ * The main interface Director, is an actor that coordinates control over a
+ * display between a group of actors. A display is simply another actor.
+ *
+ * The APIs provided here are designed around routing in client side apps.
+ */
+/** imports */
+var v4 = require("uuid/v4");
+var record_1 = require("@quenk/noni/lib/data/record");
+var maybe_1 = require("@quenk/noni/lib/data/maybe");
+var future_1 = require("@quenk/noni/lib/control/monad/future");
+var case_1 = require("@quenk/potoo/lib/actor/resident/case");
+var actor_1 = require("../actor");
+/**
+ * Dispatch signals to the Director that a new actor should be given control
+ * of the display.
+ */
+var Dispatch = /** @class */ (function () {
+    function Dispatch(route, actor, request) {
+        this.route = route;
+        this.actor = actor;
+        this.request = request;
+    }
+    return Dispatch;
+}());
+exports.Dispatch = Dispatch;
+/**
+ * Exp informs the Director that the current actor has failed
+ * to reply in a timely manner.
+ */
+var Exp = /** @class */ (function () {
+    function Exp() {
+    }
+    return Exp;
+}());
+exports.Exp = Exp;
+/**
+ * Cont can be sent in lieu of Ack by a controlling actor to retain control.
+ */
+var Cont = /** @class */ (function () {
+    function Cont() {
+    }
+    return Cont;
+}());
+exports.Cont = Cont;
+/**
+ * Ack should be sent to the router by the controlling actor to indicate it has
+ * complied with a Release request.
+ */
+var Ack = /** @class */ (function () {
+    function Ack() {
+    }
+    return Ack;
+}());
+exports.Ack = Ack;
+/**
+ * Resume indicates to the receiving actor now has control of the display.
+ */
+var Resume = /** @class */ (function () {
+    function Resume(route, request, display, router) {
+        this.route = route;
+        this.request = request;
+        this.display = display;
+        this.router = router;
+    }
+    return Resume;
+}());
+exports.Resume = Resume;
+/**
+ * Release indicates an actor's time is up and it should relinquish
+ * control.
+ */
+var Release = /** @class */ (function () {
+    function Release(router) {
+        this.router = router;
+    }
+    return Release;
+}());
+exports.Release = Release;
+/**
+ * Suspend indicates the actor should cease all activities immediately
+ * as it no longer has control of the display.
+ */
+var Suspend = /** @class */ (function () {
+    function Suspend(router) {
+        this.router = router;
+    }
+    return Suspend;
+}());
+exports.Suspend = Suspend;
+/**
+ * Supervisor is used to contain communication between the actor in control
+ * and the director.
+ *
+ * By treating the Supervisor as the router instead of the Director, we can
+ * prevent actors that have been blacklisted from communicating
+ * with the display.
+ *
+ * This is accomplished by killing off the supervisor whenever its actor
+ * is no longer in control.
+ */
+var Supervisor = /** @class */ (function (_super) {
+    __extends(Supervisor, _super);
+    function Supervisor(route, actor, request, delay, display, router, system) {
+        var _this = _super.call(this, system) || this;
+        _this.route = route;
+        _this.actor = actor;
+        _this.request = request;
+        _this.delay = delay;
+        _this.display = display;
+        _this.router = router;
+        _this.system = system;
+        _this.receive = [
+            new case_1.Case(Release, function (_) {
+                _this.tell(_this.actor, new Release(_this.self()));
+            }),
+            new case_1.Case(Suspend, function (s) {
+                _this.tell(_this.actor, s);
+                _this.exit();
+            }),
+            new case_1.Case(Ack, function (a) { return _this.tell(_this.router, a); }),
+            new case_1.Case(Cont, function (c) { return _this.tell(_this.router, c); }),
+            new case_1.Default(function (m) { return _this.tell(_this.display, m); })
+        ];
+        return _this;
+    }
+    Supervisor.prototype.run = function () {
+        var _this = this;
+        var me = this.self();
+        setTimeout(function () {
+            _this.tell(_this.actor, new Resume(_this.route, _this.request, me, me));
+        }, this.delay);
+    };
+    return Supervisor;
+}(actor_1.Immutable));
+exports.Supervisor = Supervisor;
+/**
+ * AbstractDirector provides an abstract implementation of a Director.
+ *
+ * Most of the implementation is inflexible except for the hook methods
+ * that are left up to extending classes.
+ */
+var AbstractDirector = /** @class */ (function (_super) {
+    __extends(AbstractDirector, _super);
+    function AbstractDirector(display, routes, router, current, config, system) {
+        var _this = _super.call(this, system) || this;
+        _this.display = display;
+        _this.routes = routes;
+        _this.router = router;
+        _this.current = current;
+        _this.config = config;
+        _this.system = system;
+        return _this;
+    }
+    AbstractDirector.prototype.beforeRouting = function () {
+        return this;
+    };
+    AbstractDirector.prototype.routing = function () {
+        return exports.whenRouting(this);
+    };
+    AbstractDirector.prototype.beforeDispatch = function (_) {
+        var _this = this;
+        setTimeout(function () { return _this.tell(_this.self(), new Exp()); }, this.config.timeout);
+        if (this.current.isJust()) {
+            this.tell(this.current.get(), new Release(this.self()));
+        }
+        else {
+            this.tell(this.self(), new Ack());
+        }
+        return this;
+    };
+    AbstractDirector.prototype.dispatching = function (p) {
+        return exports.whenDispatching(this, p);
+    };
+    AbstractDirector.prototype.afterExpire = function (_a) {
+        var route = _a.route, actor = _a.actor, request = _a.request;
+        var routes = this.routes;
+        if (this.current.isJust()) {
+            var addr = this.current.get();
+            this.kill(addr);
+            this.spawn(exports.supervisorTmpl(this, route, actor, request));
+        }
+        else {
+            this.spawn(exports.supervisorTmpl(this, route, actor, request));
+        }
+        //remove the offending route from the table.
+        this.routes = record_1.exclude(routes, route);
+        return this;
+    };
+    AbstractDirector.prototype.afterCont = function (_) {
+        //TODO: In future tell the real router we did not navigate.
+        return this;
+    };
+    AbstractDirector.prototype.afterAck = function (_a) {
+        var route = _a.route, actor = _a.actor, request = _a.request;
+        if (this.current.isJust())
+            this.tell(this.current.get(), new Suspend(this.self()));
+        this.current = maybe_1.just(this.spawn(exports.supervisorTmpl(this, route, actor, request)));
+        return this;
+    };
+    AbstractDirector.prototype.run = function () {
+        var _this = this;
+        this.routes = record_1.map(this.routes, function (actor, route) {
+            _this.router.add(route, function (r) {
+                if (_this.routes.hasOwnProperty(route)) {
+                    _this.tell(_this.self(), new Dispatch(route, actor, r));
+                    return future_1.pure(undefined);
+                }
+                else {
+                    return _this.router.onError(new Error(route + ": not responding!"));
+                }
+            });
+            return actor;
+        });
+        this.select(this.routing());
+    };
+    return AbstractDirector;
+}(actor_1.Mutable));
+exports.AbstractDirector = AbstractDirector;
+/**
+ * DefaultDirector
+ */
+var DefaultDirector = /** @class */ (function (_super) {
+    __extends(DefaultDirector, _super);
+    function DefaultDirector() {
+        return _super !== null && _super.apply(this, arguments) || this;
+    }
+    DefaultDirector.prototype.beforeExp = function (_) { return this; };
+    DefaultDirector.prototype.beforeCont = function (_) { return this; };
+    DefaultDirector.prototype.beforeAck = function (_) { return this; };
+    return DefaultDirector;
+}(AbstractDirector));
+exports.DefaultDirector = DefaultDirector;
+/**
+ * DispatchCase triggers the beforeDispatch hook
+ * and transitions to dispatching.
+ */
+var DispatchCase = /** @class */ (function (_super) {
+    __extends(DispatchCase, _super);
+    function DispatchCase(d) {
+        return _super.call(this, Dispatch, function (p) {
+            d.beforeDispatch(p).select(d.dispatching(p));
+        }) || this;
+    }
+    return DispatchCase;
+}(case_1.Case));
+exports.DispatchCase = DispatchCase;
+/**
+ * ExpireCase triggers the afterExpire hook
+ * and transitions to routing.
+ */
+var ExpireCase = /** @class */ (function (_super) {
+    __extends(ExpireCase, _super);
+    function ExpireCase(d, m) {
+        return _super.call(this, Exp, function (_) {
+            d
+                .beforeExp(m)
+                .afterExpire(m)
+                .select(d.routing());
+        }) || this;
+    }
+    return ExpireCase;
+}(case_1.Case));
+exports.ExpireCase = ExpireCase;
+/**
+ * ContCase triggers the afterCont hook and transitions to
+ * routing.
+ */
+var ContCase = /** @class */ (function (_super) {
+    __extends(ContCase, _super);
+    function ContCase(d) {
+        return _super.call(this, Cont, function (c) {
+            d
+                .beforeCont(c)
+                .afterCont(c)
+                .select(d.routing());
+        }) || this;
+    }
+    return ContCase;
+}(case_1.Case));
+exports.ContCase = ContCase;
+/**
+ * AckCase triggers the afterAck hook and transitions
+ * to routing.
+ */
+var AckCase = /** @class */ (function (_super) {
+    __extends(AckCase, _super);
+    function AckCase(d, m) {
+        return _super.call(this, Ack, function (_) {
+            d
+                .beforeAck(m)
+                .afterAck(m)
+                .select(d.routing());
+        }) || this;
+    }
+    return AckCase;
+}(case_1.Case));
+exports.AckCase = AckCase;
+/**
+ * whenRouting behaviour.
+ */
+exports.whenRouting = function (r) { return [
+    new DispatchCase(r)
+]; };
+/**
+ * whenDispatching behaviour.
+ */
+exports.whenDispatching = function (r, d) { return [
+    new ExpireCase(r, d),
+    new ContCase(r),
+    new AckCase(r, d),
+]; };
+/**
+ * supervisorTmpl used to spawn new supervisor actors.
+ */
+exports.supervisorTmpl = function (d, route, actor, req) { return ({
+    id: v4(),
+    create: function (s) { return new Supervisor(route, actor, req, d.config.delay, d.display, d.self(), s); }
+}); };
+
+},{"../actor":2,"@quenk/noni/lib/control/monad/future":17,"@quenk/noni/lib/data/maybe":22,"@quenk/noni/lib/data/record":23,"@quenk/potoo/lib/actor/resident/case":31,"uuid/v4":97}],13:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -1407,7 +1746,7 @@ var DefaultHashRouter = /** @class */ (function (_super) {
 }(_1.HashRouter));
 exports.DefaultHashRouter = DefaultHashRouter;
 
-},{"./":13,"@quenk/noni/lib/control/monad/future":16,"@quenk/noni/lib/data/function":20}],13:[function(require,module,exports){
+},{"./":14,"@quenk/noni/lib/control/monad/future":17,"@quenk/noni/lib/data/function":21}],14:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var qs = require("qs");
@@ -1540,7 +1879,7 @@ exports.compile = function (r) {
     });
 };
 
-},{"@quenk/noni/lib/control/monad/future":16,"@quenk/noni/lib/data/function":20,"@quenk/noni/lib/data/record":22,"path-to-regexp":80,"qs":84}],14:[function(require,module,exports){
+},{"@quenk/noni/lib/control/monad/future":17,"@quenk/noni/lib/data/function":21,"@quenk/noni/lib/data/record":23,"path-to-regexp":81,"qs":85}],15:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -1718,7 +2057,7 @@ exports.toString = function (value) {
  */
 exports.must = function (value) { return new Positive(value, true); };
 
-},{"egal":76,"json-stringify-safe":78}],15:[function(require,module,exports){
+},{"egal":77,"json-stringify-safe":79}],16:[function(require,module,exports){
 "use strict";
 /**
  * This module provides functions and types to make dealing with ES errors
@@ -1759,7 +2098,7 @@ exports.attempt = function (f) {
     }
 };
 
-},{"../data/either":19}],16:[function(require,module,exports){
+},{"../data/either":20}],17:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -2071,7 +2410,7 @@ exports.pure = function (a) { return new Pure(a); };
  */
 exports.raise = function (e) { return new Raise(e); };
 /**
- * attempt a syncronous task, trapping any thrown errors in the Future.
+ * attempt a synchronous task, trapping any thrown errors in the Future.
  */
 exports.attempt = function (f) { return new Run(function (s) {
     timer_1.tick(function () { try {
@@ -2083,13 +2422,22 @@ exports.attempt = function (f) { return new Run(function (s) {
     return function_1.noop;
 }); };
 /**
- * delay a task by running it in the "next tick" without attempting
- * to trap any thrown errors.
+ * delay executes a function f after n milliseconds have passed.
+ *
+ * Any errors thrown are caught.
  */
-exports.delay = function (f) { return new Run(function (s) {
-    timer_1.tick(function () { return s.onSuccess(f()); });
-    return function_1.noop;
-}); };
+exports.delay = function (f, n) {
+    if (n === void 0) { n = 0; }
+    return new Run(function (s) {
+        setTimeout(function () { try {
+            s.onSuccess(f());
+        }
+        catch (e) {
+            s.onError(e);
+        } }, n);
+        return function_1.noop;
+    });
+};
 /**
  * fromAbortable takes an Aborter and a node style async function and
  * produces a Future.
@@ -2097,7 +2445,9 @@ exports.delay = function (f) { return new Run(function (s) {
  * Note: The function used here is not called in the "next tick".
  */
 exports.fromAbortable = function (abort) { return function (f) { return new Run(function (s) {
-    f(function (err, a) { return (err != null) ? s.onError(err) : s.onSuccess(a); });
+    f(function (err, a) {
+        return (err != null) ? s.onError(err) : s.onSuccess(a);
+    });
     return abort;
 }); }; };
 /**
@@ -2253,7 +2603,7 @@ exports.liftP = function (f) { return new Run(function (s) {
     return function_1.noop;
 }); };
 
-},{"../../data/function":20,"../error":15,"../timer":17}],17:[function(require,module,exports){
+},{"../../data/function":21,"../error":16,"../timer":18}],18:[function(require,module,exports){
 (function (process){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
@@ -2266,7 +2616,7 @@ exports.tick = function (f) { return (typeof window == 'undefined') ?
     process.nextTick(f); };
 
 }).call(this,require('_process'))
-},{"_process":81}],18:[function(require,module,exports){
+},{"_process":82}],19:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 /**
@@ -2347,7 +2697,7 @@ exports.dedupe = function (list) {
     return list.filter(function (e, i, l) { return l.indexOf(e) === i; });
 };
 
-},{"../../math":26,"../record":22}],19:[function(require,module,exports){
+},{"../../math":27,"../record":23}],20:[function(require,module,exports){
 "use strict";
 /**
  * Either represents a value that may be one of two types.
@@ -2542,7 +2892,7 @@ exports.either = function (f) { return function (g) { return function (e) {
     return (e instanceof Right) ? g(e.takeRight()) : f(e.takeLeft());
 }; }; };
 
-},{"./maybe":21}],20:[function(require,module,exports){
+},{"./maybe":22}],21:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 /**
@@ -2601,7 +2951,7 @@ exports.curry5 = function (f) {
  */
 exports.noop = function () { };
 
-},{}],21:[function(require,module,exports){
+},{}],22:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 /**
@@ -2834,7 +3184,7 @@ exports.fromNaN = function (n) {
     return isNaN(n) ? new Nothing() : new Just(n);
 };
 
-},{}],22:[function(require,module,exports){
+},{}],23:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 /**
@@ -2996,8 +3346,8 @@ exports.exclude = function (o, keys) {
  */
 exports.partition = function (r, f) {
     return exports.reduce(r, [{}, {}], function (_a, c, k) {
-        var yes = _a[0], no = _a[1];
         var _b, _c;
+        var yes = _a[0], no = _a[1];
         return f(c, k, r) ?
             [exports.merge(yes, (_b = {}, _b[k] = c, _b)), no] :
             [yes, exports.merge(no, (_c = {}, _c[k] = c, _c))];
@@ -3048,7 +3398,7 @@ var _clone = function (a) {
         return a;
 };
 
-},{"../array":18}],23:[function(require,module,exports){
+},{"../array":19}],24:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 /**
@@ -3340,7 +3690,7 @@ exports.map = function (a, f) {
     });
 };
 
-},{"../maybe":21,"./":22}],24:[function(require,module,exports){
+},{"../maybe":22,"./":23}],25:[function(require,module,exports){
 "use strict";
 /**
  *  Common functions used to manipulate strings.
@@ -3436,7 +3786,7 @@ exports.interpolate = function (str, data, opts) {
     });
 };
 
-},{"./record":22,"./record/path":23}],25:[function(require,module,exports){
+},{"./record":23,"./record/path":24}],26:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var prims = ['string', 'number', 'boolean'];
@@ -3506,24 +3856,26 @@ exports.is = function (expected) { return function (value) { return typeof (valu
  *             instead.
  */
 exports.test = function (value, t) {
-    return ((prims.indexOf(typeof t) > -1) && (value === t)) ?
-        true :
-        ((typeof t === 'function') &&
-            (((t === String) && (typeof value === 'string')) ||
-                ((t === Number) && (typeof value === 'number')) ||
-                ((t === Boolean) && (typeof value === 'boolean')) ||
-                ((t === Array) && (Array.isArray(value))) ||
-                (t === Any) ||
-                (value instanceof t))) ?
-            true :
-            ((t instanceof RegExp) && ((typeof value === 'string') && t.test(value))) ?
-                true :
-                ((typeof t === 'object') && (typeof value === 'object')) ?
-                    Object
-                        .keys(t)
-                        .every(function (k) { return value.hasOwnProperty(k) ?
-                        exports.test(value[k], t[k]) : false; }) :
-                    false;
+    if ((prims.indexOf(typeof t) > -1) && (value === t))
+        return true;
+    else if ((typeof t === 'function') &&
+        (((t === String) && (typeof value === 'string')) ||
+            ((t === Number) && (typeof value === 'number')) ||
+            ((t === Boolean) && (typeof value === 'boolean')) ||
+            ((t === Array) && (Array.isArray(value))) ||
+            (t === Any) ||
+            (value instanceof t)))
+        return true;
+    else if ((t instanceof RegExp) &&
+        ((typeof value === 'string') &&
+            t.test(value)))
+        return true;
+    else if ((typeof t === 'object') && (typeof value === 'object'))
+        return Object
+            .keys(t)
+            .every(function (k) { return Object.hasOwnProperty.call(value, k) ?
+            exports.test(value[k], t[k]) : false; });
+    return false;
 };
 /**
  * show the type of a value.
@@ -3534,7 +3886,7 @@ exports.test = function (value, t) {
 exports.show = function (value) {
     if (typeof value === 'object') {
         if (Array.isArray(value))
-            return "[" + value.map(exports.show) + "]";
+            return "[" + value.map(exports.show) + "];";
         else if (value.constructor !== Object)
             return (value.constructor.name || value.constructor);
         else
@@ -3545,7 +3897,7 @@ exports.show = function (value) {
     }
 };
 
-},{}],26:[function(require,module,exports){
+},{}],27:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 /**
@@ -3553,7 +3905,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
  */
 exports.isMultipleOf = function (x, y) { return ((y % x) === 0); };
 
-},{}],27:[function(require,module,exports){
+},{}],28:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var property_seek_1 = require("property-seek");
@@ -3585,7 +3937,7 @@ exports.polate = function (str, data, opts) {
 };
 exports.default = exports.polate;
 
-},{"property-seek":82}],28:[function(require,module,exports){
+},{"property-seek":83}],29:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var array_1 = require("@quenk/noni/lib/data/array");
@@ -3663,7 +4015,7 @@ exports.isGroup = function (addr) {
     return ((addr[0] === '$') && (addr !== '$'));
 };
 
-},{"@quenk/noni/lib/data/array":18,"@quenk/noni/lib/data/string":24}],29:[function(require,module,exports){
+},{"@quenk/noni/lib/data/array":19,"@quenk/noni/lib/data/string":25}],30:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 /**
@@ -3681,7 +4033,7 @@ var Envelope = /** @class */ (function () {
 }());
 exports.Envelope = Envelope;
 
-},{}],30:[function(require,module,exports){
+},{}],31:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -3742,7 +4094,7 @@ var Default = /** @class */ (function (_super) {
 }(Case));
 exports.Default = Default;
 
-},{"@quenk/noni/lib/data/type":25}],31:[function(require,module,exports){
+},{"@quenk/noni/lib/data/type":26}],32:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -3897,7 +4249,7 @@ exports.ref = function (res, addr) {
     };
 };
 
-},{"../address":28,"../system":36,"../system/framework/scripts":34,"../system/vm/runtime/scripts":62,"./scripts":32,"@quenk/noni/lib/data/either":19,"@quenk/noni/lib/data/function":20,"@quenk/noni/lib/data/maybe":21,"@quenk/noni/lib/data/record":22}],32:[function(require,module,exports){
+},{"../address":29,"../system":37,"../system/framework/scripts":35,"../system/vm/runtime/scripts":63,"./scripts":33,"@quenk/noni/lib/data/either":20,"@quenk/noni/lib/data/function":21,"@quenk/noni/lib/data/maybe":22,"@quenk/noni/lib/data/record":23}],33:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -4016,7 +4368,7 @@ var RaiseScript = /** @class */ (function (_super) {
 }(script_1.Script));
 exports.RaiseScript = RaiseScript;
 
-},{"../system/vm/op/discard":45,"../system/vm/op/drop":46,"../system/vm/op/jump":48,"../system/vm/op/noop":50,"../system/vm/op/push":51,"../system/vm/op/raise":52,"../system/vm/op/read":53,"../system/vm/op/receive":54,"../system/vm/op/tell":59,"../system/vm/script":64}],33:[function(require,module,exports){
+},{"../system/vm/op/discard":46,"../system/vm/op/drop":47,"../system/vm/op/jump":49,"../system/vm/op/noop":51,"../system/vm/op/push":52,"../system/vm/op/raise":53,"../system/vm/op/read":54,"../system/vm/op/receive":55,"../system/vm/op/tell":60,"../system/vm/script":65}],34:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var maybe_1 = require("@quenk/noni/lib/data/maybe");
@@ -4110,7 +4462,7 @@ exports.newState = function (sys) { return ({
     groups: {}
 }); };
 
-},{"../../address":28,"../state":38,"../vm/runtime/this":63,"./scripts":34,"@quenk/noni/lib/data/maybe":21}],34:[function(require,module,exports){
+},{"../../address":29,"../state":39,"../vm/runtime/this":64,"./scripts":35,"@quenk/noni/lib/data/maybe":22}],35:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -4190,7 +4542,7 @@ var SpawnScript = /** @class */ (function (_super) {
 }(script_1.Script));
 exports.SpawnScript = SpawnScript;
 
-},{"../vm/op/add":41,"../vm/op/allocate":42,"../vm/op/call":43,"../vm/op/cmp":44,"../vm/op/jump":48,"../vm/op/load":49,"../vm/op/noop":50,"../vm/op/push":51,"../vm/op/run":56,"../vm/op/store":58,"../vm/op/tempcc":60,"../vm/op/tempchild":61,"../vm/script":64}],35:[function(require,module,exports){
+},{"../vm/op/add":42,"../vm/op/allocate":43,"../vm/op/call":44,"../vm/op/cmp":45,"../vm/op/jump":49,"../vm/op/load":50,"../vm/op/noop":51,"../vm/op/push":52,"../vm/op/run":57,"../vm/op/store":59,"../vm/op/tempcc":61,"../vm/op/tempchild":62,"../vm/script":65}],36:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -4246,7 +4598,7 @@ var TestAbstractSystem = /** @class */ (function (_super) {
 }(_1.AbstractSystem));
 exports.TestAbstractSystem = TestAbstractSystem;
 
-},{"./":33,"@quenk/test/lib/mock":70}],36:[function(require,module,exports){
+},{"./":34,"@quenk/test/lib/mock":71}],37:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var maybe_1 = require("@quenk/noni/lib/data/maybe");
@@ -4276,7 +4628,7 @@ var Void = /** @class */ (function () {
 }());
 exports.Void = Void;
 
-},{"@quenk/noni/lib/data/maybe":21}],37:[function(require,module,exports){
+},{"@quenk/noni/lib/data/maybe":22}],38:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.DEBUG = 7;
@@ -4285,7 +4637,7 @@ exports.NOTICE = 5;
 exports.WARN = 4;
 exports.ERROR = 3;
 
-},{}],38:[function(require,module,exports){
+},{}],39:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var maybe_1 = require("@quenk/noni/lib/data/maybe");
@@ -4402,7 +4754,7 @@ exports.removeMember = function (s, group, member) {
     return s;
 };
 
-},{"../address":28,"@quenk/noni/lib/data/maybe":21,"@quenk/noni/lib/data/record":22,"@quenk/noni/lib/data/string":24}],39:[function(require,module,exports){
+},{"../address":29,"@quenk/noni/lib/data/maybe":22,"@quenk/noni/lib/data/record":23,"@quenk/noni/lib/data/string":25}],40:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -4584,7 +4936,7 @@ var EmptyMailboxErr = /** @class */ (function (_super) {
 }(Error));
 exports.EmptyMailboxErr = EmptyMailboxErr;
 
-},{"../../address":28}],40:[function(require,module,exports){
+},{"../../address":29}],41:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var error = require("./error");
@@ -4815,7 +5167,7 @@ var Frame = /** @class */ (function () {
 }());
 exports.Frame = Frame;
 
-},{"./error":39,"@quenk/noni/lib/data/either":19,"@quenk/noni/lib/data/maybe":21}],41:[function(require,module,exports){
+},{"./error":40,"@quenk/noni/lib/data/either":20,"@quenk/noni/lib/data/maybe":22}],42:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var _1 = require("./");
@@ -4852,7 +5204,7 @@ var Add = /** @class */ (function () {
 }());
 exports.Add = Add;
 
-},{"./":47}],42:[function(require,module,exports){
+},{"./":48}],43:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var error = require("../error");
@@ -4907,7 +5259,7 @@ var Allocate = /** @class */ (function () {
 }());
 exports.Allocate = Allocate;
 
-},{"../../../address":28,"../error":39,"./":47}],43:[function(require,module,exports){
+},{"../../../address":29,"../error":40,"./":48}],44:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var frame_1 = require("../frame");
@@ -4949,7 +5301,7 @@ var Call = /** @class */ (function () {
 }());
 exports.Call = Call;
 
-},{"../frame":40,"./":47}],44:[function(require,module,exports){
+},{"../frame":41,"./":48}],45:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var _1 = require("./");
@@ -4993,7 +5345,7 @@ var Cmp = /** @class */ (function () {
 }());
 exports.Cmp = Cmp;
 
-},{"./":47}],45:[function(require,module,exports){
+},{"./":48}],46:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var errors = require("../error");
@@ -5025,7 +5377,7 @@ var Discard = /** @class */ (function () {
 }());
 exports.Discard = Discard;
 
-},{"../error":39,"../frame":40,"./":47,"@quenk/noni/lib/data/maybe":21}],46:[function(require,module,exports){
+},{"../error":40,"../frame":41,"./":48,"@quenk/noni/lib/data/maybe":22}],47:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var _1 = require("./");
@@ -5056,7 +5408,7 @@ var Drop = /** @class */ (function () {
 }());
 exports.Drop = Drop;
 
-},{"./":47}],47:[function(require,module,exports){
+},{"./":48}],48:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var log = require("../../log");
@@ -5103,7 +5455,7 @@ var Level;
     Level[Level["System"] = log.WARN] = "System";
 })(Level = exports.Level || (exports.Level = {}));
 
-},{"../../log":37}],48:[function(require,module,exports){
+},{"../../log":38}],49:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var either_1 = require("@quenk/noni/lib/data/either");
@@ -5162,7 +5514,7 @@ var JumpIfOne = /** @class */ (function () {
 }());
 exports.JumpIfOne = JumpIfOne;
 
-},{"../frame":40,"./":47,"@quenk/noni/lib/data/either":19}],49:[function(require,module,exports){
+},{"../frame":41,"./":48,"@quenk/noni/lib/data/either":20}],50:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var frame_1 = require("../frame");
@@ -5191,7 +5543,7 @@ var Load = /** @class */ (function () {
 }());
 exports.Load = Load;
 
-},{"../frame":40,"./":47}],50:[function(require,module,exports){
+},{"../frame":41,"./":48}],51:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var _1 = require("./");
@@ -5211,7 +5563,7 @@ var Noop = /** @class */ (function () {
 }());
 exports.Noop = Noop;
 
-},{"./":47}],51:[function(require,module,exports){
+},{"./":48}],52:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var frame_1 = require("../frame");
@@ -5325,7 +5677,7 @@ var PushForeign = /** @class */ (function () {
 }());
 exports.PushForeign = PushForeign;
 
-},{"../frame":40,"./":47}],52:[function(require,module,exports){
+},{"../frame":41,"./":48}],53:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var _1 = require("./");
@@ -5367,7 +5719,7 @@ var Raise = /** @class */ (function () {
 }());
 exports.Raise = Raise;
 
-},{"./":47}],53:[function(require,module,exports){
+},{"./":48}],54:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var errors = require("../error");
@@ -5420,7 +5772,7 @@ var Read = /** @class */ (function () {
 }());
 exports.Read = Read;
 
-},{"../error":39,"../frame":40,"./":47,"@quenk/noni/lib/data/maybe":21}],54:[function(require,module,exports){
+},{"../error":40,"../frame":41,"./":48,"@quenk/noni/lib/data/maybe":22}],55:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var _1 = require("./");
@@ -5460,7 +5812,7 @@ var Receive = /** @class */ (function () {
 }());
 exports.Receive = Receive;
 
-},{"./":47}],55:[function(require,module,exports){
+},{"./":48}],56:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var _1 = require("./");
@@ -5491,7 +5843,7 @@ var Restart = /** @class */ (function () {
 }());
 exports.Restart = Restart;
 
-},{"./":47}],56:[function(require,module,exports){
+},{"./":48}],57:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var timer_1 = require("@quenk/noni/lib/control/timer");
@@ -5525,7 +5877,7 @@ var Run = /** @class */ (function () {
 }());
 exports.Run = Run;
 
-},{"./":47,"@quenk/noni/lib/control/timer":17}],57:[function(require,module,exports){
+},{"./":48,"@quenk/noni/lib/control/timer":18}],58:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var error = require("../error");
@@ -5577,7 +5929,7 @@ var Stop = /** @class */ (function () {
 }());
 exports.Stop = Stop;
 
-},{"../../../address":28,"../error":39,"./":47,"@quenk/noni/lib/data/record":22}],58:[function(require,module,exports){
+},{"../../../address":29,"../error":40,"./":48,"@quenk/noni/lib/data/record":23}],59:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var frame_1 = require("../frame");
@@ -5606,7 +5958,7 @@ var Store = /** @class */ (function () {
 }());
 exports.Store = Store;
 
-},{"../frame":40,"./":47}],59:[function(require,module,exports){
+},{"../frame":41,"./":48}],60:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var timer_1 = require("@quenk/noni/lib/control/timer");
@@ -5676,7 +6028,7 @@ var deliver = function (ctx, msg) {
     }
 };
 
-},{"../../../mailbox":29,"./":47,"@quenk/noni/lib/control/timer":17}],60:[function(require,module,exports){
+},{"../../../mailbox":30,"./":48,"@quenk/noni/lib/control/timer":18}],61:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var _1 = require("./");
@@ -5707,7 +6059,7 @@ var TempCC = /** @class */ (function () {
 }());
 exports.TempCC = TempCC;
 
-},{"./":47}],61:[function(require,module,exports){
+},{"./":48}],62:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var error = require("../error");
@@ -5749,7 +6101,7 @@ var TempChild = /** @class */ (function () {
 }());
 exports.TempChild = TempChild;
 
-},{"../error":39,"./":47}],62:[function(require,module,exports){
+},{"../error":40,"./":48}],63:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -5803,7 +6155,7 @@ var RestartScript = /** @class */ (function (_super) {
 }(script_1.Script));
 exports.RestartScript = RestartScript;
 
-},{"../op/push":51,"../op/restart":55,"../op/run":56,"../op/stop":57,"../script":64}],63:[function(require,module,exports){
+},{"../op/push":52,"../op/restart":56,"../op/run":57,"../op/stop":58,"../script":65}],64:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var template = require("../../../template");
@@ -6020,7 +6372,7 @@ var resolveLog = function (f, _a) {
     return [op, operand].concat(stack);
 };
 
-},{"../../../address":28,"../../../template":65,"../../log":37,"../../state":38,"../frame":40,"./scripts":62,"@quenk/noni/lib/control/error":15,"@quenk/noni/lib/data/array":18,"@quenk/noni/lib/data/maybe":21}],64:[function(require,module,exports){
+},{"../../../address":29,"../../../template":66,"../../log":38,"../../state":39,"../frame":41,"./scripts":63,"@quenk/noni/lib/control/error":16,"@quenk/noni/lib/data/array":19,"@quenk/noni/lib/data/maybe":22}],65:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 /**
@@ -6041,7 +6393,7 @@ var Script = /** @class */ (function () {
 }());
 exports.Script = Script;
 
-},{}],65:[function(require,module,exports){
+},{}],66:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ACTION_RAISE = -0x1;
@@ -6049,7 +6401,7 @@ exports.ACTION_IGNORE = 0x0;
 exports.ACTION_RESTART = 0x1;
 exports.ACTION_STOP = 0x2;
 
-},{}],66:[function(require,module,exports){
+},{}],67:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var result_1 = require("./result");
@@ -6093,7 +6445,7 @@ exports.toNumber = function (value) {
     return isNaN(n) ? result_1.fail('NaN', value, {}) : result_1.succeed(n);
 };
 
-},{"./result":68}],67:[function(require,module,exports){
+},{"./result":69}],68:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var polate_1 = require("@quenk/polate");
@@ -6224,7 +6576,7 @@ var DualFailure = /** @class */ (function () {
 }());
 exports.DualFailure = DualFailure;
 
-},{"@quenk/noni/lib/data/record":22,"@quenk/polate":27}],68:[function(require,module,exports){
+},{"@quenk/noni/lib/data/record":23,"@quenk/polate":28}],69:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var either_1 = require("@quenk/noni/lib/data/either");
@@ -6245,7 +6597,7 @@ exports.succeed = function (b) {
     return either_1.right(b);
 };
 
-},{"./failure":67,"@quenk/noni/lib/data/either":19}],69:[function(require,module,exports){
+},{"./failure":68,"@quenk/noni/lib/data/either":20}],70:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -6423,7 +6775,7 @@ exports.toString = function (value) {
  */
 exports.assert = function (value) { return new Positive(value, true); };
 
-},{"deep-equal":73,"json-stringify-safe":78}],70:[function(require,module,exports){
+},{"deep-equal":74,"json-stringify-safe":79}],71:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 /**
@@ -6474,7 +6826,7 @@ var Mock = /** @class */ (function () {
 }());
 exports.Mock = Mock;
 
-},{}],71:[function(require,module,exports){
+},{}],72:[function(require,module,exports){
 'use strict'
 
 exports.byteLength = byteLength
@@ -6627,7 +6979,7 @@ function fromByteArray (uint8) {
   return parts.join('')
 }
 
-},{}],72:[function(require,module,exports){
+},{}],73:[function(require,module,exports){
 /*!
  * The buffer module from node.js, for the browser.
  *
@@ -8406,7 +8758,7 @@ function numberIsNaN (obj) {
   return obj !== obj // eslint-disable-line no-self-compare
 }
 
-},{"base64-js":71,"ieee754":77}],73:[function(require,module,exports){
+},{"base64-js":72,"ieee754":78}],74:[function(require,module,exports){
 var pSlice = Array.prototype.slice;
 var objectKeys = require('./lib/keys.js');
 var isArguments = require('./lib/is_arguments.js');
@@ -8502,7 +8854,7 @@ function objEquiv(a, b, opts) {
   return typeof a === typeof b;
 }
 
-},{"./lib/is_arguments.js":74,"./lib/keys.js":75}],74:[function(require,module,exports){
+},{"./lib/is_arguments.js":75,"./lib/keys.js":76}],75:[function(require,module,exports){
 var supportsArgumentsClass = (function(){
   return Object.prototype.toString.call(arguments)
 })() == '[object Arguments]';
@@ -8524,7 +8876,7 @@ function unsupported(object){
     false;
 };
 
-},{}],75:[function(require,module,exports){
+},{}],76:[function(require,module,exports){
 exports = module.exports = typeof Object.keys === 'function'
   ? Object.keys : shim;
 
@@ -8535,7 +8887,7 @@ function shim (obj) {
   return keys;
 }
 
-},{}],76:[function(require,module,exports){
+},{}],77:[function(require,module,exports){
 var kindof = require("kindof")
 exports = module.exports = egal
 exports.deepEgal = deepEgal
@@ -8657,7 +9009,7 @@ function keys(obj) {
   return all
 }
 
-},{"kindof":79}],77:[function(require,module,exports){
+},{"kindof":80}],78:[function(require,module,exports){
 exports.read = function (buffer, offset, isLE, mLen, nBytes) {
   var e, m
   var eLen = (nBytes * 8) - mLen - 1
@@ -8743,7 +9095,7 @@ exports.write = function (buffer, value, offset, isLE, mLen, nBytes) {
   buffer[offset + i - d] |= s * 128
 }
 
-},{}],78:[function(require,module,exports){
+},{}],79:[function(require,module,exports){
 exports = module.exports = stringify
 exports.getSerialize = serializer
 
@@ -8772,7 +9124,7 @@ function serializer(replacer, cycleReplacer) {
   }
 }
 
-},{}],79:[function(require,module,exports){
+},{}],80:[function(require,module,exports){
 if (typeof module != "undefined") module.exports = kindof
 
 function kindof(obj) {
@@ -8792,7 +9144,7 @@ function kindof(obj) {
   }
 }
 
-},{}],80:[function(require,module,exports){
+},{}],81:[function(require,module,exports){
 /**
  * Expose `pathToRegexp`.
  */
@@ -9161,7 +9513,7 @@ function pathToRegexp (path, keys, options) {
   return stringToRegexp(/** @type {string} */ (path), keys, options)
 }
 
-},{}],81:[function(require,module,exports){
+},{}],82:[function(require,module,exports){
 // shim for using process in browser
 var process = module.exports = {};
 
@@ -9347,7 +9699,7 @@ process.chdir = function (dir) {
 };
 process.umask = function() { return 0; };
 
-},{}],82:[function(require,module,exports){
+},{}],83:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var ESCAPED_SUBS = '@xR25$e!#fda8f623';
@@ -9449,7 +9801,7 @@ function default_1(k, v, o) {
 exports.default = default_1;
 ;
 
-},{}],83:[function(require,module,exports){
+},{}],84:[function(require,module,exports){
 'use strict';
 
 var replace = String.prototype.replace;
@@ -9469,7 +9821,7 @@ module.exports = {
     RFC3986: 'RFC3986'
 };
 
-},{}],84:[function(require,module,exports){
+},{}],85:[function(require,module,exports){
 'use strict';
 
 var stringify = require('./stringify');
@@ -9482,7 +9834,7 @@ module.exports = {
     stringify: stringify
 };
 
-},{"./formats":83,"./parse":85,"./stringify":86}],85:[function(require,module,exports){
+},{"./formats":84,"./parse":86,"./stringify":87}],86:[function(require,module,exports){
 'use strict';
 
 var utils = require('./utils');
@@ -9710,7 +10062,7 @@ module.exports = function (str, opts) {
     return utils.compact(obj);
 };
 
-},{"./utils":87}],86:[function(require,module,exports){
+},{"./utils":88}],87:[function(require,module,exports){
 'use strict';
 
 var utils = require('./utils');
@@ -9954,7 +10306,7 @@ module.exports = function (object, opts) {
     return joined.length > 0 ? prefix + joined : '';
 };
 
-},{"./formats":83,"./utils":87}],87:[function(require,module,exports){
+},{"./formats":84,"./utils":88}],88:[function(require,module,exports){
 'use strict';
 
 var has = Object.prototype.hasOwnProperty;
@@ -10184,7 +10536,7 @@ module.exports = {
     merge: merge
 };
 
-},{}],88:[function(require,module,exports){
+},{}],89:[function(require,module,exports){
 'use strict';
 
 function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'default' in ex) ? ex['default'] : ex; }
@@ -10518,7 +10870,7 @@ function eq(a, b, opts) {
 eq.EQ = EQ;
 
 module.exports = eq;
-},{"should-type":91}],89:[function(require,module,exports){
+},{"should-type":92}],90:[function(require,module,exports){
 'use strict';
 
 function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'default' in ex) ? ex['default'] : ex; }
@@ -11051,7 +11403,7 @@ Formatter.addType(new t.Type(t.OBJECT, t.HOST), function() {
 });
 
 module.exports = defaultFormat;
-},{"should-type":91,"should-type-adaptors":90}],90:[function(require,module,exports){
+},{"should-type":92,"should-type-adaptors":91}],91:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', { value: true });
@@ -11340,7 +11692,7 @@ exports.some = some;
 exports.every = every;
 exports.isIterable = isIterable;
 exports.iterator = iterator;
-},{"should-type":91,"should-util":92}],91:[function(require,module,exports){
+},{"should-type":92,"should-util":93}],92:[function(require,module,exports){
 (function (Buffer){
 'use strict';
 
@@ -11606,7 +11958,7 @@ Object.keys(types).forEach(function(typeName) {
 
 module.exports = getGlobalType;
 }).call(this,require("buffer").Buffer)
-},{"buffer":72}],92:[function(require,module,exports){
+},{"buffer":73}],93:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', { value: true });
@@ -11657,7 +12009,7 @@ exports.propertyIsEnumerable = propertyIsEnumerable;
 exports.merge = merge;
 exports.isIterator = isIterator;
 exports.isGeneratorFunction = isGeneratorFunction;
-},{}],93:[function(require,module,exports){
+},{}],94:[function(require,module,exports){
 (function (global){
 'use strict';
 
@@ -14623,7 +14975,100 @@ try {
 module.exports = should$1;
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"should-equal":88,"should-format":89,"should-type":91,"should-type-adaptors":90,"should-util":92}],94:[function(require,module,exports){
+},{"should-equal":89,"should-format":90,"should-type":92,"should-type-adaptors":91,"should-util":93}],95:[function(require,module,exports){
+/**
+ * Convert array of 16 byte values to UUID string format of the form:
+ * XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
+ */
+var byteToHex = [];
+for (var i = 0; i < 256; ++i) {
+  byteToHex[i] = (i + 0x100).toString(16).substr(1);
+}
+
+function bytesToUuid(buf, offset) {
+  var i = offset || 0;
+  var bth = byteToHex;
+  // join used to fix memory issue caused by concatenation: https://bugs.chromium.org/p/v8/issues/detail?id=3175#c4
+  return ([bth[buf[i++]], bth[buf[i++]], 
+	bth[buf[i++]], bth[buf[i++]], '-',
+	bth[buf[i++]], bth[buf[i++]], '-',
+	bth[buf[i++]], bth[buf[i++]], '-',
+	bth[buf[i++]], bth[buf[i++]], '-',
+	bth[buf[i++]], bth[buf[i++]],
+	bth[buf[i++]], bth[buf[i++]],
+	bth[buf[i++]], bth[buf[i++]]]).join('');
+}
+
+module.exports = bytesToUuid;
+
+},{}],96:[function(require,module,exports){
+// Unique ID creation requires a high quality random # generator.  In the
+// browser this is a little complicated due to unknown quality of Math.random()
+// and inconsistent support for the `crypto` API.  We do the best we can via
+// feature-detection
+
+// getRandomValues needs to be invoked in a context where "this" is a Crypto
+// implementation. Also, find the complete implementation of crypto on IE11.
+var getRandomValues = (typeof(crypto) != 'undefined' && crypto.getRandomValues && crypto.getRandomValues.bind(crypto)) ||
+                      (typeof(msCrypto) != 'undefined' && typeof window.msCrypto.getRandomValues == 'function' && msCrypto.getRandomValues.bind(msCrypto));
+
+if (getRandomValues) {
+  // WHATWG crypto RNG - http://wiki.whatwg.org/wiki/Crypto
+  var rnds8 = new Uint8Array(16); // eslint-disable-line no-undef
+
+  module.exports = function whatwgRNG() {
+    getRandomValues(rnds8);
+    return rnds8;
+  };
+} else {
+  // Math.random()-based (RNG)
+  //
+  // If all else fails, use Math.random().  It's fast, but is of unspecified
+  // quality.
+  var rnds = new Array(16);
+
+  module.exports = function mathRNG() {
+    for (var i = 0, r; i < 16; i++) {
+      if ((i & 0x03) === 0) r = Math.random() * 0x100000000;
+      rnds[i] = r >>> ((i & 0x03) << 3) & 0xff;
+    }
+
+    return rnds;
+  };
+}
+
+},{}],97:[function(require,module,exports){
+var rng = require('./lib/rng');
+var bytesToUuid = require('./lib/bytesToUuid');
+
+function v4(options, buf, offset) {
+  var i = buf && offset || 0;
+
+  if (typeof(options) == 'string') {
+    buf = options === 'binary' ? new Array(16) : null;
+    options = null;
+  }
+  options = options || {};
+
+  var rnds = options.random || (options.rng || rng)();
+
+  // Per 4.4, set bits for version and `clock_seq_hi_and_reserved`
+  rnds[6] = (rnds[6] & 0x0f) | 0x40;
+  rnds[8] = (rnds[8] & 0x3f) | 0x80;
+
+  // Copy bytes to buffer, if provided
+  if (buf) {
+    for (var ii = 0; ii < 16; ++ii) {
+      buf[i + ii] = rnds[ii];
+    }
+  }
+
+  return buf || bytesToUuid(rnds);
+}
+
+module.exports = v4;
+
+},{"./lib/bytesToUuid":95,"./lib/rng":96}],98:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -14761,7 +15206,7 @@ describe('router', function () {
     });
 });
 
-},{"../../../../../lib/actor":2,"../../../../../lib/actor/api/router/display":1,"../../../../../lib/browser/window/router/hash/default":12,"../../../app/fixtures/app":106,"@quenk/noni/lib/control/monad/future":16,"@quenk/noni/lib/data/function":20,"@quenk/noni/lib/data/maybe":21,"@quenk/potoo/lib/actor/resident/case":30,"@quenk/test/lib/assert":69}],95:[function(require,module,exports){
+},{"../../../../../lib/actor":2,"../../../../../lib/actor/api/router/display":1,"../../../../../lib/browser/window/router/hash/default":13,"../../../app/fixtures/app":111,"@quenk/noni/lib/control/monad/future":17,"@quenk/noni/lib/data/function":21,"@quenk/noni/lib/data/maybe":22,"@quenk/potoo/lib/actor/resident/case":31,"@quenk/test/lib/assert":70}],99:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -14822,7 +15267,7 @@ var ActorImpl = /** @class */ (function (_super) {
 }(mock_1.Mock));
 exports.ActorImpl = ActorImpl;
 
-},{"../../fixtures/mock":108,"@quenk/noni/lib/data/record":22}],96:[function(require,module,exports){
+},{"../../fixtures/mock":113,"@quenk/noni/lib/data/record":23}],100:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -14931,7 +15376,7 @@ describe('app/interact/data/form/client', function () {
     });
 });
 
-},{"../../../../../../lib/actor/interact/data/form/client":3,"../../../fixtures/actor":95,"@quenk/must":14}],97:[function(require,module,exports){
+},{"../../../../../../lib/actor/interact/data/form/client":3,"../../../fixtures/actor":99,"@quenk/must":15}],101:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -15038,7 +15483,7 @@ describe('app/interact/data/form', function () {
     });
 });
 
-},{"../../../../../../lib/actor/interact/data/form":4,"../../../fixtures/actor":95,"@quenk/must":14}],98:[function(require,module,exports){
+},{"../../../../../../lib/actor/interact/data/form":4,"../../../fixtures/actor":99,"@quenk/must":15}],102:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -15131,7 +15576,7 @@ describe('app/interact/data/form/validate', function () {
     });
 });
 
-},{"../../../../../../lib/actor/interact/data/form/validate":5,"../../../fixtures/actor":95,"@quenk/must":14,"@quenk/noni/lib/data/either":19,"@quenk/preconditions/lib/number":66}],99:[function(require,module,exports){
+},{"../../../../../../lib/actor/interact/data/form/validate":5,"../../../fixtures/actor":99,"@quenk/must":15,"@quenk/noni/lib/data/either":20,"@quenk/preconditions/lib/number":67}],103:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -15292,7 +15737,7 @@ describe('app/interact/http', function () {
     });
 });
 
-},{"../../../../../../../lib/actor/interact/data/preload/http/response":6,"../../../fixtures/interact":102,"@quenk/must":14}],100:[function(require,module,exports){
+},{"../../../../../../../lib/actor/interact/data/preload/http/response":6,"../../../fixtures/interact":106,"@quenk/must":15}],104:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -15372,7 +15817,7 @@ describe('app/interact/data/preload', function () {
     });
 });
 
-},{"../../../../../../lib/actor/interact/data/preload":7,"../../../fixtures/actor":95,"@quenk/must":14}],101:[function(require,module,exports){
+},{"../../../../../../lib/actor/interact/data/preload":7,"../../../fixtures/actor":99,"@quenk/must":15}],105:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -15518,7 +15963,7 @@ describe('app/interact/data/search', function () {
     });
 });
 
-},{"../../../../../lib/actor/interact/data/search":8,"../../fixtures/actor":95,"@quenk/must":14}],102:[function(require,module,exports){
+},{"../../../../../lib/actor/interact/data/search":8,"../../fixtures/actor":99,"@quenk/must":15}],106:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -15560,7 +16005,7 @@ var InteractImpl = /** @class */ (function (_super) {
 }(actor_1.ActorImpl));
 exports.InteractImpl = InteractImpl;
 
-},{"../../fixtures/actor":95}],103:[function(require,module,exports){
+},{"../../fixtures/actor":99}],107:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -15714,7 +16159,7 @@ describe('app/interact/http', function () {
     });
 });
 
-},{"../../../../../lib/actor/interact/http/response":9,"../fixtures/interact":102,"@quenk/must":14}],104:[function(require,module,exports){
+},{"../../../../../lib/actor/interact/http/response":9,"../fixtures/interact":106,"@quenk/must":15}],108:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -15810,7 +16255,7 @@ describe('app/interact', function () {
     });
 });
 
-},{"../../../../lib/actor/interact":10,"../fixtures/actor":95,"@quenk/must":14}],105:[function(require,module,exports){
+},{"../../../../lib/actor/interact":10,"../fixtures/actor":99,"@quenk/must":15}],109:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -15966,7 +16411,149 @@ describe('router', function () {
     });
 });
 
-},{"../../../lib/actor/router":11,"./fixtures/actor":95,"@quenk/must":14}],106:[function(require,module,exports){
+},{"../../../lib/actor/router":11,"./fixtures/actor":99,"@quenk/must":15}],110:[function(require,module,exports){
+"use strict";
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+        return extendStatics(d, b);
+    };
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
+Object.defineProperty(exports, "__esModule", { value: true });
+var assert_1 = require("@quenk/test/lib/assert");
+var maybe_1 = require("@quenk/noni/lib/data/maybe");
+var function_1 = require("@quenk/noni/lib/data/function");
+var future_1 = require("@quenk/noni/lib/control/monad/future");
+var case_1 = require("@quenk/potoo/lib/actor/resident/case");
+var default_1 = require("../../../lib/browser/window/router/hash/default");
+var director_1 = require("../../../lib/app/director");
+var actor_1 = require("../../../lib/actor");
+var app_1 = require("../app/fixtures/app");
+var Ctrl = /** @class */ (function (_super) {
+    __extends(Ctrl, _super);
+    function Ctrl(cases, system) {
+        var _this = _super.call(this, system) || this;
+        _this.cases = cases;
+        _this.system = system;
+        _this.receive = _this.cases(_this);
+        return _this;
+    }
+    return Ctrl;
+}(actor_1.Immutable));
+var system = function () { return new app_1.TestApp({ log: { level: 8 } }); };
+var onNotFound = function (p) { return future_1.pure(console.error("Not found " + p)); };
+var controllerTemplate = function (id, cases) { return ({
+    id: id,
+    create: function (s) { return new Ctrl(cases, s); }
+}); };
+var director = function (routes, router, timeout, delay) {
+    if (timeout === void 0) { timeout = 0; }
+    if (delay === void 0) { delay = 0; }
+    return ({
+        id: 'router',
+        create: function (s) { return new director_1.DefaultDirector('display', routes, router, maybe_1.nothing(), { timeout: timeout, delay: delay }, s); }
+    });
+};
+describe('director', function () {
+    describe('AbstractDirector', function () {
+        var hash;
+        afterEach(function () {
+            if (hash != null)
+                hash.stop();
+            window.location.hash = '';
+        });
+        it('should dispatch routes ', function () { return future_1.toPromise(future_1.fromCallback(function (cb) {
+            var sys = system();
+            hash = new default_1.DefaultHashRouter(window, {}, undefined, onNotFound);
+            sys.spawn(director({ '/foo': 'ctl' }, hash, 200));
+            sys.spawn(controllerTemplate('ctl', function () { return [
+                new case_1.Case(director_1.Resume, function () {
+                    assert_1.assert(true).be.true();
+                    cb(undefined);
+                })
+            ]; }));
+            hash.start();
+            setTimeout(function () { return window.location.hash = 'foo'; }, 500);
+        })); });
+        it('should release before change', function () { return future_1.toPromise(future_1.fromCallback(function (cb) {
+            var sys = system();
+            var routes = { '/foo': 'foo', '/bar': 'bar' };
+            hash = new default_1.DefaultHashRouter(window, {}, undefined, onNotFound);
+            sys.spawn(director(routes, hash, 100));
+            sys.spawn(controllerTemplate('foo', function (c) { return [
+                new case_1.Case(director_1.Release, function (_a) {
+                    var router = _a.router;
+                    return c.tell(router, new director_1.Ack());
+                })
+            ]; }));
+            sys.spawn(controllerTemplate('bar', function () { return [
+                new case_1.Case(director_1.Resume, function () {
+                    assert_1.assert(true).true();
+                    cb(undefined);
+                })
+            ]; }));
+            hash.start();
+            setTimeout(function () { return window.location.hash = 'foo'; }, 300);
+            setTimeout(function () { return window.location.hash = 'bar'; }, 600);
+        })); });
+        it('should expire if no response', function () { return future_1.toPromise(future_1.fromCallback(function (cb) {
+            var sys = system();
+            var routes = { '/foo': 'foo', '/bar': 'bar' };
+            var promoted = false;
+            var onErr = function () { return future_1.pure(function_1.noop()); };
+            hash = new default_1.DefaultHashRouter(window, {}, onErr, onNotFound);
+            sys.spawn(director(routes, hash, 100));
+            sys.spawn(controllerTemplate('foo', function () { return [
+                new case_1.Case(director_1.Release, function_1.noop)
+            ]; }));
+            sys.spawn(controllerTemplate('bar', function () { return [
+                new case_1.Case(director_1.Resume, function () { promoted = true; })
+            ]; }));
+            hash.start();
+            setTimeout(function () { return window.location.hash = 'foo'; }, 300);
+            setTimeout(function () { return window.location.hash = 'bar'; }, 600);
+            setTimeout(function () {
+                assert_1.assert(promoted).true();
+                cb(undefined);
+            }, 1000);
+        })); });
+        it('should allow continues', function () { return future_1.toPromise(future_1.fromCallback(function (cb) {
+            var sys = system();
+            var routes = { '/foo': 'foo', '/bar': 'bar' };
+            var expired = false;
+            var promoted = false;
+            var onErr = function () { expired = true; return future_1.pure(function_1.noop()); };
+            hash = new default_1.DefaultHashRouter(window, {}, onErr, onNotFound);
+            sys.spawn(director(routes, hash, 100));
+            sys.spawn(controllerTemplate('foo', function (c) { return [
+                new case_1.Case(director_1.Release, function (_a) {
+                    var router = _a.router;
+                    return c.tell(router, new director_1.Cont());
+                })
+            ]; }));
+            sys.spawn(controllerTemplate('bar', function () { return [
+                new case_1.Case(director_1.Resume, function () { promoted = true; })
+            ]; }));
+            hash.start();
+            setTimeout(function () { return window.location.hash = 'foo'; }, 300);
+            setTimeout(function () { return window.location.hash = 'bar'; }, 600);
+            setTimeout(function () {
+                assert_1.assert(expired).false();
+                assert_1.assert(promoted).false();
+                cb(undefined);
+            }, 800);
+        })); });
+    });
+});
+
+},{"../../../lib/actor":2,"../../../lib/app/director":12,"../../../lib/browser/window/router/hash/default":13,"../app/fixtures/app":111,"@quenk/noni/lib/control/monad/future":17,"@quenk/noni/lib/data/function":21,"@quenk/noni/lib/data/maybe":22,"@quenk/potoo/lib/actor/resident/case":31,"@quenk/test/lib/assert":70}],111:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -16002,7 +16589,7 @@ var TestApp = /** @class */ (function (_super) {
 }(test_1.TestAbstractSystem));
 exports.TestApp = TestApp;
 
-},{"@quenk/potoo/lib/actor/system/framework":33,"@quenk/potoo/lib/actor/system/framework/test":35}],107:[function(require,module,exports){
+},{"@quenk/potoo/lib/actor/system/framework":34,"@quenk/potoo/lib/actor/system/framework/test":36}],112:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var must = require("should");
@@ -16115,7 +16702,7 @@ describe('router', function () {
     });
 });
 
-},{"../../../../../../lib/browser/window/router/hash/default":12,"@quenk/noni/lib/control/monad/future":16,"@quenk/noni/lib/data/function":20,"should":93}],108:[function(require,module,exports){
+},{"../../../../../../lib/browser/window/router/hash/default":13,"@quenk/noni/lib/control/monad/future":17,"@quenk/noni/lib/data/function":21,"should":94}],113:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var Invoke = /** @class */ (function () {
@@ -16158,7 +16745,7 @@ var Mock = /** @class */ (function () {
 }());
 exports.Mock = Mock;
 
-},{}],109:[function(require,module,exports){
+},{}],114:[function(require,module,exports){
 require("./actor/router_test.js");
 require("./actor/interact/data/search_test.js");
 require("./actor/interact/data/form/client_test.js");
@@ -16170,5 +16757,6 @@ require("./actor/interact/index_test.js");
 require("./actor/interact/http/response_test.js");
 require("./actor/api/router/display_test.js");
 require("./browser/window/router/hash/default_test.js");
+require("./app/director_test.js");
 
-},{"./actor/api/router/display_test.js":94,"./actor/interact/data/form/client_test.js":96,"./actor/interact/data/form/index_test.js":97,"./actor/interact/data/form/validate_test.js":98,"./actor/interact/data/preload/http/response_test.js":99,"./actor/interact/data/preload/index_test.js":100,"./actor/interact/data/search_test.js":101,"./actor/interact/http/response_test.js":103,"./actor/interact/index_test.js":104,"./actor/router_test.js":105,"./browser/window/router/hash/default_test.js":107}]},{},[109]);
+},{"./actor/api/router/display_test.js":98,"./actor/interact/data/form/client_test.js":100,"./actor/interact/data/form/index_test.js":101,"./actor/interact/data/form/validate_test.js":102,"./actor/interact/data/preload/http/response_test.js":103,"./actor/interact/data/preload/index_test.js":104,"./actor/interact/data/search_test.js":105,"./actor/interact/http/response_test.js":107,"./actor/interact/index_test.js":108,"./actor/router_test.js":109,"./app/director_test.js":110,"./browser/window/router/hash/default_test.js":112}]},{},[114]);

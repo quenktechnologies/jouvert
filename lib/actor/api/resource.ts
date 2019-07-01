@@ -92,6 +92,7 @@ export class BatchResponse<B> {
  * 404   - When the resource is not found.
  * 500   - When an internal error occurs.
  * error - When a transport error occurs.
+ * @deprecated use remote instead.
  */
 export class Resource<ReqRaw, ResParsed,>
     extends Immutable<Request<ReqRaw>> {

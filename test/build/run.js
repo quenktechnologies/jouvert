@@ -9,3 +9,4 @@ require("./actor/interact/index_test.js");
 require("./actor/interact/http/response_test.js");
 require("./actor/api/router/display_test.js");
 require("./browser/window/router/hash/default_test.js");
+require("./app/director_test.js");

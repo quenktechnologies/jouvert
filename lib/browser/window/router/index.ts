@@ -23,14 +23,14 @@ export type Handler<R> = (r: R) => Future<void>;
  */
 export interface Router<R> {
 
-  /**
-   * onError hook.
-   */
-    onError(e: Error) : Future<void>;
+    /**
+     * onError hook.
+     */
+    onError(e: Error): Future<void>;
 
-  /**
-   * onNotFound hook.
-   */
+    /**
+     * onNotFound hook.
+     */
     onNotFound(url: string): Future<void>;
 
     /**
@@ -43,10 +43,10 @@ export interface Router<R> {
      */
     use(path: Route, mware: Filter<R>): Router<R>;
 
-  /**
-   * clear all routes from the Router.
-   */
-  clear(): void;
+    /**
+     * clear all routes from the Router.
+     */
+    clear(): void;
 
     /**
      * start the Router.

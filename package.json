@@ -13,11 +13,14 @@
   "devDependencies": {
     "@quenk/must": "^1.0.6",
     "@types/bluebird": "^3.5.24",
+    "@types/deep-equal": "^1.0.1",
     "@types/json-stringify-safe": "^5.0.0",
     "@types/mocha": "^5.2.5",
     "@types/node": "^10.12.0",
     "@types/path-to-regexp": "^1.7.0",
     "@types/qs": "^6.5.1",
+    "@types/should": "^13.0.0",
+    "@types/uuid": "^3.4.4",
     "bluebird": "^3.5.2",
     "browserify": "^16.2.3",
     "path-to-regexp": "^3.0.0",
@@ -28,13 +31,12 @@
   },
   "dependencies": {
     "@quenk/jhr": "^2.4.1",
-    "@quenk/noni": "^1.23.0",
+    "@quenk/noni": "^1.25.0",
     "@quenk/potoo": "^2.4.0",
     "@quenk/preconditions": "^5.2.2",
     "@quenk/test": "^2.1.0",
     "@quenk/wml": "^0.16.3",
     "@quenk/wml-widgets": "^1.10.2",
-    "@types/deep-equal": "^1.0.1",
-    "@types/should": "^13.0.0"
+    "uuid": "^3.3.2"
   }
 }

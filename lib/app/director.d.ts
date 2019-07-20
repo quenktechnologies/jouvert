@@ -3,7 +3,7 @@ import { Maybe } from '@quenk/noni/lib/data/maybe';
 import { Case } from '@quenk/potoo/lib/actor/resident/case';
 import { Address } from '@quenk/potoo/lib/actor/address';
 import { Router as RealRouter } from '../browser/window/router';
-import { App } from '../app';
+import { App, Template } from '../app';
 import { Actor, Mutable, Immutable } from '../actor';
 /**
  * Route refers to the identifier the underlying router uses to trigger
@@ -22,6 +22,25 @@ export declare type DispatchingMessages = Exp | Ack | Cont;
  * SupervisorMessages type.
  */
 export declare type SupervisorMessages = Release | Suspend | Ack | Cont;
+/**
+ * RouteSpec indicates how to communicate the Resume message to the target
+ * actor.
+ *
+ * When it is an address, the message will be sent to that address. If
+ * it is a template, the template will be spawned before the message is sent,
+ * if it is a function, it will be applied to get the target actor address.
+ */
+export declare type RouteSpec<R> = Address | Template | RouteSpecFunc<R>;
+/**
+ * RouteSpecFunc
+ */
+export declare type RouteSpecFunc<R> = (r: Resume<R>) => Route;
+/**
+ * RouteSpecs is a map of routes to RouteSpecs.
+ */
+export interface RouteSpecs<R> {
+    [key: string]: RouteSpec<R>;
+}
 /**
  * Routes to actor address map.
  */
@@ -133,9 +152,9 @@ export interface Director<R> extends Actor {
  */
 export declare class Dispatch<R> {
     route: Route;
-    actor: Address;
+    spec: RouteSpec<R>;
     request: R;
-    constructor(route: Route, actor: Address, request: R);
+    constructor(route: Route, spec: RouteSpec<R>, request: R);
 }
 /**
  * Exp informs the Director that the current actor has failed
@@ -193,13 +212,14 @@ export declare class Suspend {
  */
 export declare class Supervisor<R> extends Immutable<SupervisorMessages> {
     route: Route;
-    actor: Address;
+    spec: RouteSpec<R>;
     request: R;
     delay: Milliseconds;
     display: Address;
     router: Address;
     system: App;
-    constructor(route: Route, actor: Address, request: R, delay: Milliseconds, display: Address, router: Address, system: App);
+    constructor(route: Route, spec: RouteSpec<R>, request: R, delay: Milliseconds, display: Address, router: Address, system: App);
+    actor: string;
     receive: Case<SupervisorMessages>[];
     run(): void;
 }
@@ -211,22 +231,22 @@ export declare class Supervisor<R> extends Immutable<SupervisorMessages> {
  */
 export declare abstract class AbstractDirector<R> extends Mutable {
     display: Address;
-    routes: Routes;
+    routes: RouteSpecs<R>;
     router: RealRouter<R>;
     current: Maybe<Address>;
     config: DirectorConfig;
     system: App;
-    constructor(display: Address, routes: Routes, router: RealRouter<R>, current: Maybe<Address>, config: DirectorConfig, system: App);
+    constructor(display: Address, routes: RouteSpecs<R>, router: RealRouter<R>, current: Maybe<Address>, config: DirectorConfig, system: App);
     beforeRouting(): AbstractDirector<R>;
     routing(): Case<RoutingMessages<R>>[];
     beforeDispatch(_: Dispatch<R>): AbstractDirector<R>;
     dispatching(p: Dispatch<R>): Case<DispatchingMessages>[];
     abstract beforeExp(d: Dispatch<R>): AbstractDirector<R>;
-    afterExpire({ route, actor, request }: Dispatch<R>): AbstractDirector<R>;
+    afterExpire({ route, spec, request }: Dispatch<R>): AbstractDirector<R>;
     abstract beforeCont(c: Cont): AbstractDirector<R>;
     afterCont(_: Cont): AbstractDirector<R>;
     abstract beforeAck(a: Dispatch<R>): AbstractDirector<R>;
-    afterAck({ route, actor, request }: Dispatch<R>): AbstractDirector<R>;
+    afterAck({ route, spec, request }: Dispatch<R>): AbstractDirector<R>;
     run(): void;
 }
 /**
@@ -276,7 +296,7 @@ export declare const whenDispatching: <R>(r: AbstractDirector<R>, d: Dispatch<R>
 /**
  * supervisorTmpl used to spawn new supervisor actors.
  */
-export declare const supervisorTmpl: <R>(d: AbstractDirector<R>, route: string, actor: string, req: R) => {
+export declare const supervisorTmpl: <R>(d: AbstractDirector<R>, route: string, spec: RouteSpec<R>, req: R) => {
     id: string;
     create: (s: App) => Supervisor<R>;
 };

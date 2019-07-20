@@ -1,6 +1,6 @@
 {
   "name": "@quenk/jouvert",
-  "version": "0.3.3",
+  "version": "0.4.0",
   "description": "Actor oriented client side toolkit.",
   "author": [
     "Quenk Technologies Limited <info@quenk.com> (https://quenk.com)"
@@ -12,6 +12,7 @@
   "license": "Apache-2.0",
   "devDependencies": {
     "@quenk/must": "^1.0.6",
+    "@quenk/test": "^2.1.1",
     "@types/bluebird": "^3.5.24",
     "@types/deep-equal": "^1.0.1",
     "@types/json-stringify-safe": "^5.0.0",
@@ -26,14 +27,13 @@
     "qs": "^6.6.0",
     "should": "^13.2.3",
     "typedoc": "^0.14.2",
-    "typescript": "^3.3.3"
+    "typescript": "^3.5.3"
   },
   "dependencies": {
-    "@quenk/jhr": "^2.4.1",
-    "@quenk/noni": "^1.25.0",
-    "@quenk/potoo": "^2.4.0",
+    "@quenk/jhr": "^2.6.7",
+    "@quenk/noni": "^1.26.0",
+    "@quenk/potoo": "^2.5.0",
     "@quenk/preconditions": "^5.2.2",
-    "@quenk/test": "^2.1.0",
     "@quenk/wml": "^0.16.3",
     "@quenk/wml-widgets": "^1.10.2",
     "uuid": "^3.3.2"

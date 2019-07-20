@@ -10,8 +10,8 @@ var Invoke = /** @class */ (function () {
 exports.Invoke = Invoke;
 var Mock = /** @class */ (function () {
     function Mock(methods) {
-        if (methods === void 0) { methods = {}; }
         var _this = this;
+        if (methods === void 0) { methods = {}; }
         this.__test = {
             data: {
                 invokes: []

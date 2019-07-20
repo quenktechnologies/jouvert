@@ -10,14 +10,15 @@
 /** imports */
 import * as v4 from 'uuid/v4';
 import { Milliseconds } from '@quenk/noni/lib/control/time';
-import { map, exclude } from '@quenk/noni/lib/data/record';
+import { map, exclude, merge } from '@quenk/noni/lib/data/record';
 import { Maybe, just } from '@quenk/noni/lib/data/maybe';
 import { pure } from '@quenk/noni/lib/control/monad/future';
 import { Case, Default } from '@quenk/potoo/lib/actor/resident/case';
 import { Address } from '@quenk/potoo/lib/actor/address';
 import { Router as RealRouter } from '../browser/window/router';
-import { App } from '../app';
+import { App, Template } from '../app';
 import { Actor, Mutable, Immutable } from '../actor';
+import { startsWith } from '@quenk/noni/lib/data/string';
 
 /**
  * Route refers to the identifier the underlying router uses to trigger
@@ -50,6 +51,34 @@ export type SupervisorMessages
     | Ack
     | Cont
     ;
+
+/**
+ * RouteSpec indicates how to communicate the Resume message to the target
+ * actor.
+ *
+ * When it is an address, the message will be sent to that address. If
+ * it is a template, the template will be spawned before the message is sent,
+ * if it is a function, it will be applied to get the target actor address.
+ */
+export type RouteSpec<R>
+    = Address
+    | Template
+    | RouteSpecFunc<R>
+    ;
+
+/**
+ * RouteSpecFunc
+ */
+export type RouteSpecFunc<R> = (r: Resume<R>) => Route;
+
+/**
+ * RouteSpecs is a map of routes to RouteSpecs.
+ */
+export interface RouteSpecs<R> {
+
+    [key: string]: RouteSpec<R>
+
+}
 
 /**
  * Routes to actor address map.
@@ -183,7 +212,7 @@ export class Dispatch<R> {
 
     constructor(
         public route: Route,
-        public actor: Address,
+        public spec: RouteSpec<R>,
         public request: R) { }
 
 }
@@ -253,12 +282,14 @@ export class Supervisor<R> extends Immutable<SupervisorMessages> {
 
     constructor(
         public route: Route,
-        public actor: Address,
+        public spec: RouteSpec<R>,
         public request: R,
         public delay: Milliseconds,
         public display: Address,
         public router: Address,
         public system: App) { super(system); }
+
+    actor = '?';
 
     receive: Case<SupervisorMessages>[] = <Case<SupervisorMessages>[]>[
 
@@ -281,16 +312,33 @@ export class Supervisor<R> extends Immutable<SupervisorMessages> {
 
         new Default(m => this.tell(this.display, m))
 
-    ]
+    ];
 
     run() {
 
         let me = this.self();
+        let r = new Resume(this.route, this.request, me, me);
+        let { spec } = this;
+
+        if (typeof spec === 'object') {
+
+            let args = Array.isArray(spec.args) ? spec.args.concat(r) : [r];
+
+            this.actor = this.spawn(merge(spec, { args }));
+
+        } else if (typeof spec === 'function') {
+
+            this.actor = spec(r);
+
+        } else {
+
+            this.actor = spec;
+
+        }
 
         setTimeout(() => {
 
-            this.tell(this.actor, new Resume(this.route,
-                this.request, me, me));
+            this.tell(this.actor, r);
 
         }, this.delay);
 
@@ -308,7 +356,7 @@ export abstract class AbstractDirector<R> extends Mutable {
 
     constructor(
         public display: Address,
-        public routes: Routes,
+        public routes: RouteSpecs<R>,
         public router: RealRouter<R>,
         public current: Maybe<Address>,
         public config: DirectorConfig,
@@ -328,8 +376,6 @@ export abstract class AbstractDirector<R> extends Mutable {
 
     beforeDispatch(_: Dispatch<R>): AbstractDirector<R> {
 
-        setTimeout(() => this.tell(this.self(), new Exp()), this.config.timeout);
-
         if (this.current.isJust()) {
 
             this.tell(this.current.get(), new Release(this.self()));
@@ -339,6 +385,8 @@ export abstract class AbstractDirector<R> extends Mutable {
             this.tell(this.self(), new Ack());
 
         }
+
+        setTimeout(() => this.tell(this.self(), new Exp()), this.config.timeout);
 
         return this;
 
@@ -352,7 +400,7 @@ export abstract class AbstractDirector<R> extends Mutable {
 
     abstract beforeExp(d: Dispatch<R>): AbstractDirector<R>
 
-    afterExpire({ route, actor, request }: Dispatch<R>): AbstractDirector<R> {
+    afterExpire({ route, spec, request }: Dispatch<R>): AbstractDirector<R> {
 
         let { routes } = this;
 
@@ -362,11 +410,11 @@ export abstract class AbstractDirector<R> extends Mutable {
 
             this.kill(addr);
 
-            this.spawn(supervisorTmpl(this, route, actor, request));
+            this.spawn(supervisorTmpl(this, route, spec, request));
 
         } else {
 
-            this.spawn(supervisorTmpl(this, route, actor, request));
+            this.spawn(supervisorTmpl(this, route, spec, request));
 
         }
 
@@ -388,13 +436,22 @@ export abstract class AbstractDirector<R> extends Mutable {
 
     abstract beforeAck(a: Dispatch<R>): AbstractDirector<R>
 
-    afterAck({ route, actor, request }: Dispatch<R>): AbstractDirector<R> {
+    afterAck({ route, spec, request }: Dispatch<R>): AbstractDirector<R> {
 
-        if (this.current.isJust())
-            this.tell(this.current.get(), new Suspend(this.self()));
+        if (this.current.isJust()) {
+
+            let addr = this.current.get();
+            let me = this.self();
+
+            this.tell(addr, new Suspend(me));
+
+            if (startsWith(addr, me))
+                this.kill(addr);
+
+        }
 
         this.current = just(this.spawn(supervisorTmpl(this,
-            route, actor, request)));
+            route, spec, request)));
 
         return this;
 
@@ -402,26 +459,19 @@ export abstract class AbstractDirector<R> extends Mutable {
 
     run() {
 
-        this.routes = map(this.routes, (actor, route) => {
+        map(this.routes, (spec, route) => {
 
             this.router.add(route, (r: R) => {
 
-                if (this.routes.hasOwnProperty(route)) {
-
-                    this.tell(this.self(), new Dispatch(route, actor, r));
-
-                    return pure(<void>undefined);
-
-                } else {
-
+                if (!this.routes.hasOwnProperty(route))
                     return this.router.onError(new Error(
                         `${route}: not responding!`));
 
-                }
+                this.tell(this.self(), new Dispatch(route, spec, r));
+
+                return pure(<void>undefined);
 
             });
-
-            return actor;
 
         });
 
@@ -553,11 +603,11 @@ export const whenDispatching = <R>(r: AbstractDirector<R>, d: Dispatch<R>)
  * supervisorTmpl used to spawn new supervisor actors.
  */
 export const supervisorTmpl =
-    <R>(d: AbstractDirector<R>, route: Route, actor: Address, req: R) => ({
+    <R>(d: AbstractDirector<R>, route: Route, spec: RouteSpec<R>, req: R) => ({
 
         id: v4(),
 
-        create: (s: App) => new Supervisor(route, actor, req, d.config.delay,
+        create: (s: App) => new Supervisor(route, spec, req, d.config.delay,
             d.display, d.self(), s)
 
     })

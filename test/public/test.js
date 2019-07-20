@@ -1378,14 +1378,15 @@ var maybe_1 = require("@quenk/noni/lib/data/maybe");
 var future_1 = require("@quenk/noni/lib/control/monad/future");
 var case_1 = require("@quenk/potoo/lib/actor/resident/case");
 var actor_1 = require("../actor");
+var string_1 = require("@quenk/noni/lib/data/string");
 /**
  * Dispatch signals to the Director that a new actor should be given control
  * of the display.
  */
 var Dispatch = /** @class */ (function () {
-    function Dispatch(route, actor, request) {
+    function Dispatch(route, spec, request) {
         this.route = route;
-        this.actor = actor;
+        this.spec = spec;
         this.request = request;
     }
     return Dispatch;
@@ -1468,15 +1469,16 @@ exports.Suspend = Suspend;
  */
 var Supervisor = /** @class */ (function (_super) {
     __extends(Supervisor, _super);
-    function Supervisor(route, actor, request, delay, display, router, system) {
+    function Supervisor(route, spec, request, delay, display, router, system) {
         var _this = _super.call(this, system) || this;
         _this.route = route;
-        _this.actor = actor;
+        _this.spec = spec;
         _this.request = request;
         _this.delay = delay;
         _this.display = display;
         _this.router = router;
         _this.system = system;
+        _this.actor = '?';
         _this.receive = [
             new case_1.Case(Release, function (_) {
                 _this.tell(_this.actor, new Release(_this.self()));
@@ -1494,8 +1496,20 @@ var Supervisor = /** @class */ (function (_super) {
     Supervisor.prototype.run = function () {
         var _this = this;
         var me = this.self();
+        var r = new Resume(this.route, this.request, me, me);
+        var spec = this.spec;
+        if (typeof spec === 'object') {
+            var args = Array.isArray(spec.args) ? spec.args.concat(r) : [r];
+            this.actor = this.spawn(record_1.merge(spec, { args: args }));
+        }
+        else if (typeof spec === 'function') {
+            this.actor = spec(r);
+        }
+        else {
+            this.actor = spec;
+        }
         setTimeout(function () {
-            _this.tell(_this.actor, new Resume(_this.route, _this.request, me, me));
+            _this.tell(_this.actor, r);
         }, this.delay);
     };
     return Supervisor;
@@ -1527,28 +1541,28 @@ var AbstractDirector = /** @class */ (function (_super) {
     };
     AbstractDirector.prototype.beforeDispatch = function (_) {
         var _this = this;
-        setTimeout(function () { return _this.tell(_this.self(), new Exp()); }, this.config.timeout);
         if (this.current.isJust()) {
             this.tell(this.current.get(), new Release(this.self()));
         }
         else {
             this.tell(this.self(), new Ack());
         }
+        setTimeout(function () { return _this.tell(_this.self(), new Exp()); }, this.config.timeout);
         return this;
     };
     AbstractDirector.prototype.dispatching = function (p) {
         return exports.whenDispatching(this, p);
     };
     AbstractDirector.prototype.afterExpire = function (_a) {
-        var route = _a.route, actor = _a.actor, request = _a.request;
+        var route = _a.route, spec = _a.spec, request = _a.request;
         var routes = this.routes;
         if (this.current.isJust()) {
             var addr = this.current.get();
             this.kill(addr);
-            this.spawn(exports.supervisorTmpl(this, route, actor, request));
+            this.spawn(exports.supervisorTmpl(this, route, spec, request));
         }
         else {
-            this.spawn(exports.supervisorTmpl(this, route, actor, request));
+            this.spawn(exports.supervisorTmpl(this, route, spec, request));
         }
         //remove the offending route from the table.
         this.routes = record_1.exclude(routes, route);
@@ -1559,25 +1573,26 @@ var AbstractDirector = /** @class */ (function (_super) {
         return this;
     };
     AbstractDirector.prototype.afterAck = function (_a) {
-        var route = _a.route, actor = _a.actor, request = _a.request;
-        if (this.current.isJust())
-            this.tell(this.current.get(), new Suspend(this.self()));
-        this.current = maybe_1.just(this.spawn(exports.supervisorTmpl(this, route, actor, request)));
+        var route = _a.route, spec = _a.spec, request = _a.request;
+        if (this.current.isJust()) {
+            var addr = this.current.get();
+            var me = this.self();
+            this.tell(addr, new Suspend(me));
+            if (string_1.startsWith(addr, me))
+                this.kill(addr);
+        }
+        this.current = maybe_1.just(this.spawn(exports.supervisorTmpl(this, route, spec, request)));
         return this;
     };
     AbstractDirector.prototype.run = function () {
         var _this = this;
-        this.routes = record_1.map(this.routes, function (actor, route) {
+        record_1.map(this.routes, function (spec, route) {
             _this.router.add(route, function (r) {
-                if (_this.routes.hasOwnProperty(route)) {
-                    _this.tell(_this.self(), new Dispatch(route, actor, r));
-                    return future_1.pure(undefined);
-                }
-                else {
+                if (!_this.routes.hasOwnProperty(route))
                     return _this.router.onError(new Error(route + ": not responding!"));
-                }
+                _this.tell(_this.self(), new Dispatch(route, spec, r));
+                return future_1.pure(undefined);
             });
-            return actor;
         });
         this.select(this.routing());
     };
@@ -1680,12 +1695,12 @@ exports.whenDispatching = function (r, d) { return [
 /**
  * supervisorTmpl used to spawn new supervisor actors.
  */
-exports.supervisorTmpl = function (d, route, actor, req) { return ({
+exports.supervisorTmpl = function (d, route, spec, req) { return ({
     id: v4(),
-    create: function (s) { return new Supervisor(route, actor, req, d.config.delay, d.display, d.self(), s); }
+    create: function (s) { return new Supervisor(route, spec, req, d.config.delay, d.display, d.self(), s); }
 }); };
 
-},{"../actor":2,"@quenk/noni/lib/control/monad/future":17,"@quenk/noni/lib/data/maybe":22,"@quenk/noni/lib/data/record":23,"@quenk/potoo/lib/actor/resident/case":31,"uuid/v4":97}],13:[function(require,module,exports){
+},{"../actor":2,"@quenk/noni/lib/control/monad/future":17,"@quenk/noni/lib/data/maybe":22,"@quenk/noni/lib/data/record":23,"@quenk/noni/lib/data/string":25,"@quenk/potoo/lib/actor/resident/case":31,"uuid/v4":97}],13:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -2614,6 +2629,43 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.tick = function (f) { return (typeof window == 'undefined') ?
     setTimeout(f, 0) :
     process.nextTick(f); };
+/**
+ * debounce delays the application of a function until the specified time
+ * has passed.
+ *
+ * If multiple attempts to apply the function have occured, then each attempt
+ * will restart the delay process. The function will only ever be applied once
+ * after the delay, using the value of the final attempt for application.
+ */
+exports.debounce = function (f, delay) {
+    var id = -1;
+    return function (a) {
+        if (id === -1) {
+            id = setTimeout(function () { return f(a); }, delay);
+        }
+        else {
+            clearTimeout(id);
+            id = setTimeout(function () { return f(a); }, delay);
+        }
+    };
+};
+/**
+ * throttle limits the application of a function to occur only one within the
+ * specified duration.
+ *
+ * The first application will execute immediately subsequent applications
+ * will be ignored until the duration has passed.
+ */
+exports.throttle = function (f, duration) {
+    var wait = false;
+    return function (a) {
+        if (wait === false) {
+            f(a);
+            wait = true;
+            setTimeout(function () { return wait = false; }, duration);
+        }
+    };
+};
 
 }).call(this,require('_process'))
 },{"_process":82}],19:[function(require,module,exports){
@@ -6193,7 +6245,8 @@ var This = /** @class */ (function () {
     };
     This.prototype.allocate = function (addr, t) {
         var h = new This(addr, this.system);
-        var act = t.create(this.system);
+        var args = Array.isArray(t.args) ? t.args : [];
+        var act = t.create.apply(t, [this.system].concat(args));
         return act.init(this.system.allocate(act, h, t));
     };
     This.prototype.getContext = function (addr) {
@@ -6605,7 +6658,7 @@ var __extends = (this && this.__extends) || (function () {
             ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
             function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
         return extendStatics(d, b);
-    }
+    };
     return function (d, b) {
         extendStatics(d, b);
         function __() { this.constructor = d; }
@@ -16550,6 +16603,53 @@ describe('director', function () {
                 cb(undefined);
             }, 800);
         })); });
+        it('should spawn templates ', function () { return future_1.toPromise(future_1.fromCallback(function (cb) {
+            var sys = system();
+            hash = new default_1.DefaultHashRouter(window, {}, undefined, onNotFound);
+            sys.spawn(director({
+                '/foo': controllerTemplate('foo', function () { return [
+                    new case_1.Case(director_1.Resume, function () {
+                        assert_1.assert(true).be.true();
+                        cb(undefined);
+                    })
+                ]; })
+            }, hash, 200));
+            hash.start();
+            setTimeout(function () { return window.location.hash = 'foo'; }, 500);
+        })); });
+        it('should kill spawned templates ', function () {
+            return future_1.toPromise(future_1.fromCallback(function (cb) {
+                var sys = system();
+                hash = new default_1.DefaultHashRouter(window, {}, undefined, onNotFound);
+                sys.spawn(director({
+                    '/foo': controllerTemplate('foo', function () { return [
+                        new case_1.Case(director_1.Resume, function () {
+                            assert_1.assert(true).be.true();
+                        })
+                    ]; }),
+                    '/bar': 'bar'
+                }, hash, 200));
+                sys.spawn(controllerTemplate('bar', function () { return [
+                    new case_1.Case(director_1.Resume, function () { return cb(undefined); })
+                ]; }));
+                hash.start();
+                setTimeout(function () { return window.location.hash = 'foo'; }, 500);
+                setTimeout(function () { return window.location.hash = 'bar'; }, 1500);
+            }));
+        });
+        it('should exec functions', function () { return future_1.toPromise(future_1.fromCallback(function (cb) {
+            var sys = system();
+            hash = new default_1.DefaultHashRouter(window, {}, undefined, onNotFound);
+            sys.spawn(director({
+                '/foo': function () {
+                    assert_1.assert(true).be.true();
+                    cb(undefined);
+                    return '?';
+                }
+            }, hash, 200));
+            hash.start();
+            setTimeout(function () { return window.location.hash = 'foo'; }, 500);
+        })); });
     });
 });
 
@@ -16715,8 +16815,8 @@ var Invoke = /** @class */ (function () {
 exports.Invoke = Invoke;
 var Mock = /** @class */ (function () {
     function Mock(methods) {
-        if (methods === void 0) { methods = {}; }
         var _this = this;
+        if (methods === void 0) { methods = {}; }
         this.__test = {
             data: {
                 invokes: []

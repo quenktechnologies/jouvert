@@ -136,6 +136,53 @@ describe('director', function () {
                 cb(undefined);
             }, 800);
         })); });
+        it('should spawn templates ', function () { return future_1.toPromise(future_1.fromCallback(function (cb) {
+            var sys = system();
+            hash = new default_1.DefaultHashRouter(window, {}, undefined, onNotFound);
+            sys.spawn(director({
+                '/foo': controllerTemplate('foo', function () { return [
+                    new case_1.Case(director_1.Resume, function () {
+                        assert_1.assert(true).be.true();
+                        cb(undefined);
+                    })
+                ]; })
+            }, hash, 200));
+            hash.start();
+            setTimeout(function () { return window.location.hash = 'foo'; }, 500);
+        })); });
+        it('should kill spawned templates ', function () {
+            return future_1.toPromise(future_1.fromCallback(function (cb) {
+                var sys = system();
+                hash = new default_1.DefaultHashRouter(window, {}, undefined, onNotFound);
+                sys.spawn(director({
+                    '/foo': controllerTemplate('foo', function () { return [
+                        new case_1.Case(director_1.Resume, function () {
+                            assert_1.assert(true).be.true();
+                        })
+                    ]; }),
+                    '/bar': 'bar'
+                }, hash, 200));
+                sys.spawn(controllerTemplate('bar', function () { return [
+                    new case_1.Case(director_1.Resume, function () { return cb(undefined); })
+                ]; }));
+                hash.start();
+                setTimeout(function () { return window.location.hash = 'foo'; }, 500);
+                setTimeout(function () { return window.location.hash = 'bar'; }, 1500);
+            }));
+        });
+        it('should exec functions', function () { return future_1.toPromise(future_1.fromCallback(function (cb) {
+            var sys = system();
+            hash = new default_1.DefaultHashRouter(window, {}, undefined, onNotFound);
+            sys.spawn(director({
+                '/foo': function () {
+                    assert_1.assert(true).be.true();
+                    cb(undefined);
+                    return '?';
+                }
+            }, hash, 200));
+            hash.start();
+            setTimeout(function () { return window.location.hash = 'foo'; }, 500);
+        })); });
     });
 });
 //# sourceMappingURL=director_test.js.map

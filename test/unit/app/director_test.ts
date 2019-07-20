@@ -8,7 +8,7 @@ import {
     Request
 } from '../../../lib/browser/window/router/hash/default';
 import {
-    Routes,
+    RouteSpecs,
     DefaultDirector,
     Resume,
     Suspend,
@@ -48,14 +48,15 @@ const controllerTemplate = (id: string, cases: (c: Ctrl) => Case<Messages>[]) =>
     create: (s: App) => new Ctrl(cases, s)
 })
 
-const director = (routes: Routes, router: Hash, timeout = 0, delay = 0) => ({
+const director =
+    (routes: RouteSpecs<Request>, router: Hash, timeout = 0, delay = 0) => ({
 
-    id: 'router',
+        id: 'router',
 
-    create: (s: App) => new DefaultDirector('display', routes, router,
-        nothing(), { timeout, delay }, s)
+        create: (s: App) => new DefaultDirector('display', routes, router,
+            nothing(), { timeout, delay }, s)
 
-})
+    })
 
 describe('director', () => {
 
@@ -199,6 +200,96 @@ describe('director', () => {
             }, 800);
 
         })));
+
+        it('should spawn templates ', () => toPromise(fromCallback(cb => {
+
+            let sys = system();
+
+            hash = new Hash(window, {}, undefined, onNotFound);
+
+            sys.spawn(director({
+
+                '/foo': controllerTemplate('foo', () => [
+
+                    new Case(Resume, () => {
+
+                        assert(true).be.true();
+                        cb(undefined);
+
+                    })
+
+                ])
+
+            }, hash, 200));
+
+            hash.start();
+
+            setTimeout(() => window.location.hash = 'foo', 500);
+
+        })));
+
+        it('should kill spawned templates ', () =>
+            toPromise(fromCallback(cb => {
+
+                let sys = system();
+
+                hash = new Hash(window, {}, undefined, onNotFound);
+
+                sys.spawn(director({
+
+                    '/foo': controllerTemplate('foo', () => [
+
+                        new Case(Resume, () => {
+
+                            assert(true).be.true();
+
+                        })
+
+                    ]),
+
+                    '/bar': 'bar'
+
+                }, hash, 200));
+
+                sys.spawn(controllerTemplate('bar', () => <Case<Messages>[]>[
+
+                    new Case(Resume, () => cb(undefined))
+
+                ]));
+
+                hash.start();
+
+                setTimeout(() => window.location.hash = 'foo', 500);
+
+                setTimeout(() => window.location.hash = 'bar', 1500);
+
+            })));
+
+        it('should exec functions', () => toPromise(fromCallback(cb => {
+
+            let sys = system();
+
+            hash = new Hash(window, {}, undefined, onNotFound);
+
+            sys.spawn(director({
+
+                '/foo': () => {
+
+                    assert(true).be.true();
+
+                    cb(undefined);
+
+                    return '?';
+
+                }
+
+            }, hash, 200));
+
+            hash.start();
+
+            setTimeout(() => window.location.hash = 'foo', 500);
+
+        })))
 
     });
 

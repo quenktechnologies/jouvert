@@ -145,6 +145,12 @@ export interface Director<R> extends Actor {
      * the router requested.
      */
     afterAck(d: Dispatch<R>): Director<R>;
+    /**
+     * afterSuspend is applied after a Suspend message.
+     *
+     * The current actor will be suspended and eventually killed.
+     */
+    afterSuspend(s: Suspend): Director<R>;
 }
 /**
  * Dispatch signals to the Director that a new actor should be given control
@@ -237,6 +243,12 @@ export declare abstract class AbstractDirector<R> extends Mutable {
     config: DirectorConfig;
     system: App;
     constructor(display: Address, routes: RouteSpecs<R>, router: RealRouter<R>, current: Maybe<Address>, config: DirectorConfig, system: App);
+    /**
+     * dismiss the current actor (if any).
+     *
+     * Will cause a timer to be set for acknowledgement.
+     */
+    dismiss(): AbstractDirector<R>;
     beforeRouting(): AbstractDirector<R>;
     routing(): Case<RoutingMessages<R>>[];
     beforeDispatch(_: Dispatch<R>): AbstractDirector<R>;
@@ -247,6 +259,7 @@ export declare abstract class AbstractDirector<R> extends Mutable {
     afterCont(_: Cont): AbstractDirector<R>;
     abstract beforeAck(a: Dispatch<R>): AbstractDirector<R>;
     afterAck({ route, spec, request }: Dispatch<R>): AbstractDirector<R>;
+    afterSuspend(_: Suspend): AbstractDirector<R>;
     run(): void;
 }
 /**
@@ -284,6 +297,14 @@ export declare class ContCase<R> extends Case<Cont> {
  */
 export declare class AckCase<R> extends Case<Ack> {
     constructor(d: AbstractDirector<R>, m: Dispatch<R>);
+}
+/**
+ * SuspendCase intercepts a Suspend message sent to the Director.
+ *
+ * This will dismiss the current actor.
+ */
+export declare class SuspendCase<R> extends Case<Suspend> {
+    constructor(d: AbstractDirector<R>);
 }
 /**
  * whenRouting behaviour.

@@ -1533,13 +1533,12 @@ var AbstractDirector = /** @class */ (function (_super) {
         _this.system = system;
         return _this;
     }
-    AbstractDirector.prototype.beforeRouting = function () {
-        return this;
-    };
-    AbstractDirector.prototype.routing = function () {
-        return exports.whenRouting(this);
-    };
-    AbstractDirector.prototype.beforeDispatch = function (_) {
+    /**
+     * dismiss the current actor (if any).
+     *
+     * Will cause a timer to be set for acknowledgement.
+     */
+    AbstractDirector.prototype.dismiss = function () {
         var _this = this;
         if (this.current.isJust()) {
             this.tell(this.current.get(), new Release(this.self()));
@@ -1549,6 +1548,15 @@ var AbstractDirector = /** @class */ (function (_super) {
         }
         setTimeout(function () { return _this.tell(_this.self(), new Exp()); }, this.config.timeout);
         return this;
+    };
+    AbstractDirector.prototype.beforeRouting = function () {
+        return this;
+    };
+    AbstractDirector.prototype.routing = function () {
+        return exports.whenRouting(this);
+    };
+    AbstractDirector.prototype.beforeDispatch = function (_) {
+        return this.dismiss();
     };
     AbstractDirector.prototype.dispatching = function (p) {
         return exports.whenDispatching(this, p);
@@ -1583,6 +1591,9 @@ var AbstractDirector = /** @class */ (function (_super) {
         }
         this.current = maybe_1.just(this.spawn(exports.supervisorTmpl(this, route, spec, request)));
         return this;
+    };
+    AbstractDirector.prototype.afterSuspend = function (_) {
+        return this.dismiss();
     };
     AbstractDirector.prototype.run = function () {
         var _this = this;
@@ -1679,10 +1690,26 @@ var AckCase = /** @class */ (function (_super) {
 }(case_1.Case));
 exports.AckCase = AckCase;
 /**
+ * SuspendCase intercepts a Suspend message sent to the Director.
+ *
+ * This will dismiss the current actor.
+ */
+var SuspendCase = /** @class */ (function (_super) {
+    __extends(SuspendCase, _super);
+    function SuspendCase(d) {
+        return _super.call(this, Suspend, function (s) {
+            d.afterSuspend(s).select(d.routing());
+        }) || this;
+    }
+    return SuspendCase;
+}(case_1.Case));
+exports.SuspendCase = SuspendCase;
+/**
  * whenRouting behaviour.
  */
 exports.whenRouting = function (r) { return [
-    new DispatchCase(r)
+    new DispatchCase(r),
+    new SuspendCase(r)
 ]; };
 /**
  * whenDispatching behaviour.

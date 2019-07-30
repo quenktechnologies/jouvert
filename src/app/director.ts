@@ -202,6 +202,13 @@ export interface Director<R> extends Actor {
      */
     afterAck(d: Dispatch<R>): Director<R>
 
+    /**
+     * afterSuspend is applied after a Suspend message.
+     *
+     * The current actor will be suspended and eventually killed.
+     */
+    afterSuspend(s: Suspend): Director<R>
+
 }
 
 /**
@@ -362,19 +369,12 @@ export abstract class AbstractDirector<R> extends Mutable {
         public config: DirectorConfig,
         public system: App) { super(system); }
 
-    beforeRouting(): AbstractDirector<R> {
-
-        return this;
-
-    }
-
-    routing(): Case<RoutingMessages<R>>[] {
-
-        return whenRouting(this);
-
-    }
-
-    beforeDispatch(_: Dispatch<R>): AbstractDirector<R> {
+    /**
+     * dismiss the current actor (if any).
+     *
+     * Will cause a timer to be set for acknowledgement.
+     */
+    dismiss(): AbstractDirector<R> {
 
         if (this.current.isJust()) {
 
@@ -389,6 +389,24 @@ export abstract class AbstractDirector<R> extends Mutable {
         setTimeout(() => this.tell(this.self(), new Exp()), this.config.timeout);
 
         return this;
+
+    }
+
+    beforeRouting(): AbstractDirector<R> {
+
+        return this;
+
+    }
+
+    routing(): Case<RoutingMessages<R>>[] {
+
+        return whenRouting(this);
+
+    }
+
+    beforeDispatch(_: Dispatch<R>): AbstractDirector<R> {
+
+        return this.dismiss();
 
     }
 
@@ -454,6 +472,12 @@ export abstract class AbstractDirector<R> extends Mutable {
             route, spec, request)));
 
         return this;
+
+    }
+
+    afterSuspend(_: Suspend): AbstractDirector<R> {
+
+        return this.dismiss();
 
     }
 
@@ -576,12 +600,33 @@ export class AckCase<R> extends Case<Ack> {
 }
 
 /**
+ * SuspendCase intercepts a Suspend message sent to the Director.
+ * 
+ * This will dismiss the current actor.
+ */
+export class SuspendCase<R> extends Case<Suspend> {
+
+    constructor(d: AbstractDirector<R>) {
+
+        super(Suspend, (s: Suspend) => {
+
+            d.afterSuspend(s).select(d.routing());
+
+        });
+
+    }
+
+}
+
+/**
  * whenRouting behaviour.
  */
 export const whenRouting = <R>(r: AbstractDirector<R>)
     : Case<RoutingMessages<R>>[] => <Case<RoutingMessages<R>>[]>[
 
-        new DispatchCase(r)
+        new DispatchCase(r),
+
+        new SuspendCase(r)
 
     ];
 

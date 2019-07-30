@@ -4,8 +4,8 @@ import { Address } from '@quenk/potoo/lib/actor/address';
 import { Agent } from '@quenk/jhr/lib/agent';
 import { Request } from '@quenk/jhr/lib/request';
 import { Response } from '@quenk/jhr/lib/response';
-import { App } from '../app';
-import { Immutable } from '../actor';
+import { App } from '../../app';
+import { Immutable } from '../../actor';
 /**
  * Messages type.
  */

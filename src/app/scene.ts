@@ -42,7 +42,7 @@ export interface Scene<Req, MResumed>
 /**
  * AbstractScene implementation.
  */
-export abstract class AbstractScene<Req, Body, MResumed>
+export abstract class AbstractScene<Req, MResumed>
     extends
     Mutable
     implements
@@ -51,7 +51,7 @@ export abstract class AbstractScene<Req, Body, MResumed>
     /**
      * beforeResumed sets up the tmp UI and initiates the fetch.
      */
-    abstract beforeResumed(r: Resume<Req>): AbstractScene<Req, Body, MResumed>;
+    abstract beforeResumed(r: Resume<Req>): AbstractScene<Req, MResumed>;
 
     resumed(r: Resume<Req>): Case<ResumedMessages<MResumed>>[] {
 
@@ -78,7 +78,7 @@ export abstract class AbstractScene<Req, Body, MResumed>
     /**
      * beforeSuspended will acknowledge the suspend request.
      */
-    beforeSuspended(s: Suspend): AbstractScene<Req, Body, MResumed> {
+    beforeSuspended(s: Suspend): AbstractScene<Req, MResumed> {
 
         this.tell(s.router, new Ack());
 
@@ -99,8 +99,8 @@ export abstract class AbstractScene<Req, Body, MResumed>
  *           resumed   suspended
  * suspended <Resume>  <Suspend>
  */
-export const whenSuspended = <Req, Body, Resumed>
-    (c: AbstractScene<Req, Body, Resumed>)
+export const whenSuspended = <Req, Resumed>
+    (c: AbstractScene<Req, Resumed>)
     : Case<SuspendedMessages<Req>>[] => [
 
         new ResumeCase<Resume<Req>, ResumedMessages<Resumed>>(Resume, c),
@@ -115,8 +115,8 @@ export const whenSuspended = <Req, Body, Resumed>
  * resumed                    <Suspend>
  * suspended
  */
-export const whenResumed = <Req, Body, Resumed>
-    (c: AbstractScene<Req, Body, Resumed>)
+export const whenResumed = <Req, Resumed>
+    (c: AbstractScene<Req, Resumed>)
     : Case<ResumedMessages<Resumed>>[] => <Case<ResumedMessages<Resumed>>[]>[
 
         new SuspendCase<Suspend, SuspendedMessages<Req>>(Suspend, c),

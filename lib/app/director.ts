@@ -20,6 +20,9 @@ import { App, Template } from '../app';
 import { Actor, Mutable, Immutable } from '../actor';
 import { startsWith } from '@quenk/noni/lib/data/string';
 
+export const DEFAULT_TIMEOUT = 60000;
+export const DEFAULT_DELAY = 200;
+
 /**
  * Route refers to the identifier the underlying router uses to trigger
  * the change of actor.
@@ -366,7 +369,7 @@ export abstract class AbstractDirector<R> extends Mutable {
         public routes: RouteSpecs<R>,
         public router: RealRouter<R>,
         public current: Maybe<Address>,
-        public config: DirectorConfig,
+        public config: Partial<DirectorConfig>,
         public system: App) { super(system); }
 
     /**
@@ -618,6 +621,9 @@ export class SuspendCase<R> extends Case<Suspend> {
 
 }
 
+const defaultConfig = (c: Partial<DirectorConfig>): DirectorConfig =>
+    merge({ delay: DEFAULT_DELAY, timeout: DEFAULT_TIMEOUT }, c);
+
 /**
  * whenRouting behaviour.
  */
@@ -652,7 +658,7 @@ export const supervisorTmpl =
 
         id: v4(),
 
-        create: (s: App) => new Supervisor(route, spec, req, d.config.delay,
-            d.display, d.self(), s)
+        create: (s: App) => new Supervisor(route, spec, req,
+            defaultConfig(d.config).delay, d.display, d.self(), s)
 
     })

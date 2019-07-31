@@ -5,6 +5,8 @@ import { Address } from '@quenk/potoo/lib/actor/address';
 import { Router as RealRouter } from '../browser/window/router';
 import { App, Template } from '../app';
 import { Actor, Mutable, Immutable } from '../actor';
+export declare const DEFAULT_TIMEOUT = 60000;
+export declare const DEFAULT_DELAY = 200;
 /**
  * Route refers to the identifier the underlying router uses to trigger
  * the change of actor.
@@ -240,9 +242,9 @@ export declare abstract class AbstractDirector<R> extends Mutable {
     routes: RouteSpecs<R>;
     router: RealRouter<R>;
     current: Maybe<Address>;
-    config: DirectorConfig;
+    config: Partial<DirectorConfig>;
     system: App;
-    constructor(display: Address, routes: RouteSpecs<R>, router: RealRouter<R>, current: Maybe<Address>, config: DirectorConfig, system: App);
+    constructor(display: Address, routes: RouteSpecs<R>, router: RealRouter<R>, current: Maybe<Address>, config: Partial<DirectorConfig>, system: App);
     /**
      * dismiss the current actor (if any).
      *

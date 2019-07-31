@@ -1379,6 +1379,8 @@ var future_1 = require("@quenk/noni/lib/control/monad/future");
 var case_1 = require("@quenk/potoo/lib/actor/resident/case");
 var actor_1 = require("../actor");
 var string_1 = require("@quenk/noni/lib/data/string");
+exports.DEFAULT_TIMEOUT = 60000;
+exports.DEFAULT_DELAY = 200;
 /**
  * Dispatch signals to the Director that a new actor should be given control
  * of the display.
@@ -1704,6 +1706,9 @@ var SuspendCase = /** @class */ (function (_super) {
     return SuspendCase;
 }(case_1.Case));
 exports.SuspendCase = SuspendCase;
+var defaultConfig = function (c) {
+    return record_1.merge({ delay: exports.DEFAULT_DELAY, timeout: exports.DEFAULT_TIMEOUT }, c);
+};
 /**
  * whenRouting behaviour.
  */
@@ -1724,7 +1729,7 @@ exports.whenDispatching = function (r, d) { return [
  */
 exports.supervisorTmpl = function (d, route, spec, req) { return ({
     id: v4(),
-    create: function (s) { return new Supervisor(route, spec, req, d.config.delay, d.display, d.self(), s); }
+    create: function (s) { return new Supervisor(route, spec, req, defaultConfig(d.config).delay, d.display, d.self(), s); }
 }); };
 
 },{"../actor":2,"@quenk/noni/lib/control/monad/future":17,"@quenk/noni/lib/data/maybe":22,"@quenk/noni/lib/data/record":23,"@quenk/noni/lib/data/string":25,"@quenk/potoo/lib/actor/resident/case":31,"uuid/v4":97}],13:[function(require,module,exports){

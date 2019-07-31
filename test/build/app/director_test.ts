@@ -49,7 +49,7 @@ const controllerTemplate = (id: string, cases: (c: Ctrl) => Case<Messages>[]) =>
 })
 
 const director =
-    (routes: RouteSpecs<Request>, router: Hash, timeout = 0, delay = 0) => ({
+    (routes: RouteSpecs<Request, App>, router: Hash, timeout = 0, delay = 0) => ({
 
         id: 'router',
 

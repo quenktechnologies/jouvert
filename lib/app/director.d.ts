@@ -2,8 +2,9 @@ import { Milliseconds } from '@quenk/noni/lib/control/time';
 import { Maybe } from '@quenk/noni/lib/data/maybe';
 import { Case } from '@quenk/potoo/lib/actor/resident/case';
 import { Address } from '@quenk/potoo/lib/actor/address';
+import { Template } from '@quenk/potoo/lib/actor/template';
 import { Router as RealRouter } from '../browser/window/router';
-import { App, Template } from '../app';
+import { App } from '../app';
 import { Actor, Mutable, Immutable } from '../actor';
 export declare const DEFAULT_TIMEOUT = 60000;
 export declare const DEFAULT_DELAY = 200;
@@ -15,7 +16,7 @@ export declare type Route = string;
 /**
  * RoutingMessages type.
  */
-export declare type RoutingMessages<R> = Dispatch<R>;
+export declare type RoutingMessages<R, S extends App> = Dispatch<R, S>;
 /**
  * DispatchingMessage type.
  */
@@ -32,7 +33,7 @@ export declare type SupervisorMessages = Release | Suspend | Ack | Cont;
  * it is a template, the template will be spawned before the message is sent,
  * if it is a function, it will be applied to get the target actor address.
  */
-export declare type RouteSpec<R> = Address | Template | RouteSpecFunc<R>;
+export declare type RouteSpec<R, S extends App> = Address | Template<S> | RouteSpecFunc<R>;
 /**
  * RouteSpecFunc
  */
@@ -40,8 +41,8 @@ export declare type RouteSpecFunc<R> = (r: Resume<R>) => Route;
 /**
  * RouteSpecs is a map of routes to RouteSpecs.
  */
-export interface RouteSpecs<R> {
-    [key: string]: RouteSpec<R>;
+export interface RouteSpecs<R, S extends App> {
+    [key: string]: RouteSpec<R, S>;
 }
 /**
  * Routes to actor address map.
@@ -85,18 +86,18 @@ export interface DirectorConfig {
  * the controlling actor in question. Being blacklisted means future requests
  * for that actor to take control will result in an error.
  */
-export interface Director<R> extends Actor {
+export interface Director<R, S extends App> extends Actor {
     /**
      * beforeRouting is applied before the Director
      * transitions to routing().
      *
      * This method should be left as a hook for invoking callbacks.
      */
-    beforeRouting(): Director<R>;
+    beforeRouting(): Director<R, S>;
     /**
      * routing behaviour.
      */
-    routing(): Case<RoutingMessages<R>>[];
+    routing(): Case<RoutingMessages<R, S>>[];
     /**
      * beforeDispatch is applied before the Director transitions to
      * dispatching().
@@ -104,65 +105,65 @@ export interface Director<R> extends Actor {
      * This method should be used to release the actor currently in control
      * of the display.
      */
-    beforeDispatch(d: Dispatch<R>): Director<R>;
+    beforeDispatch(d: Dispatch<R, S>): Director<R, S>;
     /**
      * dispatching behaviour.
      */
-    dispatching(p: Dispatch<R>): Case<DispatchingMessages>[];
+    dispatching(p: Dispatch<R, S>): Case<DispatchingMessages>[];
     /**
      * beforeExp is applied before the Exp message is processed.
      *
      * This method should be left as a hook for invoking callbacks.
      */
-    beforeExp(d: Dispatch<R>): Director<R>;
+    beforeExp(d: Dispatch<R, S>): Director<R, S>;
     /**
      * afterExp is applied to react to the Exp message.
      *
      * This method should be used to forcibly change the controlling actor.
      */
-    afterExp(d: Dispatch<R>): Director<R>;
+    afterExp(d: Dispatch<R, S>): Director<R, S>;
     /**
      * beforeCont is applied before the Cont message is processed.
      *
      * This method should be left as a hook for invoking callbacks.
      */
-    beforeCont(c: Cont): Director<R>;
+    beforeCont(c: Cont): Director<R, S>;
     /**
      * afterCont is applied to process the Cont message.
      *
      * In the future, this method will be used to keep the underlying
      * router pointed to the current actor.
      */
-    afterCont(c: Cont): Director<R>;
+    afterCont(c: Cont): Director<R, S>;
     /**
      * beforeAct is applied before the Ack message is processed.
      *
      * This method shoulbe left as a hook for invoiking callabacks.
      */
-    beforeAck(d: Dispatch<R>): Director<R>;
+    beforeAck(d: Dispatch<R, S>): Director<R, S>;
     /**
      * afterAck is applied to react to the Ack message.
      *
      * The current actor is told to suspend and changed to the actor
      * the router requested.
      */
-    afterAck(d: Dispatch<R>): Director<R>;
+    afterAck(d: Dispatch<R, S>): Director<R, S>;
     /**
      * afterSuspend is applied after a Suspend message.
      *
      * The current actor will be suspended and eventually killed.
      */
-    afterSuspend(s: Suspend): Director<R>;
+    afterSuspend(s: Suspend): Director<R, S>;
 }
 /**
  * Dispatch signals to the Director that a new actor should be given control
  * of the display.
  */
-export declare class Dispatch<R> {
+export declare class Dispatch<R, S extends App> {
     route: Route;
-    spec: RouteSpec<R>;
+    spec: RouteSpec<R, S>;
     request: R;
-    constructor(route: Route, spec: RouteSpec<R>, request: R);
+    constructor(route: Route, spec: RouteSpec<R, S>, request: R);
 }
 /**
  * Exp informs the Director that the current actor has failed
@@ -226,15 +227,15 @@ export declare class Suspend {
  * This is accomplished by killing off the supervisor whenever its actor
  * is no longer in control.
  */
-export declare class Supervisor<R> extends Immutable<SupervisorMessages> {
+export declare class Supervisor<R, S extends App> extends Immutable<SupervisorMessages> {
     route: Route;
-    spec: RouteSpec<R>;
+    spec: RouteSpec<R, S>;
     request: R;
     delay: Milliseconds;
     display: Address;
     router: Address;
     system: App;
-    constructor(route: Route, spec: RouteSpec<R>, request: R, delay: Milliseconds, display: Address, router: Address, system: App);
+    constructor(route: Route, spec: RouteSpec<R, S>, request: R, delay: Milliseconds, display: Address, router: Address, system: App);
     actor: string;
     receive: Case<SupervisorMessages>[];
     run(): void;
@@ -245,98 +246,98 @@ export declare class Supervisor<R> extends Immutable<SupervisorMessages> {
  * Most of the implementation is inflexible except for the hook methods
  * that are left up to extending classes.
  */
-export declare abstract class AbstractDirector<R> extends Mutable {
+export declare abstract class AbstractDirector<R, S extends App> extends Mutable {
     display: Address;
-    routes: RouteSpecs<R>;
+    routes: RouteSpecs<R, S>;
     router: RealRouter<R>;
     current: Maybe<Address>;
     config: Partial<DirectorConfig>;
     system: App;
-    constructor(display: Address, routes: RouteSpecs<R>, router: RealRouter<R>, current: Maybe<Address>, config: Partial<DirectorConfig>, system: App);
+    constructor(display: Address, routes: RouteSpecs<R, S>, router: RealRouter<R>, current: Maybe<Address>, config: Partial<DirectorConfig>, system: App);
     /**
      * dismiss the current actor (if any).
      *
      * Will cause a timer to be set for acknowledgement.
      */
-    dismiss(): AbstractDirector<R>;
-    beforeRouting(): AbstractDirector<R>;
-    routing(): Case<RoutingMessages<R>>[];
-    beforeDispatch(_: Dispatch<R>): AbstractDirector<R>;
-    dispatching(p: Dispatch<R>): Case<DispatchingMessages>[];
-    abstract beforeExp(d: Dispatch<R>): AbstractDirector<R>;
-    afterExpire({ route, spec, request }: Dispatch<R>): AbstractDirector<R>;
-    abstract beforeCont(c: Cont): AbstractDirector<R>;
-    afterCont(_: Cont): AbstractDirector<R>;
-    abstract beforeAck(a: Dispatch<R>): AbstractDirector<R>;
-    afterAck({ route, spec, request }: Dispatch<R>): AbstractDirector<R>;
-    afterSuspend(_: Suspend): AbstractDirector<R>;
-    afterReset(r: Reset): AbstractDirector<R>;
+    dismiss(): AbstractDirector<R, S>;
+    beforeRouting(): AbstractDirector<R, S>;
+    routing(): Case<RoutingMessages<R, S>>[];
+    beforeDispatch(_: Dispatch<R, S>): AbstractDirector<R, S>;
+    dispatching(p: Dispatch<R, S>): Case<DispatchingMessages>[];
+    abstract beforeExp(d: Dispatch<R, S>): AbstractDirector<R, S>;
+    afterExpire({ route, spec, request }: Dispatch<R, S>): AbstractDirector<R, S>;
+    abstract beforeCont(c: Cont): AbstractDirector<R, S>;
+    afterCont(_: Cont): AbstractDirector<R, S>;
+    abstract beforeAck(a: Dispatch<R, S>): AbstractDirector<R, S>;
+    afterAck({ route, spec, request }: Dispatch<R, S>): AbstractDirector<R, S>;
+    afterSuspend(_: Suspend): AbstractDirector<R, S>;
+    afterReset(r: Reset): AbstractDirector<R, S>;
     run(): void;
 }
 /**
  * DefaultDirector
  */
-export declare class DefaultDirector<R> extends AbstractDirector<R> {
-    beforeExp(_: Dispatch<R>): DefaultDirector<R>;
-    beforeCont(_: Cont): DefaultDirector<R>;
-    beforeAck(_: Dispatch<R>): DefaultDirector<R>;
+export declare class DefaultDirector<R, S extends App> extends AbstractDirector<R, S> {
+    beforeExp(_: Dispatch<R, S>): DefaultDirector<R, S>;
+    beforeCont(_: Cont): DefaultDirector<R, S>;
+    beforeAck(_: Dispatch<R, S>): DefaultDirector<R, S>;
 }
 /**
  * DispatchCase triggers the beforeDispatch hook
  * and transitions to dispatching.
  */
-export declare class DispatchCase<R> extends Case<Dispatch<R>> {
-    constructor(d: AbstractDirector<R>);
+export declare class DispatchCase<R, S extends App> extends Case<Dispatch<R, S>> {
+    constructor(d: AbstractDirector<R, S>);
 }
 /**
  * ExpireCase triggers the afterExpire hook
  * and transitions to routing.
  */
-export declare class ExpireCase<R> extends Case<Exp> {
-    constructor(d: AbstractDirector<R>, m: Dispatch<R>);
+export declare class ExpireCase<R, S extends App> extends Case<Exp> {
+    constructor(d: AbstractDirector<R, S>, m: Dispatch<R, S>);
 }
 /**
  * ContCase triggers the afterCont hook and transitions to
  * routing.
  */
-export declare class ContCase<R> extends Case<Cont> {
-    constructor(d: AbstractDirector<R>);
+export declare class ContCase<R, S extends App> extends Case<Cont> {
+    constructor(d: AbstractDirector<R, S>);
 }
 /**
  * AckCase triggers the afterAck hook and transitions
  * to routing.
  */
-export declare class AckCase<R> extends Case<Ack> {
-    constructor(d: AbstractDirector<R>, m: Dispatch<R>);
+export declare class AckCase<R, S extends App> extends Case<Ack> {
+    constructor(d: AbstractDirector<R, S>, m: Dispatch<R, S>);
 }
 /**
  * ResetCase intercepts the Reset message sent to the Director
  *
  * It continues routing.
  */
-export declare class ResetCase<R> extends Case<Reset> {
-    constructor(d: AbstractDirector<R>);
+export declare class ResetCase<R, S extends App> extends Case<Reset> {
+    constructor(d: AbstractDirector<R, S>);
 }
 /**
  * SuspendCase intercepts a Suspend message sent to the Director.
  *
  * This will dismiss the current actor.
  */
-export declare class SuspendCase<R> extends Case<Suspend> {
-    constructor(d: AbstractDirector<R>);
+export declare class SuspendCase<R, S extends App> extends Case<Suspend> {
+    constructor(d: AbstractDirector<R, S>);
 }
 /**
  * whenRouting behaviour.
  */
-export declare const whenRouting: <R>(r: AbstractDirector<R>) => Case<Dispatch<R>>[];
+export declare const whenRouting: <R, S extends App>(r: AbstractDirector<R, S>) => Case<Dispatch<R, S>>[];
 /**
  * whenDispatching behaviour.
  */
-export declare const whenDispatching: <R>(r: AbstractDirector<R>, d: Dispatch<R>) => Case<DispatchingMessages>[];
+export declare const whenDispatching: <R, S extends App>(r: AbstractDirector<R, S>, d: Dispatch<R, S>) => Case<DispatchingMessages>[];
 /**
  * supervisorTmpl used to spawn new supervisor actors.
  */
-export declare const supervisorTmpl: <R>(d: AbstractDirector<R>, route: string, spec: RouteSpec<R>, req: R) => {
+export declare const supervisorTmpl: <R, S extends App>(d: AbstractDirector<R, S>, route: string, spec: RouteSpec<R, S>, req: R) => {
     id: string;
-    create: (s: App) => Supervisor<R>;
+    create: (s: App) => Supervisor<R, S>;
 };

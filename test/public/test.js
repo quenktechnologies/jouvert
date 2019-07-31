@@ -1867,6 +1867,7 @@ var HashRouter = /** @class */ (function () {
         this.keys = [];
     }
     HashRouter.prototype.handleEvent = function (_) {
+        var _this = this;
         var _a = exports.takeHash(this.window), path = _a[0], query = _a[1];
         var cache = this.cache;
         var mware = [];
@@ -1886,7 +1887,7 @@ var HashRouter = /** @class */ (function () {
             mware
                 .reduce(function (p, c) { return p.chain(c); }, ft)
                 .chain(handler)
-                .catch(this.onError)
+                .catch(function (e) { return _this.onError(e); })
                 .fork(console.error, function_1.noop);
         }
         else {

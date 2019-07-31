@@ -1,5 +1,5 @@
 import { Case } from '@quenk/potoo/lib/actor/resident/case';
-import { Resume, Suspend } from '../actor/api/router/display';
+import { Resume, Suspend } from './director';
 import { ResumeListener, SuspendListener } from '../actor/interact';
 import { Mutable } from '../actor';
 /**

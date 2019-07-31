@@ -3,7 +3,7 @@ import {
     Resume,
     Suspend,
     Ack
-} from '../actor/api/router/display';
+} from './director';
 import {
     ResumeListener,
     SuspendListener,

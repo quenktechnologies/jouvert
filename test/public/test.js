@@ -1437,6 +1437,18 @@ var Resume = /** @class */ (function () {
 }());
 exports.Resume = Resume;
 /**
+ * Reset indicates the current actor should be reset.
+ *
+ * This process for this acts as though the user has navigated away and
+ * returned to the route.
+ */
+var Reset = /** @class */ (function () {
+    function Reset() {
+    }
+    return Reset;
+}());
+exports.Reset = Reset;
+/**
  * Release indicates an actor's time is up and it should relinquish
  * control.
  */
@@ -1482,6 +1494,12 @@ var Supervisor = /** @class */ (function (_super) {
         _this.system = system;
         _this.actor = '?';
         _this.receive = [
+            new case_1.Case(Reset, function (_) {
+                _this.tell(_this.actor, new Suspend('?'));
+                if (typeof _this.spec === 'object')
+                    _this.kill(_this.actor);
+                _this.run();
+            }),
             new case_1.Case(Release, function (_) {
                 _this.tell(_this.actor, new Release(_this.self()));
             }),
@@ -1597,6 +1615,11 @@ var AbstractDirector = /** @class */ (function (_super) {
     AbstractDirector.prototype.afterSuspend = function (_) {
         return this.dismiss();
     };
+    AbstractDirector.prototype.afterReset = function (r) {
+        if (this.current.isJust())
+            this.tell(this.current.get(), r);
+        return this;
+    };
     AbstractDirector.prototype.run = function () {
         var _this = this;
         record_1.map(this.routes, function (spec, route) {
@@ -1692,6 +1715,21 @@ var AckCase = /** @class */ (function (_super) {
 }(case_1.Case));
 exports.AckCase = AckCase;
 /**
+ * ResetCase intercepts the Reset message sent to the Director
+ *
+ * It continues routing.
+ */
+var ResetCase = /** @class */ (function (_super) {
+    __extends(ResetCase, _super);
+    function ResetCase(d) {
+        return _super.call(this, Reset, function (r) {
+            d.afterReset(r).select(d.routing());
+        }) || this;
+    }
+    return ResetCase;
+}(case_1.Case));
+exports.ResetCase = ResetCase;
+/**
  * SuspendCase intercepts a Suspend message sent to the Director.
  *
  * This will dismiss the current actor.
@@ -1714,6 +1752,7 @@ var defaultConfig = function (c) {
  */
 exports.whenRouting = function (r) { return [
     new DispatchCase(r),
+    new ResetCase(r),
     new SuspendCase(r)
 ]; };
 /**

@@ -258,6 +258,14 @@ export class Resume<R> {
 }
 
 /**
+ * Reset indicates the current actor should be reset.
+ *
+ * This process for this acts as though the user has navigated away and
+ * returned to the route.
+ */
+export class Reset { }
+
+/**
  * Release indicates an actor's time is up and it should relinquish 
  * control.
  */
@@ -302,6 +310,17 @@ export class Supervisor<R> extends Immutable<SupervisorMessages> {
     actor = '?';
 
     receive: Case<SupervisorMessages>[] = <Case<SupervisorMessages>[]>[
+
+        new Case(Reset, (_: Reset) => {
+
+            this.tell(this.actor, new Suspend('?'));
+
+            if (typeof this.spec === 'object')
+                this.kill(this.actor);
+
+            this.run();
+
+        }),
 
         new Case(Release, (_: Release) => {
 
@@ -484,6 +503,15 @@ export abstract class AbstractDirector<R> extends Mutable {
 
     }
 
+    afterReset(r: Reset): AbstractDirector<R> {
+
+        if (this.current.isJust())
+            this.tell(this.current.get(), r);
+
+        return this;
+
+    }
+
     run() {
 
         map(this.routes, (spec, route) => {
@@ -603,6 +631,25 @@ export class AckCase<R> extends Case<Ack> {
 }
 
 /**
+ * ResetCase intercepts the Reset message sent to the Director
+ *
+ * It continues routing.
+ */
+export class ResetCase<R> extends Case<Reset> {
+
+    constructor(d: AbstractDirector<R>) {
+
+        super(Reset, (r: Reset) => {
+
+            d.afterReset(r).select(d.routing());
+
+        });
+
+    }
+
+}
+
+/**
  * SuspendCase intercepts a Suspend message sent to the Director.
  * 
  * This will dismiss the current actor.
@@ -631,6 +678,8 @@ export const whenRouting = <R>(r: AbstractDirector<R>)
     : Case<RoutingMessages<R>>[] => <Case<RoutingMessages<R>>[]>[
 
         new DispatchCase(r),
+
+        new ResetCase(r),
 
         new SuspendCase(r)
 

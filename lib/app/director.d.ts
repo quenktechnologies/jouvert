@@ -192,6 +192,14 @@ export declare class Resume<R> {
     constructor(route: Route, request: R, display: Address, router: Address);
 }
 /**
+ * Reset indicates the current actor should be reset.
+ *
+ * This process for this acts as though the user has navigated away and
+ * returned to the route.
+ */
+export declare class Reset {
+}
+/**
  * Release indicates an actor's time is up and it should relinquish
  * control.
  */
@@ -262,6 +270,7 @@ export declare abstract class AbstractDirector<R> extends Mutable {
     abstract beforeAck(a: Dispatch<R>): AbstractDirector<R>;
     afterAck({ route, spec, request }: Dispatch<R>): AbstractDirector<R>;
     afterSuspend(_: Suspend): AbstractDirector<R>;
+    afterReset(r: Reset): AbstractDirector<R>;
     run(): void;
 }
 /**
@@ -299,6 +308,14 @@ export declare class ContCase<R> extends Case<Cont> {
  */
 export declare class AckCase<R> extends Case<Ack> {
     constructor(d: AbstractDirector<R>, m: Dispatch<R>);
+}
+/**
+ * ResetCase intercepts the Reset message sent to the Director
+ *
+ * It continues routing.
+ */
+export declare class ResetCase<R> extends Case<Reset> {
+    constructor(d: AbstractDirector<R>);
 }
 /**
  * SuspendCase intercepts a Suspend message sent to the Director.

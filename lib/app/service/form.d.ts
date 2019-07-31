@@ -9,12 +9,11 @@ import { ResumeListener, SuspendListener } from '../../actor/interact';
 import { Suspend } from '../../actor/api/router/display';
 import { Mutable } from '../../actor';
 import { App } from '../';
-import { Resume } from '../director';
-export { Event };
+export { Event, Suspend };
 /**
  * SuspendedMessages type.
  */
-export declare type SuspendedMessages<D extends Object> = Resume<Request<D>> | Suspend;
+export declare type SuspendedMessages<D extends Object> = Request<D> | Suspend;
 /**
  * ResumedMessages
  */
@@ -52,7 +51,7 @@ export declare class FormAborted {
  * server oriented approach. The run() or beforeResumed() hooks can be used
  * respectively to initialize the form's UI.
  */
-export interface FormService<D extends Object, MResumed> extends ResumeListener<Resume<Request<D>>, ResumedMessages<MResumed>>, Validate<InputEvent, Resume<Request<D>>, ResumedMessages<MResumed>>, AbortListener<FormAborted, SuspendedMessages<D>>, SuspendListener<Suspend, SuspendedMessages<D>> {
+export interface FormService<D extends Object, MResumed> extends ResumeListener<Request<D>, ResumedMessages<MResumed>>, Validate<InputEvent, Request<D>, ResumedMessages<MResumed>>, AbortListener<FormAborted, SuspendedMessages<D>>, SuspendListener<Suspend, SuspendedMessages<D>> {
 }
 /**
  * AbstractFormService
@@ -65,13 +64,13 @@ export declare abstract class AbstractFormService<D extends Object, MResumed> ex
     parent: Address;
     system: App;
     constructor(parent: Address, system: App);
-    beforeResumed(_: Resume<Request<D>>): AbstractFormService<D, MResumed>;
-    resumed(r: Resume<Request<D>>): Case<ResumedMessages<MResumed>>[];
+    beforeResumed(_: Request<D>): AbstractFormService<D, MResumed>;
+    resumed(r: Request<D>): Case<ResumedMessages<MResumed>>[];
     /**
      * resumedAdditions can be overridden to add additional cases to
      * the resumed behaviour.
      */
-    resumedAdditions(_: Resume<Request<D>>): Case<ResumedMessages<MResumed>>[];
+    resumedAdditions(_: Request<D>): Case<ResumedMessages<MResumed>>[];
     beforeSuspended(_: Suspend): AbstractFormService<D, MResumed>;
     suspended(): Case<SuspendedMessages<D>>[];
     abstract set(name: string, value: Value): AbstractFormService<D, MResumed>;
@@ -91,4 +90,4 @@ export declare const whenSuspended: <D extends Object, MResumed>(cf: FormService
  *         resumed        suspended
  * resumed <Input>        <Abort>|<Suspend>
  */
-export declare const whenResumed: <D extends Object, MResumed>(cf: FormService<D, MResumed>, fr: Resume<Request<D>>) => Case<ResumedMessages<MResumed>>[];
+export declare const whenResumed: <D extends Object, MResumed>(cf: FormService<D, MResumed>, fr: Request<D>) => Case<ResumedMessages<MResumed>>[];

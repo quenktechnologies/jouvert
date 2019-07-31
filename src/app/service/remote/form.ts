@@ -38,10 +38,10 @@ import {
     FormService,
     ResumedMessages as RM
 } from '../../service/form';
-import { Resume, Suspend } from '../../director';
+import { Suspend } from '../../director';
 import { SuspendCase } from '../../../actor/interact';
 
-export { Event }
+export { Event, Suspend }
 
 /**
  * SavingMessages type.
@@ -88,13 +88,13 @@ export interface RemoteFormService
     extends
     FormService<D, ResumedMessages<MResumed>>,
     SaveListener<Save, SavingMessages<ConflictBody, OkBody, CreatedBody>>,
-    ConflictListener<Conflict<ConflictBody>, Resume<Request<D>>, ResumedMessages<MResumed>>,
-    OkListener<Ok<OkBody>, Resume<Request<D>>, ResumedMessages<MResumed>>,
-    CreatedListener<Created<CreatedBody>, Resume<Request<D>>, ResumedMessages<MResumed>>,
-    UnauthorizedListener<Unauthorized<Object>, Resume<Request<D>>, ResumedMessages<MResumed>>,
-    ForbiddenListener<Forbidden<Object>, Resume<Request<D>>, ResumedMessages<MResumed>>,
-    NotFoundListener<NotFound<Object>, Resume<Request<D>>, ResumedMessages<MResumed>>,
-    ServerErrorListener<ServerError<Object>, Resume<Request<D>>, ResumedMessages<MResumed>> { }
+    ConflictListener<Conflict<ConflictBody>, Request<D>, ResumedMessages<MResumed>>,
+    OkListener<Ok<OkBody>, Request<D>, ResumedMessages<MResumed>>,
+    CreatedListener<Created<CreatedBody>, Request<D>, ResumedMessages<MResumed>>,
+    UnauthorizedListener<Unauthorized<Object>, Request<D>, ResumedMessages<MResumed>>,
+    ForbiddenListener<Forbidden<Object>, Request<D>, ResumedMessages<MResumed>>,
+    NotFoundListener<NotFound<Object>, Request<D>, ResumedMessages<MResumed>>,
+    ServerErrorListener<ServerError<Object>, Request<D>, ResumedMessages<MResumed>> { }
 
 /**
  * AbstractRemoteFormService 
@@ -114,12 +114,12 @@ export abstract class AbstractRemoteFormService
     RemoteFormService<D, ConflictBody, OkBody, CreatedBody, MResumed> {
 
     /**
-     * getResume provides the Resume message that was used to 
+     * getResume provides the Request message that was used to 
      * transition the form to the resumed() behaviour.
      */
-    abstract getResume(): Resume<Request<D>>;
+    abstract getResume(): Request<D>;
 
-    resumedAdditions(r: Resume<Request<D>>): Case<ResumedMessages<MResumed>>[] {
+    resumedAdditions(r: Request<D>): Case<ResumedMessages<MResumed>>[] {
 
         return [
 
@@ -135,7 +135,7 @@ export abstract class AbstractRemoteFormService
      * remoteResumedAdditions can be overridden to add more cases to the
      * resumed behaviour.
      */
-    remoteResumedAdditions(_: Resume<Request<D>>)
+    remoteResumedAdditions(_: Request<D>)
         : Case<ResumedMessages<MResumed>>[] {
 
         return [];
@@ -237,7 +237,7 @@ export const whenResumed =
 export const whenSaving =
     <D extends Object, ConflictBody, OkBody, CreatedBody, MResumed>
         (cf: RemoteFormService<D, ConflictBody, OkBody, CreatedBody, MResumed>,
-            r: Resume<Request<D>>)
+            r: Request<D>)
         : Case<SavingMessages<ConflictBody, OkBody, CreatedBody>>[] =>
         <Case<SavingMessages<ConflictBody, OkBody, CreatedBody>>[]>[
 
@@ -253,7 +253,7 @@ export const whenSaving =
 
             new CreatedCase(Created, r, cf),
 
-            new OkCase<Ok<OkBody>, Resume<Request<D>>, ResumedMessages<MResumed>>(Ok, r, cf),
+            new OkCase<Ok<OkBody>, Request<D>, ResumedMessages<MResumed>>(Ok, r, cf),
 
             new SuspendCase<Suspend, SuspendedMessages<D>>(Suspend, cf),
 

@@ -5,8 +5,8 @@ import { SaveListener } from '../../../actor/interact/data/form';
 import { Case } from '@quenk/potoo/lib/actor/resident/case';
 import { CreatedListener, OkListener, ConflictListener, UnauthorizedListener, ForbiddenListener, NotFoundListener, ServerErrorListener } from '../../../actor/interact/http/response';
 import { Request, Event, AbstractFormService, FormService, ResumedMessages as RM } from '../../service/form';
-import { Resume } from '../../director';
-export { Event };
+import { Suspend } from '../../director';
+export { Event, Suspend };
 /**
  * SavingMessages type.
  */
@@ -31,7 +31,7 @@ export declare class FormSaved {
  * RemoteFormService extends the FormService API to provide a form
  * that saves data to a remote endpoint.
  */
-export interface RemoteFormService<D extends Object, ConflictBody, OkBody, CreatedBody, MResumed> extends FormService<D, ResumedMessages<MResumed>>, SaveListener<Save, SavingMessages<ConflictBody, OkBody, CreatedBody>>, ConflictListener<Conflict<ConflictBody>, Resume<Request<D>>, ResumedMessages<MResumed>>, OkListener<Ok<OkBody>, Resume<Request<D>>, ResumedMessages<MResumed>>, CreatedListener<Created<CreatedBody>, Resume<Request<D>>, ResumedMessages<MResumed>>, UnauthorizedListener<Unauthorized<Object>, Resume<Request<D>>, ResumedMessages<MResumed>>, ForbiddenListener<Forbidden<Object>, Resume<Request<D>>, ResumedMessages<MResumed>>, NotFoundListener<NotFound<Object>, Resume<Request<D>>, ResumedMessages<MResumed>>, ServerErrorListener<ServerError<Object>, Resume<Request<D>>, ResumedMessages<MResumed>> {
+export interface RemoteFormService<D extends Object, ConflictBody, OkBody, CreatedBody, MResumed> extends FormService<D, ResumedMessages<MResumed>>, SaveListener<Save, SavingMessages<ConflictBody, OkBody, CreatedBody>>, ConflictListener<Conflict<ConflictBody>, Request<D>, ResumedMessages<MResumed>>, OkListener<Ok<OkBody>, Request<D>, ResumedMessages<MResumed>>, CreatedListener<Created<CreatedBody>, Request<D>, ResumedMessages<MResumed>>, UnauthorizedListener<Unauthorized<Object>, Request<D>, ResumedMessages<MResumed>>, ForbiddenListener<Forbidden<Object>, Request<D>, ResumedMessages<MResumed>>, NotFoundListener<NotFound<Object>, Request<D>, ResumedMessages<MResumed>>, ServerErrorListener<ServerError<Object>, Request<D>, ResumedMessages<MResumed>> {
 }
 /**
  * AbstractRemoteFormService
@@ -45,16 +45,16 @@ export interface RemoteFormService<D extends Object, ConflictBody, OkBody, Creat
  */
 export declare abstract class AbstractRemoteFormService<D extends Object, ConflictBody, OkBody, CreatedBody, MResumed> extends AbstractFormService<D, MResumed> implements RemoteFormService<D, ConflictBody, OkBody, CreatedBody, MResumed> {
     /**
-     * getResume provides the Resume message that was used to
+     * getResume provides the Request message that was used to
      * transition the form to the resumed() behaviour.
      */
-    abstract getResume(): Resume<Request<D>>;
-    resumedAdditions(r: Resume<Request<D>>): Case<ResumedMessages<MResumed>>[];
+    abstract getResume(): Request<D>;
+    resumedAdditions(r: Request<D>): Case<ResumedMessages<MResumed>>[];
     /**
      * remoteResumedAdditions can be overridden to add more cases to the
      * resumed behaviour.
      */
-    remoteResumedAdditions(_: Resume<Request<D>>): Case<ResumedMessages<MResumed>>[];
+    remoteResumedAdditions(_: Request<D>): Case<ResumedMessages<MResumed>>[];
     /**
      * beforeSaving should contain the logic for submitting the form data.
      */
@@ -100,4 +100,4 @@ export declare const whenResumed: <D extends Object, ConflictBody, OkBody, Creat
  *        resumed    suspended
  * saving <Conflict> <Unauthorized>|<Forbidden>|<NotFound>|<ServerError><Created>|<Ok>|<Suspend>
  */
-export declare const whenSaving: <D extends Object, ConflictBody, OkBody, CreatedBody, MResumed>(cf: RemoteFormService<D, ConflictBody, OkBody, CreatedBody, MResumed>, r: Resume<Request<D>>) => Case<SavingMessages<ConflictBody, OkBody, CreatedBody>>[];
+export declare const whenSaving: <D extends Object, ConflictBody, OkBody, CreatedBody, MResumed>(cf: RemoteFormService<D, ConflictBody, OkBody, CreatedBody, MResumed>, r: Request<D>) => Case<SavingMessages<ConflictBody, OkBody, CreatedBody>>[];

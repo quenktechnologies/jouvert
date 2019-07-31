@@ -21,15 +21,14 @@ import {
 import { Suspend } from '../../actor/api/router/display';
 import { Mutable } from '../../actor';
 import { App } from '../';
-import { Resume } from '../director';
 
-export { Event }
+export { Event, Suspend }
 
 /**
  * SuspendedMessages type.
  */
 export type SuspendedMessages<D extends Object>
-    = Resume<Request<D>>
+    = Request<D>
     | Suspend
     ;
 
@@ -87,8 +86,8 @@ export class FormAborted {
  */
 export interface FormService<D extends Object, MResumed>
     extends
-    ResumeListener<Resume<Request<D>>, ResumedMessages<MResumed>>,
-    Validate<InputEvent, Resume<Request<D>>, ResumedMessages<MResumed>>,
+    ResumeListener<Request<D>, ResumedMessages<MResumed>>,
+    Validate<InputEvent, Request<D>, ResumedMessages<MResumed>>,
     AbortListener<FormAborted, SuspendedMessages<D>>,
     SuspendListener<Suspend, SuspendedMessages<D>> { }
 
@@ -109,13 +108,13 @@ export abstract class AbstractFormService<D extends Object, MResumed>
         public parent: Address,
         public system: App) { super(system); }
 
-    beforeResumed(_: Resume<Request<D>>): AbstractFormService<D, MResumed> {
+    beforeResumed(_: Request<D>): AbstractFormService<D, MResumed> {
 
         return this;
 
     }
 
-    resumed(r: Resume<Request<D>>): Case<ResumedMessages<MResumed>>[] {
+    resumed(r: Request<D>): Case<ResumedMessages<MResumed>>[] {
 
         return whenResumed(this, r);
 
@@ -125,7 +124,7 @@ export abstract class AbstractFormService<D extends Object, MResumed>
      * resumedAdditions can be overridden to add additional cases to
      * the resumed behaviour.
      */
-    resumedAdditions(_: Resume<Request<D>>): Case<ResumedMessages<MResumed>>[] {
+    resumedAdditions(_: Request<D>): Case<ResumedMessages<MResumed>>[] {
 
         return [];
 
@@ -184,7 +183,7 @@ export const whenSuspended =
         (cf: FormService<D, MResumed>)
         : Case<SuspendedMessages<D>>[] => <Case<SuspendedMessages<D>>[]>[
 
-            new ResumeCase(Resume, cf),
+            new ResumeCase(Request, cf),
 
             new SuspendCase(Suspend, cf)
 
@@ -196,10 +195,10 @@ export const whenSuspended =
  * resumed <Input>        <Abort>|<Suspend>
  */
 export const whenResumed = <D extends Object, MResumed>
-    (cf: FormService<D, MResumed>, fr: Resume<Request<D>>)
+    (cf: FormService<D, MResumed>, fr: Request<D>)
     : Case<ResumedMessages<MResumed>>[] => <Case<ResumedMessages<MResumed>>[]>[
 
-        new InputCase<InputEvent, Resume<Request<D>>, ResumedMessages<MResumed>>
+        new InputCase<InputEvent, Request<D>, ResumedMessages<MResumed>>
             (Event, fr, cf),
 
         new AbortCase(Abort, cf),

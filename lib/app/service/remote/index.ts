@@ -85,7 +85,6 @@ export class Remote<ReqRaw, ResParsed> extends Immutable<Messages<ReqRaw>> {
 
     constructor(
         public agent: Agent<ReqRaw, ResParsed>,
-        public client: Address,
         public system: App) { super(system); }
 
     send = ({ client, request }: Send<ReqRaw>) => {

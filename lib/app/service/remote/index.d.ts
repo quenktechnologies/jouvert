@@ -65,9 +65,8 @@ export declare class ResponseList<B> {
  */
 export declare class Remote<ReqRaw, ResParsed> extends Immutable<Messages<ReqRaw>> {
     agent: Agent<ReqRaw, ResParsed>;
-    client: Address;
     system: App;
-    constructor(agent: Agent<ReqRaw, ResParsed>, client: Address, system: App);
+    constructor(agent: Agent<ReqRaw, ResParsed>, system: App);
     send: ({ client, request }: Send<ReqRaw>) => void;
     sendPar: ({ client, requests }: SendPar<ReqRaw>) => void;
     sendSeq: ({ client, requests }: SendSeq<ReqRaw>) => void;

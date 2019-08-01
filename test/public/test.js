@@ -1767,7 +1767,7 @@ exports.whenDispatching = function (r, d) { return [
  * supervisorTmpl used to spawn new supervisor actors.
  */
 exports.supervisorTmpl = function (d, route, spec, req) { return ({
-    id: v4(),
+    id: v4().split('-').join(''),
     create: function (s) { return new Supervisor(route, spec, req, defaultConfig(d.config).delay, d.display, d.self(), s); }
 }); };
 

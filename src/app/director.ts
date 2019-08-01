@@ -707,7 +707,7 @@ export const whenDispatching = <R, S extends App>
 export const supervisorTmpl = <R, S extends App>
     (d: AbstractDirector<R, S>, route: Route, spec: RouteSpec<R, S>, req: R) => ({
 
-        id: v4(),
+        id: v4().split('-').join(''),
 
         create: (s: App) => new Supervisor(route, spec, req,
             defaultConfig(d.config).delay, d.display, d.self(), s)

@@ -11,6 +11,7 @@ import {
 import { Address } from '@quenk/potoo/lib/actor/address';
 import {
     SaveListener,
+    AbortCase,
     SaveCase
 } from '../../../actor/interact/data/form';
 import { Case } from '@quenk/potoo/lib/actor/resident/case';
@@ -32,14 +33,15 @@ import {
 } from '../../../actor/interact/http/response';
 import {
     SuspendedMessages,
-    Request,
-    Event,
-    AbstractFormService,
     FormService,
-    ResumedMessages as RM
+    Event,
+    Request,
+    Abort,
+    AbstractFormService,
+    ResumedMessages as RM,
 } from '../../service/form';
-import { Suspend } from '../../director';
 import { SuspendCase } from '../../../actor/interact';
+import { Suspend } from '../../director';
 
 export { Event, Suspend }
 
@@ -254,6 +256,8 @@ export const whenSaving =
             new CreatedCase(Created, r, cf),
 
             new OkCase<Ok<OkBody>, Request<D>, ResumedMessages<MResumed>>(Ok, r, cf),
+
+            new AbortCase(Abort, cf),
 
             new SuspendCase<Suspend, SuspendedMessages<D>>(Suspend, cf),
 

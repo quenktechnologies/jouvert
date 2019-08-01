@@ -4,7 +4,7 @@ import { Address } from '@quenk/potoo/lib/actor/address';
 import { SaveListener } from '../../../actor/interact/data/form';
 import { Case } from '@quenk/potoo/lib/actor/resident/case';
 import { CreatedListener, OkListener, ConflictListener, UnauthorizedListener, ForbiddenListener, NotFoundListener, ServerErrorListener } from '../../../actor/interact/http/response';
-import { Request, Event, AbstractFormService, FormService, ResumedMessages as RM } from '../../service/form';
+import { FormService, Event, Request, AbstractFormService, ResumedMessages as RM } from '../../service/form';
 import { Suspend } from '../../director';
 export { Event, Suspend };
 /**

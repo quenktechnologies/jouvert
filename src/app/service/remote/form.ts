@@ -114,10 +114,10 @@ export abstract class AbstractRemoteFormService
     RemoteFormService<D, ConflictBody, OkBody, CreatedBody, MResumed> {
 
     /**
-     * getResume provides the Request message that was used to 
+     * getRequest provides the Request message that was used to 
      * transition the form to the resumed() behaviour.
      */
-    abstract getResume(): Request<D>;
+    abstract getRequest(): Request<D>;
 
     resumedAdditions(r: Request<D>): Case<ResumedMessages<MResumed>>[] {
 
@@ -150,7 +150,7 @@ export abstract class AbstractRemoteFormService
 
     saving(_: Save): Case<SavingMessages<ConflictBody, OkBody, CreatedBody>>[] {
 
-        return whenSaving(this, this.getResume());
+        return whenSaving(this, this.getRequest());
 
     }
 

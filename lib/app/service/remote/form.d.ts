@@ -45,10 +45,10 @@ export interface RemoteFormService<D extends Object, ConflictBody, OkBody, Creat
  */
 export declare abstract class AbstractRemoteFormService<D extends Object, ConflictBody, OkBody, CreatedBody, MResumed> extends AbstractFormService<D, MResumed> implements RemoteFormService<D, ConflictBody, OkBody, CreatedBody, MResumed> {
     /**
-     * getResume provides the Request message that was used to
+     * getRequest provides the Request message that was used to
      * transition the form to the resumed() behaviour.
      */
-    abstract getResume(): Request<D>;
+    abstract getRequest(): Request<D>;
     resumedAdditions(r: Request<D>): Case<ResumedMessages<MResumed>>[];
     /**
      * remoteResumedAdditions can be overridden to add more cases to the

@@ -57,13 +57,13 @@ export declare class ResponseList<B> {
     constructor(value: Response<B>[]);
 }
 /**
- * Remote represents the host or other http server the app has access
+ * RemoteService represents the host or other http server the app has access
  * to.
  *
  * Use this actor's message api to envelope and send one or more `jhr` requests.
  * Responses are forwarded to the client actor your indicate.
  */
-export declare class Remote<ReqRaw, ResParsed> extends Immutable<Messages<ReqRaw>> {
+export declare class RemoteService<ReqRaw, ResParsed> extends Immutable<Messages<ReqRaw>> {
     agent: Agent<ReqRaw, ResParsed>;
     system: App;
     constructor(agent: Agent<ReqRaw, ResParsed>, system: App);

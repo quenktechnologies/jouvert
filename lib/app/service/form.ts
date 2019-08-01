@@ -116,7 +116,13 @@ export abstract class AbstractFormService<D extends Object, MResumed>
 
     resumed(r: Request<D>): Case<ResumedMessages<MResumed>>[] {
 
-        return whenResumed(this, r);
+        return [
+
+            ...this.resumedAdditions(r),
+
+            ...whenResumed(this, r)
+
+        ];
 
     }
 

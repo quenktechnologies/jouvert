@@ -6,7 +6,7 @@ import { Message, Validate } from '../../actor/interact/data/form/validate';
 import { AbortListener } from '../../actor/interact/data/form';
 import { Case } from '@quenk/potoo/lib/actor/resident/case';
 import { ResumeListener, SuspendListener } from '../../actor/interact';
-import { Suspend } from '../../actor/api/router/display';
+import { Suspend } from '../director';
 import { Mutable } from '../../actor';
 import { App } from '../';
 export { Event, Suspend };

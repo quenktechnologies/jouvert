@@ -18,7 +18,7 @@ import {
     ResumeCase,
     SuspendCase,
 } from '../../actor/interact';
-import { Suspend } from '../../actor/api/router/display';
+import { Suspend } from '../director';
 import { Mutable } from '../../actor';
 import { App } from '../';
 

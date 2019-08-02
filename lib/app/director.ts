@@ -325,7 +325,9 @@ export class Supervisor<R, S extends App> extends Immutable<SupervisorMessages> 
 
         new Case(Release, (_: Release) => {
 
-            this.tell(this.actor, new Release(this.self()));
+            //XXX: this part of the process needs to be reviewed.
+            //Should we get rid of Release entriely and just stick with suspend?
+            this.tell(this.actor, new Suspend(this.self()));
 
         }),
 

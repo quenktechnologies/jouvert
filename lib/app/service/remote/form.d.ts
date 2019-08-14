@@ -1,12 +1,11 @@
 import { Object } from '@quenk/noni/lib/data/json';
 import { Created, Ok, Conflict, Unauthorized, Forbidden, NotFound, ServerError } from '@quenk/jhr/lib/response';
-import { Address } from '@quenk/potoo/lib/actor/address';
 import { SaveListener } from '../../../actor/interact/data/form';
 import { Case } from '@quenk/potoo/lib/actor/resident/case';
 import { CreatedListener, OkListener, ConflictListener, UnauthorizedListener, ForbiddenListener, NotFoundListener, ServerErrorListener } from '../../../actor/interact/http/response';
-import { FormService, Event, Request, AbstractFormService, ResumedMessages as RM } from '../../service/form';
+import { FormService, Event, Request, Save, FormSaved, AbstractFormService, ResumedMessages as RM } from '../../service/form';
 import { Suspend } from '../../director';
-export { Event, Suspend };
+export { Event, Suspend, Save, FormSaved };
 /**
  * SavingMessages type.
  */
@@ -15,18 +14,6 @@ export declare type SavingMessages<ConflictBody, OkBody, CreatedBody> = Conflict
  * ResumedMessages
  */
 export declare type ResumedMessages<M> = Save | RM<M> | M;
-/**
- * Save indicates the data collected thus far should be saved.
- */
-export declare class Save {
-}
-/**
- * FormSaved indicates to the parent that the form's data has been saved.
- */
-export declare class FormSaved {
-    form: Address;
-    constructor(form: Address);
-}
 /**
  * RemoteFormService extends the FormService API to provide a form
  * that saves data to a remote endpoint.

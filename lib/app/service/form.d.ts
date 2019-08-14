@@ -38,9 +38,21 @@ export interface InputEvent {
 export declare class Abort {
 }
 /**
+ * Save indicates the data collected thus far should be saved.
+ */
+export declare class Save {
+}
+/**
  * FormAborted indicates to the form's parent that it was aborted.
  */
 export declare class FormAborted {
+    form: Address;
+    constructor(form: Address);
+}
+/**
+ * FormSaved indicates to the parent that the form's data has been saved.
+ */
+export declare class FormSaved {
     form: Address;
     constructor(form: Address);
 }

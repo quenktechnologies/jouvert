@@ -8,7 +8,6 @@ import {
     NotFound,
     ServerError
 } from '@quenk/jhr/lib/response';
-import { Address } from '@quenk/potoo/lib/actor/address';
 import {
     SaveListener,
     AbortCase,
@@ -37,13 +36,15 @@ import {
     Event,
     Request,
     Abort,
+    Save,
+    FormSaved,
     AbstractFormService,
     ResumedMessages as RM,
 } from '../../service/form';
 import { SuspendCase } from '../../../actor/interact';
 import { Suspend } from '../../director';
 
-export { Event, Suspend }
+export { Event, Suspend, Save, FormSaved }
 
 /**
  * SavingMessages type.
@@ -66,20 +67,6 @@ export type ResumedMessages<M>
     | RM<M>
     | M
     ;
-
-/**
- * Save indicates the data collected thus far should be saved.
- */
-export class Save { }
-
-/**
- * FormSaved indicates to the parent that the form's data has been saved.
- */
-export class FormSaved {
-
-    constructor(public form: Address) { }
-
-}
 
 /**
  * RemoteFormService extends the FormService API to provide a form 

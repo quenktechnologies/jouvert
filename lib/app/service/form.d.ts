@@ -82,7 +82,7 @@ export declare abstract class AbstractFormService<D extends Object, MResumed> ex
      * resumedAdditions can be overridden to add additional cases to
      * the resumed behaviour.
      */
-    resumedAdditions(_: Request<D>): Case<ResumedMessages<MResumed>>[];
+    resumedAdditions(_: Request<D>): Case<MResumed>[];
     beforeSuspended(_: Suspend): AbstractFormService<D, MResumed>;
     suspended(): Case<SuspendedMessages<D>>[];
     abstract set(name: string, value: Value): AbstractFormService<D, MResumed>;

@@ -132,7 +132,7 @@ export abstract class AbstractFormService<D extends Object, MResumed>
 
         return [
 
-            ...this.resumedAdditions(r),
+            ...(<Case<ResumedMessages<MResumed>>[]>this.resumedAdditions(r)),
 
             ...whenResumed(this, r)
 
@@ -144,7 +144,7 @@ export abstract class AbstractFormService<D extends Object, MResumed>
      * resumedAdditions can be overridden to add additional cases to
      * the resumed behaviour.
      */
-    resumedAdditions(_: Request<D>): Case<ResumedMessages<MResumed>>[] {
+    resumedAdditions(_: Request<D>): Case<MResumed>[] {
 
         return [];
 

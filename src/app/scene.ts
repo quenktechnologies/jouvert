@@ -57,7 +57,7 @@ export abstract class AbstractScene<Req, MResumed>
 
         return [
 
-            ...this.resumedAdditions(r),
+            ...(<Case<ResumedMessages<MResumed>>[]>this.resumedAdditions(r)),
 
             ...whenResumed(this)
 
@@ -69,7 +69,7 @@ export abstract class AbstractScene<Req, MResumed>
      * resumedAdditions can be overriden to provide additional cases
      * for the resumed behaviour.
      */
-    resumedAdditions(_: Resume<Req>): Case<ResumedMessages<MResumed>>[] {
+    resumedAdditions(_: Resume<Req>): Case<MResumed>[] {
 
         return [];
 

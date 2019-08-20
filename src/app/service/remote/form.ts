@@ -102,13 +102,13 @@ export abstract class AbstractRemoteFormService
     implements
     RemoteFormService<D, ConflictBody, OkBody, CreatedBody, MResumed> {
 
-    /**
+    /*]*
      * getRequest provides the Request message that was used to 
      * transition the form to the resumed() behaviour.
      */
     abstract getRequest(): Request<D>;
 
-    resumedAdditions(r: Request<D>): Case<ResumedMessages<MResumed>>[] {
+    resumedAdditions(r: Request<D>): Case<MResumed>[] {
 
         return [
 
@@ -124,8 +124,7 @@ export abstract class AbstractRemoteFormService
      * remoteResumedAdditions can be overridden to add more cases to the
      * resumed behaviour.
      */
-    remoteResumedAdditions(_: Request<D>)
-        : Case<ResumedMessages<MResumed>>[] {
+    remoteResumedAdditions(_: Request<D>): Case<MResumed>[] {
 
         return [];
 

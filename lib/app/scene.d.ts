@@ -32,7 +32,7 @@ export declare abstract class AbstractScene<Req, MResumed> extends Mutable imple
      * resumedAdditions can be overriden to provide additional cases
      * for the resumed behaviour.
      */
-    resumedAdditions(_: Resume<Req>): Case<ResumedMessages<MResumed>>[];
+    resumedAdditions(_: Resume<Req>): Case<MResumed>[];
     /**
      * beforeSuspended will acknowledge the suspend request.
      */

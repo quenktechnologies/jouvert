@@ -1,4 +1,4 @@
-import { must } from '@quenk/must';
+import { assert } from '@quenk/test/lib/assert';
 import {
     Routing,
     DispatchCase,
@@ -100,7 +100,7 @@ describe('router', () => {
             let c = new DispatchCase(Request, s);
 
             c.match(new Request());
-            must(s.__test.invokes.order()).equate([
+            assert(s.__test.invokes.order()).equate([
 
                 'beforeWait', 'waiting', 'select'
 
@@ -118,7 +118,7 @@ describe('router', () => {
             let c = new AckCase(Ack, s);
 
             c.match(new Ack('x'));
-            must(s.__test.invokes.order()).equate([
+            assert(s.__test.invokes.order()).equate([
 
                 'afterAck', 'scheduling', 'select'
 
@@ -136,7 +136,7 @@ describe('router', () => {
             let c = new ContinueCase(Cont, s);
 
             c.match(new Cont('x'));
-            must(s.__test.invokes.order()).equate([
+            assert(s.__test.invokes.order()).equate([
 
                 'afterContinue', 'scheduling', 'select'
 
@@ -155,7 +155,7 @@ describe('router', () => {
             let c = new ExpireCase(Exp, s);
 
             c.match(new Exp('x'));
-            must(s.__test.invokes.order()).equate([
+            assert(s.__test.invokes.order()).equate([
 
                 'afterExpire', 'scheduling', 'select'
 
@@ -173,7 +173,7 @@ describe('router', () => {
             let c = new MessageCase(Message, s);
 
             c.match(new Message('x'));
-            must(s.__test.invokes.order()).equate([
+            assert(s.__test.invokes.order()).equate([
 
                 'afterMessage', 'scheduling', 'select'
 

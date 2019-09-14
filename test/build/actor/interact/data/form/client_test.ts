@@ -1,4 +1,4 @@
-import { must } from '@quenk/must';
+import { assert } from '@quenk/test/lib/assert';
 import { Case } from '@quenk/potoo/lib/actor/resident/case';
 import {
     EditListener,
@@ -74,7 +74,7 @@ describe('app/interact/data/form/client', () => {
             let c = new EditCase(Request, m);
 
             c.match(new Request());
-            must(m.__test.invokes.order()).equate([
+            assert(m.__test.invokes.order()).equate([
                 'beforeEditing', 'editing', 'select'
             ]);
 
@@ -91,7 +91,7 @@ describe('app/interact/data/form/client', () => {
             let c = new AbortedCase(Cancel, t, m);
 
             c.match(new Cancel());
-            must(m.__test.invokes.order()).equate([
+            assert(m.__test.invokes.order()).equate([
                 'afterFormAborted', 'resumed', 'select'
             ]);
 
@@ -108,7 +108,7 @@ describe('app/interact/data/form/client', () => {
             let c = new SavedCase(Save, t, m);
 
             c.match(new Save());
-            must(m.__test.invokes.order()).equate([
+            assert(m.__test.invokes.order()).equate([
                 'afterFormSaved', 'resumed', 'select'
             ]);
 

@@ -1,4 +1,4 @@
-import { must } from '@quenk/must';
+import { assert } from '@quenk/test/lib/assert';
 import { ActorImpl } from '../fixtures/actor';
 import {
     ResumeListener,
@@ -82,7 +82,7 @@ describe('app/interact', () => {
             let c = new ResumeCase<Resume, void>(Resume, m);
 
             c.match(new Resume('main'));
-            must(m.__test.invokes.order()).equate([
+            assert(m.__test.invokes.order()).equate([
                 'beforeResumed', 'resumed', 'select'
             ]);
 
@@ -98,7 +98,7 @@ describe('app/interact', () => {
             let c = new SuspendCase<Suspend, void>(Suspend, m);
 
             c.match(new Suspend('router'));
-            must(m.__test.invokes.order()).equate([
+            assert(m.__test.invokes.order()).equate([
                 'beforeSuspended', 'suspended', 'select'
             ]);
 
@@ -114,7 +114,7 @@ describe('app/interact', () => {
             let c = new ExitCase(Exit, m);
 
             c.match(new Exit());
-            must(m.__test.invokes.order()).equate([
+            assert(m.__test.invokes.order()).equate([
                 'beforeExit', 'exit'
             ]);
 

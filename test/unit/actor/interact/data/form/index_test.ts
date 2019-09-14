@@ -1,4 +1,4 @@
-import { must } from '@quenk/must';
+import { assert } from '@quenk/test/lib/assert';
 import {
     InputListener,
     SaveListener,
@@ -77,7 +77,7 @@ describe('app/interact/data/form', () => {
             let c = new InputCase(Event, t, m);
 
             c.match(new Event());
-            must(m.__test.invokes.order()).equate([
+            assert(m.__test.invokes.order()).equate([
                 'onInput', 'resumed', 'select'
             ]);
 
@@ -94,7 +94,7 @@ describe('app/interact/data/form', () => {
 
             c.match(new Save());
 
-            must(m.__test.invokes.order()).equate([
+            assert(m.__test.invokes.order()).equate([
                 'beforeSaving', 'saving', 'select'
             ]);
 
@@ -111,7 +111,7 @@ describe('app/interact/data/form', () => {
 
             c.match(new Abort());
 
-            must(m.__test.invokes.order()).equate([
+            assert(m.__test.invokes.order()).equate([
                 'afterAbort', 'suspended', 'select'
             ]);
 

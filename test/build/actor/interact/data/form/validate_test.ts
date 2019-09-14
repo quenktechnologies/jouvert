@@ -1,4 +1,4 @@
-import { must } from '@quenk/must';
+import { assert } from '@quenk/test/lib/assert';
 import { Value } from '@quenk/noni/lib/data/json';
 import { Either, right } from '@quenk/noni/lib/data/either';
 import { gt } from '@quenk/preconditions/lib/number';
@@ -73,7 +73,7 @@ describe('app/interact/data/form/validate', () => {
             let c = new InputCase(Event, t, m);
 
             c.match(new Event('name', 12));
-            must(m.__test.invokes.order()).equate([
+            assert(m.__test.invokes.order()).equate([
                 'validate', 'set', 'afterFieldValid', 'resumed', 'select'
             ]);
 
@@ -86,7 +86,7 @@ describe('app/interact/data/form/validate', () => {
             let c = new InputCase(Event, t, m);
 
             c.match(new Event('name', 0));
-            must(m.__test.invokes.order()).equate([
+            assert(m.__test.invokes.order()).equate([
                 'validate', 'afterFieldInvalid', 'resumed', 'select'
             ]);
 

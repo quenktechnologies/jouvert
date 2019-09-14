@@ -1,4 +1,4 @@
-import { must } from '@quenk/must';
+import { assert } from '@quenk/test/lib/assert';
 import {
     OkCase,
     CreatedCase,
@@ -93,7 +93,7 @@ describe('app/interact/http', () => {
             let c = new OkCase(Response, t, m);
 
             c.match(new Response());
-            must(m.__test.invokes.order()).equate([
+            assert(m.__test.invokes.order()).equate([
 
                 'afterOk', 'loading', 'select'
 
@@ -112,7 +112,7 @@ describe('app/interact/http', () => {
             let c = new CreatedCase(Response, t, m);
 
             c.match(new Response());
-            must(m.__test.invokes.order()).equate([
+            assert(m.__test.invokes.order()).equate([
 
                 'afterCreated', 'loading', 'select'
 
@@ -131,7 +131,7 @@ describe('app/interact/http', () => {
             let c = new NoContentCase(Response, t, m);
 
             c.match(new Response());
-            must(m.__test.invokes.order()).equate([
+            assert(m.__test.invokes.order()).equate([
 
                 'afterNoContent', 'loading', 'select'
 
@@ -150,7 +150,7 @@ describe('app/interact/http', () => {
             let c = new ConflictCase(Response, t, m);
 
             c.match(new Response());
-            must(m.__test.invokes.order()).equate([
+            assert(m.__test.invokes.order()).equate([
 
                 'afterConflict', 'loading', 'select'
 
@@ -169,7 +169,7 @@ describe('app/interact/http', () => {
             let c = new ForbiddenCase(Response, t, m);
 
             c.match(new Response());
-            must(m.__test.invokes.order()).equate([
+            assert(m.__test.invokes.order()).equate([
                 'afterForbidden', 'loading', 'select'
             ]);
 
@@ -186,7 +186,7 @@ describe('app/interact/http', () => {
             let c = new UnauthorizedCase(Response, t, m);
 
             c.match(new Response());
-            must(m.__test.invokes.order()).equate([
+            assert(m.__test.invokes.order()).equate([
                 'afterUnauthorized', 'loading', 'select'
             ]);
 
@@ -203,7 +203,7 @@ describe('app/interact/http', () => {
             let c = new NotFoundCase(Response, t, m);
 
             c.match(new Response());
-            must(m.__test.invokes.order()).equate([
+            assert(m.__test.invokes.order()).equate([
                 'afterNotFound', 'loading', 'select'
             ]);
 
@@ -220,7 +220,7 @@ describe('app/interact/http', () => {
             let c = new ServerErrorCase(Response, t, m);
 
             c.match(new Response());
-            must(m.__test.invokes.order()).equate([
+            assert(m.__test.invokes.order()).equate([
                 'afterServerError', 'loading', 'select'
             ]);
 

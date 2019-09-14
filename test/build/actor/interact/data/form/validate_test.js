@@ -13,7 +13,7 @@ var __extends = (this && this.__extends) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-var must_1 = require("@quenk/must");
+var assert_1 = require("@quenk/test/lib/assert");
 var either_1 = require("@quenk/noni/lib/data/either");
 var number_1 = require("@quenk/preconditions/lib/number");
 var validate_1 = require("../../../../../../lib/actor/interact/data/form/validate");
@@ -74,7 +74,7 @@ describe('app/interact/data/form/validate', function () {
             var m = new ValidateImpl();
             var c = new validate_1.InputCase(Event, t, m);
             c.match(new Event('name', 12));
-            must_1.must(m.__test.invokes.order()).equate([
+            assert_1.assert(m.__test.invokes.order()).equate([
                 'validate', 'set', 'afterFieldValid', 'resumed', 'select'
             ]);
         });
@@ -83,7 +83,7 @@ describe('app/interact/data/form/validate', function () {
             var m = new ValidateImpl();
             var c = new validate_1.InputCase(Event, t, m);
             c.match(new Event('name', 0));
-            must_1.must(m.__test.invokes.order()).equate([
+            assert_1.assert(m.__test.invokes.order()).equate([
                 'validate', 'afterFieldInvalid', 'resumed', 'select'
             ]);
         });

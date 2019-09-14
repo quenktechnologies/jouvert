@@ -13,7 +13,7 @@ var __extends = (this && this.__extends) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-var must_1 = require("@quenk/must");
+var assert_1 = require("@quenk/test/lib/assert");
 var form_1 = require("../../../../../../lib/actor/interact/data/form");
 var actor_1 = require("../../../fixtures/actor");
 var Request = /** @class */ (function () {
@@ -77,7 +77,7 @@ describe('app/interact/data/form', function () {
             var m = new FormImpl();
             var c = new form_1.InputCase(Event, t, m);
             c.match(new Event());
-            must_1.must(m.__test.invokes.order()).equate([
+            assert_1.assert(m.__test.invokes.order()).equate([
                 'onInput', 'resumed', 'select'
             ]);
         });
@@ -87,7 +87,7 @@ describe('app/interact/data/form', function () {
             var m = new FormImpl();
             var c = new form_1.SaveCase(Save, m);
             c.match(new Save());
-            must_1.must(m.__test.invokes.order()).equate([
+            assert_1.assert(m.__test.invokes.order()).equate([
                 'beforeSaving', 'saving', 'select'
             ]);
         });
@@ -97,7 +97,7 @@ describe('app/interact/data/form', function () {
             var m = new FormImpl();
             var c = new form_1.AbortCase(Abort, m);
             c.match(new Abort());
-            must_1.must(m.__test.invokes.order()).equate([
+            assert_1.assert(m.__test.invokes.order()).equate([
                 'afterAbort', 'suspended', 'select'
             ]);
         });

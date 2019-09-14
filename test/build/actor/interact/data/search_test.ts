@@ -1,13 +1,13 @@
-import { must } from '@quenk/must';
+import { assert } from '@quenk/test/lib/assert';
 import {
-  ExecuteSyncListener,
-  ExecuteAsyncListener,
+    ExecuteSyncListener,
+    ExecuteAsyncListener,
     Filtered,
     SetFilterCase,
     RemoveFilterCase,
-  ClearFiltersCase,
-  ExecuteSyncCase,
-  ExecuteAsyncCase
+    ClearFiltersCase,
+    ExecuteSyncCase,
+    ExecuteAsyncCase
 } from '../../../../../lib/actor/interact/data/search';
 import { ActorImpl } from '../../fixtures/actor';
 
@@ -15,10 +15,10 @@ class Resume { display = '?'; }
 
 class Exec { value = '?'; }
 
-class SyncImpl 
-extends 
-ActorImpl 
-implements ExecuteSyncListener<Exec,  void>  {
+class SyncImpl
+    extends
+    ActorImpl
+    implements ExecuteSyncListener<Exec, void>  {
 
     search(e: Exec) {
 
@@ -26,7 +26,7 @@ implements ExecuteSyncListener<Exec,  void>  {
 
     }
 
-    beforeSearching(_: Exec)  {
+    beforeSearching(_: Exec) {
 
         this.__record('beforeSearching', [_]);
         return this;
@@ -43,10 +43,10 @@ implements ExecuteSyncListener<Exec,  void>  {
 
 }
 
-class AsyncImpl 
-extends 
-ActorImpl 
-implements ExecuteAsyncListener<Exec, Resume, void>  {
+class AsyncImpl
+    extends
+    ActorImpl
+    implements ExecuteAsyncListener<Exec, Resume, void>  {
 
     search(e: Exec) {
 
@@ -107,7 +107,7 @@ describe('app/interact/data/search', () => {
             let c = new SetFilterCase(Filter, t, m);
 
             c.match(new Filter());
-            must(m.__test.invokes.order()).equate([
+            assert(m.__test.invokes.order()).equate([
                 'setFilter', 'resumed', 'select'
             ]);
 
@@ -124,7 +124,7 @@ describe('app/interact/data/search', () => {
             let c = new RemoveFilterCase(Filter, t, m);
 
             c.match(new Filter());
-            must(m.__test.invokes.order()).equate([
+            assert(m.__test.invokes.order()).equate([
                 'removeFilter', 'resumed', 'select'
             ]);
 
@@ -141,7 +141,7 @@ describe('app/interact/data/search', () => {
             let c = new ClearFiltersCase(Filter, t, m);
 
             c.match(new Filter());
-            must(m.__test.invokes.order()).equate([
+            assert(m.__test.invokes.order()).equate([
                 'clearFilters', 'resumed', 'select'
             ]);
 
@@ -157,8 +157,8 @@ describe('app/interact/data/search', () => {
             let c = new ExecuteSyncCase(Exec, m);
 
             c.match(new Exec());
-            must(m.__test.invokes.order()).equate([
-                'search', 'beforeSearching', 'searching','select'
+            assert(m.__test.invokes.order()).equate([
+                'search', 'beforeSearching', 'searching', 'select'
             ]);
 
         });
@@ -174,7 +174,7 @@ describe('app/interact/data/search', () => {
             let c = new ExecuteAsyncCase(Exec, t, m);
 
             c.match(new Exec());
-            must(m.__test.invokes.order()).equate([
+            assert(m.__test.invokes.order()).equate([
                 'search', 'resumed', 'select'
             ]);
 

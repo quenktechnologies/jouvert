@@ -13,7 +13,7 @@ var __extends = (this && this.__extends) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-var must_1 = require("@quenk/must");
+var assert_1 = require("@quenk/test/lib/assert");
 var actor_1 = require("../fixtures/actor");
 var interact_1 = require("../../../../lib/actor/interact");
 var Resume = /** @class */ (function () {
@@ -66,7 +66,7 @@ describe('app/interact', function () {
             var m = new InteractImpl();
             var c = new interact_1.ResumeCase(Resume, m);
             c.match(new Resume('main'));
-            must_1.must(m.__test.invokes.order()).equate([
+            assert_1.assert(m.__test.invokes.order()).equate([
                 'beforeResumed', 'resumed', 'select'
             ]);
         });
@@ -76,7 +76,7 @@ describe('app/interact', function () {
             var m = new InteractImpl();
             var c = new interact_1.SuspendCase(Suspend, m);
             c.match(new Suspend('router'));
-            must_1.must(m.__test.invokes.order()).equate([
+            assert_1.assert(m.__test.invokes.order()).equate([
                 'beforeSuspended', 'suspended', 'select'
             ]);
         });
@@ -86,7 +86,7 @@ describe('app/interact', function () {
             var m = new InteractImpl();
             var c = new interact_1.ExitCase(Exit, m);
             c.match(new Exit());
-            must_1.must(m.__test.invokes.order()).equate([
+            assert_1.assert(m.__test.invokes.order()).equate([
                 'beforeExit', 'exit'
             ]);
         });

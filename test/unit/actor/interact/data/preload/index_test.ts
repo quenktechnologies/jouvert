@@ -1,4 +1,4 @@
-import { must } from '@quenk/must';
+import { assert } from '@quenk/test/lib/assert';
 import {
     LoadListener,
     FinishedListener,
@@ -57,7 +57,7 @@ describe('app/interact/data/preload', () => {
             let c = new LoadCase(Load, m);
 
             c.match(new Load());
-            must(m.__test.invokes.order()).equate([
+            assert(m.__test.invokes.order()).equate([
                 'beforeLoading', 'loading', 'select'
             ]);
 
@@ -73,7 +73,7 @@ describe('app/interact/data/preload', () => {
             let c = new FinishCase(Finish, new Request(), m);
 
             c.match(new Finish());
-            must(m.__test.invokes.order()).equate([
+            assert(m.__test.invokes.order()).equate([
                 'afterLoading', 'resumed', 'select'
             ]);
 

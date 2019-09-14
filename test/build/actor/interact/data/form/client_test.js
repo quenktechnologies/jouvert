@@ -13,7 +13,7 @@ var __extends = (this && this.__extends) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-var must_1 = require("@quenk/must");
+var assert_1 = require("@quenk/test/lib/assert");
 var client_1 = require("../../../../../../lib/actor/interact/data/form/client");
 var actor_1 = require("../../../fixtures/actor");
 var Request = /** @class */ (function () {
@@ -77,7 +77,7 @@ describe('app/interact/data/form/client', function () {
             var m = new ClientImpl();
             var c = new client_1.EditCase(Request, m);
             c.match(new Request());
-            must_1.must(m.__test.invokes.order()).equate([
+            assert_1.assert(m.__test.invokes.order()).equate([
                 'beforeEditing', 'editing', 'select'
             ]);
         });
@@ -88,7 +88,7 @@ describe('app/interact/data/form/client', function () {
             var m = new ClientImpl();
             var c = new client_1.AbortedCase(Cancel, t, m);
             c.match(new Cancel());
-            must_1.must(m.__test.invokes.order()).equate([
+            assert_1.assert(m.__test.invokes.order()).equate([
                 'afterFormAborted', 'resumed', 'select'
             ]);
         });
@@ -99,7 +99,7 @@ describe('app/interact/data/form/client', function () {
             var m = new ClientImpl();
             var c = new client_1.SavedCase(Save, t, m);
             c.match(new Save());
-            must_1.must(m.__test.invokes.order()).equate([
+            assert_1.assert(m.__test.invokes.order()).equate([
                 'afterFormSaved', 'resumed', 'select'
             ]);
         });

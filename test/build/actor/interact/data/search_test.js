@@ -13,7 +13,7 @@ var __extends = (this && this.__extends) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-var must_1 = require("@quenk/must");
+var assert_1 = require("@quenk/test/lib/assert");
 var search_1 = require("../../../../../lib/actor/interact/data/search");
 var actor_1 = require("../../fixtures/actor");
 var Resume = /** @class */ (function () {
@@ -93,7 +93,7 @@ describe('app/interact/data/search', function () {
             var m = new FilteredImpl();
             var c = new search_1.SetFilterCase(Filter, t, m);
             c.match(new Filter());
-            must_1.must(m.__test.invokes.order()).equate([
+            assert_1.assert(m.__test.invokes.order()).equate([
                 'setFilter', 'resumed', 'select'
             ]);
         });
@@ -104,7 +104,7 @@ describe('app/interact/data/search', function () {
             var m = new FilteredImpl();
             var c = new search_1.RemoveFilterCase(Filter, t, m);
             c.match(new Filter());
-            must_1.must(m.__test.invokes.order()).equate([
+            assert_1.assert(m.__test.invokes.order()).equate([
                 'removeFilter', 'resumed', 'select'
             ]);
         });
@@ -115,7 +115,7 @@ describe('app/interact/data/search', function () {
             var m = new FilteredImpl();
             var c = new search_1.ClearFiltersCase(Filter, t, m);
             c.match(new Filter());
-            must_1.must(m.__test.invokes.order()).equate([
+            assert_1.assert(m.__test.invokes.order()).equate([
                 'clearFilters', 'resumed', 'select'
             ]);
         });
@@ -125,7 +125,7 @@ describe('app/interact/data/search', function () {
             var m = new SyncImpl();
             var c = new search_1.ExecuteSyncCase(Exec, m);
             c.match(new Exec());
-            must_1.must(m.__test.invokes.order()).equate([
+            assert_1.assert(m.__test.invokes.order()).equate([
                 'search', 'beforeSearching', 'searching', 'select'
             ]);
         });
@@ -136,7 +136,7 @@ describe('app/interact/data/search', function () {
             var m = new AsyncImpl();
             var c = new search_1.ExecuteAsyncCase(Exec, t, m);
             c.match(new Exec());
-            must_1.must(m.__test.invokes.order()).equate([
+            assert_1.assert(m.__test.invokes.order()).equate([
                 'search', 'resumed', 'select'
             ]);
         });

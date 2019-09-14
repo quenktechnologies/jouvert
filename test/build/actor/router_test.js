@@ -13,7 +13,7 @@ var __extends = (this && this.__extends) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-var must_1 = require("@quenk/must");
+var assert_1 = require("@quenk/test/lib/assert");
 var router_1 = require("../../../lib/actor/router");
 var actor_1 = require("./fixtures/actor");
 var Request = /** @class */ (function () {
@@ -106,7 +106,7 @@ describe('router', function () {
             var s = new Rout();
             var c = new router_1.DispatchCase(Request, s);
             c.match(new Request());
-            must_1.must(s.__test.invokes.order()).equate([
+            assert_1.assert(s.__test.invokes.order()).equate([
                 'beforeWait', 'waiting', 'select'
             ]);
         });
@@ -116,7 +116,7 @@ describe('router', function () {
             var s = new Rout();
             var c = new router_1.AckCase(Ack, s);
             c.match(new Ack('x'));
-            must_1.must(s.__test.invokes.order()).equate([
+            assert_1.assert(s.__test.invokes.order()).equate([
                 'afterAck', 'scheduling', 'select'
             ]);
         });
@@ -126,7 +126,7 @@ describe('router', function () {
             var s = new Rout();
             var c = new router_1.ContinueCase(Cont, s);
             c.match(new Cont('x'));
-            must_1.must(s.__test.invokes.order()).equate([
+            assert_1.assert(s.__test.invokes.order()).equate([
                 'afterContinue', 'scheduling', 'select'
             ]);
         });
@@ -136,7 +136,7 @@ describe('router', function () {
             var s = new Rout();
             var c = new router_1.ExpireCase(Exp, s);
             c.match(new Exp('x'));
-            must_1.must(s.__test.invokes.order()).equate([
+            assert_1.assert(s.__test.invokes.order()).equate([
                 'afterExpire', 'scheduling', 'select'
             ]);
         });
@@ -146,7 +146,7 @@ describe('router', function () {
             var s = new Rout();
             var c = new router_1.MessageCase(Message, s);
             c.match(new Message('x'));
-            must_1.must(s.__test.invokes.order()).equate([
+            assert_1.assert(s.__test.invokes.order()).equate([
                 'afterMessage', 'scheduling', 'select'
             ]);
         });

@@ -13,7 +13,7 @@ var __extends = (this && this.__extends) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-var must_1 = require("@quenk/must");
+var assert_1 = require("@quenk/test/lib/assert");
 var response_1 = require("../../../../../../../lib/actor/interact/data/preload/http/response");
 var interact_1 = require("../../../fixtures/interact");
 var Response = /** @class */ (function () {
@@ -74,7 +74,7 @@ describe('app/interact/http', function () {
             var m = listener();
             var c = new response_1.OkCase(Response, t, m);
             c.match(new Response());
-            must_1.must(m.__test.invokes.order()).equate([
+            assert_1.assert(m.__test.invokes.order()).equate([
                 'afterOk', 'loading', 'select'
             ]);
         });
@@ -85,7 +85,7 @@ describe('app/interact/http', function () {
             var m = listener();
             var c = new response_1.CreatedCase(Response, t, m);
             c.match(new Response());
-            must_1.must(m.__test.invokes.order()).equate([
+            assert_1.assert(m.__test.invokes.order()).equate([
                 'afterCreated', 'loading', 'select'
             ]);
         });
@@ -96,7 +96,7 @@ describe('app/interact/http', function () {
             var m = listener();
             var c = new response_1.NoContentCase(Response, t, m);
             c.match(new Response());
-            must_1.must(m.__test.invokes.order()).equate([
+            assert_1.assert(m.__test.invokes.order()).equate([
                 'afterNoContent', 'loading', 'select'
             ]);
         });
@@ -107,7 +107,7 @@ describe('app/interact/http', function () {
             var m = listener();
             var c = new response_1.ConflictCase(Response, t, m);
             c.match(new Response());
-            must_1.must(m.__test.invokes.order()).equate([
+            assert_1.assert(m.__test.invokes.order()).equate([
                 'afterConflict', 'loading', 'select'
             ]);
         });
@@ -118,7 +118,7 @@ describe('app/interact/http', function () {
             var m = listener();
             var c = new response_1.ForbiddenCase(Response, t, m);
             c.match(new Response());
-            must_1.must(m.__test.invokes.order()).equate([
+            assert_1.assert(m.__test.invokes.order()).equate([
                 'afterForbidden', 'loading', 'select'
             ]);
         });
@@ -129,7 +129,7 @@ describe('app/interact/http', function () {
             var m = listener();
             var c = new response_1.UnauthorizedCase(Response, t, m);
             c.match(new Response());
-            must_1.must(m.__test.invokes.order()).equate([
+            assert_1.assert(m.__test.invokes.order()).equate([
                 'afterUnauthorized', 'loading', 'select'
             ]);
         });
@@ -140,7 +140,7 @@ describe('app/interact/http', function () {
             var m = listener();
             var c = new response_1.NotFoundCase(Response, t, m);
             c.match(new Response());
-            must_1.must(m.__test.invokes.order()).equate([
+            assert_1.assert(m.__test.invokes.order()).equate([
                 'afterNotFound', 'loading', 'select'
             ]);
         });
@@ -151,7 +151,7 @@ describe('app/interact/http', function () {
             var m = listener();
             var c = new response_1.ServerErrorCase(Response, t, m);
             c.match(new Response());
-            must_1.must(m.__test.invokes.order()).equate([
+            assert_1.assert(m.__test.invokes.order()).equate([
                 'afterServerError', 'loading', 'select'
             ]);
         });

@@ -11,26 +11,26 @@
   "type": "lib/app/index.d.ts",
   "license": "Apache-2.0",
   "devDependencies": {
-    "@quenk/test": "^2.1.1",
+    "@quenk/test": "^2.1.2",
     "@types/deep-equal": "^1.0.1",
     "@types/json-stringify-safe": "^5.0.0",
     "@types/mocha": "^5.2.7",
-    "@types/node": "^12.7.5",
+    "@types/node": "^12.7.11",
     "@types/qs": "^6.5.3",
     "@types/should": "^13.0.0",
     "@types/uuid": "^3.4.5",
     "browserify": "^16.5.0",
-    "qs": "^6.8.0",
+    "qs": "^6.9.0",
     "typedoc": "^0.15.0",
     "typescript": "^3.6.3"
   },
   "dependencies": {
     "@quenk/jhr": "^2.6.12",
-    "@quenk/noni": "^1.31.1",
+    "@quenk/noni": "^1.33.0",
     "@quenk/potoo": "^2.5.0",
     "@quenk/preconditions": "^5.4.1",
-    "@quenk/wml": "^1.3.0",
-    "@quenk/wml-widgets": "^1.20.6",
+    "@quenk/wml": "^2.2.0",
+    "@quenk/wml-widgets": "^1.24.0",
     "path-to-regexp": "^3.1.0",
     "uuid": "^3.3.3"
   }

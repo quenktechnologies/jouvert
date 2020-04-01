@@ -27,7 +27,7 @@
   "dependencies": {
     "@quenk/jhr": "^2.6.12",
     "@quenk/noni": "^1.33.0",
-    "@quenk/potoo": "^2.5.0",
+    "@quenk/potoo": "2.5.x",
     "@quenk/preconditions": "^5.4.1",
     "@quenk/wml": "^2.2.0",
     "@quenk/wml-widgets": "^1.24.0",

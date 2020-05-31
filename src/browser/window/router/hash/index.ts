@@ -244,6 +244,7 @@ export const compile = <R extends Request>(r: Routes<R>): Cache<R>[] =>
     reduce(r, [], (p: Cache<R>[], c: [Filter<R>[], Handler<R>], path: string) => {
 
         let keys: Key[] = [];
-        return p.concat(new Cache(toRegex(path, keys), keys, c[0], c[1]));
+        return p.concat(new Cache(
+            toRegex.pathToRegexp(path, keys), keys, c[0], c[1]));
 
     });

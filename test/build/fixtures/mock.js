@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.Mock = exports.Invoke = void 0;
 var Invoke = /** @class */ (function () {
     function Invoke(name, args) {
         this.name = name;

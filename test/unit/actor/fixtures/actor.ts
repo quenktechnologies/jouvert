@@ -27,7 +27,7 @@ export class ActorImpl extends Mock implements Actor {
     spawn(t: Template): string {
 
         this.__record('spawn', [t]);
-        return t.id;
+        return <string>t.id;
 
     }
 

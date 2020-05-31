@@ -26,7 +26,7 @@ export interface App extends System {
  * Implementors should spawn child actors in the run method.
  */
 export declare abstract class JApp extends AbstractSystem implements App {
-    state: State<Context>;
+    state: State;
     flags: Partial<Flags>;
     init(c: Context): Context;
     allocate(a: Actor<Context>, r: Runtime, t: Template): Context;

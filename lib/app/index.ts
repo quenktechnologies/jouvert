@@ -34,7 +34,7 @@ export interface App extends System { }
  */
 export abstract class JApp extends AbstractSystem implements App {
 
-    state: State<Context> = newState(this);
+    state: State = newState(this);
 
     flags: Partial<Flags> = { immutable: true, buffered: false };
 

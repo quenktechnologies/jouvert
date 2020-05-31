@@ -13,6 +13,7 @@ var __extends = (this && this.__extends) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.InteractImpl = void 0;
 var actor_1 = require("../../fixtures/actor");
 var InteractImpl = /** @class */ (function (_super) {
     __extends(InteractImpl, _super);

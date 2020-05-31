@@ -13,6 +13,7 @@ var __extends = (this && this.__extends) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.TestApp = void 0;
 var test_1 = require("@quenk/potoo/lib/actor/system/framework/test");
 var framework_1 = require("@quenk/potoo/lib/actor/system/framework");
 var TestApp = /** @class */ (function (_super) {
@@ -27,7 +28,7 @@ var TestApp = /** @class */ (function (_super) {
         return this;
     };
     TestApp.prototype.allocate = function (a, r, t) {
-        return this.MOCK.record('allocate', [a, r, t], a.init(framework_1.newContext(a, r, t)));
+        return this.MOCK.invoke('allocate', [a, r, t], a.init(framework_1.newContext(a, r, t)));
     };
     return TestApp;
 }(test_1.TestAbstractSystem));

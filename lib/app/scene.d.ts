@@ -57,7 +57,7 @@ export declare abstract class AbstractScene<Req, MResumed> extends Mutable imple
  *           resumed   suspended
  * suspended <Resume>  <Suspend>
  */
-export declare const whenSuspended: <Req, Resumed>(c: AbstractScene<Req, Resumed>) => Case<Resume<Req>>[];
+export declare const whenSuspended: <Req, Resumed>(c: AbstractScene<Req, Resumed>) => Case<SuspendedMessages<Req>>[];
 /**
  * whenResumed
  *          resumed           suspended

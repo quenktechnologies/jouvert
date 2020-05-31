@@ -329,7 +329,7 @@ export declare class SuspendCase<R, S extends App> extends Case<Suspend> {
 /**
  * whenRouting behaviour.
  */
-export declare const whenRouting: <R, S extends App>(r: AbstractDirector<R, S>) => Case<Dispatch<R, S>>[];
+export declare const whenRouting: <R, S extends App>(r: AbstractDirector<R, S>) => Case<RoutingMessages<R, S>>[];
 /**
  * whenDispatching behaviour.
  */
@@ -337,7 +337,7 @@ export declare const whenDispatching: <R, S extends App>(r: AbstractDirector<R, 
 /**
  * supervisorTmpl used to spawn new supervisor actors.
  */
-export declare const supervisorTmpl: <R, S extends App>(d: AbstractDirector<R, S>, route: string, spec: RouteSpec<R, S>, req: R) => {
+export declare const supervisorTmpl: <R, S extends App>(d: AbstractDirector<R, S>, route: Route, spec: RouteSpec<R, S>, req: R) => {
     id: string;
     create: (s: App) => Supervisor<R, S>;
 };

@@ -7,7 +7,7 @@ import { Context, Template } from '../../../../lib/app';
 
 export class TestApp extends TestAbstractSystem {
 
-    state: State<Context> = newState(this);
+    state: State = newState(this);
 
     spawn(t: Template): TestApp {
 
@@ -18,7 +18,7 @@ export class TestApp extends TestAbstractSystem {
 
     allocate(a: Actor<Context>, r: Runtime, t: Template): Context {
 
-        return this.MOCK.record('allocate', [a, r, t],
+        return this.MOCK.invoke('allocate', [a, r, t],
             a.init(newContext(a, <Runtime>r, t)));
 
     }

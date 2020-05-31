@@ -13,6 +13,7 @@ var __extends = (this && this.__extends) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.ActorImpl = void 0;
 var record_1 = require("@quenk/noni/lib/data/record");
 var mock_1 = require("../../fixtures/mock");
 var ActorImpl = /** @class */ (function (_super) {

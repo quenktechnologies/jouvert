@@ -8,7 +8,7 @@
  * The APIs provided here are designed around routing in client side apps.
  */
 /** imports */
-import * as v4 from 'uuid/v4';
+import * as uuid from 'uuid';
 import { Milliseconds } from '@quenk/noni/lib/control/time';
 import { map, exclude, merge } from '@quenk/noni/lib/data/record';
 import { Maybe, just } from '@quenk/noni/lib/data/maybe';
@@ -709,7 +709,7 @@ export const whenDispatching = <R, S extends App>
 export const supervisorTmpl = <R, S extends App>
     (d: AbstractDirector<R, S>, route: Route, spec: RouteSpec<R, S>, req: R) => ({
 
-        id: v4().split('-').join(''),
+        id: uuid.v4().split('-').join(''),
 
         create: (s: App) => new Supervisor(route, spec, req,
             defaultConfig(d.config).delay, d.display, d.self(), s)

@@ -13,6 +13,7 @@ var __extends = (this && this.__extends) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.InteractImpl = void 0;
 var assert_1 = require("@quenk/test/lib/assert");
 var actor_1 = require("../fixtures/actor");
 var interact_1 = require("../../../../lib/actor/interact");

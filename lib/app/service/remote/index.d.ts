@@ -47,7 +47,7 @@ export declare class TransportError<B> {
     error: Err;
     request: Request<B>;
     constructor(error: Err, request: Request<B>);
-    readonly message: string;
+    get message(): string;
 }
 /**
  * ResponseList contains a list of responses from a batch send.

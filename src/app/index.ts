@@ -1,17 +1,11 @@
-import { merge } from '@quenk/noni/lib/data/record';
-import { System } from '@quenk/potoo/lib/actor/system';
-import {
-    AbstractSystem,
-    newState,
-    newContext
-} from '@quenk/potoo/lib/actor/system/framework';
-import { Runtime } from '@quenk/potoo/lib/actor/system/vm/runtime';
-import { State } from '@quenk/potoo/lib/actor/system/state';
-import { Context, Flags } from '@quenk/potoo/lib/actor/context';
-import { Actor } from '@quenk/potoo/lib/actor';
+import { Maybe } from '@quenk/noni/lib/data/maybe';
 import { Template as T } from '@quenk/potoo/lib/actor/template';
-
-export { Context }
+import { PTValue } from '@quenk/potoo/lib/actor/system/vm/type';
+import { Script } from '@quenk/potoo/lib/actor/system/vm/script';
+import { Conf } from '@quenk/potoo/lib/actor/system/vm/conf';
+import { PVM } from '@quenk/potoo/lib/actor/system/vm';
+import { System } from '@quenk/potoo/lib/actor/system';
+import { Instance } from '@quenk/potoo/lib/actor';
 
 /**
  * Template for actors within the app's system.
@@ -30,23 +24,30 @@ export interface App extends System { }
  * JApp provides a default implementation of an App.
  *
  * This class takes care of the methods and properties required by potoo.
- * Implementors should spawn child actors in the run method.
+ * Implementers should spawn child actors in the run method.
  */
-export abstract class JApp extends AbstractSystem implements App {
+export abstract class JApp implements App {
 
-    state: State = newState(this);
+    constructor(public conf: Partial<Conf> = {}) { }
 
-    flags: Partial<Flags> = { immutable: true, buffered: false };
+    vm = PVM.create(this, this.conf);
 
-    init(c: Context): Context {
+    exec(i: Instance, s: Script): void {
 
-        return merge(c, { flags: merge(c.flags, this.flags) });
+        return this.vm.exec(i, s);
 
     }
 
-    allocate(a: Actor<Context>, r: Runtime, t: Template): Context {
+    execNow(i: Instance, s: Script): Maybe<PTValue> {
 
-        return a.init(newContext(a, <Runtime>r, t));
+        return this.vm.execNow(i, s);
+
+    }
+
+    spawn(temp: T<this>): JApp {
+
+        this.vm.spawn(temp);
+        return this;
 
     }
 

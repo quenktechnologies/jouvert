@@ -1,293 +1,318 @@
+import { Mock } from '@quenk/test/lib/mock';
 import { assert } from '@quenk/test/lib/assert';
-import { nothing } from '@quenk/noni/lib/data/maybe';
-import { noop } from '@quenk/noni/lib/data/function';
-import { pure, toPromise, fromCallback } from '@quenk/noni/lib/control/monad/future';
+//import { noop } from '@quenk/noni/lib/data/function';
+import { startsWith } from '@quenk/noni/lib/data/string';
+import { reduce } from '@quenk/noni/lib/data/record';
+import {
+    Future,
+    doFuture,
+    attempt,
+    toPromise,
+    fromCallback,
+} from '@quenk/noni/lib/control/monad/future';
 import { Case } from '@quenk/potoo/lib/actor/resident/case';
 import {
-    DefaultHashRouter as Hash,
-    Request
-} from '../../../lib/browser/window/router/hash/default';
-import {
-    RouteSpecs,
-    DefaultDirector,
+    RoutingTable,
+    Director,
     Resume,
+    Reload,
     Suspend,
-    Cont,
-    Ack,
-    Release
+    Suspended
 } from '../../../lib/app/director';
 import { Immutable } from '../../../lib/actor';
 import { App } from '../../../lib/app';
 import { TestApp } from '../app/fixtures/app';
 
 type Messages
-    = Resume<Request>
+    = Resume<string>
     | Suspend
     ;
 
-class Ctrl extends Immutable<Messages> {
+class Router {
+
+    mock = new Mock();
+
+    handlers: { [key: string]: (str: string) => Future<void> } = {};
+
+    add(route: string, handler: (str: string) => Future<void>): Router {
+
+        this.mock.invoke('add', [route, handler], this);
+        this.handlers[route] = handler;
+        return this;
+
+    }
+
+}
+
+class Controller extends Immutable<Messages> {
 
     constructor(
-        public cases: (c: Ctrl) => Case<Messages>[],
+        public cases: (c: Controller) => Case<Messages>[],
         public system: App) {
 
         super(system);
 
     }
 
-    receive = this.cases(this)
+    receive = this.cases(this);
+
+    static template(id: string, cases: (c: Controller) => Case<Messages>[]) {
+
+        return { id, create: (s: App) => new Controller(cases, s) };
+
+    }
+
+    run() {
+
+    }
 
 }
 
-const system = () => new TestApp({ log: { level: 8 } });
-
-const onNotFound = (p: string) => pure(console.error(`Not found ${p}`));
-
-const controllerTemplate = (id: string, cases: (c: Ctrl) => Case<Messages>[]) => ({
-    id,
-    create: (s: App) => new Ctrl(cases, s)
-})
+const system = () => new TestApp({ log: { logger: console, level: 8 } });
 
 const director =
-    (routes: RouteSpecs<Request, App>, router: Hash, timeout = 0, delay = 0) => ({
+    (routes: RoutingTable<string>, router: Router, timeout = 0) => ({
 
-        id: 'router',
+        id: 'director',
 
-        create: (s: App) => new DefaultDirector('display', routes, router,
-            nothing(), { timeout, delay }, s)
+        create: (s: App) => new Director(
+            'display', router, { timeout }, routes, s
+        )
 
-    })
+    });
 
 describe('director', () => {
 
-    describe('AbstractDirector', () => {
+    describe('Director', () => {
 
-        let hash: Hash;
+        it('should execute routes ', () => toPromise(doFuture(function*() {
 
-        afterEach(() => {
+            let app = system();
+            let router = new Router();
+            let executed = false;
 
-            if (hash != null) hash.stop();
+            app.spawn(director({ '/foo': 'ctl' }, router, 0));
 
-            window.location.hash = '';
+            app.spawn(Controller.template('ctl', () => [
 
-        })
-
-        it('should dispatch routes ', () => toPromise(fromCallback(cb => {
-
-            let sys = system();
-
-            hash = new Hash(window, {}, undefined, onNotFound);
-
-            sys.spawn(director({ '/foo': 'ctl' }, hash, 200));
-
-            sys.spawn(controllerTemplate('ctl', () => [
-
-                new Case(Resume, () => {
-
-                    assert(true).be.true();
-                    cb(undefined);
-
-                })
+                new Case(Resume, () => { executed = true; })
 
             ]));
 
-            hash.start();
+            yield router.handlers['/foo']('foo');
 
-            setTimeout(() => window.location.hash = 'foo', 500);
+            yield fromCallback(cb => setTimeout(cb));
+
+            return attempt(() => assert(executed).true());
 
         })))
 
-        it('should release before change', () => toPromise(fromCallback(cb => {
+        it('should send Suspend before change', () =>
+            toPromise(doFuture(function*() {
 
-            let sys = system();
-            let routes = { '/foo': 'foo', '/bar': 'bar' };
+                let app = system();
+                let router = new Router();
+                let routes = { '/foo': 'foo', '/bar': 'bar' };
+                let passed = false;
 
-            hash = new Hash(window, {}, undefined, onNotFound);
+                app.spawn(director(routes, router, 0));
 
-            sys.spawn(director(routes, hash, 100));
+                app.spawn(Controller.template('foo', c => <Case<Messages>[]>[
 
-            sys.spawn(controllerTemplate('foo', c => <Case<Messages>[]>[
+                    new Case(Suspend, ({ director }: Suspend) => {
 
-                new Case(Release, ({ router }: Release) =>
-                    c.tell(router, new Ack()))
-
-            ]));
-
-            sys.spawn(controllerTemplate('bar', () => [
-
-                new Case(Resume, () => {
-                    assert(true).true();
-                    cb(undefined);
-                })
-
-            ]));
-
-            hash.start();
-            setTimeout(() => window.location.hash = 'foo', 300);
-            setTimeout(() => window.location.hash = 'bar', 600);
-
-        })));
-
-        it('should expire if no response', () => toPromise(fromCallback(cb => {
-
-            let sys = system();
-            let routes = { '/foo': 'foo', '/bar': 'bar' };
-            let promoted = false;
-            let onErr = () => { return pure(noop()); }
-
-            hash = new Hash(window, {}, onErr, onNotFound);
-
-            sys.spawn(director(routes, hash, 100));
-
-            sys.spawn(controllerTemplate('foo', () => <Case<Messages>[]>[
-
-                new Case(Release, noop)
-
-            ]));
-
-            sys.spawn(controllerTemplate('bar', () => [
-
-                new Case(Resume, () => { promoted = true })
-
-            ]));
-
-            hash.start();
-
-            setTimeout(() => window.location.hash = 'foo', 300);
-
-            setTimeout(() => window.location.hash = 'bar', 600);
-
-            setTimeout(() => {
-                assert(promoted).true();
-                cb(undefined);
-            }, 1000);
-
-        })));
-
-        it('should allow continues', () => toPromise(fromCallback(cb => {
-
-            let sys = system();
-            let routes = { '/foo': 'foo', '/bar': 'bar' };
-            let expired = false;
-            let promoted = false;
-            let onErr = () => { expired = true; return pure(noop()); }
-
-            hash = new Hash(window, {}, onErr, onNotFound);
-
-            sys.spawn(director(routes, hash, 100));
-
-            sys.spawn(controllerTemplate('foo', c => <Case<Messages>[]>[
-
-                new Case(Release, ({ router }: Release) =>
-                    c.tell(router, new Cont()))
-
-            ]));
-
-            sys.spawn(controllerTemplate('bar', () => [
-
-                new Case(Resume, () => { promoted = true })
-
-            ]));
-
-            hash.start();
-            setTimeout(() => window.location.hash = 'foo', 300);
-            setTimeout(() => window.location.hash = 'bar', 600);
-
-            setTimeout(() => {
-                assert(expired).false();
-                assert(promoted).false();
-                cb(undefined);
-            }, 800);
-
-        })));
-
-        it('should spawn templates ', () => toPromise(fromCallback(cb => {
-
-            let sys = system();
-
-            hash = new Hash(window, {}, undefined, onNotFound);
-
-            sys.spawn(director({
-
-                '/foo': controllerTemplate('foo', () => [
-
-                    new Case(Resume, () => {
-
-                        assert(true).be.true();
-                        cb(undefined);
+                        passed = true;
+                        c.tell(director, new Suspended(c.self()));
 
                     })
 
-                ])
+                ]));
 
-            }, hash, 200));
+                app.spawn(Controller.template('bar', () => []));
 
-            hash.start();
+                yield router.handlers['/foo']('/foo');
+                yield router.handlers['/bar']('/bar');
+                yield fromCallback(cb => setTimeout(cb, 100));
 
-            setTimeout(() => window.location.hash = 'foo', 500);
+                return attempt(() => {
 
-        })));
+                    let runtime = app.vm.state.runtimes['director'];
+                    let dir = <Director<string>>runtime.context.actor;
+
+                    assert(dir.routes['/foo']).not.undefined();
+                    assert(dir.routes['/bar']).not.undefined();
+                    assert(passed).true();
+
+                });
+
+            })));
+
+        it('should remove unresponsive routes', () =>
+            toPromise(doFuture(function*() {
+
+                let app = system();
+                let router = new Router();
+                let routes = { '/foo': 'foo', '/bar': 'bar' };
+                let passed = false;
+
+                app.spawn(director(routes, router, 100));
+
+                app.spawn(Controller.template('foo', () => []));
+
+                app.spawn(Controller.template('bar', () => [
+
+                    new Case(Resume, () => { passed = true; })
+
+                ]));
+
+                yield router.handlers['/foo']('/foo');
+                yield router.handlers['/bar']('/bar');
+                yield fromCallback(cb => setTimeout(cb, 500));
+
+                return attempt(() => {
+
+                    let runtime = app.vm.state.runtimes['director'];
+                    let dir = <Director<string>>runtime.context.actor;
+
+                    assert(dir.routes['/foo']).undefined();
+                    assert(dir.routes['/bar']).not.undefined();
+                    assert(passed).true();
+
+                });
+
+            })));
+
+        it('should spawn templates ', () =>
+            toPromise(doFuture(function*() {
+
+                let app = system();
+                let router = new Router();
+                let passed = false;
+
+                app.spawn(director({
+
+                    '/foo': Controller.template('foo', () => [
+
+                        new Case(Resume, () => { passed = true; })
+
+                    ])
+
+                }, router, 0));
+
+
+                yield router.handlers['/foo']('/foo');
+                yield fromCallback(cb => setTimeout(cb));
+                return attempt(() => assert(passed).true());
+
+            })));
 
         it('should kill spawned templates ', () =>
-            toPromise(fromCallback(cb => {
+            toPromise(doFuture(function*() {
 
-                let sys = system();
+                let app = system();
+                let router = new Router();
+                let spawned = false;
 
-                hash = new Hash(window, {}, undefined, onNotFound);
+                app.spawn(director({
 
-                sys.spawn(director({
+                    '/foo': Controller.template('foo', c => <Case<Messages>[]>[
 
-                    '/foo': controllerTemplate('foo', () => [
+                        new Case(Suspend, ({ director }: Suspend) => {
 
-                        new Case(Resume, () => {
-
-                            assert(true).be.true();
+                            spawned = true;
+                            c.tell(director, new Suspended(c.self()));
 
                         })
 
                     ]),
 
-                    '/bar': 'bar'
+                    '/bar': Controller.template('bar', () => []),
 
-                }, hash, 200));
+                }, router, 0));
 
-                sys.spawn(controllerTemplate('bar', () => <Case<Messages>[]>[
+                yield router.handlers['/foo']('/foo');
+                yield router.handlers['/bar']('/bar');
+                yield fromCallback(cb => setTimeout(cb, 100));
 
-                    new Case(Resume, () => cb(undefined))
+                return attempt(() => {
 
-                ]));
+                    let runtimes = app.vm.state.runtimes;
 
-                hash.start();
+                    let matches = reduce(runtimes, 0, (p, _, k) =>
+                        startsWith(String(k), 'director/') ? p + 1 : p);
 
-                setTimeout(() => window.location.hash = 'foo', 500);
+                    assert(spawned).true();
+                    console.error(runtimes);
+                    assert(matches).equal(2);
 
-                setTimeout(() => window.location.hash = 'bar', 1500);
+                });
 
             })));
 
-        it('should exec functions', () => toPromise(fromCallback(cb => {
+        it('should exec functions', () => toPromise(doFuture(function*() {
 
-            let sys = system();
+            let app = system();
+            let router = new Router();
+            let spawned = false;
 
-            hash = new Hash(window, {}, undefined, onNotFound);
-
-            sys.spawn(director({
+            app.spawn(director({
 
                 '/foo': () => {
 
-                    assert(true).be.true();
+                    spawned = true;
 
-                    cb(undefined);
-
-                    return '?';
+                    return 'foo';
 
                 }
 
-            }, hash, 200));
+            }, router, 0));
 
-            hash.start();
+            yield router.handlers['/foo']('/foo');
+            yield fromCallback(cb => setTimeout(cb, 100));
 
-            setTimeout(() => window.location.hash = 'foo', 500);
+            return attempt(() => { assert(spawned).true(); });
+
+        })))
+
+        it('should reload actors', () => toPromise(doFuture(function*() {
+
+            let app = system();
+            let router = new Router();
+            let called = 0;
+
+            app.spawn(director({
+
+                '/foo': Controller.template('foo', c => <Case<Messages>[]>[
+
+                    new Case(Resume, ({ director }) => {
+
+                        if (called === 0) {
+
+                            called++;
+                            c.tell(director, new Reload(c.self()));
+
+                        } else {
+
+                            called++;
+
+                        }
+
+                    }),
+
+                    new Case(Suspend, ({ director }: Suspend) => {
+
+                        c.tell(director, new Suspended(c.self()));
+
+                    })
+
+                ]),
+
+            }, router, 0));
+
+            yield router.handlers['/foo']('/foo');
+            yield fromCallback(cb => setTimeout(cb, 100));
+
+            return attempt(() => { assert(called).equal(2); });
 
         })))
 

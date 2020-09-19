@@ -1,6 +1,5 @@
 import { Mock } from '@quenk/test/lib/mock';
 import { assert } from '@quenk/test/lib/assert';
-//import { noop } from '@quenk/noni/lib/data/function';
 import { startsWith } from '@quenk/noni/lib/data/string';
 import { reduce } from '@quenk/noni/lib/data/record';
 import {
@@ -68,7 +67,7 @@ class Controller extends Immutable<Messages> {
 
 }
 
-const system = () => new TestApp({ log: { logger: console, level: 8 } });
+const system = () => new TestApp();
 
 const director =
     (routes: RoutingTable<string>, router: Router, timeout = 0) => ({
@@ -242,7 +241,6 @@ describe('director', () => {
                         startsWith(String(k), 'director/') ? p + 1 : p);
 
                     assert(spawned).true();
-                    console.error(runtimes);
                     assert(matches).equal(2);
 
                 });

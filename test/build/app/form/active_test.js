@@ -47,22 +47,8 @@ var either_1 = require("@quenk/noni/lib/data/either");
 var case_1 = require("@quenk/potoo/lib/actor/resident/case");
 var strategy_1 = require("../../../../lib/app/form/active/validate/strategy");
 var active_1 = require("../../../../lib/app/form/active");
-var actor_1 = require("../../../../lib/actor");
 var app_1 = require("../../app/fixtures/app");
-var Parent = /** @class */ (function (_super) {
-    __extends(Parent, _super);
-    function Parent(system, receive, func) {
-        var _this = _super.call(this, system) || this;
-        _this.system = system;
-        _this.receive = receive;
-        _this.func = func;
-        return _this;
-    }
-    Parent.prototype.run = function () {
-        this.func(this);
-    };
-    return Parent;
-}(actor_1.Immutable));
+var actor_1 = require("../fixtures/actor");
 var Form = /** @class */ (function (_super) {
     __extends(Form, _super);
     function Form() {
@@ -124,10 +110,12 @@ describe('active', function () {
                                 ];
                                 s.spawn({
                                     id: 'parent',
-                                    create: function (s) { return new Parent(s, cases, function (that) {
-                                        var addr = that.spawn(form(that.self()));
-                                        that.tell(addr, new active_1.Abort());
-                                    }); }
+                                    create: function (s) {
+                                        return new actor_1.GenericImmutable(s, cases, function (that) {
+                                            var addr = that.spawn(form(that.self()));
+                                            that.tell(addr, new active_1.Abort());
+                                        });
+                                    }
                                 });
                                 return [4 /*yield*/, future_1.delay(function () { }, 0)];
                             case 1:
@@ -150,10 +138,12 @@ describe('active', function () {
                                 s = system();
                                 s.spawn({
                                     id: 'parent',
-                                    create: function (s) { return new Parent(s, [], function (that) {
-                                        var addr = that.spawn(form(that.self()));
-                                        that.tell(addr, new active_1.Save());
-                                    }); }
+                                    create: function (s) {
+                                        return new actor_1.GenericImmutable(s, [], function (that) {
+                                            var addr = that.spawn(form(that.self()));
+                                            that.tell(addr, new active_1.Save());
+                                        });
+                                    }
                                 });
                                 return [4 /*yield*/, future_1.delay(function () { })];
                             case 1:
@@ -180,10 +170,12 @@ describe('active', function () {
                                 ];
                                 s.spawn({
                                     id: 'parent',
-                                    create: function (s) { return new Parent(s, cases, function (that) {
-                                        var addr = that.spawn(form(that.self()));
-                                        that.tell(addr, new active_1.Saved());
-                                    }); }
+                                    create: function (s) {
+                                        return new actor_1.GenericImmutable(s, cases, function (that) {
+                                            var addr = that.spawn(form(that.self()));
+                                            that.tell(addr, new active_1.Saved());
+                                        });
+                                    }
                                 });
                                 return [4 /*yield*/, future_1.delay(function () { })];
                             case 1:
@@ -206,10 +198,12 @@ describe('active', function () {
                                 s = system();
                                 s.spawn({
                                     id: 'parent',
-                                    create: function (s) { return new Parent(s, [], function (that) {
-                                        var addr = that.spawn(form(that.self()));
-                                        that.tell(addr, new active_1.Failed());
-                                    }); }
+                                    create: function (s) {
+                                        return new actor_1.GenericImmutable(s, [], function (that) {
+                                            var addr = that.spawn(form(that.self()));
+                                            that.tell(addr, new active_1.Failed());
+                                        });
+                                    }
                                 });
                                 return [4 /*yield*/, future_1.delay(function () { })];
                             case 1:
@@ -232,10 +226,12 @@ describe('active', function () {
                                 s = system();
                                 s.spawn({
                                     id: 'parent',
-                                    create: function (s) { return new Parent(s, [], function (that) {
-                                        var addr = that.spawn(form(that.self()));
-                                        that.tell(addr, { name: 'name', value: 'asp' });
-                                    }); }
+                                    create: function (s) {
+                                        return new actor_1.GenericImmutable(s, [], function (that) {
+                                            var addr = that.spawn(form(that.self()));
+                                            that.tell(addr, { name: 'name', value: 'asp' });
+                                        });
+                                    }
                                 });
                                 return [4 /*yield*/, future_1.delay(function () { })];
                             case 1:

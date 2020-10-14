@@ -78,7 +78,7 @@ var Proxy = /** @class */ (function () {
 }());
 exports.Proxy = Proxy;
 
-},{"@quenk/potoo/lib/actor/resident":23}],2:[function(require,module,exports){
+},{"@quenk/potoo/lib/actor/resident":32}],2:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -362,7 +362,7 @@ var defaultConfig = function (c) {
     return record_1.merge({ timeout: exports.DEFAULT_TIMEOUT }, c);
 };
 
-},{"../actor":1,"@quenk/noni/lib/control/monad/future":7,"@quenk/noni/lib/data/record":14,"@quenk/noni/lib/data/type":17,"@quenk/potoo/lib/actor/resident/case":22}],3:[function(require,module,exports){
+},{"../actor":1,"@quenk/noni/lib/control/monad/future":16,"@quenk/noni/lib/data/record":23,"@quenk/noni/lib/data/type":26,"@quenk/potoo/lib/actor/resident/case":31}],3:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -498,7 +498,7 @@ var AbstractActiveForm = /** @class */ (function (_super) {
 }(actor_1.Immutable));
 exports.AbstractActiveForm = AbstractActiveForm;
 
-},{"../../../actor":1,"@quenk/noni/lib/data/type":17,"@quenk/potoo/lib/actor/resident/case":22}],4:[function(require,module,exports){
+},{"../../../actor":1,"@quenk/noni/lib/data/type":26,"@quenk/potoo/lib/actor/resident/case":31}],4:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -640,7 +640,960 @@ var JApp = /** @class */ (function () {
 }());
 exports.JApp = JApp;
 
-},{"@quenk/potoo/lib/actor/system/vm":27}],6:[function(require,module,exports){
+},{"@quenk/potoo/lib/actor/system/vm":36}],6:[function(require,module,exports){
+"use strict";
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+        return extendStatics(d, b);
+    };
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.Remote = exports.BatchResponse = exports.TransportErr = exports.ParSend = exports.SeqSend = exports.Send = void 0;
+var future_1 = require("@quenk/noni/lib/control/monad/future");
+var case_1 = require("@quenk/potoo/lib/actor/resident/case");
+var actor_1 = require("../../actor");
+/**
+ * Send a single request to the remote host, forwarding the response to the
+ * specified address.
+ */
+var Send = /** @class */ (function () {
+    function Send(client, request) {
+        this.client = client;
+        this.request = request;
+    }
+    return Send;
+}());
+exports.Send = Send;
+/**
+ * ParSend sends a batch of requests to the remote host in sequentially,
+ * forwarding the combined responses to the specified address.
+ */
+var SeqSend = /** @class */ (function () {
+    function SeqSend(client, requests) {
+        this.client = client;
+        this.requests = requests;
+    }
+    return SeqSend;
+}());
+exports.SeqSend = SeqSend;
+/**
+ * ParSend sends a batch of requests to the remote host in parallel, forwarding
+ * the combined responses to the specified address.
+ */
+var ParSend = /** @class */ (function () {
+    function ParSend(client, requests) {
+        this.client = client;
+        this.requests = requests;
+    }
+    return ParSend;
+}());
+exports.ParSend = ParSend;
+/**
+ * TransportErr is a wrapper around errors that occur before the request
+ * reaches the remote end.
+ *
+ * Indicates we were unable to initiate the request for some reason, for example,
+ * the network is down or a Same-Origin policy violation.
+ */
+var TransportErr = /** @class */ (function () {
+    function TransportErr(client, error) {
+        this.client = client;
+        this.error = error;
+    }
+    Object.defineProperty(TransportErr.prototype, "message", {
+        get: function () {
+            return this.error.message;
+        },
+        enumerable: false,
+        configurable: true
+    });
+    return TransportErr;
+}());
+exports.TransportErr = TransportErr;
+/**
+ * BatchResponse is a combined list of responses for batch requests.
+ */
+var BatchResponse = /** @class */ (function () {
+    function BatchResponse(value) {
+        this.value = value;
+    }
+    return BatchResponse;
+}());
+exports.BatchResponse = BatchResponse;
+/**
+ * Remote represents an HTTP server the app has access to.
+ *
+ * This actor is an abstraction over the `@quenk/jhr` so that requests
+ * can be sent via message passing. However, this abstraction is more
+ * concerned with application level logic than the details of the HTTP
+ * protocols.
+ */
+var Remote = /** @class */ (function (_super) {
+    __extends(Remote, _super);
+    function Remote(agent, system) {
+        var _this = _super.call(this, system) || this;
+        _this.agent = agent;
+        _this.system = system;
+        _this.onUnit = function (_a) {
+            var client = _a.client, request = _a.request;
+            var onErr = function (e) {
+                return _this.tell(client, new TransportErr(client, e));
+            };
+            var onSucc = function (res) {
+                return _this.tell(client, res);
+            };
+            _this
+                .agent
+                .send(request)
+                .fork(onErr, onSucc);
+        };
+        _this.onParallel = function (_a) {
+            var client = _a.client, requests = _a.requests;
+            var agent = _this.agent;
+            var onErr = function (e) { return _this.tell(client, e); };
+            var onSucc = function (res) {
+                return _this.tell(client, new BatchResponse(res));
+            };
+            var rs = requests.map(function (r) {
+                return agent.send(r).catch(function (e) { return future_1.raise(new TransportErr(client, e)); });
+            });
+            future_1.parallel(rs).fork(onErr, onSucc);
+        };
+        _this.onSequential = function (_a) {
+            var client = _a.client, requests = _a.requests;
+            var agent = _this.agent;
+            var onErr = function (e) { return _this.tell(client, e); };
+            var onSucc = function (res) {
+                return _this.tell(client, new BatchResponse(res));
+            };
+            var rs = requests.map(function (r) {
+                return agent.send(r).catch(function (e) { return future_1.raise(new TransportErr(client, e)); });
+            });
+            future_1.sequential(rs).fork(onErr, onSucc);
+        };
+        _this.receive = [
+            new case_1.Case(Send, _this.onUnit),
+            new case_1.Case(ParSend, _this.onParallel),
+            new case_1.Case(SeqSend, _this.onSequential)
+        ];
+        return _this;
+    }
+    Remote.prototype.run = function () { };
+    return Remote;
+}(actor_1.Immutable));
+exports.Remote = Remote;
+
+},{"../../actor":1,"@quenk/noni/lib/control/monad/future":16,"@quenk/potoo/lib/actor/resident/case":31}],7:[function(require,module,exports){
+"use strict";
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+        return extendStatics(d, b);
+    };
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
+var __spreadArrays = (this && this.__spreadArrays) || function () {
+    for (var s = 0, i = 0, il = arguments.length; i < il; i++) s += arguments[i].length;
+    for (var r = Array(s), k = 0, i = 0; i < il; i++)
+        for (var a = arguments[i], j = 0, jl = a.length; j < jl; j++, k++)
+            r[k] = a[j];
+    return r;
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.ObservableRemote = exports.AbstractRemoteObserver = exports.BatchResponse = exports.SeqSend = exports.ParSend = exports.Send = exports.TransportErr = void 0;
+var match_1 = require("@quenk/noni/lib/control/match");
+var response_1 = require("@quenk/jhr/lib/response");
+var case_1 = require("@quenk/potoo/lib/actor/resident/case");
+var actor_1 = require("../../actor");
+var _1 = require("./");
+Object.defineProperty(exports, "TransportErr", { enumerable: true, get: function () { return _1.TransportErr; } });
+Object.defineProperty(exports, "Send", { enumerable: true, get: function () { return _1.Send; } });
+Object.defineProperty(exports, "ParSend", { enumerable: true, get: function () { return _1.ParSend; } });
+Object.defineProperty(exports, "SeqSend", { enumerable: true, get: function () { return _1.SeqSend; } });
+Object.defineProperty(exports, "BatchResponse", { enumerable: true, get: function () { return _1.BatchResponse; } });
+/**
+ * AbstractRemoteObserver implementation.
+ */
+var AbstractRemoteObserver = /** @class */ (function () {
+    function AbstractRemoteObserver() {
+    }
+    AbstractRemoteObserver.prototype.onStart = function (_) { };
+    AbstractRemoteObserver.prototype.onError = function (_) { };
+    AbstractRemoteObserver.prototype.onClientError = function (_) { };
+    AbstractRemoteObserver.prototype.onServerError = function (_) { };
+    AbstractRemoteObserver.prototype.onComplete = function (_) { };
+    AbstractRemoteObserver.prototype.onFinish = function () { };
+    return AbstractRemoteObserver;
+}());
+exports.AbstractRemoteObserver = AbstractRemoteObserver;
+/**
+ * ObservableRemote is a bridge to a Remote that allows the requests and
+ * responses to be observed.
+ *
+ * Observation is done through the RemoteObserver API an instance of which can
+ * be passed to the ObservableRemote constructor.
+ *
+ * This actor exists mostly to allow the manipulation of UI indicators when
+ * requests are being made in the foreground of an application.
+ */
+var ObservableRemote = /** @class */ (function (_super) {
+    __extends(ObservableRemote, _super);
+    function ObservableRemote(agent, observer, system) {
+        var _this = _super.call(this, system) || this;
+        _this.agent = agent;
+        _this.observer = observer;
+        _this.system = system;
+        _this.remote = '?';
+        _this.onWake = function (req) {
+            _this.send(req);
+            _this.select(_this.pending(req, []));
+        };
+        _this.onRequest = function (current, buffer) {
+            return function (msg) {
+                _this.select(_this.pending(current, __spreadArrays(buffer, [msg])));
+            };
+        };
+        _this.onError = function (current) { return function (err) {
+            _this.observer.onError(err);
+            _this.observer.onFinish();
+            _this.tell(current.client, new _1.TransportErr(current.client, err.error));
+        }; };
+        _this.onResponse = function (current, buffer) {
+            return function (r) {
+                var res = r;
+                if (r instanceof _1.BatchResponse) {
+                    var failed = r.value.filter(function (r) { return r.code > 299; });
+                    if (failed.length > 0)
+                        res = failed[0];
+                }
+                else {
+                    res = r;
+                }
+                if (res.code > 499) {
+                    _this.observer.onServerError(res);
+                }
+                else if (res.code > 399) {
+                    _this.observer.onClientError(res);
+                }
+                else {
+                    _this.observer.onComplete(res);
+                }
+                _this.observer.onFinish();
+                _this.tell(current.client, res);
+                if (buffer.length > 0) {
+                    var next = buffer[0];
+                    _this.send(next);
+                    _this.select(_this.pending(next, buffer.slice()));
+                }
+                else {
+                    _this.select(_this.idle());
+                }
+            };
+        };
+        return _this;
+    }
+    ObservableRemote.prototype.idle = function () {
+        return [
+            new case_1.Case(_1.Send, this.onWake),
+            new case_1.Case(_1.ParSend, this.onWake),
+            new case_1.Case(_1.SeqSend, this.onWake),
+        ];
+    };
+    ObservableRemote.prototype.pending = function (current, buffer) {
+        var onReq = this.onRequest(current, buffer);
+        var onRes = this.onResponse(current, buffer);
+        return [
+            new case_1.Case(_1.Send, onReq),
+            new case_1.Case(_1.ParSend, onReq),
+            new case_1.Case(_1.SeqSend, onReq),
+            new case_1.Case(_1.TransportErr, this.onError(current)),
+            new case_1.Case(response_1.GenericResponse, onRes),
+            new case_1.Case(_1.BatchResponse, onRes),
+        ];
+    };
+    ObservableRemote.prototype.send = function (req) {
+        var self = this.self();
+        this.observer.onStart(req);
+        var msg = match_1.match(req)
+            .caseOf(_1.Send, function (msg) {
+            return new _1.Send(self, msg.request);
+        })
+            .caseOf(_1.ParSend, function (msg) {
+            return new _1.ParSend(self, msg.requests);
+        })
+            .caseOf(_1.SeqSend, function (msg) {
+            return new _1.SeqSend(self, msg.requests);
+        })
+            .end();
+        this.tell(this.remote, msg);
+    };
+    ObservableRemote.prototype.run = function () {
+        var _this = this;
+        this.remote = this.spawn(function (s) { return new _1.Remote(_this.agent, s); });
+        this.select(this.idle());
+    };
+    return ObservableRemote;
+}(actor_1.Mutable));
+exports.ObservableRemote = ObservableRemote;
+
+},{"../../actor":1,"./":6,"@quenk/jhr/lib/response":11,"@quenk/noni/lib/control/match":15,"@quenk/potoo/lib/actor/resident/case":31}],8:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.MockAgent = void 0;
+var mock_1 = require("@quenk/test/lib/mock");
+var future_1 = require("@quenk/noni/lib/control/monad/future");
+var response_1 = require("../response");
+var res = future_1.pure(new response_1.GenericResponse(0, {}, {}, { port: 0, ttl: 0, tags: {}, context: {} }));
+/**
+ * MockAgent is an HTTPAgent that can be used when testing projects that use
+ * this library.
+ */
+var MockAgent = /** @class */ (function () {
+    function MockAgent() {
+        this.__MOCK__ = new mock_1.Mock();
+    }
+    MockAgent.prototype.head = function (path, params, headers) {
+        if (params === void 0) { params = {}; }
+        if (headers === void 0) { headers = {}; }
+        return this.__MOCK__.invoke('head', [path, params, headers], res);
+    };
+    MockAgent.prototype.get = function (path, params, headers) {
+        if (params === void 0) { params = {}; }
+        if (headers === void 0) { headers = {}; }
+        return this.__MOCK__.invoke('get', [path, params, headers], res);
+    };
+    MockAgent.prototype.post = function (path, body, headers) {
+        if (headers === void 0) { headers = {}; }
+        return this.__MOCK__.invoke('post', [path, body, headers], res);
+    };
+    MockAgent.prototype.put = function (path, body, headers) {
+        if (headers === void 0) { headers = {}; }
+        return this.__MOCK__.invoke('put', [path, body, headers], res);
+    };
+    MockAgent.prototype.patch = function (path, body, headers) {
+        if (headers === void 0) { headers = {}; }
+        return this.__MOCK__.invoke('patch', [path, body, headers], res);
+    };
+    MockAgent.prototype.delete = function (path, body, headers) {
+        return this.__MOCK__.invoke('delete', [path, body, headers], res);
+    };
+    MockAgent.prototype.send = function (req) {
+        return this.__MOCK__.invoke('send', [req], res);
+    };
+    return MockAgent;
+}());
+exports.MockAgent = MockAgent;
+
+},{"../response":11,"@quenk/noni/lib/control/monad/future":16,"@quenk/test/lib/mock":13}],9:[function(require,module,exports){
+"use strict";
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
+        return extendStatics(d, b);
+    };
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.Delete = exports.Patch = exports.Put = exports.Post = exports.Get = exports.Head = void 0;
+var method_1 = require("./method");
+/**
+ * Head request.
+ */
+var Head = /** @class */ (function () {
+    function Head(path, params, headers, options) {
+        if (headers === void 0) { headers = {}; }
+        if (options === void 0) { options = { ttl: 0, tags: {}, context: {} }; }
+        this.path = path;
+        this.params = params;
+        this.headers = headers;
+        this.options = options;
+        this.method = method_1.Method.Head;
+    }
+    return Head;
+}());
+exports.Head = Head;
+/**
+ * Get request.
+ */
+var Get = /** @class */ (function (_super) {
+    __extends(Get, _super);
+    function Get() {
+        var _this = _super !== null && _super.apply(this, arguments) || this;
+        _this.method = method_1.Method.Get;
+        return _this;
+    }
+    return Get;
+}(Head));
+exports.Get = Get;
+/**
+ * Post request.
+ */
+var Post = /** @class */ (function () {
+    function Post(path, body, headers, options) {
+        if (headers === void 0) { headers = {}; }
+        if (options === void 0) { options = { ttl: 0, tags: {}, context: {} }; }
+        this.path = path;
+        this.body = body;
+        this.headers = headers;
+        this.options = options;
+        this.method = method_1.Method.Post;
+    }
+    return Post;
+}());
+exports.Post = Post;
+/**
+ * Put request.
+ */
+var Put = /** @class */ (function (_super) {
+    __extends(Put, _super);
+    function Put() {
+        var _this = _super !== null && _super.apply(this, arguments) || this;
+        _this.method = method_1.Method.Put;
+        return _this;
+    }
+    return Put;
+}(Post));
+exports.Put = Put;
+/**
+ * Patch request.
+ */
+var Patch = /** @class */ (function (_super) {
+    __extends(Patch, _super);
+    function Patch() {
+        var _this = _super !== null && _super.apply(this, arguments) || this;
+        _this.method = method_1.Method.Patch;
+        return _this;
+    }
+    return Patch;
+}(Post));
+exports.Patch = Patch;
+/**
+ * Delete request.
+ */
+var Delete = /** @class */ (function (_super) {
+    __extends(Delete, _super);
+    function Delete() {
+        var _this = _super !== null && _super.apply(this, arguments) || this;
+        _this.method = method_1.Method.Delete;
+        return _this;
+    }
+    return Delete;
+}(Post));
+exports.Delete = Delete;
+
+},{"./method":10}],10:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.Method = void 0;
+/**
+ * Method types.
+ */
+var Method;
+(function (Method) {
+    Method["Head"] = "HEAD";
+    Method["Get"] = "GET";
+    Method["Put"] = "PUT";
+    Method["Post"] = "POST";
+    Method["Delete"] = "DELETE";
+    Method["Patch"] = "PATCH";
+})(Method = exports.Method || (exports.Method = {}));
+
+},{}],11:[function(require,module,exports){
+"use strict";
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
+        return extendStatics(d, b);
+    };
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.createResponse = exports.InternalServerError = exports.ServerError = exports.Conflict = exports.NotFound = exports.Forbidden = exports.Unauthorized = exports.BadRequest = exports.ClientError = exports.Created = exports.NoContent = exports.Accepted = exports.Ok = exports.Success = exports.GenericResponse = void 0;
+var status = require("./status");
+/**
+ * GenericResponse response refers to response codes we don't have
+ * an explicit type for.
+ */
+var GenericResponse = /** @class */ (function () {
+    function GenericResponse(code, body, headers, options) {
+        this.code = code;
+        this.body = body;
+        this.headers = headers;
+        this.options = options;
+    }
+    return GenericResponse;
+}());
+exports.GenericResponse = GenericResponse;
+/**
+ * Success
+ *
+ * See (here)[http://www.iana.org/assignments/http-status-codes/http-status-codes.xhtml].
+ */
+var Success = /** @class */ (function (_super) {
+    __extends(Success, _super);
+    function Success() {
+        return _super !== null && _super.apply(this, arguments) || this;
+    }
+    return Success;
+}(GenericResponse));
+exports.Success = Success;
+/**
+ * Ok response.
+ */
+var Ok = /** @class */ (function (_super) {
+    __extends(Ok, _super);
+    function Ok(body, headers, options) {
+        var _this = _super.call(this, status.OK, body, headers, options) || this;
+        _this.body = body;
+        _this.headers = headers;
+        _this.options = options;
+        return _this;
+    }
+    return Ok;
+}(Success));
+exports.Ok = Ok;
+/**
+ * Accepted response.
+ */
+var Accepted = /** @class */ (function (_super) {
+    __extends(Accepted, _super);
+    function Accepted(body, headers, options) {
+        var _this = _super.call(this, status.ACCEPTED, body, headers, options) || this;
+        _this.body = body;
+        _this.headers = headers;
+        _this.options = options;
+        return _this;
+    }
+    return Accepted;
+}(Success));
+exports.Accepted = Accepted;
+/**
+ * NoContent response.
+ *
+ * NOTE: In practice, the body here should always be undefined.
+ */
+var NoContent = /** @class */ (function (_super) {
+    __extends(NoContent, _super);
+    function NoContent(body, headers, options) {
+        var _this = _super.call(this, status.NO_CONTENT, body, headers, options) || this;
+        _this.body = body;
+        _this.headers = headers;
+        _this.options = options;
+        return _this;
+    }
+    return NoContent;
+}(Success));
+exports.NoContent = NoContent;
+/**
+ * Created response.
+ */
+var Created = /** @class */ (function (_super) {
+    __extends(Created, _super);
+    function Created(body, headers, options) {
+        var _this = _super.call(this, status.CREATED, body, headers, options) || this;
+        _this.body = body;
+        _this.headers = headers;
+        _this.options = options;
+        return _this;
+    }
+    return Created;
+}(Success));
+exports.Created = Created;
+/**
+ * ClientError
+ * See (here)[http://www.iana.org/assignments/http-status-codes/http-status-codes.xhtml].
+ */
+var ClientError = /** @class */ (function (_super) {
+    __extends(ClientError, _super);
+    function ClientError() {
+        return _super !== null && _super.apply(this, arguments) || this;
+    }
+    return ClientError;
+}(GenericResponse));
+exports.ClientError = ClientError;
+/**
+ * BadRequest response.
+ */
+var BadRequest = /** @class */ (function (_super) {
+    __extends(BadRequest, _super);
+    function BadRequest(body, headers, options) {
+        var _this = _super.call(this, status.BAD_REQUEST, body, headers, options) || this;
+        _this.body = body;
+        _this.headers = headers;
+        _this.options = options;
+        return _this;
+    }
+    return BadRequest;
+}(ClientError));
+exports.BadRequest = BadRequest;
+/**
+ * Unauthorized response.
+ */
+var Unauthorized = /** @class */ (function (_super) {
+    __extends(Unauthorized, _super);
+    function Unauthorized(body, headers, options) {
+        var _this = _super.call(this, status.UNAUTHORIZED, body, headers, options) || this;
+        _this.body = body;
+        _this.headers = headers;
+        _this.options = options;
+        return _this;
+    }
+    return Unauthorized;
+}(ClientError));
+exports.Unauthorized = Unauthorized;
+/**
+ * Forbidden response.
+ */
+var Forbidden = /** @class */ (function (_super) {
+    __extends(Forbidden, _super);
+    function Forbidden(body, headers, options) {
+        var _this = _super.call(this, status.FORBIDDEN, body, headers, options) || this;
+        _this.body = body;
+        _this.headers = headers;
+        _this.options = options;
+        return _this;
+    }
+    return Forbidden;
+}(ClientError));
+exports.Forbidden = Forbidden;
+/**
+ * NotFound response.
+ */
+var NotFound = /** @class */ (function (_super) {
+    __extends(NotFound, _super);
+    function NotFound(body, headers, options) {
+        var _this = _super.call(this, status.NOT_FOUND, body, headers, options) || this;
+        _this.body = body;
+        _this.headers = headers;
+        _this.options = options;
+        return _this;
+    }
+    return NotFound;
+}(ClientError));
+exports.NotFound = NotFound;
+/**
+ * Conflict response.
+ */
+var Conflict = /** @class */ (function (_super) {
+    __extends(Conflict, _super);
+    function Conflict(body, headers, options) {
+        var _this = _super.call(this, status.CONFLICT, body, headers, options) || this;
+        _this.body = body;
+        _this.headers = headers;
+        _this.options = options;
+        return _this;
+    }
+    return Conflict;
+}(ClientError));
+exports.Conflict = Conflict;
+/**
+ * ServerError
+ */
+var ServerError = /** @class */ (function (_super) {
+    __extends(ServerError, _super);
+    function ServerError() {
+        return _super !== null && _super.apply(this, arguments) || this;
+    }
+    return ServerError;
+}(GenericResponse));
+exports.ServerError = ServerError;
+/**
+ * InternalServerError response.
+ */
+var InternalServerError = /** @class */ (function (_super) {
+    __extends(InternalServerError, _super);
+    function InternalServerError(body, headers, options) {
+        var _this = _super.call(this, status.INTERNAL_SERVER_ERROR, body, headers, options) || this;
+        _this.body = body;
+        _this.headers = headers;
+        _this.options = options;
+        _this.status = status.INTERNAL_SERVER_ERROR;
+        return _this;
+    }
+    return InternalServerError;
+}(ServerError));
+exports.InternalServerError = InternalServerError;
+/**
+ * createResponse creates a new typed Response or a GenericResponse if
+ * unsupported.
+ */
+exports.createResponse = function (code, body, headers, options) {
+    switch (code) {
+        case status.OK:
+            return new Ok(body, headers, options);
+        case status.ACCEPTED:
+            return new Accepted(body, headers, options);
+        case status.NO_CONTENT:
+            return new NoContent(body, headers, options);
+        case status.CREATED:
+            return new Created(body, headers, options);
+        case status.BAD_REQUEST:
+            return new BadRequest(body, headers, options);
+        case status.BAD_REQUEST:
+            return new BadRequest(body, headers, options);
+        case status.UNAUTHORIZED:
+            return new Unauthorized(body, headers, options);
+        case status.FORBIDDEN:
+            return new Forbidden(body, headers, options);
+        case status.NOT_FOUND:
+            return new NotFound(body, headers, options);
+        case status.CONFLICT:
+            return new Conflict(body, headers, options);
+        case status.INTERNAL_SERVER_ERROR:
+            return new InternalServerError(body, headers, options);
+        default:
+            if ((code >= 400) && (code <= 499))
+                return new ClientError(code, body, headers, options);
+            else if (code >= 500)
+                return new ServerError(code, body, headers, options);
+            else
+                return new GenericResponse(code, body, headers, options);
+    }
+};
+
+},{"./status":12}],12:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.NETWORK_AUTHENTICATION_REQUIRED = exports.NOT_EXTENDED = exports.LOOP_DETECTED = exports.INSUFFICIENT_STORAGE = exports.VARIANT_ALSO_NEGOTIATES = exports.HTTP_VERSION_NOT_SUPPORTED = exports.GATEWAY_TIMEOUT = exports.SERVICE_UNAVAILABLE = exports.BAD_GATEWAY = exports.NOT_IMPLEMENTED = exports.INTERNAL_SERVER_ERROR = exports.UNAVAILABLE_FOR_LEGAL_RREASONS = exports.REQUEST_HEADER_FIELDS_TOO_LARGE = exports.TOO_MANY_REQUESTS = exports.PRECONDITION_REQUIRED = exports.UPGRADE_REQUIRED = exports.FAILED_DEPENDENCY = exports.LOCKED = exports.UNPROCESSABLE_ENTITY = exports.TEAPOT = exports.EXPECTATION_FAILED = exports.REQUESTED_RANGE_NOT_SATISFIABLE = exports.UNSUPPORTED_MEDIA_TYPE = exports.REQUEST_URI_TOO_LONG = exports.REQUEST_ENTITY_TOO_LARGE = exports.PRECONDITION_FAILED = exports.LENGTH_REQUIRED = exports.GONE = exports.CONFLICT = exports.REQUEST_TIMEOUT = exports.PROXY_AUTH_REQUIRED = exports.NOT_ACCEPTABLE = exports.METHOD_NOT_ALLOWED = exports.NOT_FOUND = exports.FORBIDDEN = exports.PAYMENT_REQUIRED = exports.UNAUTHORIZED = exports.BAD_REQUEST = exports.PERMANENT_REDIRECT = exports.TEMPORARY_REDIRECT = exports.USE_PROXY = exports.NOT_MODIFIED = exports.SEE_OTHER = exports.FOUND = exports.MOVED_PERMANENTLY = exports.MULTIPLE_CHOICES = exports.IM_USED = exports.ALREADY_REPORTED = exports.MULTI_STATUS = exports.PARTIAL_CONTENT = exports.RESET_CONTENT = exports.NO_CONTENT = exports.NON_AUTHORITATIV_INFO = exports.ACCEPTED = exports.CREATED = exports.OK = exports.PROCESSING = exports.SWITCHING_PROTOCOLS = exports.CONTINUE = void 0;
+exports.CONTINUE = 100;
+exports.SWITCHING_PROTOCOLS = 101;
+exports.PROCESSING = 102;
+exports.OK = 200;
+exports.CREATED = 201;
+exports.ACCEPTED = 202;
+exports.NON_AUTHORITATIV_INFO = 203;
+exports.NO_CONTENT = 204;
+exports.RESET_CONTENT = 205;
+exports.PARTIAL_CONTENT = 206;
+exports.MULTI_STATUS = 207;
+exports.ALREADY_REPORTED = 208;
+exports.IM_USED = 226;
+exports.MULTIPLE_CHOICES = 300;
+exports.MOVED_PERMANENTLY = 301;
+exports.FOUND = 302;
+exports.SEE_OTHER = 303;
+exports.NOT_MODIFIED = 304;
+exports.USE_PROXY = 305;
+exports.TEMPORARY_REDIRECT = 307;
+exports.PERMANENT_REDIRECT = 308;
+exports.BAD_REQUEST = 400;
+exports.UNAUTHORIZED = 401;
+exports.PAYMENT_REQUIRED = 402;
+exports.FORBIDDEN = 403;
+exports.NOT_FOUND = 404;
+exports.METHOD_NOT_ALLOWED = 405;
+exports.NOT_ACCEPTABLE = 406;
+exports.PROXY_AUTH_REQUIRED = 407;
+exports.REQUEST_TIMEOUT = 408;
+exports.CONFLICT = 409;
+exports.GONE = 410;
+exports.LENGTH_REQUIRED = 411;
+exports.PRECONDITION_FAILED = 412;
+exports.REQUEST_ENTITY_TOO_LARGE = 413;
+exports.REQUEST_URI_TOO_LONG = 414;
+exports.UNSUPPORTED_MEDIA_TYPE = 415;
+exports.REQUESTED_RANGE_NOT_SATISFIABLE = 416;
+exports.EXPECTATION_FAILED = 417;
+exports.TEAPOT = 418;
+exports.UNPROCESSABLE_ENTITY = 422;
+exports.LOCKED = 423;
+exports.FAILED_DEPENDENCY = 424;
+exports.UPGRADE_REQUIRED = 426;
+exports.PRECONDITION_REQUIRED = 428;
+exports.TOO_MANY_REQUESTS = 429;
+exports.REQUEST_HEADER_FIELDS_TOO_LARGE = 431;
+exports.UNAVAILABLE_FOR_LEGAL_RREASONS = 451;
+exports.INTERNAL_SERVER_ERROR = 500;
+exports.NOT_IMPLEMENTED = 501;
+exports.BAD_GATEWAY = 502;
+exports.SERVICE_UNAVAILABLE = 503;
+exports.GATEWAY_TIMEOUT = 504;
+exports.HTTP_VERSION_NOT_SUPPORTED = 505;
+exports.VARIANT_ALSO_NEGOTIATES = 506;
+exports.INSUFFICIENT_STORAGE = 507;
+exports.LOOP_DETECTED = 508;
+exports.NOT_EXTENDED = 510;
+exports.NETWORK_AUTHENTICATION_REQUIRED = 511;
+
+},{}],13:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+var deepEqual = require("deep-equal");
+/**
+ * Invocation is a recording of method invocations stored by a Mock.
+ */
+var Invocation = /** @class */ (function () {
+    function Invocation(name, args, value) {
+        this.name = name;
+        this.args = args;
+        this.value = value;
+    }
+    return Invocation;
+}());
+exports.Invocation = Invocation;
+/**
+ * ReturnValue stores a value to be returned by a mocked method.
+ */
+var ReturnValue = /** @class */ (function () {
+    function ReturnValue(name, value) {
+        this.name = name;
+        this.value = value;
+    }
+    ReturnValue.prototype.get = function () {
+        var _ = [];
+        for (var _i = 0; _i < arguments.length; _i++) {
+            _[_i] = arguments[_i];
+        }
+        return this.value;
+    };
+    return ReturnValue;
+}());
+exports.ReturnValue = ReturnValue;
+/**
+ * ReturnCallback allows a function to be used to provide a ReturnValue.
+ */
+var ReturnCallback = /** @class */ (function () {
+    function ReturnCallback(name, value) {
+        this.name = name;
+        this.value = value;
+    }
+    ReturnCallback.prototype.get = function () {
+        var args = [];
+        for (var _i = 0; _i < arguments.length; _i++) {
+            args[_i] = arguments[_i];
+        }
+        return this.value.apply(undefined, args);
+    };
+    return ReturnCallback;
+}());
+exports.ReturnCallback = ReturnCallback;
+/**
+ * Mock is a class that can be used to keep track of the mocking of some
+ * interface.
+ *
+ * It provides methods for recording the invocation of methods and setting
+ * their return values. Generally, embedding a Mock instance is preffered to
+ * extending the class.
+ */
+var Mock = /** @class */ (function () {
+    function Mock(calls, returns) {
+        if (calls === void 0) { calls = []; }
+        if (returns === void 0) { returns = {}; }
+        this.calls = calls;
+        this.returns = returns;
+    }
+    /**
+     * invoke records the invocation of a method.
+     * @param method - The method name.
+     * @param args   - An array of arguments the method is called with.
+     * @param ret    - The return value of the method invocation.
+     */
+    Mock.prototype.invoke = function (method, args, ret) {
+        this.calls.push(new Invocation(method, args, ret));
+        return this.returns.hasOwnProperty(method) ?
+            this.returns[method].get.apply(this.returns[method], args) : ret;
+    };
+    /**
+     * setReturnValue so that invocation of a method always return the desired
+     * result.
+     */
+    Mock.prototype.setReturnValue = function (method, value) {
+        this.returns[method] = new ReturnValue(method, value);
+        return this;
+    };
+    /**
+     * setReturnCallback allows a function to provide the return value
+     * of a method on invocation.
+     */
+    Mock.prototype.setReturnCallback = function (method, value) {
+        this.returns[method] =
+            new ReturnCallback(method, value);
+        return this;
+    };
+    /**
+     * getCalledArgs provides the first set of arguments a method was called
+     * with.
+     *
+     * The array is empty if the method was never called.
+     */
+    Mock.prototype.getCalledArgs = function (name) {
+        return this.calls.reduce(function (p, c) {
+            return (p.length > 0) ? p : (c.name === name) ?
+                c.args : p;
+        }, []);
+    };
+    /**
+     * getCalledWith tests whether a method was called with the specified args.
+     *
+     * Compared using === .
+     */
+    Mock.prototype.getCalledWith = function (name, args) {
+        return this.calls.some(function (c) { return (c.name === name) &&
+            c.args.every(function (a, i) { return a === args[i]; }); });
+    };
+    /**
+     * getCalledWithDeep tests whether a method was called with the specified
+     * args.
+     *
+     * Compared using deepEqual.
+     */
+    Mock.prototype.getCalledWithDeep = function (name, args) {
+        return this.calls.some(function (c) {
+            return (c.name === name) && deepEqual(c.args, args);
+        });
+    };
+    /**
+     * getCalledList returns a list of methods that have been called so far.
+     */
+    Mock.prototype.getCalledList = function () {
+        return this.calls.map(function (c) { return c.name; });
+    };
+    /**
+     * wasCalled tests whether a method was called.
+     */
+    Mock.prototype.wasCalled = function (method) {
+        return this.getCalledList().indexOf(method) > -1;
+    };
+    /**
+     * wasCalledNTimes tests whether a method was called a certain amount of
+     * times.
+     */
+    Mock.prototype.wasCalledNTimes = function (method, n) {
+        return this.getCalledList().reduce(function (p, c) {
+            return (c === method) ? p + 1 : p;
+        }, 0) === n;
+    };
+    return Mock;
+}());
+exports.Mock = Mock;
+
+},{"deep-equal":66}],14:[function(require,module,exports){
 "use strict";
 /**
  * This module provides functions and types to make dealing with ES errors
@@ -682,7 +1635,94 @@ exports.attempt = function (f) {
     }
 };
 
-},{"../data/either":11}],7:[function(require,module,exports){
+},{"../data/either":20}],15:[function(require,module,exports){
+"use strict";
+/**
+ * The match module provides a best effort pattern runtime pattern matching
+ * framework for ECMAScript.
+ *
+ * Example:
+ * ```ts
+ *
+ *    let r:string = match(window.global)
+ *                   .caseOf(1, (_:number) => 'one')
+ *                   .caseOf('one', (n:string) => n)
+ *                   .orElse(()=> 'N/A')
+ *                   .end();
+ *
+ * ```
+ * This framework uses the data/type#test function to do the actual
+ * pattern matching and attention must be paid to the rules of that
+ * function to avoid unexpected errors.
+ *
+ * Great effort was made to try and make the `caseOf` methods as
+ * type safe as possible however it is still possible to evade the compiler
+ * especially when the first argument is a shape (object with keys describing
+ * allowed types).
+ *
+ */
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.match = exports.Matched = exports.UnMatched = void 0;
+var type_1 = require("../data/type");
+/**
+ * UnMatched represents a value yet to have a successful match.
+ */
+var UnMatched = /** @class */ (function () {
+    function UnMatched(value) {
+        this.value = value;
+    }
+    UnMatched.prototype.caseOf = function (pattern, f) {
+        return type_1.test(this.value, pattern) ?
+            new Matched(f(this.value)) : this;
+    };
+    /**
+     * orElse produces the alternative value since no cases have been matched yet.
+     */
+    UnMatched.prototype.orElse = function (f) {
+        return new Matched(f(this.value));
+    };
+    /**
+     * end
+     *
+     * Calling end on an UnMatched is an error.
+     */
+    UnMatched.prototype.end = function () {
+        throw new Error("The pattern '" + type_1.show(this.value) + "' was not matched!");
+    };
+    return UnMatched;
+}());
+exports.UnMatched = UnMatched;
+/**
+ * Matched represents a succefully matched case.
+ */
+var Matched = /** @class */ (function () {
+    function Matched(value) {
+        this.value = value;
+    }
+    Matched.prototype.caseOf = function (_, __) {
+        return this;
+    };
+    /**
+     * orElse does nothing.
+     */
+    Matched.prototype.orElse = function (_) {
+        return this;
+    };
+    /**
+     * end produces the value the Matched was created with.
+     */
+    Matched.prototype.end = function () {
+        return this.value;
+    };
+    return Matched;
+}());
+exports.Matched = Matched;
+/**
+ * match wraps a value in an UnMatched so that case tests can be applied.
+ */
+exports.match = function (value) { return new UnMatched(value); };
+
+},{"../data/type":26}],16:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -699,9 +1739,9 @@ var __extends = (this && this.__extends) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.doFuture = exports.liftP = exports.fromExcept = exports.toPromise = exports.race = exports.reduce = exports.sequential = exports.parallel = exports.batch = exports.fromCallback = exports.fromAbortable = exports.wait = exports.delay = exports.attempt = exports.raise = exports.pure = exports.Compute = exports.Run = exports.Raise = exports.Trap = exports.Finally = exports.Catch = exports.Step = exports.Bind = exports.Pure = exports.Future = void 0;
+var function_1 = require("../../data/function");
 var timer_1 = require("../timer");
 var error_1 = require("../error");
-var function_1 = require("../../data/function");
 var _1 = require("./");
 var Future = /** @class */ (function () {
     function Future() {
@@ -725,6 +1765,8 @@ var Future = /** @class */ (function () {
         return new Finally(this, f);
     };
     Future.prototype.fork = function (onError, onSuccess) {
+        if (onError === void 0) { onError = function_1.noop; }
+        if (onSuccess === void 0) { onSuccess = function_1.noop; }
         return (new Compute(undefined, onError, onSuccess, [this])).run();
     };
     /**
@@ -1215,7 +2257,7 @@ exports.liftP = function (f) { return new Run(function (s) {
  */
 exports.doFuture = function (f) { return _1.doN(f); };
 
-},{"../../data/function":12,"../error":6,"../timer":9,"./":8}],8:[function(require,module,exports){
+},{"../../data/function":21,"../error":14,"../timer":18,"./":17}],17:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.doMonad = exports.doN = exports.pipeN = exports.pipe = exports.compose = exports.join = void 0;
@@ -1304,7 +2346,7 @@ exports.doN = function (f) {
 };
 exports.doMonad = exports.doN;
 
-},{}],9:[function(require,module,exports){
+},{}],18:[function(require,module,exports){
 (function (process){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
@@ -1355,7 +2397,7 @@ exports.throttle = function (f, duration) {
 };
 
 }).call(this,require('_process'))
-},{"_process":77}],10:[function(require,module,exports){
+},{"_process":86}],19:[function(require,module,exports){
 "use strict";
 var __spreadArrays = (this && this.__spreadArrays) || function () {
     for (var s = 0, i = 0, il = arguments.length; i < il; i++) s += arguments[i].length;
@@ -1504,7 +2546,7 @@ exports.compact = function (list) {
     return list.filter(function (v) { return (v != null); });
 };
 
-},{"../../math":18,"../record":14}],11:[function(require,module,exports){
+},{"../../math":27,"../record":23}],20:[function(require,module,exports){
 "use strict";
 /**
  * Either represents a value that may be one of two types.
@@ -1700,7 +2742,7 @@ exports.either = function (f) { return function (g) { return function (e) {
     return (e instanceof Right) ? g(e.takeRight()) : f(e.takeLeft());
 }; }; };
 
-},{"./maybe":13}],12:[function(require,module,exports){
+},{"./maybe":22}],21:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.noop = exports.curry5 = exports.curry4 = exports.curry3 = exports.curry = exports.id = exports.identity = exports.flip = exports.cons = exports.compose5 = exports.compose4 = exports.compose3 = exports.compose = void 0;
@@ -1760,7 +2802,7 @@ exports.curry5 = function (f) {
  */
 exports.noop = function () { };
 
-},{}],13:[function(require,module,exports){
+},{}],22:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.fromNaN = exports.fromNumber = exports.fromBoolean = exports.fromString = exports.fromObject = exports.fromArray = exports.fromNullable = exports.just = exports.nothing = exports.of = exports.Just = exports.Nothing = void 0;
@@ -1994,7 +3036,7 @@ exports.fromNaN = function (n) {
     return isNaN(n) ? new Nothing() : new Just(n);
 };
 
-},{}],14:[function(require,module,exports){
+},{}],23:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.pickValue = exports.pickKey = exports.make = exports.rcompact = exports.compact = exports.isBadKey = exports.set = exports.every = exports.some = exports.empty = exports.count = exports.clone = exports.hasKey = exports.values = exports.group = exports.partition = exports.exclude = exports.rmerge5 = exports.rmerge4 = exports.rmerge3 = exports.rmerge = exports.merge5 = exports.merge4 = exports.merge3 = exports.merge = exports.filter = exports.reduce = exports.forEach = exports.mapTo = exports.map = exports.keys = exports.isRecord = exports.assign = exports.badKeys = void 0;
@@ -2334,7 +3376,7 @@ exports.pickValue = function (rec, test) {
     });
 };
 
-},{"../array":10,"../maybe":13,"../type":17}],15:[function(require,module,exports){
+},{"../array":19,"../maybe":22,"../type":26}],24:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.project = exports.unflatten = exports.flatten = exports.unescapeRecord = exports.escapeRecord = exports.unescape = exports.escape = exports.set = exports.getString = exports.getDefault = exports.get = exports.unsafeGet = exports.tokenize = void 0;
@@ -2601,7 +3643,7 @@ exports.project = function (spec, rec) {
     });
 };
 
-},{"../maybe":13,"./":14}],16:[function(require,module,exports){
+},{"../maybe":22,"./":23}],25:[function(require,module,exports){
 "use strict";
 /**
  *  Common functions used to manipulate strings.
@@ -2710,7 +3752,7 @@ exports.propercase = function (str) {
         .join(' ');
 };
 
-},{"../record":14,"../record/path":15}],17:[function(require,module,exports){
+},{"../record":23,"../record/path":24}],26:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.toString = exports.show = exports.test = exports.is = exports.isPrim = exports.isFunction = exports.isBoolean = exports.isNumber = exports.isString = exports.isArray = exports.isObject = exports.Any = void 0;
@@ -2840,7 +3882,7 @@ exports.toString = function (val) {
     return (val == null) ? '' : String(val);
 };
 
-},{}],18:[function(require,module,exports){
+},{}],27:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.round = exports.isMultipleOf = void 0;
@@ -2884,7 +3926,7 @@ exports.round = function (x, n) {
     return sign * (Math.round((Math.abs(x) * exp) + offset) / exp);
 };
 
-},{}],19:[function(require,module,exports){
+},{}],28:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.randomID = exports.isGroup = exports.isChild = exports.getId = exports.getParent = exports.make = exports.isRestricted = exports.ADDRESS_RESTRICTED = exports.ADDRESS_EMPTY = exports.ADDRESS_SYSTEM = exports.ADDRESS_DISCARD = exports.SEPERATOR = void 0;
@@ -2968,7 +4010,7 @@ exports.isGroup = function (addr) {
  */
 exports.randomID = function () { return uuid.v4().split('-').join(''); };
 
-},{"@quenk/noni/lib/data/array":10,"@quenk/noni/lib/data/string":16,"uuid":46}],20:[function(require,module,exports){
+},{"@quenk/noni/lib/data/array":19,"@quenk/noni/lib/data/string":25,"uuid":55}],29:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.isRouter = exports.isBuffered = exports.isImmutable = exports.FLAG_ROUTER = exports.FLAG_TEMPORARY = exports.FLAG_BUFFERED = exports.FLAG_IMMUTABLE = void 0;
@@ -2995,7 +4037,7 @@ exports.isRouter = function (f) {
     return (f & exports.FLAG_ROUTER) === exports.FLAG_ROUTER;
 };
 
-},{}],21:[function(require,module,exports){
+},{}],30:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Envelope = void 0;
@@ -3014,7 +4056,7 @@ var Envelope = /** @class */ (function () {
 }());
 exports.Envelope = Envelope;
 
-},{}],22:[function(require,module,exports){
+},{}],31:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -3076,7 +4118,7 @@ var Default = /** @class */ (function (_super) {
 }(Case));
 exports.Default = Default;
 
-},{"@quenk/noni/lib/data/type":17}],23:[function(require,module,exports){
+},{"@quenk/noni/lib/data/type":26}],32:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -3251,7 +4293,7 @@ var receiveFun = function (cases) {
     });
 };
 
-},{"../address":19,"../flags":20,"../system/vm/event":26,"../system/vm/script/info":41,"../template":44,"./scripts":24,"@quenk/noni/lib/data/record":14,"@quenk/noni/lib/data/type":17}],24:[function(require,module,exports){
+},{"../address":28,"../flags":29,"../system/vm/event":35,"../system/vm/script/info":50,"../template":53,"./scripts":33,"@quenk/noni/lib/data/record":23,"@quenk/noni/lib/data/type":26}],33:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Kill = exports.Raise = exports.Notify = exports.Receive = exports.Tell = exports.Self = exports.Spawn = void 0;
@@ -3455,7 +4497,7 @@ var Kill = /** @class */ (function () {
 }());
 exports.Kill = Kill;
 
-},{"../system/vm/runtime/heap/object/es":32,"../system/vm/runtime/op":36,"../system/vm/script/info":41,"@quenk/noni/lib/data/type":17}],25:[function(require,module,exports){
+},{"../system/vm/runtime/heap/object/es":41,"../system/vm/runtime/op":45,"../system/vm/script/info":50,"@quenk/noni/lib/data/type":26}],34:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.defaults = void 0;
@@ -3471,7 +4513,7 @@ exports.defaults = function () { return ({
     on: {}
 }); };
 
-},{"./log":28}],26:[function(require,module,exports){
+},{"./log":37}],35:[function(require,module,exports){
 "use strict";
 var _a;
 Object.defineProperty(exports, "__esModule", { value: true });
@@ -3530,7 +4572,7 @@ exports.events = (_a = {},
 exports.getLevel = function (e) { return exports.events.hasOwnProperty(e) ?
     exports.events[e].level : log_1.LOG_LEVEL_DEBUG; };
 
-},{"./log":28}],27:[function(require,module,exports){
+},{"./log":37}],36:[function(require,module,exports){
 "use strict";
 var __spreadArrays = (this && this.__spreadArrays) || function () {
     for (var s = 0, i = 0, il = arguments.length; i < il; i++) s += arguments[i].length;
@@ -3936,7 +4978,7 @@ var scheduleFutures = function (work) {
         .chain(function () { return future_1.pure(undefined); });
 };
 
-},{"../../address":19,"../../flags":20,"../../message":21,"../../resident":23,"../../template":44,"./conf":25,"./event":26,"./log":28,"./runtime/context":29,"./runtime/error":30,"./runtime/heap":31,"./runtime/op":36,"./runtime/thread":39,"./state":42,"@quenk/noni/lib/control/monad/future":7,"@quenk/noni/lib/data/array":10,"@quenk/noni/lib/data/either":11,"@quenk/noni/lib/data/maybe":13,"@quenk/noni/lib/data/record":14,"@quenk/noni/lib/data/type":17}],28:[function(require,module,exports){
+},{"../../address":28,"../../flags":29,"../../message":30,"../../resident":32,"../../template":53,"./conf":34,"./event":35,"./log":37,"./runtime/context":38,"./runtime/error":39,"./runtime/heap":40,"./runtime/op":45,"./runtime/thread":48,"./state":51,"@quenk/noni/lib/control/monad/future":16,"@quenk/noni/lib/data/array":19,"@quenk/noni/lib/data/either":20,"@quenk/noni/lib/data/maybe":22,"@quenk/noni/lib/data/record":23,"@quenk/noni/lib/data/type":26}],37:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.LOG_LEVEL_ERROR = exports.LOG_LEVEL_WARN = exports.LOG_LEVEL_NOTICE = exports.LOG_LEVEL_INFO = exports.LOG_LEVEL_DEBUG = void 0;
@@ -3946,7 +4988,7 @@ exports.LOG_LEVEL_NOTICE = 5;
 exports.LOG_LEVEL_WARN = 4;
 exports.LOG_LEVEL_ERROR = 3;
 
-},{}],29:[function(require,module,exports){
+},{}],38:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.newContext = void 0;
@@ -3962,7 +5004,7 @@ exports.newContext = function (actor, address, template) { return ({
     template: template
 }); };
 
-},{}],30:[function(require,module,exports){
+},{}],39:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -4251,7 +5293,7 @@ var InvalidFunctionErr = /** @class */ (function (_super) {
 }(Error));
 exports.InvalidFunctionErr = InvalidFunctionErr;
 
-},{"../../../address":19,"./stack/frame":38}],31:[function(require,module,exports){
+},{"../../../address":28,"./stack/frame":47}],40:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Heap = void 0;
@@ -4340,7 +5382,7 @@ var Heap = /** @class */ (function () {
 }());
 exports.Heap = Heap;
 
-},{"../stack/frame":38,"@quenk/noni/lib/data/maybe":13,"@quenk/noni/lib/data/type":17}],32:[function(require,module,exports){
+},{"../stack/frame":47,"@quenk/noni/lib/data/maybe":22,"@quenk/noni/lib/data/type":26}],41:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ESArray = exports.ESObject = void 0;
@@ -4448,7 +5490,7 @@ var marshal = function (heap, typ, val) {
     }
 };
 
-},{"../../../type":43,"@quenk/noni/lib/data/maybe":13,"@quenk/noni/lib/data/record":14,"@quenk/noni/lib/data/type":17}],33:[function(require,module,exports){
+},{"../../../type":52,"@quenk/noni/lib/data/maybe":22,"@quenk/noni/lib/data/record":23,"@quenk/noni/lib/data/type":26}],42:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.MAX_INSTRUCTION = exports.OPERAND_RANGE_END = exports.OPERAND_RANGE_START = exports.OPCODE_RANGE_END = exports.OPCODE_RANGE_START = exports.OPERAND_MASK = exports.OPCODE_MASK = void 0;
@@ -4460,7 +5502,7 @@ exports.OPERAND_RANGE_START = 0x0;
 exports.OPERAND_RANGE_END = 0xffffff;
 exports.MAX_INSTRUCTION = 0xffffffff;
 
-},{}],34:[function(require,module,exports){
+},{}],43:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.stop = exports.read = exports.maildq = exports.mailcount = exports.recvcount = exports.recv = exports.send = exports.run = exports.self = exports.alloc = void 0;
@@ -4615,7 +5657,7 @@ exports.stop = function (r, f, _) {
     r.kill(eaddr.takeRight());
 };
 
-},{"../../../../flags":20,"../error":30}],35:[function(require,module,exports){
+},{"../../../../flags":29,"../error":39}],44:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ifneqjmp = exports.ifeqjmp = exports.ifnzjmp = exports.ifzjmp = exports.jmp = exports.raise = exports.call = exports.addui32 = exports.ceq = exports.load = exports.store = exports.dup = exports.ldn = exports.lds = exports.pushui32 = exports.pushui16 = exports.pushui8 = exports.nop = void 0;
@@ -4841,7 +5883,7 @@ exports.ifneqjmp = function (r, f, oper) {
         f.seek(oper);
 };
 
-},{"../error":30,"../stack/frame":38,"@quenk/noni/lib/data/array":10}],36:[function(require,module,exports){
+},{"../error":39,"../stack/frame":47,"@quenk/noni/lib/data/array":19}],45:[function(require,module,exports){
 "use strict";
 var _a;
 Object.defineProperty(exports, "__esModule", { value: true });
@@ -5076,7 +6118,7 @@ exports.toLog = function (op, r, f, oper) {
     return exports.opcodes.hasOwnProperty(op) ? exports.opcodes[op].log(r, f, oper) : [];
 };
 
-},{"../stack/frame":38,"./actor":34,"./base":35,"./object":37,"@quenk/noni/lib/data/record":14}],37:[function(require,module,exports){
+},{"../stack/frame":47,"./actor":43,"./base":44,"./object":46,"@quenk/noni/lib/data/record":23}],46:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.arelm = exports.arlength = exports.getprop = void 0;
@@ -5140,7 +6182,7 @@ exports.arelm = function (r, f, _) {
     }
 };
 
-},{}],38:[function(require,module,exports){
+},{}],47:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.StackFrame = exports.BYTE_CONSTANT_INFO = exports.BYTE_CONSTANT_STR = exports.BYTE_CONSTANT_NUM = exports.DATA_TYPE_SELF = exports.DATA_TYPE_MAILBOX = exports.DATA_TYPE_LOCAL = exports.DATA_TYPE_HEAP_STRING = exports.DATA_TYPE_HEAP_OBJECT = exports.DATA_TYPE_INFO = exports.DATA_TYPE_STRING = exports.DATA_MAX_SAFE_UINT32 = exports.DATA_MAX_SIZE = exports.DATA_MASK_VALUE32 = exports.DATA_MASK_VALUE24 = exports.DATA_MASK_VALUE16 = exports.DATA_MASK_VALUE8 = exports.DATA_MASK_TYPE = exports.DATA_RANGE_TYPE_STEP = exports.DATA_RANGE_TYPE_LOW = exports.DATA_RANGE_TYPE_HIGH = void 0;
@@ -5357,7 +6399,7 @@ var missingSymbol = function (data) {
     return either_1.left(new error.MissingSymbolErr(data));
 };
 
-},{"../../script":40,"../../type":43,"../error":30,"@quenk/noni/lib/data/either":11,"@quenk/noni/lib/data/maybe":13}],39:[function(require,module,exports){
+},{"../../script":49,"../../type":52,"../error":39,"@quenk/noni/lib/data/either":20,"@quenk/noni/lib/data/maybe":22}],48:[function(require,module,exports){
 "use strict";
 var __spreadArrays = (this && this.__spreadArrays) || function () {
     for (var s = 0, i = 0, il = arguments.length; i < il; i++) s += arguments[i].length;
@@ -5472,7 +6514,7 @@ var Thread = /** @class */ (function () {
 }());
 exports.Thread = Thread;
 
-},{"./":33,"./op":36,"./stack/frame":38,"@quenk/noni/lib/control/monad/future":7,"@quenk/noni/lib/data/array":10,"@quenk/noni/lib/data/maybe":13}],40:[function(require,module,exports){
+},{"./":42,"./op":45,"./stack/frame":47,"@quenk/noni/lib/control/monad/future":16,"@quenk/noni/lib/data/array":19,"@quenk/noni/lib/data/maybe":22}],49:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getInfo = exports.PScript = exports.CONSTANTS_INDEX_STRING = exports.CONSTANTS_INDEX_NUMBER = void 0;
@@ -5505,7 +6547,7 @@ exports.getInfo = function (s, idx) {
     return either_1.right(s.info[idx]);
 };
 
-},{"../runtime/error":30,"@quenk/noni/lib/data/either":11}],41:[function(require,module,exports){
+},{"../runtime/error":39,"@quenk/noni/lib/data/either":20}],50:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.funType = exports.objectType = exports.arrayType = exports.stringType = exports.booleanType = exports.uint32Type = exports.uint16Type = exports.uint8Type = exports.int32Type = exports.int16Type = exports.int8Type = exports.voidType = exports.NewPropInfo = exports.NewArrayTypeInfo = exports.NewTypeInfo = exports.NewForeignFunInfo = exports.NewFunInfo = exports.NewArrayInfo = exports.NewObjectInfo = exports.NewStringInfo = exports.NewBooleanInfo = exports.Int32Info = exports.NewInt16Info = exports.NewInt8Info = exports.NewUInt32Info = exports.NewUInt16Info = exports.NewUInt8Info = exports.VoidInfo = void 0;
@@ -5765,7 +6807,7 @@ exports.objectType = new NewTypeInfo('object', 0, [], types.TYPE_OBJECT);
  */
 exports.funType = new NewTypeInfo('function', 0, [], types.TYPE_FUN);
 
-},{"../type":43}],42:[function(require,module,exports){
+},{"../type":52}],51:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.removeMember = exports.putMember = exports.getGroup = exports.removeGroup = exports.removeRoute = exports.putRoute = exports.getRouter = exports.getParent = exports.getChildren = exports.getAddress = exports.remove = exports.put = exports.get = exports.exists = void 0;
@@ -5882,7 +6924,7 @@ exports.removeMember = function (s, group, member) {
     return s;
 };
 
-},{"../../address":19,"@quenk/noni/lib/data/maybe":13,"@quenk/noni/lib/data/record":14,"@quenk/noni/lib/data/string":16}],43:[function(require,module,exports){
+},{"../../address":28,"@quenk/noni/lib/data/maybe":22,"@quenk/noni/lib/data/record":23,"@quenk/noni/lib/data/string":25}],52:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getType = exports.TYPE_CONS = exports.TYPE_FUN = exports.TYPE_ARRAY = exports.TYPE_OBJECT = exports.TYPE_STRING = exports.TYPE_BOOLEAN = exports.TYPE_INT32 = exports.TYPE_INT16 = exports.TYPE_INT8 = exports.TYPE_UINT32 = exports.TYPE_UINT16 = exports.TYPE_UINT8 = exports.TYPE_VOID = exports.BYTE_INDEX = exports.BYTE_TYPE = exports.TYPE_STEP = void 0;
@@ -5911,7 +6953,7 @@ exports.getType = function (d) {
     return d & exports.BYTE_TYPE;
 };
 
-},{}],44:[function(require,module,exports){
+},{}],53:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.normalize = exports.ACTION_STOP = exports.ACTION_RESTART = exports.ACTION_IGNORE = exports.ACTION_RAISE = void 0;
@@ -5930,7 +6972,7 @@ exports.normalize = function (t) { return record_1.merge(t, {
         record_1.mapTo(t.children, function (c, k) { return record_1.merge(c, { id: k }); }) : t.children
 }); };
 
-},{"./address":19,"@quenk/noni/lib/data/record":14}],45:[function(require,module,exports){
+},{"./address":28,"@quenk/noni/lib/data/record":23}],54:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -5958,7 +7000,7 @@ function bytesToUuid(buf, offset) {
 var _default = bytesToUuid;
 exports.default = _default;
 module.exports = exports.default;
-},{}],46:[function(require,module,exports){
+},{}],55:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -5998,7 +7040,7 @@ var _v3 = _interopRequireDefault(require("./v4.js"));
 var _v4 = _interopRequireDefault(require("./v5.js"));
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-},{"./v1.js":50,"./v3.js":51,"./v4.js":53,"./v5.js":54}],47:[function(require,module,exports){
+},{"./v1.js":59,"./v3.js":60,"./v4.js":62,"./v5.js":63}],56:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -6224,7 +7266,7 @@ function md5ii(a, b, c, d, x, s, t) {
 var _default = md5;
 exports.default = _default;
 module.exports = exports.default;
-},{}],48:[function(require,module,exports){
+},{}],57:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -6248,7 +7290,7 @@ function rng() {
 }
 
 module.exports = exports.default;
-},{}],49:[function(require,module,exports){
+},{}],58:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -6345,7 +7387,7 @@ function sha1(bytes) {
 var _default = sha1;
 exports.default = _default;
 module.exports = exports.default;
-},{}],50:[function(require,module,exports){
+},{}],59:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -6454,7 +7496,7 @@ function v1(options, buf, offset) {
 var _default = v1;
 exports.default = _default;
 module.exports = exports.default;
-},{"./bytesToUuid.js":45,"./rng.js":48}],51:[function(require,module,exports){
+},{"./bytesToUuid.js":54,"./rng.js":57}],60:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -6472,7 +7514,7 @@ const v3 = (0, _v.default)('v3', 0x30, _md.default);
 var _default = v3;
 exports.default = _default;
 module.exports = exports.default;
-},{"./md5.js":47,"./v35.js":52}],52:[function(require,module,exports){
+},{"./md5.js":56,"./v35.js":61}],61:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -6542,7 +7584,7 @@ function _default(name, version, hashfunc) {
   generateUUID.URL = URL;
   return generateUUID;
 }
-},{"./bytesToUuid.js":45}],53:[function(require,module,exports){
+},{"./bytesToUuid.js":54}],62:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -6584,7 +7626,7 @@ function v4(options, buf, offset) {
 var _default = v4;
 exports.default = _default;
 module.exports = exports.default;
-},{"./bytesToUuid.js":45,"./rng.js":48}],54:[function(require,module,exports){
+},{"./bytesToUuid.js":54,"./rng.js":57}],63:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -6602,7 +7644,7 @@ const v5 = (0, _v.default)('v5', 0x50, _sha.default);
 var _default = v5;
 exports.default = _default;
 module.exports = exports.default;
-},{"./sha1.js":49,"./v35.js":52}],55:[function(require,module,exports){
+},{"./sha1.js":58,"./v35.js":61}],64:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -6782,159 +7824,9 @@ exports.toString = function (value) {
  */
 exports.assert = function (value) { return new Positive(value, true); };
 
-},{"deep-equal":57,"json-stringify-safe":69}],56:[function(require,module,exports){
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-var deepEqual = require("deep-equal");
-/**
- * Invocation is a recording of method invocations stored by a Mock.
- */
-var Invocation = /** @class */ (function () {
-    function Invocation(name, args, value) {
-        this.name = name;
-        this.args = args;
-        this.value = value;
-    }
-    return Invocation;
-}());
-exports.Invocation = Invocation;
-/**
- * ReturnValue stores a value to be returned by a mocked method.
- */
-var ReturnValue = /** @class */ (function () {
-    function ReturnValue(name, value) {
-        this.name = name;
-        this.value = value;
-    }
-    ReturnValue.prototype.get = function () {
-        var _ = [];
-        for (var _i = 0; _i < arguments.length; _i++) {
-            _[_i] = arguments[_i];
-        }
-        return this.value;
-    };
-    return ReturnValue;
-}());
-exports.ReturnValue = ReturnValue;
-/**
- * ReturnCallback allows a function to be used to provide a ReturnValue.
- */
-var ReturnCallback = /** @class */ (function () {
-    function ReturnCallback(name, value) {
-        this.name = name;
-        this.value = value;
-    }
-    ReturnCallback.prototype.get = function () {
-        var args = [];
-        for (var _i = 0; _i < arguments.length; _i++) {
-            args[_i] = arguments[_i];
-        }
-        return this.value.apply(undefined, args);
-    };
-    return ReturnCallback;
-}());
-exports.ReturnCallback = ReturnCallback;
-/**
- * Mock is a class that can be used to keep track of the mocking of some
- * interface.
- *
- * It provides methods for recording the invocation of methods and setting
- * their return values. Generally, embedding a Mock instance is preffered to
- * extending the class.
- */
-var Mock = /** @class */ (function () {
-    function Mock(calls, returns) {
-        if (calls === void 0) { calls = []; }
-        if (returns === void 0) { returns = {}; }
-        this.calls = calls;
-        this.returns = returns;
-    }
-    /**
-     * invoke records the invocation of a method.
-     * @param method - The method name.
-     * @param args   - An array of arguments the method is called with.
-     * @param ret    - The return value of the method invocation.
-     */
-    Mock.prototype.invoke = function (method, args, ret) {
-        this.calls.push(new Invocation(method, args, ret));
-        return this.returns.hasOwnProperty(method) ?
-            this.returns[method].get.apply(this.returns[method], args) : ret;
-    };
-    /**
-     * setReturnValue so that invocation of a method always return the desired
-     * result.
-     */
-    Mock.prototype.setReturnValue = function (method, value) {
-        this.returns[method] = new ReturnValue(method, value);
-        return this;
-    };
-    /**
-     * setReturnCallback allows a function to provide the return value
-     * of a method on invocation.
-     */
-    Mock.prototype.setReturnCallback = function (method, value) {
-        this.returns[method] =
-            new ReturnCallback(method, value);
-        return this;
-    };
-    /**
-     * getCalledArgs provides the first set of arguments a method was called
-     * with.
-     *
-     * The array is empty if the method was never called.
-     */
-    Mock.prototype.getCalledArgs = function (name) {
-        return this.calls.reduce(function (p, c) {
-            return (p.length > 0) ? p : (c.name === name) ?
-                c.args : p;
-        }, []);
-    };
-    /**
-     * getCalledWith tests whether a method was called with the specified args.
-     *
-     * Compared using === .
-     */
-    Mock.prototype.getCalledWith = function (name, args) {
-        return this.calls.some(function (c) { return (c.name === name) &&
-            c.args.every(function (a, i) { return a === args[i]; }); });
-    };
-    /**
-     * getCalledWithDeep tests whether a method was called with the specified
-     * args.
-     *
-     * Compared using deepEqual.
-     */
-    Mock.prototype.getCalledWithDeep = function (name, args) {
-        return this.calls.some(function (c) {
-            return (c.name === name) && deepEqual(c.args, args);
-        });
-    };
-    /**
-     * getCalledList returns a list of methods that have been called so far.
-     */
-    Mock.prototype.getCalledList = function () {
-        return this.calls.map(function (c) { return c.name; });
-    };
-    /**
-     * wasCalled tests whether a method was called.
-     */
-    Mock.prototype.wasCalled = function (method) {
-        return this.getCalledList().indexOf(method) > -1;
-    };
-    /**
-     * wasCalledNTimes tests whether a method was called a certain amount of
-     * times.
-     */
-    Mock.prototype.wasCalledNTimes = function (method, n) {
-        return this.getCalledList().reduce(function (p, c) {
-            return (c === method) ? p + 1 : p;
-        }, 0) === n;
-    };
-    return Mock;
-}());
-exports.Mock = Mock;
-
-},{"deep-equal":57}],57:[function(require,module,exports){
+},{"deep-equal":66,"json-stringify-safe":78}],65:[function(require,module,exports){
+arguments[4][13][0].apply(exports,arguments)
+},{"deep-equal":66,"dup":13}],66:[function(require,module,exports){
 var objectKeys = require('object-keys');
 var isArguments = require('is-arguments');
 var is = require('object-is');
@@ -7048,7 +7940,7 @@ function objEquiv(a, b, opts) {
 
 module.exports = deepEqual;
 
-},{"is-arguments":66,"is-date-object":67,"is-regex":68,"object-is":71,"object-keys":75,"regexp.prototype.flags":79}],58:[function(require,module,exports){
+},{"is-arguments":75,"is-date-object":76,"is-regex":77,"object-is":80,"object-keys":84,"regexp.prototype.flags":88}],67:[function(require,module,exports){
 'use strict';
 
 var keys = require('object-keys');
@@ -7108,7 +8000,7 @@ defineProperties.supportsDescriptors = !!supportsDescriptors;
 
 module.exports = defineProperties;
 
-},{"object-keys":75}],59:[function(require,module,exports){
+},{"object-keys":84}],68:[function(require,module,exports){
 'use strict';
 
 /* globals
@@ -7328,7 +8220,7 @@ module.exports = function GetIntrinsic(name, allowMissing) {
 	return value;
 };
 
-},{"function-bind":62,"has-symbols":63}],60:[function(require,module,exports){
+},{"function-bind":71,"has-symbols":72}],69:[function(require,module,exports){
 'use strict';
 
 var bind = require('function-bind');
@@ -7347,7 +8239,7 @@ module.exports.apply = function applyBind() {
 	return bind.apply($apply, arguments);
 };
 
-},{"../GetIntrinsic":59,"function-bind":62}],61:[function(require,module,exports){
+},{"../GetIntrinsic":68,"function-bind":71}],70:[function(require,module,exports){
 'use strict';
 
 /* eslint no-invalid-this: 1 */
@@ -7401,14 +8293,14 @@ module.exports = function bind(that) {
     return bound;
 };
 
-},{}],62:[function(require,module,exports){
+},{}],71:[function(require,module,exports){
 'use strict';
 
 var implementation = require('./implementation');
 
 module.exports = Function.prototype.bind || implementation;
 
-},{"./implementation":61}],63:[function(require,module,exports){
+},{"./implementation":70}],72:[function(require,module,exports){
 (function (global){
 'use strict';
 
@@ -7425,7 +8317,7 @@ module.exports = function hasNativeSymbols() {
 };
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./shams":64}],64:[function(require,module,exports){
+},{"./shams":73}],73:[function(require,module,exports){
 'use strict';
 
 /* eslint complexity: [2, 18], max-statements: [2, 33] */
@@ -7469,14 +8361,14 @@ module.exports = function hasSymbols() {
 	return true;
 };
 
-},{}],65:[function(require,module,exports){
+},{}],74:[function(require,module,exports){
 'use strict';
 
 var bind = require('function-bind');
 
 module.exports = bind.call(Function.call, Object.prototype.hasOwnProperty);
 
-},{"function-bind":62}],66:[function(require,module,exports){
+},{"function-bind":71}],75:[function(require,module,exports){
 'use strict';
 
 var hasToStringTag = typeof Symbol === 'function' && typeof Symbol.toStringTag === 'symbol';
@@ -7509,7 +8401,7 @@ isStandardArguments.isLegacyArguments = isLegacyArguments; // for tests
 
 module.exports = supportsStandardArguments ? isStandardArguments : isLegacyArguments;
 
-},{}],67:[function(require,module,exports){
+},{}],76:[function(require,module,exports){
 'use strict';
 
 var getDay = Date.prototype.getDay;
@@ -7533,7 +8425,7 @@ module.exports = function isDateObject(value) {
 	return hasToStringTag ? tryDateObject(value) : toStr.call(value) === dateClass;
 };
 
-},{}],68:[function(require,module,exports){
+},{}],77:[function(require,module,exports){
 'use strict';
 
 var has = require('has');
@@ -7574,7 +8466,7 @@ module.exports = function isRegex(value) {
 	return tryRegexExecCall(value);
 };
 
-},{"has":65}],69:[function(require,module,exports){
+},{"has":74}],78:[function(require,module,exports){
 exports = module.exports = stringify
 exports.getSerialize = serializer
 
@@ -7603,7 +8495,7 @@ function serializer(replacer, cycleReplacer) {
   }
 }
 
-},{}],70:[function(require,module,exports){
+},{}],79:[function(require,module,exports){
 'use strict';
 
 var numberIsNaN = function (value) {
@@ -7624,7 +8516,7 @@ module.exports = function is(a, b) {
 };
 
 
-},{}],71:[function(require,module,exports){
+},{}],80:[function(require,module,exports){
 'use strict';
 
 var define = require('define-properties');
@@ -7644,7 +8536,7 @@ define(polyfill, {
 
 module.exports = polyfill;
 
-},{"./implementation":70,"./polyfill":72,"./shim":73,"define-properties":58,"es-abstract/helpers/callBind":60}],72:[function(require,module,exports){
+},{"./implementation":79,"./polyfill":81,"./shim":82,"define-properties":67,"es-abstract/helpers/callBind":69}],81:[function(require,module,exports){
 'use strict';
 
 var implementation = require('./implementation');
@@ -7653,7 +8545,7 @@ module.exports = function getPolyfill() {
 	return typeof Object.is === 'function' ? Object.is : implementation;
 };
 
-},{"./implementation":70}],73:[function(require,module,exports){
+},{"./implementation":79}],82:[function(require,module,exports){
 'use strict';
 
 var getPolyfill = require('./polyfill');
@@ -7669,7 +8561,7 @@ module.exports = function shimObjectIs() {
 	return polyfill;
 };
 
-},{"./polyfill":72,"define-properties":58}],74:[function(require,module,exports){
+},{"./polyfill":81,"define-properties":67}],83:[function(require,module,exports){
 'use strict';
 
 var keysShim;
@@ -7793,7 +8685,7 @@ if (!Object.keys) {
 }
 module.exports = keysShim;
 
-},{"./isArguments":76}],75:[function(require,module,exports){
+},{"./isArguments":85}],84:[function(require,module,exports){
 'use strict';
 
 var slice = Array.prototype.slice;
@@ -7827,7 +8719,7 @@ keysShim.shim = function shimObjectKeys() {
 
 module.exports = keysShim;
 
-},{"./implementation":74,"./isArguments":76}],76:[function(require,module,exports){
+},{"./implementation":83,"./isArguments":85}],85:[function(require,module,exports){
 'use strict';
 
 var toStr = Object.prototype.toString;
@@ -7846,7 +8738,7 @@ module.exports = function isArguments(value) {
 	return isArgs;
 };
 
-},{}],77:[function(require,module,exports){
+},{}],86:[function(require,module,exports){
 // shim for using process in browser
 var process = module.exports = {};
 
@@ -8032,7 +8924,7 @@ process.chdir = function (dir) {
 };
 process.umask = function() { return 0; };
 
-},{}],78:[function(require,module,exports){
+},{}],87:[function(require,module,exports){
 'use strict';
 
 var $Object = Object;
@@ -8064,7 +8956,7 @@ module.exports = function flags() {
 	return result;
 };
 
-},{}],79:[function(require,module,exports){
+},{}],88:[function(require,module,exports){
 'use strict';
 
 var define = require('define-properties');
@@ -8084,7 +8976,7 @@ define(flagsBound, {
 
 module.exports = flagsBound;
 
-},{"./implementation":78,"./polyfill":80,"./shim":81,"define-properties":58,"es-abstract/helpers/callBind":60}],80:[function(require,module,exports){
+},{"./implementation":87,"./polyfill":89,"./shim":90,"define-properties":67,"es-abstract/helpers/callBind":69}],89:[function(require,module,exports){
 'use strict';
 
 var implementation = require('./implementation');
@@ -8106,7 +8998,7 @@ module.exports = function getPolyfill() {
 	return implementation;
 };
 
-},{"./implementation":78,"define-properties":58}],81:[function(require,module,exports){
+},{"./implementation":87,"define-properties":67}],90:[function(require,module,exports){
 'use strict';
 
 var supportsDescriptors = require('define-properties').supportsDescriptors;
@@ -8134,7 +9026,7 @@ module.exports = function shimFlags() {
 	return polyfill;
 };
 
-},{"./polyfill":80,"define-properties":58}],82:[function(require,module,exports){
+},{"./polyfill":89,"define-properties":67}],91:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -8448,7 +9340,44 @@ describe('director', function () {
     });
 });
 
-},{"../../../lib/actor":1,"../../../lib/app/director":2,"../app/fixtures/app":83,"@quenk/noni/lib/control/monad/future":7,"@quenk/noni/lib/data/record":14,"@quenk/noni/lib/data/string":16,"@quenk/potoo/lib/actor/resident/case":22,"@quenk/test/lib/assert":55,"@quenk/test/lib/mock":56}],83:[function(require,module,exports){
+},{"../../../lib/actor":1,"../../../lib/app/director":2,"../app/fixtures/app":93,"@quenk/noni/lib/control/monad/future":16,"@quenk/noni/lib/data/record":23,"@quenk/noni/lib/data/string":25,"@quenk/potoo/lib/actor/resident/case":31,"@quenk/test/lib/assert":64,"@quenk/test/lib/mock":65}],92:[function(require,module,exports){
+"use strict";
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+        return extendStatics(d, b);
+    };
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.GenericImmutable = void 0;
+var actor_1 = require("../../../../lib/actor");
+/**
+ * GenericImmutable is an Immutable that accepts its cases in the constructor.
+ */
+var GenericImmutable = /** @class */ (function (_super) {
+    __extends(GenericImmutable, _super);
+    function GenericImmutable(system, receive, runFunc) {
+        var _this = _super.call(this, system) || this;
+        _this.system = system;
+        _this.receive = receive;
+        _this.runFunc = runFunc;
+        return _this;
+    }
+    GenericImmutable.prototype.run = function () {
+        this.runFunc(this);
+    };
+    return GenericImmutable;
+}(actor_1.Immutable));
+exports.GenericImmutable = GenericImmutable;
+
+},{"../../../../lib/actor":1}],93:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -8475,7 +9404,7 @@ var TestApp = /** @class */ (function (_super) {
 }(app_1.JApp));
 exports.TestApp = TestApp;
 
-},{"../../../../lib/app":5}],84:[function(require,module,exports){
+},{"../../../../lib/app":5}],94:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -8525,22 +9454,8 @@ var either_1 = require("@quenk/noni/lib/data/either");
 var case_1 = require("@quenk/potoo/lib/actor/resident/case");
 var strategy_1 = require("../../../../lib/app/form/active/validate/strategy");
 var active_1 = require("../../../../lib/app/form/active");
-var actor_1 = require("../../../../lib/actor");
 var app_1 = require("../../app/fixtures/app");
-var Parent = /** @class */ (function (_super) {
-    __extends(Parent, _super);
-    function Parent(system, receive, func) {
-        var _this = _super.call(this, system) || this;
-        _this.system = system;
-        _this.receive = receive;
-        _this.func = func;
-        return _this;
-    }
-    Parent.prototype.run = function () {
-        this.func(this);
-    };
-    return Parent;
-}(actor_1.Immutable));
+var actor_1 = require("../fixtures/actor");
 var Form = /** @class */ (function (_super) {
     __extends(Form, _super);
     function Form() {
@@ -8602,10 +9517,12 @@ describe('active', function () {
                                 ];
                                 s.spawn({
                                     id: 'parent',
-                                    create: function (s) { return new Parent(s, cases, function (that) {
-                                        var addr = that.spawn(form(that.self()));
-                                        that.tell(addr, new active_1.Abort());
-                                    }); }
+                                    create: function (s) {
+                                        return new actor_1.GenericImmutable(s, cases, function (that) {
+                                            var addr = that.spawn(form(that.self()));
+                                            that.tell(addr, new active_1.Abort());
+                                        });
+                                    }
                                 });
                                 return [4 /*yield*/, future_1.delay(function () { }, 0)];
                             case 1:
@@ -8628,10 +9545,12 @@ describe('active', function () {
                                 s = system();
                                 s.spawn({
                                     id: 'parent',
-                                    create: function (s) { return new Parent(s, [], function (that) {
-                                        var addr = that.spawn(form(that.self()));
-                                        that.tell(addr, new active_1.Save());
-                                    }); }
+                                    create: function (s) {
+                                        return new actor_1.GenericImmutable(s, [], function (that) {
+                                            var addr = that.spawn(form(that.self()));
+                                            that.tell(addr, new active_1.Save());
+                                        });
+                                    }
                                 });
                                 return [4 /*yield*/, future_1.delay(function () { })];
                             case 1:
@@ -8658,10 +9577,12 @@ describe('active', function () {
                                 ];
                                 s.spawn({
                                     id: 'parent',
-                                    create: function (s) { return new Parent(s, cases, function (that) {
-                                        var addr = that.spawn(form(that.self()));
-                                        that.tell(addr, new active_1.Saved());
-                                    }); }
+                                    create: function (s) {
+                                        return new actor_1.GenericImmutable(s, cases, function (that) {
+                                            var addr = that.spawn(form(that.self()));
+                                            that.tell(addr, new active_1.Saved());
+                                        });
+                                    }
                                 });
                                 return [4 /*yield*/, future_1.delay(function () { })];
                             case 1:
@@ -8684,10 +9605,12 @@ describe('active', function () {
                                 s = system();
                                 s.spawn({
                                     id: 'parent',
-                                    create: function (s) { return new Parent(s, [], function (that) {
-                                        var addr = that.spawn(form(that.self()));
-                                        that.tell(addr, new active_1.Failed());
-                                    }); }
+                                    create: function (s) {
+                                        return new actor_1.GenericImmutable(s, [], function (that) {
+                                            var addr = that.spawn(form(that.self()));
+                                            that.tell(addr, new active_1.Failed());
+                                        });
+                                    }
                                 });
                                 return [4 /*yield*/, future_1.delay(function () { })];
                             case 1:
@@ -8710,10 +9633,12 @@ describe('active', function () {
                                 s = system();
                                 s.spawn({
                                     id: 'parent',
-                                    create: function (s) { return new Parent(s, [], function (that) {
-                                        var addr = that.spawn(form(that.self()));
-                                        that.tell(addr, { name: 'name', value: 'asp' });
-                                    }); }
+                                    create: function (s) {
+                                        return new actor_1.GenericImmutable(s, [], function (that) {
+                                            var addr = that.spawn(form(that.self()));
+                                            that.tell(addr, { name: 'name', value: 'asp' });
+                                        });
+                                    }
                                 });
                                 return [4 /*yield*/, future_1.delay(function () { })];
                             case 1:
@@ -8806,8 +9731,559 @@ describe('active', function () {
     });
 });
 
-},{"../../../../lib/actor":1,"../../../../lib/app/form/active":3,"../../../../lib/app/form/active/validate/strategy":4,"../../app/fixtures/app":83,"@quenk/noni/lib/control/monad/future":7,"@quenk/noni/lib/data/either":11,"@quenk/potoo/lib/actor/resident/case":22,"@quenk/test/lib/assert":55,"@quenk/test/lib/mock":56}],85:[function(require,module,exports){
+},{"../../../../lib/app/form/active":3,"../../../../lib/app/form/active/validate/strategy":4,"../../app/fixtures/app":93,"../fixtures/actor":92,"@quenk/noni/lib/control/monad/future":16,"@quenk/noni/lib/data/either":20,"@quenk/potoo/lib/actor/resident/case":31,"@quenk/test/lib/assert":64,"@quenk/test/lib/mock":65}],95:[function(require,module,exports){
+"use strict";
+var __generator = (this && this.__generator) || function (thisArg, body) {
+    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
+    return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
+    function verb(n) { return function (v) { return step([n, v]); }; }
+    function step(op) {
+        if (f) throw new TypeError("Generator is already executing.");
+        while (_) try {
+            if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
+            if (y = 0, t) op = [op[0] & 2, t.value];
+            switch (op[0]) {
+                case 0: case 1: t = op; break;
+                case 4: _.label++; return { value: op[1], done: false };
+                case 5: _.label++; y = op[1]; op = [0]; continue;
+                case 7: op = _.ops.pop(); _.trys.pop(); continue;
+                default:
+                    if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) { _ = 0; continue; }
+                    if (op[0] === 3 && (!t || (op[1] > t[0] && op[1] < t[3]))) { _.label = op[1]; break; }
+                    if (op[0] === 6 && _.label < t[1]) { _.label = t[1]; t = op; break; }
+                    if (t && _.label < t[2]) { _.label = t[2]; _.ops.push(op); break; }
+                    if (t[2]) _.ops.pop();
+                    _.trys.pop(); continue;
+            }
+            op = body.call(thisArg, _);
+        } catch (e) { op = [6, e]; y = 0; } finally { f = t = 0; }
+        if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
+    }
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+var assert_1 = require("@quenk/test/lib/assert");
+var future_1 = require("@quenk/noni/lib/control/monad/future");
+var case_1 = require("@quenk/potoo/lib/actor/resident/case");
+var mock_1 = require("@quenk/jhr/lib/agent/mock");
+var request_1 = require("@quenk/jhr/lib/request");
+var response_1 = require("@quenk/jhr/lib/response");
+var remote_1 = require("../../../../lib/app/remote");
+var actor_1 = require("../../app/fixtures/actor");
+var app_1 = require("../../app/fixtures/app");
+describe('remote', function () {
+    describe('Remote', function () {
+        describe('api', function () {
+            it('should handle Send', function () { return future_1.toPromise(future_1.doFuture(function () {
+                var s, mock, res, success, cases;
+                return __generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0:
+                            s = new app_1.TestApp();
+                            mock = new mock_1.MockAgent();
+                            res = new response_1.Ok('text', {}, {});
+                            success = false;
+                            mock.__MOCK__.setReturnValue('send', future_1.pure(res));
+                            cases = [
+                                new case_1.Case(response_1.Ok, function (r) {
+                                    success = r === res;
+                                })
+                            ];
+                            s.spawn({
+                                id: 'remote',
+                                create: function (s) { return new remote_1.Remote(mock, s); }
+                            });
+                            s.spawn({
+                                id: 'client',
+                                create: function (s) {
+                                    return new actor_1.GenericImmutable(s, cases, function (that) {
+                                        var msg = new remote_1.Send(that.self(), new request_1.Get('', {}));
+                                        that.tell('remote', msg);
+                                    });
+                                }
+                            });
+                            return [4 /*yield*/, future_1.delay(function () { }, 0)];
+                        case 1:
+                            _a.sent();
+                            return [2 /*return*/, future_1.attempt(function () {
+                                    assert_1.assert(success).true();
+                                })];
+                    }
+                });
+            })); });
+            it('should handle ParSend', function () {
+                return future_1.toPromise(future_1.doFuture(function () {
+                    var s, mock, res, success, cases;
+                    return __generator(this, function (_a) {
+                        switch (_a.label) {
+                            case 0:
+                                s = new app_1.TestApp();
+                                mock = new mock_1.MockAgent();
+                                res = new response_1.Ok('text', {}, {});
+                                success = false;
+                                mock.__MOCK__.setReturnValue('send', future_1.pure(res));
+                                cases = [
+                                    new case_1.Case(remote_1.BatchResponse, function (r) {
+                                        success = r.value.every(function (r) { return r === res; });
+                                    })
+                                ];
+                                s.spawn({
+                                    id: 'remote',
+                                    create: function (s) { return new remote_1.Remote(mock, s); }
+                                });
+                                s.spawn({
+                                    id: 'client',
+                                    create: function (s) {
+                                        return new actor_1.GenericImmutable(s, cases, function (that) {
+                                            var msg = new remote_1.ParSend(that.self(), [
+                                                new request_1.Get('', {}),
+                                                new request_1.Get('', {}),
+                                                new request_1.Get('', {})
+                                            ]);
+                                            that.tell('remote', msg);
+                                        });
+                                    }
+                                });
+                                return [4 /*yield*/, future_1.delay(function () { }, 0)];
+                            case 1:
+                                _a.sent();
+                                return [2 /*return*/, future_1.attempt(function () {
+                                        assert_1.assert(success).true();
+                                    })];
+                        }
+                    });
+                }));
+            });
+            it('should handle SeqSend', function () {
+                return future_1.toPromise(future_1.doFuture(function () {
+                    var s, mock, res, success, cases;
+                    return __generator(this, function (_a) {
+                        switch (_a.label) {
+                            case 0:
+                                s = new app_1.TestApp();
+                                mock = new mock_1.MockAgent();
+                                res = new response_1.Ok('text', {}, {});
+                                success = false;
+                                mock.__MOCK__.setReturnValue('send', future_1.pure(res));
+                                cases = [
+                                    new case_1.Case(remote_1.BatchResponse, function (r) {
+                                        success = r.value.every(function (r) { return r === res; });
+                                    })
+                                ];
+                                s.spawn({
+                                    id: 'remote',
+                                    create: function (s) { return new remote_1.Remote(mock, s); }
+                                });
+                                s.spawn({
+                                    id: 'client',
+                                    create: function (s) {
+                                        return new actor_1.GenericImmutable(s, cases, function (that) {
+                                            var msg = new remote_1.SeqSend(that.self(), [
+                                                new request_1.Get('', {}),
+                                                new request_1.Get('', {}),
+                                                new request_1.Get('', {})
+                                            ]);
+                                            that.tell('remote', msg);
+                                        });
+                                    }
+                                });
+                                return [4 /*yield*/, future_1.delay(function () { }, 0)];
+                            case 1:
+                                _a.sent();
+                                return [2 /*return*/, future_1.attempt(function () {
+                                        assert_1.assert(success).true();
+                                    })];
+                        }
+                    });
+                }));
+            });
+            it('should handle transport errors', function () {
+                return future_1.toPromise(future_1.doFuture(function () {
+                    var s, mock, req, failed, cases;
+                    return __generator(this, function (_a) {
+                        switch (_a.label) {
+                            case 0:
+                                s = new app_1.TestApp();
+                                mock = new mock_1.MockAgent();
+                                req = new request_1.Get('', {});
+                                failed = false;
+                                mock.__MOCK__.setReturnValue('send', future_1.raise(new remote_1.TransportErr('client', new Error('err'))));
+                                cases = [
+                                    new case_1.Case(remote_1.TransportErr, function (_) { failed = true; })
+                                ];
+                                s.spawn({
+                                    id: 'remote',
+                                    create: function (s) { return new remote_1.Remote(mock, s); }
+                                });
+                                s.spawn({
+                                    id: 'client',
+                                    create: function (s) {
+                                        return new actor_1.GenericImmutable(s, cases, function (that) {
+                                            var msg = new remote_1.Send(that.self(), req);
+                                            that.tell('remote', msg);
+                                        });
+                                    }
+                                });
+                                return [4 /*yield*/, future_1.delay(function () { }, 0)];
+                            case 1:
+                                _a.sent();
+                                return [2 /*return*/, future_1.attempt(function () {
+                                        assert_1.assert(failed).true();
+                                    })];
+                        }
+                    });
+                }));
+            });
+        });
+    });
+});
+
+},{"../../../../lib/app/remote":6,"../../app/fixtures/actor":92,"../../app/fixtures/app":93,"@quenk/jhr/lib/agent/mock":8,"@quenk/jhr/lib/request":9,"@quenk/jhr/lib/response":11,"@quenk/noni/lib/control/monad/future":16,"@quenk/potoo/lib/actor/resident/case":31,"@quenk/test/lib/assert":64}],96:[function(require,module,exports){
+"use strict";
+var __generator = (this && this.__generator) || function (thisArg, body) {
+    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
+    return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
+    function verb(n) { return function (v) { return step([n, v]); }; }
+    function step(op) {
+        if (f) throw new TypeError("Generator is already executing.");
+        while (_) try {
+            if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
+            if (y = 0, t) op = [op[0] & 2, t.value];
+            switch (op[0]) {
+                case 0: case 1: t = op; break;
+                case 4: _.label++; return { value: op[1], done: false };
+                case 5: _.label++; y = op[1]; op = [0]; continue;
+                case 7: op = _.ops.pop(); _.trys.pop(); continue;
+                default:
+                    if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) { _ = 0; continue; }
+                    if (op[0] === 3 && (!t || (op[1] > t[0] && op[1] < t[3]))) { _.label = op[1]; break; }
+                    if (op[0] === 6 && _.label < t[1]) { _.label = t[1]; t = op; break; }
+                    if (t && _.label < t[2]) { _.label = t[2]; _.ops.push(op); break; }
+                    if (t[2]) _.ops.pop();
+                    _.trys.pop(); continue;
+            }
+            op = body.call(thisArg, _);
+        } catch (e) { op = [6, e]; y = 0; } finally { f = t = 0; }
+        if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
+    }
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+var assert_1 = require("@quenk/test/lib/assert");
+var mock_1 = require("@quenk/test/lib/mock");
+var future_1 = require("@quenk/noni/lib/control/monad/future");
+var case_1 = require("@quenk/potoo/lib/actor/resident/case");
+var mock_2 = require("@quenk/jhr/lib/agent/mock");
+var request_1 = require("@quenk/jhr/lib/request");
+var response_1 = require("@quenk/jhr/lib/response");
+var observable_1 = require("../../../../lib/app/remote/observable");
+var actor_1 = require("../../app/fixtures/actor");
+var app_1 = require("../../app/fixtures/app");
+var MockRemoteObserver = /** @class */ (function () {
+    function MockRemoteObserver() {
+        this.__mock__ = new mock_1.Mock();
+    }
+    MockRemoteObserver.prototype.onStart = function (req) {
+        return this.__mock__.invoke('onStart', [req], undefined);
+    };
+    MockRemoteObserver.prototype.onError = function (e) {
+        return this.__mock__.invoke('onError', [e], undefined);
+    };
+    MockRemoteObserver.prototype.onClientError = function (e) {
+        return this.__mock__.invoke('onClientError', [e], undefined);
+    };
+    MockRemoteObserver.prototype.onServerError = function (e) {
+        return this.__mock__.invoke('onServerError', [e], undefined);
+    };
+    MockRemoteObserver.prototype.onComplete = function (e) {
+        return this.__mock__.invoke('onComplete', [e], undefined);
+    };
+    MockRemoteObserver.prototype.onFinish = function () {
+        return this.__mock__.invoke('onFinish', [], undefined);
+    };
+    return MockRemoteObserver;
+}());
+describe('observable', function () {
+    describe('ObservableRemote', function () {
+        describe('api', function () {
+            it('should handle Send', function () { return future_1.toPromise(future_1.doFuture(function () {
+                var s, agent, observer, res, success, cases;
+                return __generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0:
+                            s = new app_1.TestApp({ log: { logger: console, level: 8 } });
+                            agent = new mock_2.MockAgent();
+                            observer = new MockRemoteObserver();
+                            res = new response_1.Ok('text', {}, {});
+                            success = false;
+                            agent.__MOCK__.setReturnValue('send', future_1.pure(res));
+                            cases = [
+                                new case_1.Case(response_1.Ok, function (r) {
+                                    success = r === res;
+                                })
+                            ];
+                            s.spawn({
+                                id: 'remote',
+                                create: function (s) {
+                                    return new observable_1.ObservableRemote(agent, observer, s);
+                                }
+                            });
+                            s.spawn({
+                                id: 'client',
+                                create: function (s) {
+                                    return new actor_1.GenericImmutable(s, cases, function (that) {
+                                        var msg = new observable_1.Send(that.self(), new request_1.Get('', {}));
+                                        that.tell('remote', msg);
+                                    });
+                                }
+                            });
+                            return [4 /*yield*/, future_1.delay(function () { }, 0)];
+                        case 1:
+                            _a.sent();
+                            return [2 /*return*/, future_1.attempt(function () {
+                                    assert_1.assert(success).true();
+                                    assert_1.assert(observer.__mock__.getCalledList()).equate([
+                                        'onStart',
+                                        'onComplete',
+                                        'onFinish'
+                                    ]);
+                                })];
+                    }
+                });
+            })); });
+            it('should handle ParSend', function () {
+                return future_1.toPromise(future_1.doFuture(function () {
+                    var s, agent, observer, res, success, cases;
+                    return __generator(this, function (_a) {
+                        switch (_a.label) {
+                            case 0:
+                                s = new app_1.TestApp();
+                                agent = new mock_2.MockAgent();
+                                observer = new MockRemoteObserver();
+                                res = new response_1.Ok('text', {}, {});
+                                success = false;
+                                agent.__MOCK__.setReturnValue('send', future_1.pure(res));
+                                cases = [
+                                    new case_1.Case(observable_1.BatchResponse, function (r) {
+                                        success = r.value.every(function (r) { return r === res; });
+                                    })
+                                ];
+                                s.spawn({
+                                    id: 'remote',
+                                    create: function (s) {
+                                        return new observable_1.ObservableRemote(agent, observer, s);
+                                    }
+                                });
+                                s.spawn({
+                                    id: 'client',
+                                    create: function (s) {
+                                        return new actor_1.GenericImmutable(s, cases, function (that) {
+                                            var msg = new observable_1.ParSend(that.self(), [
+                                                new request_1.Get('', {}),
+                                                new request_1.Get('', {}),
+                                                new request_1.Get('', {})
+                                            ]);
+                                            that.tell('remote', msg);
+                                        });
+                                    }
+                                });
+                                return [4 /*yield*/, future_1.delay(function () { }, 0)];
+                            case 1:
+                                _a.sent();
+                                return [2 /*return*/, future_1.attempt(function () {
+                                        assert_1.assert(success).true();
+                                        assert_1.assert(observer.__mock__.getCalledList()).equate([
+                                            'onStart',
+                                            'onComplete',
+                                            'onFinish'
+                                        ]);
+                                    })];
+                        }
+                    });
+                }));
+            });
+            it('should handle SeqSend', function () {
+                return future_1.toPromise(future_1.doFuture(function () {
+                    var s, agent, observer, res, success, cases;
+                    return __generator(this, function (_a) {
+                        switch (_a.label) {
+                            case 0:
+                                s = new app_1.TestApp();
+                                agent = new mock_2.MockAgent();
+                                observer = new MockRemoteObserver();
+                                res = new response_1.Ok('text', {}, {});
+                                success = false;
+                                agent.__MOCK__.setReturnValue('send', future_1.pure(res));
+                                cases = [
+                                    new case_1.Case(observable_1.BatchResponse, function (r) {
+                                        success = r.value.every(function (r) { return r === res; });
+                                    })
+                                ];
+                                s.spawn({
+                                    id: 'remote',
+                                    create: function (s) {
+                                        return new observable_1.ObservableRemote(agent, observer, s);
+                                    }
+                                });
+                                s.spawn({
+                                    id: 'client',
+                                    create: function (s) {
+                                        return new actor_1.GenericImmutable(s, cases, function (that) {
+                                            var msg = new observable_1.SeqSend(that.self(), [
+                                                new request_1.Get('', {}),
+                                                new request_1.Get('', {}),
+                                                new request_1.Get('', {})
+                                            ]);
+                                            that.tell('remote', msg);
+                                        });
+                                    }
+                                });
+                                return [4 /*yield*/, future_1.delay(function () { }, 0)];
+                            case 1:
+                                _a.sent();
+                                return [2 /*return*/, future_1.attempt(function () {
+                                        assert_1.assert(success).true();
+                                        assert_1.assert(observer.__mock__.getCalledList()).equate([
+                                            'onStart',
+                                            'onComplete',
+                                            'onFinish'
+                                        ]);
+                                    })];
+                        }
+                    });
+                }));
+            });
+            it('should handle transport errors', function () {
+                return future_1.toPromise(future_1.doFuture(function () {
+                    var s, agent, observer, req, failed, cases;
+                    return __generator(this, function (_a) {
+                        switch (_a.label) {
+                            case 0:
+                                s = new app_1.TestApp();
+                                agent = new mock_2.MockAgent();
+                                observer = new MockRemoteObserver();
+                                req = new request_1.Get('', {});
+                                failed = false;
+                                agent.__MOCK__.setReturnValue('send', future_1.raise(new observable_1.TransportErr('client', new Error('err'))));
+                                cases = [
+                                    new case_1.Case(observable_1.TransportErr, function (_) { failed = true; })
+                                ];
+                                s.spawn({
+                                    id: 'remote',
+                                    create: function (s) {
+                                        return new observable_1.ObservableRemote(agent, observer, s);
+                                    }
+                                });
+                                s.spawn({
+                                    id: 'client',
+                                    create: function (s) {
+                                        return new actor_1.GenericImmutable(s, cases, function (that) {
+                                            var msg = new observable_1.Send(that.self(), req);
+                                            that.tell('remote', msg);
+                                        });
+                                    }
+                                });
+                                return [4 /*yield*/, future_1.delay(function () { }, 0)];
+                            case 1:
+                                _a.sent();
+                                return [2 /*return*/, future_1.attempt(function () {
+                                        assert_1.assert(failed).true();
+                                        assert_1.assert(observer.__mock__.getCalledList()).equate([
+                                            'onStart',
+                                            'onError',
+                                            'onFinish'
+                                        ]);
+                                    })];
+                        }
+                    });
+                }));
+            });
+            it('should handle client errors', function () {
+                return future_1.toPromise(future_1.doFuture(function () {
+                    var s, agent, observer, req;
+                    return __generator(this, function (_a) {
+                        switch (_a.label) {
+                            case 0:
+                                s = new app_1.TestApp();
+                                agent = new mock_2.MockAgent();
+                                observer = new MockRemoteObserver();
+                                req = new request_1.Get('', {});
+                                agent.__MOCK__.setReturnValue('send', future_1.pure(new response_1.BadRequest({}, {}, {})));
+                                s.spawn({
+                                    id: 'remote',
+                                    create: function (s) {
+                                        return new observable_1.ObservableRemote(agent, observer, s);
+                                    }
+                                });
+                                s.spawn({
+                                    id: 'client',
+                                    create: function (s) {
+                                        return new actor_1.GenericImmutable(s, [], function (that) {
+                                            var msg = new observable_1.Send(that.self(), req);
+                                            that.tell('remote', msg);
+                                        });
+                                    }
+                                });
+                                return [4 /*yield*/, future_1.delay(function () { }, 0)];
+                            case 1:
+                                _a.sent();
+                                return [2 /*return*/, future_1.attempt(function () {
+                                        assert_1.assert(observer.__mock__.getCalledList()).equate([
+                                            'onStart',
+                                            'onClientError',
+                                            'onFinish'
+                                        ]);
+                                    })];
+                        }
+                    });
+                }));
+            });
+            it('should handle server errors', function () {
+                return future_1.toPromise(future_1.doFuture(function () {
+                    var s, agent, observer, req;
+                    return __generator(this, function (_a) {
+                        switch (_a.label) {
+                            case 0:
+                                s = new app_1.TestApp();
+                                agent = new mock_2.MockAgent();
+                                observer = new MockRemoteObserver();
+                                req = new request_1.Get('', {});
+                                agent.__MOCK__.setReturnValue('send', future_1.pure(new response_1.InternalServerError({}, {}, {})));
+                                s.spawn({
+                                    id: 'remote',
+                                    create: function (s) {
+                                        return new observable_1.ObservableRemote(agent, observer, s);
+                                    }
+                                });
+                                s.spawn({
+                                    id: 'client',
+                                    create: function (s) {
+                                        return new actor_1.GenericImmutable(s, [], function (that) {
+                                            var msg = new observable_1.Send(that.self(), req);
+                                            that.tell('remote', msg);
+                                        });
+                                    }
+                                });
+                                return [4 /*yield*/, future_1.delay(function () { }, 0)];
+                            case 1:
+                                _a.sent();
+                                return [2 /*return*/, future_1.attempt(function () {
+                                        assert_1.assert(observer.__mock__.getCalledList()).equate([
+                                            'onStart',
+                                            'onServerError',
+                                            'onFinish'
+                                        ]);
+                                    })];
+                        }
+                    });
+                }));
+            });
+        });
+    });
+});
+
+},{"../../../../lib/app/remote/observable":7,"../../app/fixtures/actor":92,"../../app/fixtures/app":93,"@quenk/jhr/lib/agent/mock":8,"@quenk/jhr/lib/request":9,"@quenk/jhr/lib/response":11,"@quenk/noni/lib/control/monad/future":16,"@quenk/potoo/lib/actor/resident/case":31,"@quenk/test/lib/assert":64,"@quenk/test/lib/mock":65}],97:[function(require,module,exports){
+require("./app/remote/observable_test.js");
+require("./app/remote/index_test.js");
 require("./app/form/active_test.js");
 require("./app/director_test.js");
 
-},{"./app/director_test.js":82,"./app/form/active_test.js":84}]},{},[85]);
+},{"./app/director_test.js":91,"./app/form/active_test.js":94,"./app/remote/index_test.js":95,"./app/remote/observable_test.js":96}]},{},[97]);

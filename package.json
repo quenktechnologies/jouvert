@@ -11,6 +11,7 @@
   "type": "lib/app/index.d.ts",
   "license": "Apache-2.0",
   "devDependencies": {
+    "@quenk/client-side-routers": "^1.0.0",
     "@quenk/test": "^2.2.3",
     "@types/deep-equal": "^1.0.1",
     "@types/json-stringify-safe": "^5.0.0",
@@ -25,9 +26,9 @@
     "typescript": "^3.9.3"
   },
   "dependencies": {
-    "@quenk/jhr": "^2.6.15",
-    "@quenk/noni": "^1.39.1",
-    "@quenk/potoo": "^2.6.1",
+    "@quenk/jhr": "^2.6.23",
+    "@quenk/noni": "^1.40.7",
+    "@quenk/potoo": "^3.0.0-rc.2",
     "@quenk/preconditions": "^5.4.3",
     "@quenk/wml": "^2.6.1",
     "@quenk/wml-widgets": "^1.27.13",

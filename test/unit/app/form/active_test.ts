@@ -10,7 +10,7 @@ import {
 import { Either, right, left } from '@quenk/noni/lib/data/either';
 import { Case } from '@quenk/potoo/lib/actor/resident/case';
 
-import {FormErrors} from '../../../../lib/app/form';
+import { FormErrors } from '../../../../lib/app/form';
 import {
     ValidateStrategy,
     NoStrategy,
@@ -26,29 +26,13 @@ import {
     Saved,
     Failed
 } from '../../../../lib/app/form/active';
-import { Immutable } from '../../../../lib/actor';
 import { App } from '../../../../lib/app';
 import { TestApp } from '../../app/fixtures/app';
-
+import { GenericImmutable } from '../fixtures/actor';
 
 interface Data {
 
     [key: string]: Value
-
-}
-
-class Parent extends Immutable<any> {
-
-    constructor(
-        public system: TestApp,
-        public receive: Case<any>[],
-        public func: (that: Parent) => void) { super(system); }
-
-    run() {
-
-        this.func(this);
-
-    }
 
 }
 
@@ -149,12 +133,13 @@ describe('active', () => {
 
                         id: 'parent',
 
-                        create: (s: TestApp) => new Parent(s, cases, that => {
+                        create: (s: TestApp) =>
+                            new GenericImmutable(s, cases, that => {
 
-                            let addr = that.spawn(form(that.self()));
-                            that.tell(addr, new Abort());
+                                let addr = that.spawn(form(that.self()));
+                                that.tell(addr, new Abort());
 
-                        })
+                            })
 
                     });
 
@@ -180,7 +165,8 @@ describe('active', () => {
 
                         id: 'parent',
 
-                        create: (s: TestApp) => new Parent(s, [], that => {
+                        create: (s: TestApp) => 
+                      new GenericImmutable(s, [], that => {
 
                             let addr = that.spawn(form(that.self()));
                             that.tell(addr, new Save());
@@ -216,7 +202,8 @@ describe('active', () => {
 
                         id: 'parent',
 
-                        create: (s: TestApp) => new Parent(s, cases, that => {
+                        create: (s: TestApp) => 
+                      new GenericImmutable(s, cases, that => {
 
                             let addr = that.spawn(form(that.self()));
                             that.tell(addr, new Saved());
@@ -247,7 +234,8 @@ describe('active', () => {
 
                         id: 'parent',
 
-                        create: (s: TestApp) => new Parent(s, [], that => {
+                        create: (s: TestApp) => 
+                      new GenericImmutable(s, [], that => {
 
                             let addr = that.spawn(form(that.self()));
                             that.tell(addr, new Failed());
@@ -278,7 +266,8 @@ describe('active', () => {
 
                         id: 'parent',
 
-                        create: (s: TestApp) => new Parent(s, [], that => {
+                        create: (s: TestApp) => 
+                      new GenericImmutable(s, [], that => {
 
                             let addr = that.spawn(form(that.self()));
                             that.tell(addr, { name: 'name', value: 'asp' });

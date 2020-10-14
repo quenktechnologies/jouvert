@@ -1,4 +1,4 @@
-[**.js]
+[**.ts, **.js]
 brace_style = collapse-preserve-inline
 indent_style = space
 indent_size = 4

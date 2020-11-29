@@ -11,28 +11,27 @@
   "type": "lib/app/index.d.ts",
   "license": "Apache-2.0",
   "devDependencies": {
-    "@quenk/client-side-routers": "^1.0.0",
-    "@quenk/test": "^2.2.3",
+    "@quenk/test": "^2.3.0",
     "@types/deep-equal": "^1.0.1",
     "@types/json-stringify-safe": "^5.0.0",
     "@types/mocha": "^7.0.2",
-    "@types/node": "^14.0.6",
-    "@types/qs": "^6.9.3",
+    "@types/node": "^14.14.10",
+    "@types/qs": "^6.9.5",
     "@types/should": "^13.0.0",
-    "@types/uuid": "^8.0.0",
-    "browserify": "^16.5.1",
+    "@types/uuid": "^8.3.0",
+    "browserify": "^16.5.2",
     "qs": "^6.9.4",
-    "typedoc": "^0.17.7",
-    "typescript": "^3.9.3"
+    "typedoc": "^0.17.8",
+    "typescript": "^3.9.7"
   },
   "dependencies": {
     "@quenk/jhr": "^2.6.23",
-    "@quenk/noni": "^1.40.7",
+    "@quenk/noni": "^1.40.14",
     "@quenk/potoo": "^3.0.0-rc.2",
-    "@quenk/preconditions": "^5.4.3",
-    "@quenk/wml": "^2.6.1",
-    "@quenk/wml-widgets": "^1.27.13",
-    "path-to-regexp": "^6.1.0",
-    "uuid": "^8.1.0"
+    "@quenk/preconditions": "^5.5.0",
+    "@quenk/wml": "^2.6.2",
+    "@quenk/wml-widgets": "^1.27.14",
+    "path-to-regexp": "^6.2.0",
+    "uuid": "^8.3.1"
   }
 }

@@ -1,568 +1,403 @@
-/**
- * This module provides an API for what could be described as building 
- * a "display router".
- *
- * The main interface Director, is an actor that coordinates control over a 
- * display between a group of actors. A display is simply another actor.
- *
- * The APIs provided here are designed around routing in client side apps.
- */
-/** imports */
-import * as uuid from 'uuid';
 import { Milliseconds } from '@quenk/noni/lib/control/time';
-import { map, exclude, merge } from '@quenk/noni/lib/data/record';
-import { Maybe, just } from '@quenk/noni/lib/data/maybe';
-import { pure } from '@quenk/noni/lib/control/monad/future';
+import { exclude, merge, forEach } from '@quenk/noni/lib/data/record';
+import { isFunction, isObject } from '@quenk/noni/lib/data/type';
+import { Future, fromCallback } from '@quenk/noni/lib/control/monad/future';
 import { Case, Default } from '@quenk/potoo/lib/actor/resident/case';
 import { Address } from '@quenk/potoo/lib/actor/address';
 import { Template } from '@quenk/potoo/lib/actor/template';
-import { Router as RealRouter } from '../browser/window/router';
-import { App } from '../app';
-import { Actor, Mutable, Immutable } from '../actor';
-import { startsWith } from '@quenk/noni/lib/data/string';
 
-export const DEFAULT_TIMEOUT = 60000;
-export const DEFAULT_DELAY = 200;
+import { Immutable } from '../actor';
+import { App } from './';
+
+export const DEFAULT_TIMEOUT = 10000;
 
 /**
- * Route refers to the identifier the underlying router uses to trigger
- * the change of actor.
+ * RouteString is the identifier used by the RoutingLogic to determine which
+ * route to execute.
  */
-export type Route = string;
+export type RouteString = string;
 
 /**
- * RoutingMessages type.
+ * SupervisorAddress is the address of the current actor's supervising actor.
  */
-export type RoutingMessages<R, S extends App>
-    = Dispatch<R, S>
+export type SupervisorAddress = Address;
+
+/**
+ * SuspendTimerAddress is the address of the timer for a current actor
+ * that is being suspended.
+ */
+export type SuspendTimerAddress = Address;
+
+/**
+ * CurrentInfo is a tuple containing information about the current actor.
+ */
+export type CurrentInfo = [
+    RouteString,
+    SupervisorAddress,
+    SuspendTimerAddress
+];
+
+/**
+ * SupervisorMessage type.
+ */
+export type SupervisorMessage
+    = SuspendActor
+    | Suspended
     ;
 
 /**
- * DispatchingMessage type.
+ * SuspendTimerMessage type.
  */
-export type DispatchingMessages
-    = Exp
-    | Ack
-    | Cont
+export type SuspendTimerMessage
+    = CancelTimer
     ;
 
 /**
- * SupervisorMessages type.
+ * DirectorMessage type.
  */
-export type SupervisorMessages
-    = Release
-    | Suspend
-    | Ack
-    | Cont
+export type DirectorMessage<T>
+    = RouteChanged<T>
+    | ActorSuspended
     ;
 
 /**
- * RouteSpec indicates how to communicate the Resume message to the target
- * actor.
+ * RouteTarget is the address (or template) of the target actor that will be
+ * sent the Resume message when its route is selected.
  *
- * When it is an address, the message will be sent to that address. If
- * it is a template, the template will be spawned before the message is sent,
- * if it is a function, it will be applied to get the target actor address.
+ * Values of this type can be an Address of an existing actor, a template for
+ * spawning a new actor or a function that provides one of the former.
  */
-export type RouteSpec<R, S extends App>
+export type RouteTarget<A>
     = Address
-    | Template<S>
-    | RouteSpecFunc<R>
+    | Template<App>
+    | ((r: Resume<A>) => Address | Template<App>)
     ;
 
 /**
- * RouteSpecFunc
+ * RoutingTable is a map of routes to CandidateTargets.
  */
-export type RouteSpecFunc<R> = (r: Resume<R>) => Route;
+export interface RoutingTable<A> {
 
-/**
- * RouteSpecs is a map of routes to RouteSpecs.
- */
-export interface RouteSpecs<R, S extends App> {
-
-    [key: string]: RouteSpec<R, S>
+    [key: string]: RouteTarget<A>
 
 }
 
 /**
- * Routes to actor address map.
+ * RoutingLogic is any object that allows the Director to add routes to its
+ * table.
+ *
+ * The Director does not initialize or start routing by the RoutingLogic that
+ * is expected to be handled elsewhere.
  */
-export interface Routes {
+export interface RoutingLogic<T> {
 
-    [key: string]: Address
+    /**
+     * add a route to the RoutingLogic's table.
+     */
+    add(route: RouteString, handler: (req: T) => Future<void>): RoutingLogic<T>
 
 }
 
 /**
- * DirectorConfig allows a Director to be configured.
+ * Conf for a Director instance.
  */
-export interface DirectorConfig {
+export interface Conf {
 
     /**
      * timeout specifies how long the Director awaits a response from a 
      * Release message.
      */
-    timeout: Milliseconds,
-
-    /**
-     * delay indicates how long the Director should delay before actually
-     * giving control to the next actor.
-     *
-     * This may be desirable to prevent the UI flashing to spontaneously.
-     */
-    delay: Milliseconds
+    timeout?: Milliseconds
 
 }
 
 /**
- * Director is the interface honored by actors that act as "display routers"
+ * Resume hints to the receiving actor that is now the current actor and can
+ * stream messages.
  *
- * These display routers coordinate the steaming of view content from 
- * controlling actors to a single display.
- *
- * There can only be one actor in control at a time.
- *
- * In order to be a compliant with the Director, controlling actors must:
- * 1. Only start streaming when it receives a Resume message from the Router.
- * 2. Stop streaming when it receives a Release message from the Router.
- * 3. Reply with an Ack after it has received a Release message or
- * 4. reply with a Cont message to remain in control.
- * 5. Immediately cease all activities when the Suspend message is received.
- *
- * Failure to comply with the above will result in the Director "blacklisting"
- * the controlling actor in question. Being blacklisted means future requests
- * for that actor to take control will result in an error.
+ * @param director - The address of the Director that sent the message.
+ * @param request  - Value provided by the RoutingLogic typically containing
+ *                   information about the route request. This value may not
+ *                   be type safe.
  */
-export interface Director<R, S extends App> extends Actor {
+export class Resume<T> {
 
-    /**
-     * beforeRouting is applied before the Director
-     * transitions to routing(). 
-     *
-     * This method should be left as a hook for invoking callbacks.
-     */
-    beforeRouting(): Director<R, S>
-
-    /**
-     * routing behaviour.
-     */
-    routing(): Case<RoutingMessages<R, S>>[]
-
-    /**
-     * beforeDispatch is applied before the Director transitions to 
-     * dispatching().
-     *
-     * This method should be used to release the actor currently in control
-     * of the display.
-     */
-    beforeDispatch(d: Dispatch<R, S>): Director<R, S>
-
-    /**
-     * dispatching behaviour.
-     */
-    dispatching(p: Dispatch<R, S>): Case<DispatchingMessages>[]
-
-    /**
-     * beforeExp is applied before the Exp message is processed.
-     *
-     * This method should be left as a hook for invoking callbacks.
-     */
-    beforeExp(d: Dispatch<R, S>): Director<R, S>
-
-    /**
-     * afterExp is applied to react to the Exp message.
-     *
-     * This method should be used to forcibly change the controlling actor.
-     */
-    afterExp(d: Dispatch<R, S>): Director<R, S>
-
-    /**
-     * beforeCont is applied before the Cont message is processed.
-     *
-     * This method should be left as a hook for invoking callbacks.
-     */
-    beforeCont(c: Cont): Director<R, S>
-
-    /**
-     * afterCont is applied to process the Cont message.
-     *
-     * In the future, this method will be used to keep the underlying
-     * router pointed to the current actor.
-     */
-    afterCont(c: Cont): Director<R, S>
-
-    /**
-     * beforeAct is applied before the Ack message is processed.
-     *
-     * This method shoulbe left as a hook for invoiking callabacks.
-     */
-    beforeAck(d: Dispatch<R, S>): Director<R, S>
-
-    /**
-     * afterAck is applied to react to the Ack message.
-     *
-     * The current actor is told to suspend and changed to the actor
-     * the router requested.
-     */
-    afterAck(d: Dispatch<R, S>): Director<R, S>
-
-    /**
-     * afterSuspend is applied after a Suspend message.
-     *
-     * The current actor will be suspended and eventually killed.
-     */
-    afterSuspend(s: Suspend): Director<R, S>
+    constructor(public director: Address, public request: T) { }
 
 }
 
 /**
- * Dispatch signals to the Director that a new actor should be given control
- * of the display.
- */
-export class Dispatch<R, S extends App> {
-
-    constructor(
-        public route: Route,
-        public spec: RouteSpec<R, S>,
-        public request: R) { }
-
-}
-
-/**
- * Exp informs the Director that the current actor has failed
- * to reply in a timely manner.
- */
-export class Exp { }
-
-/**
- * Cont can be sent in lieu of Ack by a controlling actor to retain control.
- */
-export class Cont { }
-
-/**
- * Ack should be sent to the router by the controlling actor to indicate it has
- * complied with a Release request.
- */
-export class Ack { }
-
-/**
- * Resume indicates to the receiving actor now has control of the display.
- */
-export class Resume<R> {
-
-    constructor(
-        public route: Route,
-        public request: R,
-        public display: Address,
-        public router: Address) { }
-
-}
-
-/**
- * Reset indicates the current actor should be reset.
+ * Reload can be sent by the current actor to repeat the steps involved in
+ * giving the actor control.
  *
- * This process for this acts as though the user has navigated away and
- * returned to the route.
+ * Note: The will only repeat the steps taken by the Director and not any 
+ * external libraries.
  */
-export class Reset { }
+export class Reload {
 
-/**
- * Release indicates an actor's time is up and it should relinquish 
- * control.
- */
-export class Release {
-
-    constructor(public router: Address) { }
+    constructor(public target: Address) { }
 
 }
 
 /**
- * Suspend indicates the actor should cease all activities immediately
- * as it no longer has control of the display.
+ * Suspend indicates the actor should cease streaming as it no longer considered
+ * the current actor.
  */
 export class Suspend {
 
-    constructor(public router: Address) { }
+    constructor(public director: SupervisorAddress) { }
 
 }
+
+/**
+ * Suspended MUST be sent by the current actor when a Suspend request has 
+ * been received. Failure to do so indicates the actor is no longer responding.
+ */
+export class Suspended { constructor(public actor: Address) { } }
+
+/**
+ * CancelTimer indicates the SuspendTimer should cancel its timer and invoke
+ * the onFinish callback.
+ */
+export class CancelTimer { }
+
+/**
+ * SuspendTimer is spawned by the Director to handle the logic of removing
+ * unresponsive current actors from the routing apparatus.
+ */
+export class SuspendTimer extends Immutable<SuspendTimerMessage> {
+
+    constructor(
+        public director: Address,
+        public timeout: Milliseconds,
+        public system: App,
+        public onExpire: () => void,
+        public onFinish: () => void) { super(system); }
+
+    timer: NodeJS.Timeout | number = -1;
+
+    onCancelTimer = (_: CancelTimer) => {
+
+        clearTimeout(<NodeJS.Timeout>this.timer);
+        this.onFinish();
+        this.exit();
+
+    };
+
+    receive = [new Case(CancelTimer, this.onCancelTimer)];
+
+    run() {
+
+        this.timer = setTimeout(() => {
+
+            this.onExpire();
+            this.exit();
+
+        }, this.timeout);
+
+    }
+
+}
+
+/**
+ * SuspendActor indicates the Supervisor should suspend its supervised actor.
+ */
+export class SuspendActor { }
 
 /**
  * Supervisor is used to contain communication between the actor in control
  * and the director.
  * 
- * By treating the Supervisor as the router instead of the Director, we can
- * prevent actors that have been blacklisted from communicating
- * with the display.
+ * By treating the Supervisor as the Director instead of the actual Director, 
+ * we can prevent actors that have been blacklisted from communicating.
  *
- * This is accomplished by killing off the supervisor whenever its actor
- * is no longer in control.
+ * Once a Supervisor has exited, messages sent to that address are dropped.
+ * Routes that require a spawned actor are also done here having the side-effect
+ * of killing them once the Supervisor exits.
  */
-export class Supervisor<R, S extends App> extends Immutable<SupervisorMessages> {
+export class Supervisor<R> extends Immutable<SupervisorMessage> {
 
     constructor(
-        public route: Route,
-        public spec: RouteSpec<R, S>,
-        public request: R,
-        public delay: Milliseconds,
+        public director: Address,
         public display: Address,
-        public router: Address,
+        public info: RouteChanged<R>,
         public system: App) { super(system); }
 
     actor = '?';
 
-    receive: Case<SupervisorMessages>[] = <Case<SupervisorMessages>[]>[
+    receive: Case<SupervisorMessage>[] = <Case<SupervisorMessage>[]>[
 
-        new Case(Reset, (_: Reset) => {
+        new Case(SuspendActor, () => {
 
-            this.tell(this.actor, new Suspend('?'));
-
-            if (typeof this.spec === 'object')
-                this.kill(this.actor);
-
-            this.run();
-
-        }),
-
-        new Case(Release, (_: Release) => {
-
-            //XXX: this part of the process needs to be reviewed.
-            //Should we get rid of Release entriely and just stick with suspend?
             this.tell(this.actor, new Suspend(this.self()));
 
         }),
 
-        new Case(Suspend, (s: Suspend) => {
+        new Case(Reload, () => {
 
-            this.tell(this.actor, s);
-            this.exit();
+            this.tell(this.director, this.info);
 
         }),
 
-        new Case(Ack, (a: Ack) => this.tell(this.router, a)),
+        new Case(Suspended, () => {
 
-        new Case(Cont, (c: Cont) => this.tell(this.router, c)),
+            this.tell(this.director, new ActorSuspended());
 
-        new Default(m => this.tell(this.display, m))
+        }),
+
+        new Default(m => { this.tell(this.display, m); })
 
     ];
 
     run() {
 
-        let me = this.self();
-        let r = new Resume(this.route, this.request, me, me);
-        let { spec } = this;
+        let { request, spec } = this.info;
+        let r = new Resume(this.self(), request);
+        let candidate = isFunction(spec) ? spec(r) : spec;
 
-        if (typeof spec === 'object') {
+        if (isObject(candidate))
+            this.actor = this.spawn(<Template<App>>candidate);
+        else
+            this.actor = <string>candidate;
 
-            let args = Array.isArray(spec.args) ? spec.args.concat(r) : [r];
-
-            this.actor = this.spawn(<Template<App>>merge(spec, { args }));
-
-        } else if (typeof spec === 'function') {
-
-            this.actor = spec(r);
-
-        } else {
-
-            this.actor = spec;
-
-        }
-
-        setTimeout(() => {
-
-            this.tell(this.actor, r);
-
-        }, this.delay);
+        this.tell(this.actor, r);
 
     }
 
 }
 
 /**
- * AbstractDirector provides an abstract implementation of a Director.
- *
- * Most of the implementation is inflexible except for the hook methods
- * that are left up to extending classes.
+ * RouteChanged signals to the Director that a new actor should be given control
+ * of the display.
  */
-export abstract class AbstractDirector<R, S extends App> extends Mutable {
+export class RouteChanged<T> {
+
+    constructor(
+        public route: RouteString,
+        public spec: RouteTarget<T>,
+        public request: T) { }
+
+}
+
+/**
+ * ActorSuspended indicates an actor has been successfully suspended.
+ */
+export class ActorSuspended { }
+
+/**
+ * Director is an actor used to mediate control of a single view or "display" 
+ * between various actors.
+ *
+ * It using an implementation of a RoutingLogic to determine what actor should
+ * be allowed to stream content to the display at any point in time. The actor
+ * allowed is said to be in control and is referred to as the "current actor".
+ *
+ * Only one actor is allowed control at a time.
+ *
+ * The display itself is also expected to be an actor somewhere in the system
+ * that understands the messages that will be forwarded to it.
+ *
+ * In order to be a compliant with the Director, a current actor must:
+ * 1. Only start streaming when it receives a Resume message from the Router.
+ * 2. Stop streaming when it receives a Suspend message from the Router.
+ * 3. Reply with a Suspended message after it has received a Suspend.
+ *
+ * If the Suspended message is not received in time, the actor will not be 
+ * allowed to stream again by the Director.
+ */
+export class Director<T> extends Immutable<DirectorMessage<T>> {
 
     constructor(
         public display: Address,
-        public routes: RouteSpecs<R, S>,
-        public router: RealRouter<R>,
-        public current: Maybe<Address>,
-        public config: Partial<DirectorConfig>,
+        public router: RoutingLogic<T>,
+        public conf: Conf,
+        public routes: RoutingTable<T>,
         public system: App) { super(system); }
 
-    /**
-     * dismiss the current actor (if any).
-     *
-     * Will cause a timer to be set for acknowledgement.
-     */
-    dismiss(): AbstractDirector<R, S> {
+    current: CurrentInfo = ['', '?', '?'];
 
-        if (this.current.isJust()) {
+    config = defaultConfig(this.conf);
 
-            this.tell(this.current.get(), new Release(this.self()));
+    onRouteChanged = (msg: RouteChanged<T>) => {
 
-        } else {
+        let self = this.self();
+        let { display, routes, current, config } = this;
+        let [route, supervisor] = current;
 
-            this.tell(this.self(), new Ack());
+        let onFinish = () => {
 
-        }
+            if (supervisor != '?') this.kill(supervisor);
 
-        setTimeout(() => this.tell(this.self(), new Exp()), this.config.timeout);
+            this.current = [msg.route, this.spawn(s => new Supervisor(
+                self,
+                display,
+                msg,
+                s
+            )), '?'];
 
-        return this;
+        };
 
-    }
+        if (supervisor != '?') {
 
-    beforeRouting(): AbstractDirector<R, S> {
+            let { timeout } = config;
 
-        return this;
+            let onExpire = () => {
 
-    }
+                this.routes = exclude(routes, route);
+                onFinish();
 
-    routing(): Case<RoutingMessages<R, S>>[] {
+            };
 
-        return whenRouting(this);
+            this.current = <CurrentInfo>[
+                route,
+                supervisor,
+                this.spawn(s => new SuspendTimer(
+                    self, <number>timeout, s, onExpire, onFinish
+                ))
+            ];
 
-    }
-
-    beforeDispatch(_: Dispatch<R, S>): AbstractDirector<R, S> {
-
-        return this.dismiss();
-
-    }
-
-    dispatching(p: Dispatch<R, S>): Case<DispatchingMessages>[] {
-
-        return whenDispatching(this, p);
-
-    }
-
-    abstract beforeExp(d: Dispatch<R, S>): AbstractDirector<R, S>
-
-    afterExpire({ route, spec, request }: Dispatch<R, S>): AbstractDirector<R, S> {
-
-        let { routes } = this;
-
-        if (this.current.isJust()) {
-
-            let addr = this.current.get();
-
-            this.kill(addr);
-
-            this.spawn(supervisorTmpl(this, route, spec, request));
+            this.tell(supervisor, new SuspendActor());
 
         } else {
 
-            this.spawn(supervisorTmpl(this, route, spec, request));
+            onFinish();
 
         }
 
-        //remove the offending route from the table.
-        this.routes = exclude(routes, route);
+    };
 
-        return this;
+    onActorSuspended = (_: ActorSuspended) => {
 
-    }
+        this.tell(this.current[2], new CancelTimer());
 
-    abstract beforeCont(c: Cont): AbstractDirector<R, S>
+    };
 
-    afterCont(_: Cont): AbstractDirector<R, S> {
+    receive = <Case<DirectorMessage<T>>[]>[
 
-        //TODO: In future tell the real router we did not navigate.
-        return this;
+        new Case(RouteChanged, this.onRouteChanged),
 
-    }
+        new Case(ActorSuspended, this.onActorSuspended)
 
-    abstract beforeAck(a: Dispatch<R, S>): AbstractDirector<R, S>
-
-    afterAck({ route, spec, request }: Dispatch<R, S>): AbstractDirector<R, S> {
-
-        if (this.current.isJust()) {
-
-            let addr = this.current.get();
-            let me = this.self();
-
-            this.tell(addr, new Suspend(me));
-
-            if (startsWith(addr, me))
-                this.kill(addr);
-
-        }
-
-        this.current = just(this.spawn(supervisorTmpl(this,
-            route, spec, request)));
-
-        return this;
-
-    }
-
-    afterSuspend(_: Suspend): AbstractDirector<R, S> {
-
-        return this.dismiss();
-
-    }
-
-    afterReset(r: Reset): AbstractDirector<R, S> {
-
-        if (this.current.isJust())
-            this.tell(this.current.get(), r);
-
-        return this;
-
-    }
+    ];
 
     run() {
 
-        map(this.routes, (spec, route) => {
+        forEach(this.routes, (spec, route) => {
 
-            this.router.add(route, (r: R) => {
+            this.router.add(route, (r: T) => fromCallback(cb => {
 
-                if (!this.routes.hasOwnProperty(route))
-                    return this.router.onError(new Error(
-                        `${route}: not responding!`));
+                if (!this.routes.hasOwnProperty(route)) {
 
-                this.tell(this.self(), new Dispatch(route, spec, r));
+                    return cb(new Error(`${route}: not responding!`));
 
-                return pure(<void>undefined);
+                } else {
 
-            });
+                    this.tell(this.self(), new RouteChanged(route, spec, r));
+                    cb(null);
 
-        });
+                }
 
-        this.select(this.routing());
-
-    }
-
-}
-
-/**
- * DefaultDirector 
- */
-export class DefaultDirector<R, S extends App> extends AbstractDirector<R, S> {
-
-    beforeExp(_: Dispatch<R, S>): DefaultDirector<R, S> { return this; }
-
-    beforeCont(_: Cont): DefaultDirector<R, S> { return this; }
-
-    beforeAck(_: Dispatch<R, S>): DefaultDirector<R, S> { return this; }
-
-}
-
-/**
- * DispatchCase triggers the beforeDispatch hook
- * and transitions to dispatching.
- */
-export class DispatchCase<R, S extends App> extends Case<Dispatch<R, S>> {
-
-    constructor(d: AbstractDirector<R, S>) {
-
-        super(Dispatch, (p: Dispatch<R, S>) => {
-
-            d.beforeDispatch(p).select(d.dispatching(p));
+            }));
 
         });
 
@@ -570,148 +405,5 @@ export class DispatchCase<R, S extends App> extends Case<Dispatch<R, S>> {
 
 }
 
-/**
- * ExpireCase triggers the afterExpire hook
- * and transitions to routing.
- */
-export class ExpireCase<R, S extends App> extends Case<Exp> {
-
-    constructor(d: AbstractDirector<R, S>, m: Dispatch<R, S>) {
-
-        super(Exp, (_: Exp) => {
-
-            d
-                .beforeExp(m)
-                .afterExpire(m)
-                .select(d.routing());
-
-        });
-
-    }
-
-}
-
-/**
- * ContCase triggers the afterCont hook and transitions to 
- * routing.
- */
-export class ContCase<R, S extends App> extends Case<Cont> {
-
-    constructor(d: AbstractDirector<R, S>) {
-
-        super(Cont, (c: Cont) => {
-
-            d
-                .beforeCont(c)
-                .afterCont(c)
-                .select(d.routing());
-
-        });
-
-    }
-
-}
-
-/**
- * AckCase triggers the afterAck hook and transitions
- * to routing.
- */
-export class AckCase<R, S extends App> extends Case<Ack> {
-
-    constructor(d: AbstractDirector<R, S>, m: Dispatch<R, S>) {
-
-        super(Ack, (_: Ack) => {
-
-            d
-                .beforeAck(m)
-                .afterAck(m)
-                .select(d.routing());
-
-        });
-
-    }
-
-}
-
-/**
- * ResetCase intercepts the Reset message sent to the Director
- *
- * It continues routing.
- */
-export class ResetCase<R, S extends App> extends Case<Reset> {
-
-    constructor(d: AbstractDirector<R, S>) {
-
-        super(Reset, (r: Reset) => {
-
-            d.afterReset(r).select(d.routing());
-
-        });
-
-    }
-
-}
-
-/**
- * SuspendCase intercepts a Suspend message sent to the Director.
- * 
- * This will dismiss the current actor.
- */
-export class SuspendCase<R, S extends App> extends Case<Suspend> {
-
-    constructor(d: AbstractDirector<R, S>) {
-
-        super(Suspend, (s: Suspend) => {
-
-            d.afterSuspend(s).select(d.routing());
-
-        });
-
-    }
-
-}
-
-const defaultConfig = (c: Partial<DirectorConfig>): DirectorConfig =>
-    merge({ delay: DEFAULT_DELAY, timeout: DEFAULT_TIMEOUT }, c);
-
-/**
- * whenRouting behaviour.
- */
-export const whenRouting = <R, S extends App>(r: AbstractDirector<R, S>)
-    : Case<RoutingMessages<R, S>>[] => <Case<RoutingMessages<R, S>>[]>[
-
-        new DispatchCase(r),
-
-        new ResetCase(r),
-
-        new SuspendCase(r)
-
-    ];
-
-/**
- * whenDispatching behaviour.
- */
-export const whenDispatching = <R, S extends App>
-    (r: AbstractDirector<R, S>, d: Dispatch<R, S>)
-    : Case<DispatchingMessages>[] => <Case<DispatchingMessages>[]>[
-
-        new ExpireCase(r, d),
-
-        new ContCase(r),
-
-        new AckCase(r, d),
-
-    ];
-
-/**
- * supervisorTmpl used to spawn new supervisor actors.
- */
-export const supervisorTmpl = <R, S extends App>
-    (d: AbstractDirector<R, S>, route: Route, spec: RouteSpec<R, S>, req: R) => ({
-
-        id: uuid.v4().split('-').join(''),
-
-        create: (s: App) => new Supervisor(route, spec, req,
-            defaultConfig(d.config).delay, d.display, d.self(), s)
-
-    })
+const defaultConfig = (c: Partial<Conf>): Conf =>
+    merge({ timeout: DEFAULT_TIMEOUT }, c);

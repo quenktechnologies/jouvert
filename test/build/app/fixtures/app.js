@@ -14,23 +14,13 @@ var __extends = (this && this.__extends) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.TestApp = void 0;
-var test_1 = require("@quenk/potoo/lib/actor/system/framework/test");
-var framework_1 = require("@quenk/potoo/lib/actor/system/framework");
+var app_1 = require("../../../../lib/app");
 var TestApp = /** @class */ (function (_super) {
     __extends(TestApp, _super);
     function TestApp() {
-        var _this = _super !== null && _super.apply(this, arguments) || this;
-        _this.state = framework_1.newState(_this);
-        return _this;
+        return _super !== null && _super.apply(this, arguments) || this;
     }
-    TestApp.prototype.spawn = function (t) {
-        _super.prototype.spawn.call(this, t);
-        return this;
-    };
-    TestApp.prototype.allocate = function (a, r, t) {
-        return this.MOCK.invoke('allocate', [a, r, t], a.init(framework_1.newContext(a, r, t)));
-    };
     return TestApp;
-}(test_1.TestAbstractSystem));
+}(app_1.JApp));
 exports.TestApp = TestApp;
 //# sourceMappingURL=app.js.map

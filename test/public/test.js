@@ -1606,16 +1606,17 @@ var either_1 = require("../data/either");
 /**
  * convert an Err to an Error.
  */
-exports.convert = function (e) {
+var convert = function (e) {
     return (e instanceof Error) ? e : new Error(e.message);
 };
+exports.convert = convert;
 /**
  * raise the supplied Error.
  *
  * This function exists to maintain a functional style in situations where
  * you may actually want to throw an error.
  */
-exports.raise = function (e) {
+var raise = function (e) {
     if (e instanceof Error) {
         throw e;
     }
@@ -1623,10 +1624,11 @@ exports.raise = function (e) {
         throw new Error(e.message);
     }
 };
+exports.raise = raise;
 /**
  * attempt a synchronous computation that may throw an exception.
  */
-exports.attempt = function (f) {
+var attempt = function (f) {
     try {
         return either_1.right(f());
     }
@@ -1634,6 +1636,7 @@ exports.attempt = function (f) {
         return either_1.left(e);
     }
 };
+exports.attempt = attempt;
 
 },{"../data/either":20}],15:[function(require,module,exports){
 "use strict";
@@ -1720,7 +1723,8 @@ exports.Matched = Matched;
 /**
  * match wraps a value in an UnMatched so that case tests can be applied.
  */
-exports.match = function (value) { return new UnMatched(value); };
+var match = function (value) { return new UnMatched(value); };
+exports.match = match;
 
 },{"../data/type":26}],16:[function(require,module,exports){
 "use strict";
@@ -1728,7 +1732,7 @@ var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
         extendStatics = Object.setPrototypeOf ||
             ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
         return extendStatics(d, b);
     };
     return function (d, b) {
@@ -2039,17 +2043,19 @@ exports.Compute = Compute;
 /**
  * pure wraps a synchronous value in a Future.
  */
-exports.pure = function (a) { return new Pure(a); };
+var pure = function (a) { return new Pure(a); };
+exports.pure = pure;
 /**
  * raise wraps an Error in a Future.
  *
  * This future will be considered a failure.
  */
-exports.raise = function (e) { return new Raise(e); };
+var raise = function (e) { return new Raise(e); };
+exports.raise = raise;
 /**
  * attempt a synchronous task, trapping any thrown errors in the Future.
  */
-exports.attempt = function (f) { return new Run(function (s) {
+var attempt = function (f) { return new Run(function (s) {
     timer_1.tick(function () { try {
         s.onSuccess(f());
     }
@@ -2058,12 +2064,13 @@ exports.attempt = function (f) { return new Run(function (s) {
     } });
     return function_1.noop;
 }); };
+exports.attempt = attempt;
 /**
  * delay execution of a function f after n milliseconds have passed.
  *
  * Any errors thrown are caught and processed in the Future chain.
  */
-exports.delay = function (f, n) {
+var delay = function (f, n) {
     if (n === void 0) { n = 0; }
     return new Run(function (s) {
         setTimeout(function () {
@@ -2077,33 +2084,37 @@ exports.delay = function (f, n) {
         return function_1.noop;
     });
 };
+exports.delay = delay;
 /**
  * wait n milliseconds before continuing the Future chain.
  */
-exports.wait = function (n) {
+var wait = function (n) {
     return new Run(function (s) {
         setTimeout(function () { s.onSuccess(undefined); }, n);
         return function_1.noop;
     });
 };
+exports.wait = wait;
 /**
  * fromAbortable takes an Aborter and a node style async function and
  * produces a Future.
  *
  * Note: The function used here is not called in the "next tick".
  */
-exports.fromAbortable = function (abort) { return function (f) { return new Run(function (s) {
+var fromAbortable = function (abort) { return function (f) { return new Run(function (s) {
     f(function (err, a) {
         return (err != null) ? s.onError(err) : s.onSuccess(a);
     });
     return abort;
 }); }; };
+exports.fromAbortable = fromAbortable;
 /**
  * fromCallback produces a Future from a node style async function.
  *
  * Note: The function used here is not called in the "next tick".
  */
-exports.fromCallback = function (f) { return exports.fromAbortable(function_1.noop)(f); };
+var fromCallback = function (f) { return exports.fromAbortable(function_1.noop)(f); };
+exports.fromCallback = fromCallback;
 var Tag = /** @class */ (function () {
     function Tag(index, value) {
         this.index = index;
@@ -2114,14 +2125,15 @@ var Tag = /** @class */ (function () {
 /**
  * batch runs a list of batched Futures one batch at a time.
  */
-exports.batch = function (list) {
+var batch = function (list) {
     return exports.sequential(list.map(function (w) { return exports.parallel(w); }));
 };
+exports.batch = batch;
 /**
  * parallel runs a list of Futures in parallel failing if any
  * fail and succeeding with a list of successful values.
  */
-exports.parallel = function (list) { return new Run(function (s) {
+var parallel = function (list) { return new Run(function (s) {
     var done = [];
     var failed = false;
     var comps = [];
@@ -2149,13 +2161,14 @@ exports.parallel = function (list) { return new Run(function (s) {
         s.onSuccess([]);
     return function () { return abortAll(); };
 }); };
+exports.parallel = parallel;
 /**
  * sequential execution of a list of futures.
  *
  * This function succeeds with a list of all results or fails on the first
  * error.
  */
-exports.sequential = function (list) { return new Run(function (s) {
+var sequential = function (list) { return new Run(function (s) {
     var i = 0;
     var r = [];
     var onErr = function (e) { return s.onError(e); };
@@ -2172,13 +2185,14 @@ exports.sequential = function (list) { return new Run(function (s) {
     return function () { if (abort)
         abort.abort(); };
 }); };
+exports.sequential = sequential;
 /**
  * reduce a list of futures into a single value.
  *
  * Starts with an initial value passing the result of
  * each future to the next.
  */
-exports.reduce = function (list, init, f) { return new Run(function (s) {
+var reduce = function (list, init, f) { return new Run(function (s) {
     var i = 0;
     var onErr = function (e) { return s.onError(e); };
     var onSuccess = function (a) {
@@ -2197,11 +2211,12 @@ exports.reduce = function (list, init, f) { return new Run(function (s) {
     return function () { if (abort)
         abort.abort(); };
 }); };
+exports.reduce = reduce;
 /**
  * race given a list of Futures, will return a Future that is settled by
  * the first error or success to occur.
  */
-exports.race = function (list) { return new Run(function (s) {
+var race = function (list) { return new Run(function (s) {
     var comps = [];
     var finished = false;
     var abortAll = function () {
@@ -2226,36 +2241,41 @@ exports.race = function (list) { return new Run(function (s) {
         s.onError(new Error("race(): Cannot race an empty list!"));
     return function () { return abortAll(); };
 }); };
+exports.race = race;
 /**
  * toPromise transforms a Future into a Promise.
  *
  * This function depends on the global promise constructor and
  * will fail if the enviornment does not provide one.
  */
-exports.toPromise = function (ft) { return new Promise(function (yes, no) {
+var toPromise = function (ft) { return new Promise(function (yes, no) {
     return ft.fork(no, yes);
 }); };
+exports.toPromise = toPromise;
 /**
  * fromExcept converts an Except to a Future.
  */
-exports.fromExcept = function (e) {
+var fromExcept = function (e) {
     return e.fold(function (e) { return exports.raise(e); }, function (a) { return exports.pure(a); });
 };
+exports.fromExcept = fromExcept;
 /**
  * liftP turns a function that produces a Promise into a Future.
  */
-exports.liftP = function (f) { return new Run(function (s) {
+var liftP = function (f) { return new Run(function (s) {
     f()
         .then(function (a) { return s.onSuccess(a); })
         .catch(function (e) { return s.onError(e); });
     return function_1.noop;
 }); };
+exports.liftP = liftP;
 /**
  * doFuture provides a do notation function specialized to Futures.
  *
  * Use this function to avoid explicit type assertions with control/monad#doN.
  */
-exports.doFuture = function (f) { return _1.doN(f); };
+var doFuture = function (f) { return _1.doN(f); };
+exports.doFuture = doFuture;
 
 },{"../../data/function":21,"../error":14,"../timer":18,"./":17}],17:[function(require,module,exports){
 "use strict";
@@ -2264,25 +2284,28 @@ exports.doMonad = exports.doN = exports.pipeN = exports.pipe = exports.compose =
 /**
  * join flattens a Monad that contains another Monad.
  */
-exports.join = function (outer) {
+var join = function (outer) {
     return outer.chain(function (x) { return x; });
 };
+exports.join = join;
 /**
  * compose right composes functions that produce Monads so that the output
  * of the second is the input of the first.
  */
-exports.compose = function (g, f) { return exports.pipe(f, g); };
+var compose = function (g, f) { return exports.pipe(f, g); };
+exports.compose = compose;
 /**
  * pipe left composes functions that produce Monads so that the output of the
  * first is the input of the second.
  */
-exports.pipe = function (f, g) { return function (value) { return f(value).chain(function (b) { return g(b); }); }; };
+var pipe = function (f, g) { return function (value) { return f(value).chain(function (b) { return g(b); }); }; };
+exports.pipe = pipe;
 /**
  * pipeN is like pipe but takes variadic parameters.
  *
  * Because of this, the resulting function only maps from A -> B.
  */
-exports.pipeN = function (f) {
+var pipeN = function (f) {
     var list = [];
     for (var _i = 1; _i < arguments.length; _i++) {
         list[_i - 1] = arguments[_i];
@@ -2291,6 +2314,7 @@ exports.pipeN = function (f) {
         return list.reduce(function (p, c) { return p.chain(function (v) { return c(v); }); }, f(value));
     };
 };
+exports.pipeN = pipeN;
 /**
  * doN simulates haskell's do notation using ES6's generator syntax.
  *
@@ -2333,7 +2357,7 @@ exports.pipeN = function (f) {
  *
  * Beware of uncaught errors being swallowed in the function body.
  */
-exports.doN = function (f) {
+var doN = function (f) {
     var gen = f();
     var next = function (val) {
         var r = gen.next(val);
@@ -2344,10 +2368,11 @@ exports.doN = function (f) {
     };
     return next();
 };
+exports.doN = doN;
 exports.doMonad = exports.doN;
 
 },{}],18:[function(require,module,exports){
-(function (process){
+(function (process){(function (){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.throttle = exports.debounce = exports.tick = void 0;
@@ -2355,9 +2380,10 @@ exports.throttle = exports.debounce = exports.tick = void 0;
  * tick runs a function in the "next tick" using process.nextTick in node
  * or setTimeout(f, 0) elsewhere.
  */
-exports.tick = function (f) { return (typeof window == 'undefined') ?
+var tick = function (f) { return (typeof window == 'undefined') ?
     setTimeout(f, 0) :
     process.nextTick(f); };
+exports.tick = tick;
 /**
  * debounce delays the application of a function until the specified time
  * has passed.
@@ -2366,7 +2392,7 @@ exports.tick = function (f) { return (typeof window == 'undefined') ?
  * will restart the delay process. The function will only ever be applied once
  * after the delay, using the value of the final attempt for application.
  */
-exports.debounce = function (f, delay) {
+var debounce = function (f, delay) {
     var id = -1;
     return function (a) {
         if (id === -1) {
@@ -2378,6 +2404,7 @@ exports.debounce = function (f, delay) {
         }
     };
 };
+exports.debounce = debounce;
 /**
  * throttle limits the application of a function to occur only one within the
  * specified duration.
@@ -2385,7 +2412,7 @@ exports.debounce = function (f, delay) {
  * The first application will execute immediately subsequent applications
  * will be ignored until the duration has passed.
  */
-exports.throttle = function (f, duration) {
+var throttle = function (f, duration) {
     var wait = false;
     return function (a) {
         if (wait === false) {
@@ -2395,8 +2422,9 @@ exports.throttle = function (f, duration) {
         }
     };
 };
+exports.throttle = throttle;
 
-}).call(this,require('_process'))
+}).call(this)}).call(this,require('_process'))
 },{"_process":86}],19:[function(require,module,exports){
 "use strict";
 var __spreadArrays = (this && this.__spreadArrays) || function () {
@@ -2407,7 +2435,7 @@ var __spreadArrays = (this && this.__spreadArrays) || function () {
     return r;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.compact = exports.combine = exports.make = exports.removeAt = exports.remove = exports.dedupe = exports.distribute = exports.group = exports.partition = exports.concat = exports.flatMap = exports.map = exports.contains = exports.empty = exports.tail = exports.head = void 0;
+exports.compact = exports.flatten = exports.combine = exports.make = exports.removeAt = exports.remove = exports.dedupe = exports.distribute = exports.group = exports.partition = exports.concat = exports.flatMap = exports.map = exports.contains = exports.empty = exports.tail = exports.head = void 0;
 /**
  * The array module provides helper functions
  * for working with JS arrays.
@@ -2417,41 +2445,48 @@ var math_1 = require("../../math");
 /**
  * head returns the item at index 0 of an array
  */
-exports.head = function (list) { return list[0]; };
+var head = function (list) { return list[0]; };
+exports.head = head;
 /**
  * tail returns the last item in an array
  */
-exports.tail = function (list) { return list[list.length - 1]; };
+var tail = function (list) { return list[list.length - 1]; };
+exports.tail = tail;
 /**
  * empty indicates whether an array is empty or not.
  */
-exports.empty = function (list) { return (list.length === 0); };
+var empty = function (list) { return (list.length === 0); };
+exports.empty = empty;
 /**
  * contains indicates whether an element exists in an array.
  */
-exports.contains = function (list, a) { return (list.indexOf(a) > -1); };
+var contains = function (list, a) { return (list.indexOf(a) > -1); };
+exports.contains = contains;
 /**
  * map is a curried version of the Array#map method.
  */
-exports.map = function (list) { return function (f) { return list.map(f); }; };
+var map = function (list) { return function (f) { return list.map(f); }; };
+exports.map = map;
 /**
  * flatMap allows a function to produce a combined set of arrays from a map
  * operation over each member of a list.
  */
-exports.flatMap = function (list, f) {
+var flatMap = function (list, f) {
     return list.reduce(function (p, c, i) { return p.concat(f(c, i, list)); }, []);
 };
+exports.flatMap = flatMap;
 /**
  * concat concatenates an element to an array without destructuring
  * the element if itself is an array.
  */
-exports.concat = function (list, a) { return __spreadArrays(list, [a]); };
+var concat = function (list, a) { return __spreadArrays(list, [a]); };
+exports.concat = concat;
 /**
  * partition an array into two using a partitioning function.
  *
  * The first array contains values that return true and the second false.
  */
-exports.partition = function (list, f) { return exports.empty(list) ?
+var partition = function (list, f) { return exports.empty(list) ?
     [[], []] :
     list.reduce(function (_a, c, i) {
         var yes = _a[0], no = _a[1];
@@ -2459,11 +2494,12 @@ exports.partition = function (list, f) { return exports.empty(list) ?
             [exports.concat(yes, c), no] :
             [yes, exports.concat(no, c)]);
     }, [[], []]); };
+exports.partition = partition;
 /**
  * group the elements of an array into a Record where each property
  * is an array of elements assigned to it's property name.
  */
-exports.group = function (list, f) {
+var group = function (list, f) {
     return list.reduce(function (p, c, i) {
         var _a;
         var g = f(c, i, list);
@@ -2473,11 +2509,12 @@ exports.group = function (list, f) {
             _a));
     }, {});
 };
+exports.group = group;
 /**
  * distribute breaks an array into an array of equally (approximate) sized
  * smaller arrays.
  */
-exports.distribute = function (list, size) {
+var distribute = function (list, size) {
     var r = list.reduce(function (p, c, i) {
         return math_1.isMultipleOf(size, i + 1) ?
             [exports.concat(p[0], exports.concat(p[1], c)), []] :
@@ -2485,18 +2522,20 @@ exports.distribute = function (list, size) {
     }, [[], []]);
     return (r[1].length === 0) ? r[0] : exports.concat(r[0], r[1]);
 };
+exports.distribute = distribute;
 /**
  * dedupe an array by filtering out elements
  * that appear twice.
  */
-exports.dedupe = function (list) {
+var dedupe = function (list) {
     return list.filter(function (e, i, l) { return l.indexOf(e) === i; });
 };
+exports.dedupe = dedupe;
 /**
  * remove an element from an array returning a new copy with the element
  * removed.
  */
-exports.remove = function (list, target) {
+var remove = function (list, target) {
     var idx = list.indexOf(target);
     if (idx === -1) {
         return list.slice();
@@ -2507,11 +2546,12 @@ exports.remove = function (list, target) {
         return a;
     }
 };
+exports.remove = remove;
 /**
  * removeAt removes an element at the specified index returning a copy
  * of the original array with the element removed.
  */
-exports.removeAt = function (list, idx) {
+var removeAt = function (list, idx) {
     if ((list.length > idx) && (idx > -1)) {
         var a = list.slice();
         a.splice(idx, 1);
@@ -2521,30 +2561,45 @@ exports.removeAt = function (list, idx) {
         return list.slice();
     }
 };
+exports.removeAt = removeAt;
 /**
  * make an array of elements of a given size using a function to provide
  * each element.
  *
  * The function receives the index number for each step.
  */
-exports.make = function (size, f) {
+var make = function (size, f) {
     var a = new Array(size);
     for (var i = 0; i < size; i++)
         a[i] = f(i);
     return a;
 };
+exports.make = make;
 /**
  * combine a list of of lists into one list.
  */
-exports.combine = function (list) {
+var combine = function (list) {
     return list.reduce(function (p, c) { return p.concat(c); }, []);
 };
+exports.combine = combine;
+/**
+ * flatten a list of items that may be multi-dimensional.
+ *
+ * This function may not be stack safe.
+ */
+var flatten = function (list) {
+    return list.reduce(function (p, c) {
+        return p.concat(Array.isArray(c) ? exports.flatten(c) : c);
+    }, []);
+};
+exports.flatten = flatten;
 /**
  * compact removes any occurences of null or undefined in the list.
  */
-exports.compact = function (list) {
+var compact = function (list) {
     return list.filter(function (v) { return (v != null); });
 };
+exports.compact = compact;
 
 },{"../../math":27,"../record":23}],20:[function(require,module,exports){
 "use strict";
@@ -2571,7 +2626,7 @@ var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
         extendStatics = Object.setPrototypeOf ||
             ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
         return extendStatics(d, b);
     };
     return function (d, b) {
@@ -2723,24 +2778,28 @@ exports.Right = Right;
 /**
  * left constructor helper.
  */
-exports.left = function (a) { return new Left(a); };
+var left = function (a) { return new Left(a); };
+exports.left = left;
 /**
  * right constructor helper.
  */
-exports.right = function (b) { return new Right(b); };
+var right = function (b) { return new Right(b); };
+exports.right = right;
 /**
  * fromBoolean constructs an Either using a boolean value.
  */
-exports.fromBoolean = function (b) {
+var fromBoolean = function (b) {
     return b ? exports.right(true) : exports.left(false);
 };
+exports.fromBoolean = fromBoolean;
 /**
  * either given two functions, first for Left, second for Right, will return
  * the result of applying the appropriate function to an Either's internal value.
  */
-exports.either = function (f) { return function (g) { return function (e) {
+var either = function (f) { return function (g) { return function (e) {
     return (e instanceof Right) ? g(e.takeRight()) : f(e.takeLeft());
 }; }; };
+exports.either = either;
 
 },{"./maybe":22}],21:[function(require,module,exports){
 "use strict";
@@ -2749,58 +2808,70 @@ exports.noop = exports.curry5 = exports.curry4 = exports.curry3 = exports.curry 
 /**
  * compose two functions into one.
  */
-exports.compose = function (f, g) { return function (a) { return g(f(a)); }; };
+var compose = function (f, g) { return function (a) { return g(f(a)); }; };
+exports.compose = compose;
 /**
  * compose3 functions into one.
  */
-exports.compose3 = function (f, g, h) { return function (a) { return h(g(f(a))); }; };
+var compose3 = function (f, g, h) { return function (a) { return h(g(f(a))); }; };
+exports.compose3 = compose3;
 /**
  * compose4 functions into one.
  */
-exports.compose4 = function (f, g, h, i) {
+var compose4 = function (f, g, h, i) {
     return function (a) { return i(h(g(f(a)))); };
 };
+exports.compose4 = compose4;
 /**
  * compose5 functions into one.
  */
-exports.compose5 = function (f, g, h, i, j) { return function (a) { return j(i(h(g(f(a))))); }; };
+var compose5 = function (f, g, h, i, j) { return function (a) { return j(i(h(g(f(a))))); }; };
+exports.compose5 = compose5;
 /**
  * cons given two values, ignore the second and always return the first.
  */
-exports.cons = function (a) { return function (_) { return a; }; };
+var cons = function (a) { return function (_) { return a; }; };
+exports.cons = cons;
 /**
  * flip the order of arguments to a curried function that takes 2 arguments.
  */
-exports.flip = function (f) { return function (b) { return function (a) { return (f(a)(b)); }; }; };
+var flip = function (f) { return function (b) { return function (a) { return (f(a)(b)); }; }; };
+exports.flip = flip;
 /**
  * identity function.
  */
-exports.identity = function (a) { return a; };
+var identity = function (a) { return a; };
+exports.identity = identity;
 exports.id = exports.identity;
 /**
  * curry an ES function that accepts 2 parameters.
  */
-exports.curry = function (f) { return function (a) { return function (b) { return f(a, b); }; }; };
+var curry = function (f) { return function (a) { return function (b) { return f(a, b); }; }; };
+exports.curry = curry;
 /**
  * curry3 curries an ES function that accepts 3 parameters.
  */
-exports.curry3 = function (f) { return function (a) { return function (b) { return function (c) { return f(a, b, c); }; }; }; };
+var curry3 = function (f) { return function (a) { return function (b) { return function (c) { return f(a, b, c); }; }; }; };
+exports.curry3 = curry3;
 /**
  * curry4 curries an ES function that accepts 4 parameters.
  */
-exports.curry4 = function (f) {
+var curry4 = function (f) {
     return function (a) { return function (b) { return function (c) { return function (d) { return f(a, b, c, d); }; }; }; };
 };
+exports.curry4 = curry4;
 /**
  * curry5 curries an ES function that accepts 5 parameters.
  */
-exports.curry5 = function (f) {
+var curry5 = function (f) {
     return function (a) { return function (b) { return function (c) { return function (d) { return function (e) { return f(a, b, c, d, e); }; }; }; }; };
 };
+exports.curry5 = curry5;
 /**
  * noop function
  */
-exports.noop = function () { };
+var noop = function () { };
+exports.noop = noop;
 
 },{}],22:[function(require,module,exports){
 "use strict";
@@ -2981,60 +3052,70 @@ exports.Just = Just;
 /**
  * of
  */
-exports.of = function (a) { return new Just(a); };
+var of = function (a) { return new Just(a); };
+exports.of = of;
 /**
  * nothing convenience constructor
  */
-exports.nothing = function () { return new Nothing(); };
+var nothing = function () { return new Nothing(); };
+exports.nothing = nothing;
 /**
  * just convenience constructor
  */
-exports.just = function (a) { return new Just(a); };
+var just = function (a) { return new Just(a); };
+exports.just = just;
 /**
  * fromNullable constructs a Maybe from a value that may be null.
  */
-exports.fromNullable = function (a) { return a == null ?
+var fromNullable = function (a) { return a == null ?
     new Nothing() : new Just(a); };
+exports.fromNullable = fromNullable;
 /**
  * fromArray checks an array to see if it's empty
  *
  * Returns [[Nothing]] if it is, [[Just]] otherwise.
  */
-exports.fromArray = function (a) {
+var fromArray = function (a) {
     return (a.length === 0) ? new Nothing() : new Just(a);
 };
+exports.fromArray = fromArray;
 /**
  * fromObject uses Object.keys to turn see if an object
  * has any own properties.
  */
-exports.fromObject = function (o) {
+var fromObject = function (o) {
     return Object.keys(o).length === 0 ? new Nothing() : new Just(o);
 };
+exports.fromObject = fromObject;
 /**
  * fromString constructs Nothing<A> if the string is empty or Just<A> otherwise.
  */
-exports.fromString = function (s) {
+var fromString = function (s) {
     return (s === '') ? new Nothing() : new Just(s);
 };
+exports.fromString = fromString;
 /**
  * fromBoolean constructs Nothing if b is false, Just<A> otherwise
  */
-exports.fromBoolean = function (b) {
+var fromBoolean = function (b) {
     return (b === false) ? new Nothing() : new Just(b);
 };
+exports.fromBoolean = fromBoolean;
 /**
  * fromNumber constructs Nothing if n is 0 Just<A> otherwise.
  */
-exports.fromNumber = function (n) {
+var fromNumber = function (n) {
     return (n === 0) ? new Nothing() : new Just(n);
 };
+exports.fromNumber = fromNumber;
 /**
  * fromNaN constructs Nothing if a value is not a number or
  * Just<A> otherwise.
  */
-exports.fromNaN = function (n) {
+var fromNaN = function (n) {
     return isNaN(n) ? new Nothing() : new Just(n);
 };
+exports.fromNaN = fromNaN;
 
 },{}],23:[function(require,module,exports){
 "use strict";
@@ -3087,43 +3168,48 @@ exports.assign = assign;
  * 2. must not be an instance of Date
  * 3. must not be an instance of RegExp
  */
-exports.isRecord = function (value) {
+var isRecord = function (value) {
     return (typeof value === 'object') &&
         (value != null) &&
         (!Array.isArray(value)) &&
         (!(value instanceof Date)) &&
         (!(value instanceof RegExp));
 };
+exports.isRecord = isRecord;
 /**
  * keys is an Object.keys shortcut.
  */
-exports.keys = function (obj) { return Object.keys(obj); };
+var keys = function (obj) { return Object.keys(obj); };
+exports.keys = keys;
 /**
  * map over a Record's properties producing a new record.
  *
  * The order of keys processed is not guaranteed.
  */
-exports.map = function (rec, f) {
+var map = function (rec, f) {
     return exports.keys(rec)
         .reduce(function (p, k) { return exports.merge(p, exports.set({}, k, f(rec[k], k, rec))); }, {});
 };
+exports.map = map;
 /**
  * mapTo an array the properties of the provided Record.
  *
  * The elements of the array are the result of applying the function provided
  * to each property. The order of elements is not guaranteed.
  */
-exports.mapTo = function (rec, f) {
+var mapTo = function (rec, f) {
     return exports.keys(rec).map(function (k) { return f(rec[k], k, rec); });
 };
+exports.mapTo = mapTo;
 /**
  * forEach is similar to map only the result of each function call is not kept.
  *
  * The order of keys processed is not guaranteed.
  */
-exports.forEach = function (rec, f) {
+var forEach = function (rec, f) {
     return exports.keys(rec).forEach(function (k) { return f(rec[k], k, rec); });
 };
+exports.forEach = forEach;
 /**
  * reduce a Record's keys to a single value.
  *
@@ -3131,74 +3217,84 @@ exports.forEach = function (rec, f) {
  * there are no properties on the Record. The order of keys processed is
  * not guaranteed.
  */
-exports.reduce = function (rec, accum, f) {
+var reduce = function (rec, accum, f) {
     return exports.keys(rec).reduce(function (p, k) { return f(p, rec[k], k); }, accum);
 };
+exports.reduce = reduce;
 /**
  * filter the keys of a Record using a filter function.
  */
-exports.filter = function (rec, f) {
+var filter = function (rec, f) {
     return exports.keys(rec)
         .reduce(function (p, k) { return f(rec[k], k, rec) ?
         exports.merge(p, exports.set({}, k, rec[k])) : p; }, {});
 };
+exports.filter = filter;
 /**
  * merge two objects (shallow) into one new object.
  *
  * The return value's type is the product of the two objects provided.
  */
-exports.merge = function (left, right) { return assign({}, left, right); };
+var merge = function (left, right) { return assign({}, left, right); };
+exports.merge = merge;
 /**
  * merge3
  */
-exports.merge3 = function (a, b, c) { return assign({}, a, b, c); };
+var merge3 = function (a, b, c) { return assign({}, a, b, c); };
+exports.merge3 = merge3;
 /**
  * merge4
  */
-exports.merge4 = function (a, b, c, d) {
+var merge4 = function (a, b, c, d) {
     return assign({}, a, b, c, d);
 };
+exports.merge4 = merge4;
 /**
  * merge5
  */
-exports.merge5 = function (a, b, c, d, e) {
+var merge5 = function (a, b, c, d, e) {
     return assign({}, a, b, c, d, e);
 };
+exports.merge5 = merge5;
 /**
  * rmerge merges 2 records recursively.
  *
  * This function may violate type safety.
  */
-exports.rmerge = function (left, right) {
+var rmerge = function (left, right) {
     return exports.reduce(right, left, deepMerge);
 };
+exports.rmerge = rmerge;
 /**
  * rmerge3
  */
-exports.rmerge3 = function (r, s, t) {
+var rmerge3 = function (r, s, t) {
     return [s, t]
         .reduce(function (p, c) {
         return exports.reduce(c, (p), deepMerge);
     }, r);
 };
+exports.rmerge3 = rmerge3;
 /**
  * rmerge4
  */
-exports.rmerge4 = function (r, s, t, u) {
+var rmerge4 = function (r, s, t, u) {
     return [s, t, u]
         .reduce(function (p, c) {
         return exports.reduce(c, (p), deepMerge);
     }, r);
 };
+exports.rmerge4 = rmerge4;
 /**
  * rmerge5
  */
-exports.rmerge5 = function (r, s, t, u, v) {
+var rmerge5 = function (r, s, t, u, v) {
     return [s, t, u, v]
         .reduce(function (p, c) {
         return exports.reduce(c, (p), deepMerge);
     }, r);
 };
+exports.rmerge5 = rmerge5;
 var deepMerge = function (pre, curr, key) {
     return exports.isRecord(curr) ?
         exports.merge(pre, exports.set({}, key, exports.isRecord(pre[key]) ?
@@ -3209,19 +3305,20 @@ var deepMerge = function (pre, curr, key) {
 /**
  * exclude removes the specified properties from a Record.
  */
-exports.exclude = function (rec, keys) {
+var exclude = function (rec, keys) {
     var list = Array.isArray(keys) ? keys : [keys];
     return exports.reduce(rec, {}, function (p, c, k) {
         return list.indexOf(k) > -1 ? p : exports.merge(p, exports.set({}, k, c));
     });
 };
+exports.exclude = exclude;
 /**
  * partition a Record into two sub-records using a PartitionFunc function.
  *
  * This function produces an array where the first element is a Record
  * of values that return true and the second, false.
  */
-exports.partition = function (r, f) {
+var partition = function (r, f) {
     return exports.reduce(r, [{}, {}], function (_a, c, k) {
         var yes = _a[0], no = _a[1];
         return f(c, k, r) ?
@@ -3229,11 +3326,12 @@ exports.partition = function (r, f) {
             [yes, exports.merge(no, exports.set({}, k, c))];
     });
 };
+exports.partition = partition;
 /**
  * group the properties of a Record into another Record using a GroupFunc
  * function.
  */
-exports.group = function (rec, f) {
+var group = function (rec, f) {
     return exports.reduce(rec, {}, function (prev, curr, key) {
         var category = f(curr, key, rec);
         var value = exports.isRecord(prev[category]) ?
@@ -3242,18 +3340,21 @@ exports.group = function (rec, f) {
         return exports.merge(prev, exports.set({}, category, value));
     });
 };
+exports.group = group;
 /**
  * values returns a shallow array of the values of a record.
  */
-exports.values = function (r) {
+var values = function (r) {
     return exports.reduce(r, [], function (p, c) { return array_1.concat(p, c); });
 };
+exports.values = values;
 /**
  * hasKey indicates whether a Record has a given key.
  */
-exports.hasKey = function (r, key) {
+var hasKey = function (r, key) {
     return Object.hasOwnProperty.call(r, key);
 };
+exports.hasKey = hasKey;
 /**
  * clone a Record.
  *
@@ -3261,9 +3362,10 @@ exports.hasKey = function (r, key) {
  * This function should only be used on Records or objects that
  * are not class instances. This function may violate type safety.
  */
-exports.clone = function (r) {
+var clone = function (r) {
     return exports.reduce(r, {}, function (p, c, k) { exports.set(p, k, _clone(c)); return p; });
 };
+exports.clone = clone;
 var _clone = function (a) {
     if (type_1.isArray(a))
         return a.map(_clone);
@@ -3275,25 +3377,29 @@ var _clone = function (a) {
 /**
  * count how many properties exist on the record.
  */
-exports.count = function (r) { return exports.keys(r).length; };
+var count = function (r) { return exports.keys(r).length; };
+exports.count = count;
 /**
  * empty tests whether the object has any properties or not.
  */
-exports.empty = function (r) { return exports.count(r) === 0; };
+var empty = function (r) { return exports.count(r) === 0; };
+exports.empty = empty;
 /**
  * some tests whether at least one property of a Record passes the
  * test implemented by the provided function.
  */
-exports.some = function (o, f) {
+var some = function (o, f) {
     return exports.keys(o).some(function (k) { return f(o[k], k, o); });
 };
+exports.some = some;
 /**
  * every tests whether each property of a Record passes the
  * test implemented by the provided function.
  */
-exports.every = function (o, f) {
+var every = function (o, f) {
     return exports.keys(o).every(function (k) { return f(o[k], k, o); });
 };
+exports.every = every;
 /**
  * set the value of a key on a Record ignoring problematic keys.
  *
@@ -3309,21 +3415,23 @@ exports.every = function (o, f) {
  * Do:
  * obj = set(obj, key, value);
  */
-exports.set = function (r, k, value) {
+var set = function (r, k, value) {
     if (!exports.isBadKey(k))
         r[k] = value;
     return r;
 };
+exports.set = set;
 /**
  * isBadKey tests whether a key is problematic (Like __proto__).
  */
-exports.isBadKey = function (key) {
+var isBadKey = function (key) {
     return exports.badKeys.indexOf(key) !== -1;
 };
+exports.isBadKey = isBadKey;
 /**
  * compact a Record by removing any properties that == null.
  */
-exports.compact = function (rec) {
+var compact = function (rec) {
     var result = {};
     for (var key in rec)
         if (rec.hasOwnProperty(key))
@@ -3331,12 +3439,14 @@ exports.compact = function (rec) {
                 result = exports.set(result, key, rec[key]);
     return result;
 };
+exports.compact = compact;
 /**
  * rcompact recursively compacts a Record.
  */
-exports.rcompact = function (rec) {
+var rcompact = function (rec) {
     return exports.compact(exports.map(rec, function (val) { return exports.isRecord(val) ? exports.rcompact(val) : val; }));
 };
+exports.rcompact = rcompact;
 /**
  * make creates a new instance of a Record optionally using the provided
  * value as an initializer.
@@ -3344,7 +3454,7 @@ exports.rcompact = function (rec) {
  * This function is intended to assist with curbing prototype pollution by
  * configuring a setter for __proto__ that ignores changes.
  */
-exports.make = function (init) {
+var make = function (init) {
     if (init === void 0) { init = {}; }
     var rec = {};
     Object.defineProperty(rec, '__proto__', {
@@ -3357,24 +3467,27 @@ exports.make = function (init) {
             rec[key] = init[key];
     return rec;
 };
+exports.make = make;
 /**
  * pickKey selects the value of the first property in a Record that passes the
  * provided test.
  */
-exports.pickKey = function (rec, test) {
+var pickKey = function (rec, test) {
     return exports.reduce(rec, maybe_1.nothing(), function (p, c, k) {
         return p.isJust() ? p : test(c, k, rec) ? maybe_1.just(k) : p;
     });
 };
+exports.pickKey = pickKey;
 /**
  * pickValue selects the value of the first property in a Record that passes the
  * provided test.
  */
-exports.pickValue = function (rec, test) {
+var pickValue = function (rec, test) {
     return exports.reduce(rec, maybe_1.nothing(), function (p, c, k) {
         return p.isJust() ? p : test(c, k, rec) ? maybe_1.just(c) : p;
     });
 };
+exports.pickValue = pickValue;
 
 },{"../array":19,"../maybe":22,"../type":26}],24:[function(require,module,exports){
 "use strict";
@@ -3404,7 +3517,7 @@ var TOKEN_ESCAPE = '\\';
 /**
  * tokenize a path into a list of sequential property names.
  */
-exports.tokenize = function (str) {
+var tokenize = function (str) {
     var i = 0;
     var buf = '';
     var curr = '';
@@ -3491,47 +3604,53 @@ exports.tokenize = function (str) {
         tokens.push(buf);
     return tokens;
 };
+exports.tokenize = tokenize;
 /**
  * unsafeGet retrieves a value at the specified path
  * on any ES object.
  *
  * This function does not check if getting the value succeeded or not.
  */
-exports.unsafeGet = function (path, src) {
+var unsafeGet = function (path, src) {
     if (src == null)
         return undefined;
     var toks = exports.tokenize(path);
     var head = src[toks.shift()];
     return toks.reduce(function (p, c) { return (p == null) ? p : p[c]; }, head);
 };
+exports.unsafeGet = unsafeGet;
 /**
  * get a value from a Record given its path safely.
  */
-exports.get = function (path, src) {
+var get = function (path, src) {
     return maybe_1.fromNullable(exports.unsafeGet(path, src));
 };
+exports.get = get;
 /**
  * getDefault is like get but takes a default value to return if
  * the path is not found.
  */
-exports.getDefault = function (path, src, def) {
+var getDefault = function (path, src, def) {
     return exports.get(path, src).orJust(function () { return def; }).get();
 };
+exports.getDefault = getDefault;
 /**
  * getString casts the resulting value to a string.
  *
  * An empty string is provided if the path is not found.
  */
-exports.getString = function (path, src) {
+var getString = function (path, src) {
     return exports.get(path, src).map(function (v) { return String(v); }).orJust(function () { return ''; }).get();
 };
+exports.getString = getString;
 /**
  * set sets a value on an object given a path.
  */
-exports.set = function (p, v, r) {
+var set = function (p, v, r) {
     var toks = exports.tokenize(p);
     return _set(r, v, toks);
 };
+exports.set = set;
 var _set = function (r, value, toks) {
     var o;
     if (toks.length === 0)
@@ -3545,7 +3664,7 @@ var _set = function (r, value, toks) {
  *
  * This function escapes dots and dots only.
  */
-exports.escape = function (p) {
+var escape = function (p) {
     var i = 0;
     var buf = '';
     var curr = '';
@@ -3559,10 +3678,11 @@ exports.escape = function (p) {
     }
     return buf;
 };
+exports.escape = escape;
 /**
  * unescape a path that has been previously escaped.
  */
-exports.unescape = function (p) {
+var unescape = function (p) {
     var i = 0;
     var curr = '';
     var next = '';
@@ -3581,10 +3701,11 @@ exports.unescape = function (p) {
     }
     return buf;
 };
+exports.unescape = unescape;
 /**
  * escapeRecord escapes each property of a record recursively.
  */
-exports.escapeRecord = function (r) {
+var escapeRecord = function (r) {
     return _1.reduce(r, {}, function (p, c, k) {
         if (typeof c === 'object')
             p = _1.set(p, exports.escape(k), exports.escapeRecord(c));
@@ -3593,10 +3714,11 @@ exports.escapeRecord = function (r) {
         return p;
     });
 };
+exports.escapeRecord = escapeRecord;
 /**
  * unescapeRecord unescapes each property of a record recursively.
  */
-exports.unescapeRecord = function (r) {
+var unescapeRecord = function (r) {
     return _1.reduce(r, {}, function (p, c, k) {
         if (_1.isRecord(c))
             p = _1.set(p, exports.unescape(k), exports.unescapeRecord(c));
@@ -3605,15 +3727,17 @@ exports.unescapeRecord = function (r) {
         return p;
     });
 };
+exports.unescapeRecord = unescapeRecord;
 /**
  * flatten an object into a Record where each key is a path to a non-complex
  * value or array.
  *
  * If any of the paths contain dots, they will be escaped.
  */
-exports.flatten = function (r) {
+var flatten = function (r) {
     return (flatImpl('')({})(r));
 };
+exports.flatten = flatten;
 var flatImpl = function (pfix) { return function (prev) {
     return function (r) {
         return _1.reduce(r, prev, function (p, c, k) { return _1.isRecord(c) ?
@@ -3627,9 +3751,10 @@ var prefix = function (pfix, key) { return (pfix === '') ?
  * unflatten a flattened Record so that any nested paths are expanded
  * to their full representation.
  */
-exports.unflatten = function (r) {
+var unflatten = function (r) {
     return _1.reduce(r, {}, function (p, c, k) { return exports.set(k, c, p); });
 };
+exports.unflatten = unflatten;
 /**
  * project a Record according to the field specification given.
  *
@@ -3637,11 +3762,12 @@ exports.unflatten = function (r) {
  * This function may violate type safety and may leave undefined holes in the
  * result.
  */
-exports.project = function (spec, rec) {
+var project = function (spec, rec) {
     return _1.reduce(spec, {}, function (p, c, k) {
         return (c === true) ? exports.set(k, exports.unsafeGet(k, rec), p) : p;
     });
 };
+exports.project = project;
 
 },{"../maybe":22,"./":23}],25:[function(require,module,exports){
 "use strict";
@@ -3649,7 +3775,7 @@ exports.project = function (spec, rec) {
  *  Common functions used to manipulate strings.
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.propercase = exports.interpolate = exports.uncapitalize = exports.capitalize = exports.camelCase = exports.contains = exports.endsWith = exports.startsWith = void 0;
+exports.alphanumeric = exports.numeric = exports.alpha = exports.interpolate = exports.uncapitalize = exports.capitalize = exports.propercase = exports.modulecase = exports.classcase = exports.camelcase = exports.contains = exports.endsWith = exports.startsWith = void 0;
 /** imports */
 var path_1 = require("../record/path");
 var record_1 = require("../record");
@@ -3657,56 +3783,128 @@ var record_1 = require("../record");
 /**
  * startsWith polyfill.
  */
-exports.startsWith = function (str, search, pos) {
+var startsWith = function (str, search, pos) {
     if (pos === void 0) { pos = 0; }
     return str.substr(!pos || pos < 0 ? 0 : +pos, search.length) === search;
 };
+exports.startsWith = startsWith;
 /**
  * endsWith polyfill.
  */
-exports.endsWith = function (str, search, this_len) {
+var endsWith = function (str, search, this_len) {
     if (this_len === void 0) { this_len = str.length; }
     return (this_len === undefined || this_len > str.length) ?
         this_len = str.length :
         str.substring(this_len - search.length, this_len) === search;
 };
+exports.endsWith = endsWith;
 /**
  * contains uses String#indexOf to determine if a substring occurs
  * in a string.
  */
-exports.contains = function (str, match) {
+var contains = function (str, match) {
     return (str.indexOf(match) > -1);
 };
+exports.contains = contains;
+var seperator = /([\\\/._-]|\s)+/g;
 /**
- * camelCase transforms a string into CamelCase.
+ * camelcase transforms a string into camelCase.
  */
-exports.camelCase = function (str) {
-    return [str[0].toUpperCase()]
-        .concat(str
-        .split(str[0])
-        .slice(1)
-        .join(str[0]))
-        .join('')
-        .replace(/(\-|_|\s)+(.)?/g, function (_, __, c) {
-        return (c ? c.toUpperCase() : '');
-    });
+var camelcase = function (str) {
+    var i = 0;
+    var curr = '';
+    var prev = '';
+    var buf = '';
+    while (true) {
+        if (i === str.length)
+            return buf;
+        curr = (i === 0) ? str[i].toLowerCase() : str[i];
+        if (curr.match(seperator)) {
+            prev = '-';
+        }
+        else {
+            buf = buf.concat((prev === '-') ?
+                curr.toUpperCase() :
+                curr.toLowerCase());
+            prev = '';
+        }
+        i++;
+    }
 };
+exports.camelcase = camelcase;
+/**
+ * classcase is like camelCase except the first letter of the string is
+ * upper case.
+ */
+var classcase = function (str) {
+    return (str === '') ? '' : str[0].toUpperCase().concat(exports.camelcase(str).slice(1));
+};
+exports.classcase = classcase;
+/**
+ * modulecase transforms a string into module-case.
+ */
+var modulecase = function (str) {
+    var i = 0;
+    var prev = '';
+    var curr = '';
+    var next = '';
+    var buf = '';
+    while (true) {
+        if (i === str.length)
+            return buf;
+        curr = str[i];
+        next = str[i + 1];
+        if (curr.match(/[A-Z]/) && (i > 0)) {
+            if (prev !== '-')
+                buf = buf.concat('-');
+            prev = curr.toLowerCase();
+            buf = buf.concat(prev);
+        }
+        else if (curr.match(seperator)) {
+            if ((prev !== '-') && next && !seperator.test(next)) {
+                prev = '-';
+                buf = buf.concat(prev);
+            }
+        }
+        else {
+            prev = curr.toLowerCase();
+            buf = buf.concat(prev);
+        }
+        i++;
+    }
+};
+exports.modulecase = modulecase;
+/**
+ * propercase converts a string into Proper Case.
+ */
+var propercase = function (str) {
+    return str
+        .trim()
+        .toLowerCase()
+        .split(' ')
+        .map(function (tok) { return (tok.length > 0) ?
+        "" + tok[0].toUpperCase() + tok.slice(1) : tok; })
+        .join(' ');
+};
+exports.propercase = propercase;
 /**
  * capitalize a string.
  *
  * Note: spaces are treated as part of the string.
  */
-exports.capitalize = function (str) {
-    return "" + str[0].toUpperCase() + str.slice(1);
+var capitalize = function (str) {
+    return (str === '') ? '' : "" + str[0].toUpperCase() + str.slice(1);
 };
+exports.capitalize = capitalize;
 /**
  * uncapitalize a string.
  *
  * Note: spaces are treated as part of the string.
  */
-exports.uncapitalize = function (str) {
-    return "" + str[0].toLowerCase() + str.slice(1);
+var uncapitalize = function (str) {
+    return (str === '') ? '' : "" + str[0].toLowerCase() + str.slice(1);
 };
+exports.uncapitalize = uncapitalize;
 var interpolateDefaults = {
     start: '\{',
     end: '\}',
@@ -3718,7 +3916,7 @@ var interpolateDefaults = {
  * interpolate a template string replacing variable paths with values
  * in the data object.
  */
-exports.interpolate = function (str, data, opts) {
+var interpolate = function (str, data, opts) {
     if (opts === void 0) { opts = {}; }
     var options = record_1.assign({}, interpolateDefaults, opts);
     var reg = new RegExp("" + options.start + options.regex + options.end, 'g');
@@ -3739,18 +3937,29 @@ exports.interpolate = function (str, data, opts) {
             .get();
     });
 };
+exports.interpolate = interpolate;
 /**
- * propercase converts a string into Proper Case.
+ * alpha omits characters in a string not found in the English alphabet.
  */
-exports.propercase = function (str) {
-    return str
-        .trim()
-        .toLowerCase()
-        .split(' ')
-        .map(function (tok) { return (tok.length > 0) ?
-        "" + tok[0].toUpperCase() + tok.slice(1) : tok; })
-        .join(' ');
+var alpha = function (str) {
+    return str.replace(/[^a-zA-Z]/g, '');
 };
+exports.alpha = alpha;
+/**
+ * numeric omits characters in a string that are decimal digits.
+ */
+var numeric = function (str) {
+    return str.replace(/[^0-9]/g, '');
+};
+exports.numeric = numeric;
+/**
+ * alhpanumeric omits characters not found in the English alphabet and not
+ * decimal digits.
+ */
+var alphanumeric = function (str) {
+    return str.replace(/[\W]|[_]/g, '');
+};
+exports.alphanumeric = alphanumeric;
 
 },{"../record":23,"../record/path":24}],26:[function(require,module,exports){
 "use strict";
@@ -3771,9 +3980,10 @@ exports.Any = Any;
  *
  * Does not consider an Array an object.
  */
-exports.isObject = function (value) {
+var isObject = function (value) {
     return (typeof value === 'object') && (!exports.isArray(value));
 };
+exports.isObject = isObject;
 /**
  * isArray test.
  */
@@ -3781,41 +3991,47 @@ exports.isArray = Array.isArray;
 /**
  * isString test.
  */
-exports.isString = function (value) {
+var isString = function (value) {
     return typeof value === 'string';
 };
+exports.isString = isString;
 /**
  * isNumber test.
  */
-exports.isNumber = function (value) {
+var isNumber = function (value) {
     return (typeof value === 'number') && (!isNaN(value));
 };
+exports.isNumber = isNumber;
 /**
  * isBoolean test.
  */
-exports.isBoolean = function (value) {
+var isBoolean = function (value) {
     return typeof value === 'boolean';
 };
+exports.isBoolean = isBoolean;
 /**
  * isFunction test.
  */
-exports.isFunction = function (value) {
+var isFunction = function (value) {
     return typeof value === 'function';
 };
+exports.isFunction = isFunction;
 /**
  * isPrim test.
  */
-exports.isPrim = function (value) {
+var isPrim = function (value) {
     return !(exports.isObject(value) ||
         exports.isArray(value) ||
         exports.isFunction(value));
 };
+exports.isPrim = isPrim;
 /**
  * is performs a typeof of check on a type.
  */
-exports.is = function (expected) { return function (value) {
+var is = function (expected) { return function (value) {
     return typeof (value) === expected;
 }; };
+exports.is = is;
 /**
  * test whether a value conforms to some pattern.
  *
@@ -3830,7 +4046,7 @@ exports.is = function (expected) { return function (value) {
  *             the function is RegExp then we uses the RegExp.test function
  *             instead.
  */
-exports.test = function (value, t) {
+var test = function (value, t) {
     if ((prims.indexOf(typeof t) > -1) && (value === t))
         return true;
     else if ((typeof t === 'function') &&
@@ -3852,13 +4068,14 @@ exports.test = function (value, t) {
             exports.test(value[k], t[k]) : false; });
     return false;
 };
+exports.test = test;
 /**
  * show the type of a value.
  *
  * Note: This may crash if the value is an
  * object literal with recursive references.
  */
-exports.show = function (value) {
+var show = function (value) {
     if (typeof value === 'object') {
         if (Array.isArray(value))
             return "[" + value.map(exports.show) + "];";
@@ -3872,15 +4089,17 @@ exports.show = function (value) {
         return '' + value;
     }
 };
+exports.show = show;
 /**
  * toString casts a value to a string.
  *
  * If the value is null or undefined an empty string is returned instead of
  * the default.
  */
-exports.toString = function (val) {
+var toString = function (val) {
     return (val == null) ? '' : String(val);
 };
+exports.toString = toString;
 
 },{}],27:[function(require,module,exports){
 "use strict";
@@ -3889,7 +4108,8 @@ exports.round = exports.isMultipleOf = void 0;
 /**
  * isMultipleOf tests whether the Integer 'y' is a multiple of x.
  */
-exports.isMultipleOf = function (x, y) { return ((y % x) === 0); };
+var isMultipleOf = function (x, y) { return ((y % x) === 0); };
+exports.isMultipleOf = isMultipleOf;
 /**
  * round a number "x" to "n" places (n defaults to 0 places).
  *
@@ -3918,13 +4138,14 @@ exports.isMultipleOf = function (x, y) { return ((y % x) === 0); };
  * for more details.
  *
  */
-exports.round = function (x, n) {
+var round = function (x, n) {
     if (n === void 0) { n = 0; }
     var exp = Math.pow(10, n);
     var sign = x >= 0 ? 1 : -1;
     var offset = (n > 0) ? (1 / (Math.pow(10, n + 1))) : 0;
     return sign * (Math.round((Math.abs(x) * exp) + offset) / exp);
 };
+exports.round = round;
 
 },{}],28:[function(require,module,exports){
 "use strict";
@@ -7650,7 +7871,7 @@ var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
         extendStatics = Object.setPrototypeOf ||
             ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
         return extendStatics(d, b);
     };
     return function (d, b) {
@@ -7660,6 +7881,7 @@ var __extends = (this && this.__extends) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.assert = exports.toString = exports.Failed = exports.Negative = exports.Positive = void 0;
 var stringify = require("json-stringify-safe");
 var deepEqual = require("deep-equal");
 /**
@@ -7675,21 +7897,21 @@ var Positive = /** @class */ (function () {
         get: function () {
             return this;
         },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     Object.defineProperty(Positive.prototype, "not", {
         get: function () {
             return new Negative(this.value, this.throwErrors);
         },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     Object.defineProperty(Positive.prototype, "instance", {
         get: function () {
             return this;
         },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     Positive.prototype.assert = function (ok, condition) {
@@ -7773,7 +7995,7 @@ var Negative = /** @class */ (function (_super) {
         get: function () {
             return new Positive(this.value, this.throwErrors); // not not == true
         },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     return Negative;
@@ -7796,7 +8018,7 @@ exports.Failed = Failed;
 /**
  * @private
  */
-exports.toString = function (value) {
+var toString = function (value) {
     if (typeof value === 'function') {
         return value.name;
     }
@@ -7816,17 +8038,170 @@ exports.toString = function (value) {
     }
     return stringify(value);
 };
+exports.toString = toString;
 /**
  * assert turns a value into a Matcher so it can be tested.
  *
  * The Matcher returned is positive and configured to throw
  * errors if any tests fail.
  */
-exports.assert = function (value) { return new Positive(value, true); };
+var assert = function (value) { return new Positive(value, true); };
+exports.assert = assert;
 
 },{"deep-equal":66,"json-stringify-safe":78}],65:[function(require,module,exports){
-arguments[4][13][0].apply(exports,arguments)
-},{"deep-equal":66,"dup":13}],66:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.Mock = exports.ReturnCallback = exports.ReturnValue = exports.Invocation = void 0;
+var deepEqual = require("deep-equal");
+/**
+ * Invocation is a recording of method invocations stored by a Mock.
+ */
+var Invocation = /** @class */ (function () {
+    function Invocation(name, args, value) {
+        this.name = name;
+        this.args = args;
+        this.value = value;
+    }
+    return Invocation;
+}());
+exports.Invocation = Invocation;
+/**
+ * ReturnValue stores a value to be returned by a mocked method.
+ */
+var ReturnValue = /** @class */ (function () {
+    function ReturnValue(name, value) {
+        this.name = name;
+        this.value = value;
+    }
+    ReturnValue.prototype.get = function () {
+        var _ = [];
+        for (var _i = 0; _i < arguments.length; _i++) {
+            _[_i] = arguments[_i];
+        }
+        return this.value;
+    };
+    return ReturnValue;
+}());
+exports.ReturnValue = ReturnValue;
+/**
+ * ReturnCallback allows a function to be used to provide a ReturnValue.
+ */
+var ReturnCallback = /** @class */ (function () {
+    function ReturnCallback(name, value) {
+        this.name = name;
+        this.value = value;
+    }
+    ReturnCallback.prototype.get = function () {
+        var args = [];
+        for (var _i = 0; _i < arguments.length; _i++) {
+            args[_i] = arguments[_i];
+        }
+        return this.value.apply(undefined, args);
+    };
+    return ReturnCallback;
+}());
+exports.ReturnCallback = ReturnCallback;
+/**
+ * Mock is a class that can be used to keep track of the mocking of some
+ * interface.
+ *
+ * It provides methods for recording the invocation of methods and setting
+ * their return values. Generally, embedding a Mock instance is preffered to
+ * extending the class.
+ */
+var Mock = /** @class */ (function () {
+    function Mock(calls, returns) {
+        if (calls === void 0) { calls = []; }
+        if (returns === void 0) { returns = {}; }
+        this.calls = calls;
+        this.returns = returns;
+    }
+    /**
+     * invoke records the invocation of a method.
+     * @param method - The method name.
+     * @param args   - An array of arguments the method is called with.
+     * @param ret    - The return value of the method invocation.
+     */
+    Mock.prototype.invoke = function (method, args, ret) {
+        this.calls.push(new Invocation(method, args, ret));
+        return this.returns.hasOwnProperty(method) ?
+            this.returns[method].get.apply(this.returns[method], args) : ret;
+    };
+    /**
+     * setReturnValue so that invocation of a method always return the desired
+     * result.
+     */
+    Mock.prototype.setReturnValue = function (method, value) {
+        this.returns[method] = new ReturnValue(method, value);
+        return this;
+    };
+    /**
+     * setReturnCallback allows a function to provide the return value
+     * of a method on invocation.
+     */
+    Mock.prototype.setReturnCallback = function (method, value) {
+        this.returns[method] =
+            new ReturnCallback(method, value);
+        return this;
+    };
+    /**
+     * getCalledArgs provides the first set of arguments a method was called
+     * with.
+     *
+     * The array is empty if the method was never called.
+     */
+    Mock.prototype.getCalledArgs = function (name) {
+        return this.calls.reduce(function (p, c) {
+            return (p.length > 0) ? p : (c.name === name) ?
+                c.args : p;
+        }, []);
+    };
+    /**
+     * wasCalledWith tests whether a method was called with the specified args.
+     *
+     * Compared using === .
+     */
+    Mock.prototype.wasCalledWith = function (name, args) {
+        return this.calls.some(function (c) { return (c.name === name) &&
+            c.args.every(function (a, i) { return a === args[i]; }); });
+    };
+    /**
+     * wasCalledWithDeep tests whether a method was called with the specified
+     * args.
+     *
+     * Compared using deepEqual.
+     */
+    Mock.prototype.wasCalledWithDeep = function (name, args) {
+        return this.calls.some(function (c) {
+            return (c.name === name) && deepEqual(c.args, args);
+        });
+    };
+    /**
+     * getCalledList returns a list of methods that have been called so far.
+     */
+    Mock.prototype.getCalledList = function () {
+        return this.calls.map(function (c) { return c.name; });
+    };
+    /**
+     * wasCalled tests whether a method was called.
+     */
+    Mock.prototype.wasCalled = function (method) {
+        return this.getCalledList().indexOf(method) > -1;
+    };
+    /**
+     * wasCalledNTimes tests whether a method was called a certain amount of
+     * times.
+     */
+    Mock.prototype.wasCalledNTimes = function (method, n) {
+        return this.getCalledList().reduce(function (p, c) {
+            return (c === method) ? p + 1 : p;
+        }, 0) === n;
+    };
+    return Mock;
+}());
+exports.Mock = Mock;
+
+},{"deep-equal":66}],66:[function(require,module,exports){
 var objectKeys = require('object-keys');
 var isArguments = require('is-arguments');
 var is = require('object-is');
@@ -8301,7 +8676,7 @@ var implementation = require('./implementation');
 module.exports = Function.prototype.bind || implementation;
 
 },{"./implementation":70}],72:[function(require,module,exports){
-(function (global){
+(function (global){(function (){
 'use strict';
 
 var origSymbol = global.Symbol;
@@ -8316,7 +8691,7 @@ module.exports = function hasNativeSymbols() {
 	return hasSymbolSham();
 };
 
-}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+}).call(this)}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 },{"./shams":73}],73:[function(require,module,exports){
 'use strict';
 
@@ -9400,6 +9775,10 @@ var TestApp = /** @class */ (function (_super) {
     function TestApp() {
         return _super !== null && _super.apply(this, arguments) || this;
     }
+    TestApp.prototype.spawn = function (temp) {
+        this.vm.spawn(temp);
+        return this;
+    };
     return TestApp;
 }(app_1.JApp));
 exports.TestApp = TestApp;

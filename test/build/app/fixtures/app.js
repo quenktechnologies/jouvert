@@ -20,6 +20,10 @@ var TestApp = /** @class */ (function (_super) {
     function TestApp() {
         return _super !== null && _super.apply(this, arguments) || this;
     }
+    TestApp.prototype.spawn = function (temp) {
+        this.vm.spawn(temp);
+        return this;
+    };
     return TestApp;
 }(app_1.JApp));
 exports.TestApp = TestApp;

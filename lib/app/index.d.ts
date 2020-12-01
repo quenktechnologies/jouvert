@@ -1,16 +1,12 @@
 import { Maybe } from '@quenk/noni/lib/data/maybe';
-import { Template as T } from '@quenk/potoo/lib/actor/template';
+import { Template } from '@quenk/potoo/lib/actor/template';
 import { PTValue } from '@quenk/potoo/lib/actor/system/vm/type';
 import { Script } from '@quenk/potoo/lib/actor/system/vm/script';
 import { Conf } from '@quenk/potoo/lib/actor/system/vm/conf';
 import { PVM } from '@quenk/potoo/lib/actor/system/vm';
 import { System } from '@quenk/potoo/lib/actor/system';
 import { Instance } from '@quenk/potoo/lib/actor';
-/**
- * Template for actors within the app's system.
- */
-export interface Template extends T<App> {
-}
+export { Template };
 /**
  * App is the main class of any j'ouvert app.
  *
@@ -31,5 +27,5 @@ export declare abstract class JApp implements App {
     vm: PVM<this>;
     exec(i: Instance, s: Script): void;
     execNow(i: Instance, s: Script): Maybe<PTValue>;
-    spawn(temp: T<this>): JApp;
+    spawn(temp: Template<JApp>): JApp;
 }

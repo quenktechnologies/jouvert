@@ -68,8 +68,8 @@ var Form = /** @class */ (function (_super) {
     Form.prototype.getModifiedValues = function () {
         return this.__MOCK__.invoke('getModifiedValues', [], this.data);
     };
-    Form.prototype.onFailed = function (f) {
-        return this.__MOCK__.invoke('onFailed', [f], undefined);
+    Form.prototype.onSaveFailed = function (f) {
+        return this.__MOCK__.invoke('onSaveFailed', [f], undefined);
     };
     Form.prototype.onFieldInvalid = function () {
         return this.__MOCK__.invoke('onFieldInvalid', [], undefined);
@@ -157,7 +157,7 @@ describe('active', function () {
                     });
                 }));
             });
-            it('should handle Saved message', function () {
+            it('should handle SaveOk message', function () {
                 return future_1.toPromise(future_1.doFuture(function () {
                     var s, saved, cases;
                     return __generator(this, function (_a) {
@@ -173,7 +173,7 @@ describe('active', function () {
                                     create: function (s) {
                                         return new actor_1.GenericImmutable(s, cases, function (that) {
                                             var addr = that.spawn(form(that.self()));
-                                            that.tell(addr, new active_1.Saved());
+                                            that.tell(addr, new active_1.SaveOk());
                                         });
                                     }
                                 });
@@ -189,7 +189,7 @@ describe('active', function () {
                     });
                 }));
             });
-            it('should handle Failed message', function () {
+            it('should handle SaveFailed message', function () {
                 return future_1.toPromise(future_1.doFuture(function () {
                     var s;
                     return __generator(this, function (_a) {
@@ -201,7 +201,7 @@ describe('active', function () {
                                     create: function (s) {
                                         return new actor_1.GenericImmutable(s, [], function (that) {
                                             var addr = that.spawn(form(that.self()));
-                                            that.tell(addr, new active_1.Failed());
+                                            that.tell(addr, new active_1.SaveFailed());
                                         });
                                     }
                                 });
@@ -211,7 +211,7 @@ describe('active', function () {
                                 return [2 /*return*/, future_1.attempt(function () {
                                         var runtime = s.vm.state.runtimes['parent/form'];
                                         var form = runtime.context.actor;
-                                        assert_1.assert(form.__MOCK__.wasCalled('onFailed')).true();
+                                        assert_1.assert(form.__MOCK__.wasCalled('onSaveFailed')).true();
                                     })];
                         }
                     });

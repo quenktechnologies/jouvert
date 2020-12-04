@@ -1,12 +1,16 @@
-import { Value } from '@quenk/noni/lib/data/json';
+import { Value, Object } from '@quenk/noni/lib/data/jsonx';
 import { Any } from '@quenk/noni/lib/data/type';
+import { clone, filter } from '@quenk/noni/lib/data/record';
+
 import { Address } from '@quenk/potoo/lib/actor/address';
 import { Case } from '@quenk/potoo/lib/actor/resident/case';
 
-import { Immutable } from '../../../actor';
+import { Api, Immutable } from '../../../actor';
 import { App } from '../../';
-import { FieldName, FieldValue, FieldError  } from '../';
+import { FieldName, FieldValue, FieldError, FormErrors } from '../';
+
 import { ValidateStrategy } from './validate/strategy';
+import { contains } from '@quenk/noni/lib/data/array';
 
 /**
  * ActiveFormMessage type.
@@ -14,16 +18,17 @@ import { ValidateStrategy } from './validate/strategy';
 export type ActiveFormMessage<M>
     = Abort
     | Save
-    | Failed
-    | Saved
+    | SaveFailed
+    | SaveOk
+    | FieldInputEvent
     | M
     ;
 
 /**
- * FieldEvent is any object that stores the name and associated value of a
+ * FieldInputEvent is any object that stores the name and associated value of a
  * field in the view of the form.
  */
-export interface FieldEvent {
+export interface FieldInputEvent {
 
     /**
      * name of the control the event originated from.
@@ -38,21 +43,29 @@ export interface FieldEvent {
 }
 
 /**
- * ActiveForm is an interface implemented by actors that can be spawned to 
- * manage the workflow of a form.
+ * ActiveForm is an interface implemented by actors interested in providing
+ * a facilty for form input.
  *
- * These actors are not HTML forms but rather, could be seen as the "controller"
- * for such. The interface is named ActiveForm because its designed around
- * the concept of a form that can give user feedback on the validity of various
- * fields as they are changed.
+ * These actors are not HTML forms but rather, they act as the "controller"
+ * for one or more.
  *
- * The details of such is left up to implementors, the interface simply provides
- * the API that can be used with various other classes found in this module.
+ * The interface is named ActiveForm because it's designed around the concept of
+ * the controller actively monitoring input and optionally giving the user 
+ * feedback (if desired) on the validity of the fields.
+ *
+ * The details of such is left up to implementors of the interface.
  */
-export interface ActiveForm<T> {
+export interface ActiveForm<T extends Object> extends Api {
 
     /**
-     * validateStartegy for the ActiveForm.
+     * owner is the address of the actor that the ActiveForm reports to.
+     *
+     * Usually its parent actor.
+     */
+    owner: Address;
+
+    /**
+     * validateStraregy for the ActiveForm.
      *
      * This determines how data is validated and what callbacks will be 
      * applied.
@@ -61,6 +74,8 @@ export interface ActiveForm<T> {
 
     /**
      * set changes the stored value of a field captured by the ActiveForm.
+     * 
+     * The field's name will be included in the list of modified fields.
      */
     set(name: FieldName, value: FieldValue): ActiveForm<T>
 
@@ -72,12 +87,19 @@ export interface ActiveForm<T> {
     /**
      * getModifiedValues provides only those values that have changed.
      */
-    getModifiedValues(): T
+    getModifiedValues(): Partial<T>
 
     /**
-     * save triggers the persistence mechanism of the ActiveForm.
+     * save the captured form data.
+     *
+     * This is implementation specific.
      */
-    save(): void;
+    save(): void
+
+    /**
+     * onSaveFailed is invoked when a SaveFailed message is encountered.
+     */
+    onSaveFailed(sf: SaveFailed): void
 
 }
 
@@ -85,7 +107,7 @@ export interface ActiveForm<T> {
  * FieldFeedback indicates an ActiveForm has methods for reacting to a single
  * field's validation state changing.
  */
-export interface FieldFeedback<T> extends ActiveForm<T> {
+export interface FieldFeedback<T extends Object> extends ActiveForm<T> {
 
     /**
      * onFieldInvalid is applied when a field becomes invalid.
@@ -103,7 +125,7 @@ export interface FieldFeedback<T> extends ActiveForm<T> {
  * FormFeedback indicates an ActiveForm has methods for reacting to the entire
  * form's validation state changing.
  */
-export interface FormFeedback<T> extends FieldFeedback<T> {
+export interface FormFeedback<T extends Object> extends FieldFeedback<T> {
 
     /**
      * onFormInvalid is applied when the entire form becomes invalid.
@@ -119,26 +141,28 @@ export interface FormFeedback<T> extends FieldFeedback<T> {
 
 /**
  * Abort causes an ActiveForm to cease operations and return control to the
- * owner actor.
+ * actor that owns it.
  */
 export class Abort { }
 
 /**
- * Save causes an ActiveForm to persist the data collected thus far.
+ * Save causes an ActiveForm to trigger saving of the data collected thus far.
  */
 export class Save { }
 
 /**
- * Saved signals to an ActiveForm that its "save" operation was successful.
- * The ActiveForm will then yield control to the owner actor.
+ * SaveOk signals to an ActiveForm that its "save" operation was successful.
  */
-export class Saved { }
+export class SaveOk { }
 
 /**
- * Failed signals to an ActiveForm that its "save" operation has failed.
- * The ActiveForm retains control.
+ * SaveFailed signals to an ActiveForm that its "save" operation has failed.
  */
-export class Failed { }
+export class SaveFailed {
+
+    constructor(public errors: FormErrors={}) { }
+
+}
 
 /**
  * FormAborted is sent by an ActiveForm to its owner when the form has been
@@ -152,7 +176,7 @@ export class FormAborted {
 
 /**
  * FormSaved is sent by an ActiveForm to its owner when it has been successfully
- * saved.
+ * saved its data.
  */
 export class FormSaved {
 
@@ -161,13 +185,91 @@ export class FormSaved {
 }
 
 /**
- * AbstractActiveForm 
- *
- * What happens after input/editing is up to the implementation.
- * If a Abort message is received it will be send FormAborted to the parent
- * address.
+ * FieldInputEventCase defers input to the ValidateStategy.
  */
-export abstract class AbstractActiveForm<T, M>
+export class FieldInputEventCase<T extends Object>
+    extends
+    Case<FieldInputEvent> {
+
+    constructor(public form: ActiveForm<T>) {
+
+        super({ name: String, value: Any }, (e: FieldInputEvent) => {
+
+            return form.validateStrategy.validate(e);
+
+        });
+    }
+}
+
+/**
+ * AbortCase informs the ActiveForm's owner, then terminates the ActiveForm.
+ */
+export class AbortCase<T extends Object> extends Case<Abort> {
+
+    constructor(public form: ActiveForm<T>) {
+
+        super(Abort, (_: Abort) => {
+
+            form.tell(form.owner, new FormAborted(form.self()));
+            form.exit();
+
+        });
+    }
+}
+
+/**
+ * SaveCase invokes the [[ActiveForm.save]].
+ */
+export class SaveCase<T extends Object> extends Case<Save> {
+
+    constructor(public form: ActiveForm<T>) {
+
+        super(Save, (_: Save) => {
+
+            form.save();
+
+        });
+    }
+}
+
+/**
+ * FailedCase invokes [[ActiveForm.onFailed]].
+ */
+export class FailedCase<T extends Object> extends Case<SaveFailed> {
+
+    constructor(public form: ActiveForm<T>) {
+
+        super(SaveFailed, f => form.onSaveFailed(f));
+    }
+}
+
+/**
+ * SaveOkCase informs the ActiveForm's owner and exits.
+ */
+export class SaveOkCase<T extends Object> extends Case<SaveOk> {
+
+    constructor(public form: ActiveForm<T>) {
+
+        super(SaveOk, (_: SaveOk) => {
+
+            form.tell(form.owner, new FormSaved(form.self()));
+            form.exit();
+
+        });
+    }
+}
+
+/**
+ * AbstractActiveForm implements the FormFeedback interface.
+ *
+ * Child classes provide a ValidateStrategy and a save() implementation to 
+ * provide the logic of saving data. This actor listens for ActiveFormMessage 
+ * messages including anything that looks like a FieldInputEvent.
+ *
+ * These messages can be used to update the values captured or the [[set]]
+ * method can be used directly (bypasses validation).
+ */
+export abstract class AbstractActiveForm<T extends Object, M>
     extends
     Immutable<ActiveFormMessage<M>>
     implements
@@ -177,49 +279,62 @@ export abstract class AbstractActiveForm<T, M>
 
     abstract validateStrategy: ValidateStrategy;
 
-    abstract set(name: FieldName, value: FieldValue): AbstractActiveForm<T, M>
-
-    abstract getValues(): T
-
-    abstract getModifiedValues(): T
-
     abstract save(): void;
+
+    /**
+     * value of the AbstractActiveForm tracked by the APIs of this class.
+     *
+     * This should not be edited directly, instead use [[set()]].
+     */
+    values: Partial<T> = {};
+
+    /**
+     * fieldsModified tracks the names of those fields whose values have been 
+     * modified via this class's APIs.
+     */
+    fieldsModifed: string[] = [];
 
     receive = <Case<ActiveFormMessage<M>>[]>[
 
         ...this.getAdditionalMessages(),
 
-        new Case({ name: String, value: Any }, (e: FieldEvent) => {
+        new AbortCase(this),
 
-            return this.validateStrategy.validate(e);
+        new SaveCase(this),
 
-        }),
+        new FailedCase(this),
 
-        new Case(Abort, (_: Abort) => {
+        new SaveOkCase(this),
 
-            this.tell(this.owner, new FormAborted(this.self()));
-            this.exit();
-
-        }),
-
-        new Case(Save, (_: Save) => {
-
-            return this.save();
-
-        }),
-
-        new Case(Failed, f => this.onFailed(f)),
-
-        new Case(Saved, (_: Saved) => {
-
-            this.tell(this.owner, new FormSaved(this.self()));
-            this.exit();
-
-        })
+        new FieldInputEventCase(this)
 
     ];
 
-    onFailed(_: Failed) { }
+    set(name: FieldName, value: FieldValue): AbstractActiveForm<T, M> {
+
+        if (!contains(this.fieldsModifed, name))
+            this.fieldsModifed.push(name);
+
+        (<Object>this.values)[name] = value;
+
+        return this;
+
+    }
+
+    getValues(): T {
+
+        return <T>clone(this.values);
+
+    }
+
+    getModifiedValues(): Partial<T> {
+
+        return <Partial<T>>filter(<Object>this.values, (_, k) =>
+            contains(this.fieldsModifed, k));
+
+    }
+
+    onSaveFailed(_: SaveFailed) { }
 
     onFieldInvalid() { }
 

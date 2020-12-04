@@ -23,8 +23,8 @@ import {
     Abort,
     Save,
     FormSaved,
-    Saved,
-    Failed
+    SaveOk,
+    SaveFailed
 } from '../../../../lib/app/form/active';
 import { App } from '../../../../lib/app';
 import { TestApp } from '../../app/fixtures/app';
@@ -63,9 +63,9 @@ class Form extends AbstractActiveForm<Data, void> {
 
     }
 
-    onFailed(f: Failed) {
+    onSaveFailed(f: SaveFailed) {
 
-        return this.__MOCK__.invoke('onFailed', [f], undefined);
+        return this.__MOCK__.invoke('onSaveFailed', [f], undefined);
 
     }
 
@@ -165,13 +165,13 @@ describe('active', () => {
 
                         id: 'parent',
 
-                        create: (s: TestApp) => 
-                      new GenericImmutable(s, [], that => {
+                        create: (s: TestApp) =>
+                            new GenericImmutable(s, [], that => {
 
-                            let addr = that.spawn(form(that.self()));
-                            that.tell(addr, new Save());
+                                let addr = that.spawn(form(that.self()));
+                                that.tell(addr, new Save());
 
-                        })
+                            })
 
                     });
 
@@ -188,7 +188,7 @@ describe('active', () => {
 
                 })))
 
-            it('should handle Saved message', () =>
+            it('should handle SaveOk message', () =>
                 toPromise(doFuture(function*() {
 
                     let s = system();
@@ -202,13 +202,13 @@ describe('active', () => {
 
                         id: 'parent',
 
-                        create: (s: TestApp) => 
-                      new GenericImmutable(s, cases, that => {
+                        create: (s: TestApp) =>
+                            new GenericImmutable(s, cases, that => {
 
-                            let addr = that.spawn(form(that.self()));
-                            that.tell(addr, new Saved());
+                                let addr = that.spawn(form(that.self()));
+                                that.tell(addr, new SaveOk());
 
-                        })
+                            })
 
                     });
 
@@ -225,7 +225,7 @@ describe('active', () => {
 
                 })))
 
-            it('should handle Failed message', () =>
+            it('should handle SaveFailed message', () =>
                 toPromise(doFuture(function*() {
 
                     let s = system();
@@ -234,13 +234,13 @@ describe('active', () => {
 
                         id: 'parent',
 
-                        create: (s: TestApp) => 
-                      new GenericImmutable(s, [], that => {
+                        create: (s: TestApp) =>
+                            new GenericImmutable(s, [], that => {
 
-                            let addr = that.spawn(form(that.self()));
-                            that.tell(addr, new Failed());
+                                let addr = that.spawn(form(that.self()));
+                                that.tell(addr, new SaveFailed());
 
-                        })
+                            })
 
                     });
 
@@ -251,7 +251,7 @@ describe('active', () => {
                         let runtime = s.vm.state.runtimes['parent/form'];
                         let form = <Form>runtime.context.actor;
 
-                        assert(form.__MOCK__.wasCalled('onFailed')).true();
+                        assert(form.__MOCK__.wasCalled('onSaveFailed')).true();
 
                     });
 
@@ -266,13 +266,13 @@ describe('active', () => {
 
                         id: 'parent',
 
-                        create: (s: TestApp) => 
-                      new GenericImmutable(s, [], that => {
+                        create: (s: TestApp) =>
+                            new GenericImmutable(s, [], that => {
 
-                            let addr = that.spawn(form(that.self()));
-                            that.tell(addr, { name: 'name', value: 'asp' });
+                                let addr = that.spawn(form(that.self()));
+                                that.tell(addr, { name: 'name', value: 'asp' });
 
-                        })
+                            })
 
                     });
 

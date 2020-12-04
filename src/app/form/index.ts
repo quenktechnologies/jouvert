@@ -1,4 +1,4 @@
-import {Value} from '@quenk/noni/lib/data/json';
+import {Value} from '@quenk/noni/lib/data/jsonx';
 
 /**
  * FieldName

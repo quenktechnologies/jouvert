@@ -385,13 +385,15 @@ var __spreadArrays = (this && this.__spreadArrays) || function () {
     return r;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.AbstractActiveForm = exports.FormSaved = exports.FormAborted = exports.Failed = exports.Saved = exports.Save = exports.Abort = void 0;
+exports.AbstractActiveForm = exports.SaveOkCase = exports.FailedCase = exports.SaveCase = exports.AbortCase = exports.FieldInputEventCase = exports.FormSaved = exports.FormAborted = exports.SaveFailed = exports.SaveOk = exports.Save = exports.Abort = void 0;
 var type_1 = require("@quenk/noni/lib/data/type");
+var record_1 = require("@quenk/noni/lib/data/record");
 var case_1 = require("@quenk/potoo/lib/actor/resident/case");
 var actor_1 = require("../../../actor");
+var array_1 = require("@quenk/noni/lib/data/array");
 /**
  * Abort causes an ActiveForm to cease operations and return control to the
- * owner actor.
+ * actor that owns it.
  */
 var Abort = /** @class */ (function () {
     function Abort() {
@@ -400,7 +402,7 @@ var Abort = /** @class */ (function () {
 }());
 exports.Abort = Abort;
 /**
- * Save causes an ActiveForm to persist the data collected thus far.
+ * Save causes an ActiveForm to trigger saving of the data collected thus far.
  */
 var Save = /** @class */ (function () {
     function Save() {
@@ -409,25 +411,25 @@ var Save = /** @class */ (function () {
 }());
 exports.Save = Save;
 /**
- * Saved signals to an ActiveForm that its "save" operation was successful.
- * The ActiveForm will then yield control to the owner actor.
+ * SaveOk signals to an ActiveForm that its "save" operation was successful.
  */
-var Saved = /** @class */ (function () {
-    function Saved() {
+var SaveOk = /** @class */ (function () {
+    function SaveOk() {
     }
-    return Saved;
+    return SaveOk;
 }());
-exports.Saved = Saved;
+exports.SaveOk = SaveOk;
 /**
- * Failed signals to an ActiveForm that its "save" operation has failed.
- * The ActiveForm retains control.
+ * SaveFailed signals to an ActiveForm that its "save" operation has failed.
  */
-var Failed = /** @class */ (function () {
-    function Failed() {
+var SaveFailed = /** @class */ (function () {
+    function SaveFailed(errors) {
+        if (errors === void 0) { errors = {}; }
+        this.errors = errors;
     }
-    return Failed;
+    return SaveFailed;
 }());
-exports.Failed = Failed;
+exports.SaveFailed = SaveFailed;
 /**
  * FormAborted is sent by an ActiveForm to its owner when the form has been
  * aborted.
@@ -441,7 +443,7 @@ var FormAborted = /** @class */ (function () {
 exports.FormAborted = FormAborted;
 /**
  * FormSaved is sent by an ActiveForm to its owner when it has been successfully
- * saved.
+ * saved its data.
  */
 var FormSaved = /** @class */ (function () {
     function FormSaved(form) {
@@ -451,11 +453,89 @@ var FormSaved = /** @class */ (function () {
 }());
 exports.FormSaved = FormSaved;
 /**
- * AbstractActiveForm
+ * FieldInputEventCase defers input to the ValidateStategy.
+ */
+var FieldInputEventCase = /** @class */ (function (_super) {
+    __extends(FieldInputEventCase, _super);
+    function FieldInputEventCase(form) {
+        var _this = _super.call(this, { name: String, value: type_1.Any }, function (e) {
+            return form.validateStrategy.validate(e);
+        }) || this;
+        _this.form = form;
+        return _this;
+    }
+    return FieldInputEventCase;
+}(case_1.Case));
+exports.FieldInputEventCase = FieldInputEventCase;
+/**
+ * AbortCase informs the ActiveForm's owner, then terminates the ActiveForm.
+ */
+var AbortCase = /** @class */ (function (_super) {
+    __extends(AbortCase, _super);
+    function AbortCase(form) {
+        var _this = _super.call(this, Abort, function (_) {
+            form.tell(form.owner, new FormAborted(form.self()));
+            form.exit();
+        }) || this;
+        _this.form = form;
+        return _this;
+    }
+    return AbortCase;
+}(case_1.Case));
+exports.AbortCase = AbortCase;
+/**
+ * SaveCase invokes the [[ActiveForm.save]].
+ */
+var SaveCase = /** @class */ (function (_super) {
+    __extends(SaveCase, _super);
+    function SaveCase(form) {
+        var _this = _super.call(this, Save, function (_) {
+            form.save();
+        }) || this;
+        _this.form = form;
+        return _this;
+    }
+    return SaveCase;
+}(case_1.Case));
+exports.SaveCase = SaveCase;
+/**
+ * FailedCase invokes [[ActiveForm.onFailed]].
+ */
+var FailedCase = /** @class */ (function (_super) {
+    __extends(FailedCase, _super);
+    function FailedCase(form) {
+        var _this = _super.call(this, SaveFailed, function (f) { return form.onSaveFailed(f); }) || this;
+        _this.form = form;
+        return _this;
+    }
+    return FailedCase;
+}(case_1.Case));
+exports.FailedCase = FailedCase;
+/**
+ * SaveOkCase informs the ActiveForm's owner and exits.
+ */
+var SaveOkCase = /** @class */ (function (_super) {
+    __extends(SaveOkCase, _super);
+    function SaveOkCase(form) {
+        var _this = _super.call(this, SaveOk, function (_) {
+            form.tell(form.owner, new FormSaved(form.self()));
+            form.exit();
+        }) || this;
+        _this.form = form;
+        return _this;
+    }
+    return SaveOkCase;
+}(case_1.Case));
+exports.SaveOkCase = SaveOkCase;
+/**
+ * AbstractActiveForm implements the FormFeedback interface.
  *
- * What happens after input/editing is up to the implementation.
- * If a Abort message is received it will be send FormAborted to the parent
- * address.
+ * Child classes provide a ValidateStrategy and a save() implementation to
+ * provide the logic of saving data. This actor listens for ActiveFormMessage
+ * messages including anything that looks like a FieldInputEvent.
+ *
+ * These messages can be used to update the values captured or the [[set]]
+ * method can be used directly (bypasses validation).
  */
 var AbstractActiveForm = /** @class */ (function (_super) {
     __extends(AbstractActiveForm, _super);
@@ -463,26 +543,42 @@ var AbstractActiveForm = /** @class */ (function (_super) {
         var _this = _super.call(this, system) || this;
         _this.owner = owner;
         _this.system = system;
+        /**
+         * value of the AbstractActiveForm tracked by the APIs of this class.
+         *
+         * This should not be edited directly, instead use [[set()]].
+         */
+        _this.values = {};
+        /**
+         * fieldsModified tracks the names of those fields whose values have been
+         * modified via this class's APIs.
+         */
+        _this.fieldsModifed = [];
         _this.receive = __spreadArrays(_this.getAdditionalMessages(), [
-            new case_1.Case({ name: String, value: type_1.Any }, function (e) {
-                return _this.validateStrategy.validate(e);
-            }),
-            new case_1.Case(Abort, function (_) {
-                _this.tell(_this.owner, new FormAborted(_this.self()));
-                _this.exit();
-            }),
-            new case_1.Case(Save, function (_) {
-                return _this.save();
-            }),
-            new case_1.Case(Failed, function (f) { return _this.onFailed(f); }),
-            new case_1.Case(Saved, function (_) {
-                _this.tell(_this.owner, new FormSaved(_this.self()));
-                _this.exit();
-            })
+            new AbortCase(_this),
+            new SaveCase(_this),
+            new FailedCase(_this),
+            new SaveOkCase(_this),
+            new FieldInputEventCase(_this)
         ]);
         return _this;
     }
-    AbstractActiveForm.prototype.onFailed = function (_) { };
+    AbstractActiveForm.prototype.set = function (name, value) {
+        if (!array_1.contains(this.fieldsModifed, name))
+            this.fieldsModifed.push(name);
+        this.values[name] = value;
+        return this;
+    };
+    AbstractActiveForm.prototype.getValues = function () {
+        return record_1.clone(this.values);
+    };
+    AbstractActiveForm.prototype.getModifiedValues = function () {
+        var _this = this;
+        return record_1.filter(this.values, function (_, k) {
+            return array_1.contains(_this.fieldsModifed, k);
+        });
+    };
+    AbstractActiveForm.prototype.onSaveFailed = function (_) { };
     AbstractActiveForm.prototype.onFieldInvalid = function () { };
     AbstractActiveForm.prototype.onFieldValid = function () { };
     AbstractActiveForm.prototype.onFormInvalid = function () { };
@@ -498,7 +594,7 @@ var AbstractActiveForm = /** @class */ (function (_super) {
 }(actor_1.Immutable));
 exports.AbstractActiveForm = AbstractActiveForm;
 
-},{"../../../actor":1,"@quenk/noni/lib/data/type":26,"@quenk/potoo/lib/actor/resident/case":31}],4:[function(require,module,exports){
+},{"../../../actor":1,"@quenk/noni/lib/data/array":19,"@quenk/noni/lib/data/record":23,"@quenk/noni/lib/data/type":26,"@quenk/potoo/lib/actor/resident/case":31}],4:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -557,7 +653,7 @@ var OneForOneStrategy = /** @class */ (function () {
 }());
 exports.OneForOneStrategy = OneForOneStrategy;
 /**
- * AllForOneStrategy validtes FieldEvent input and invokes the
+ * AllForOneStrategy validtes FieldInputEvent input and invokes the
  * respective callbacks.
  *
  * Callbacks for the entire form are also invoked.
@@ -567,7 +663,7 @@ var AllForOneStrategy = /** @class */ (function () {
         this.form = form;
         this.validator = validator;
     }
-    AllForOneStrategy.prototype.getFormValues = function () {
+    AllForOneStrategy.prototype.getValues = function () {
         return this.form.getValues();
     };
     AllForOneStrategy.prototype.validate = function (_a) {
@@ -582,7 +678,7 @@ var AllForOneStrategy = /** @class */ (function () {
             var value_2 = eResult.takeRight();
             form.set(name, value_2);
             form.onFieldValid(name, value_2);
-            var eAllResult = validator.validateAll(this.getFormValues());
+            var eAllResult = validator.validateAll(this.getValues());
             if (eAllResult.isRight())
                 form.onFormValid();
             else
@@ -602,7 +698,7 @@ var AllForOneModifiedStrategy = /** @class */ (function (_super) {
     function AllForOneModifiedStrategy() {
         return _super !== null && _super.apply(this, arguments) || this;
     }
-    AllForOneModifiedStrategy.prototype.getFormValues = function () {
+    AllForOneModifiedStrategy.prototype.getValues = function () {
         return this.form.getModifiedValues();
     };
     return AllForOneModifiedStrategy;
@@ -9854,8 +9950,8 @@ var Form = /** @class */ (function (_super) {
     Form.prototype.getModifiedValues = function () {
         return this.__MOCK__.invoke('getModifiedValues', [], this.data);
     };
-    Form.prototype.onFailed = function (f) {
-        return this.__MOCK__.invoke('onFailed', [f], undefined);
+    Form.prototype.onSaveFailed = function (f) {
+        return this.__MOCK__.invoke('onSaveFailed', [f], undefined);
     };
     Form.prototype.onFieldInvalid = function () {
         return this.__MOCK__.invoke('onFieldInvalid', [], undefined);
@@ -9943,7 +10039,7 @@ describe('active', function () {
                     });
                 }));
             });
-            it('should handle Saved message', function () {
+            it('should handle SaveOk message', function () {
                 return future_1.toPromise(future_1.doFuture(function () {
                     var s, saved, cases;
                     return __generator(this, function (_a) {
@@ -9959,7 +10055,7 @@ describe('active', function () {
                                     create: function (s) {
                                         return new actor_1.GenericImmutable(s, cases, function (that) {
                                             var addr = that.spawn(form(that.self()));
-                                            that.tell(addr, new active_1.Saved());
+                                            that.tell(addr, new active_1.SaveOk());
                                         });
                                     }
                                 });
@@ -9975,7 +10071,7 @@ describe('active', function () {
                     });
                 }));
             });
-            it('should handle Failed message', function () {
+            it('should handle SaveFailed message', function () {
                 return future_1.toPromise(future_1.doFuture(function () {
                     var s;
                     return __generator(this, function (_a) {
@@ -9987,7 +10083,7 @@ describe('active', function () {
                                     create: function (s) {
                                         return new actor_1.GenericImmutable(s, [], function (that) {
                                             var addr = that.spawn(form(that.self()));
-                                            that.tell(addr, new active_1.Failed());
+                                            that.tell(addr, new active_1.SaveFailed());
                                         });
                                     }
                                 });
@@ -9997,7 +10093,7 @@ describe('active', function () {
                                 return [2 /*return*/, future_1.attempt(function () {
                                         var runtime = s.vm.state.runtimes['parent/form'];
                                         var form = runtime.context.actor;
-                                        assert_1.assert(form.__MOCK__.wasCalled('onFailed')).true();
+                                        assert_1.assert(form.__MOCK__.wasCalled('onSaveFailed')).true();
                                     })];
                         }
                     });

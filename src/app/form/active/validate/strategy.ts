@@ -1,7 +1,13 @@
 import { Either } from '@quenk/noni/lib/data/either';
+import { Object } from '@quenk/noni/lib/data/jsonx';
 
-import { FieldEvent, ActiveForm, FieldFeedback, FormFeedback } from '../';
 import { FieldName, FieldValue, FieldError, FormErrors } from '../..';
+import {
+    FieldInputEvent,
+    ActiveForm,
+    FieldFeedback,
+    FormFeedback
+} from '../';
 
 /**
  * FieldValidator is an interface used to validate at the field level.
@@ -18,7 +24,7 @@ export interface FieldValidator {
 /**
  * FormValidator extends FieldValidator to provide form level validation.
  */
-export interface FormValidator<T> extends FieldValidator {
+export interface FormValidator<T extends Object> extends FieldValidator {
 
     /**
      * validateAll helper.
@@ -35,9 +41,9 @@ export interface FormValidator<T> extends FieldValidator {
 export interface ValidateStrategy {
 
     /**
-     * validate a FieldEvent.
+     * validate a FieldInputEvent.
      */
-    validate(e: FieldEvent): void
+    validate(e: FieldInputEvent): void
 
 }
 
@@ -58,7 +64,7 @@ export interface FieldValidator {
  * FormValidator extends FieldValidator to allow validation of all the values
  * in an ActiveForm.
  */
-export interface FormValidator<T> extends FieldValidator {
+export interface FormValidator<T extends Object> extends FieldValidator {
 
     /**
      * validateAll helper.
@@ -72,11 +78,11 @@ export interface FormValidator<T> extends FieldValidator {
  *
  * This is useful if all validation is done on the server side.
  */
-export class NoStrategy<T> implements ValidateStrategy {
+export class NoStrategy<T extends Object> implements ValidateStrategy {
 
     constructor(public form: ActiveForm<T>) { }
 
-    validate({ name, value }: FieldEvent) {
+    validate({ name, value }: FieldInputEvent) {
 
         this.form.set(name, value);
 
@@ -88,13 +94,13 @@ export class NoStrategy<T> implements ValidateStrategy {
  * OneForOneStrategy validates event input and triggers the respect
  * onField(In)?Valid callback.
  */
-export class OneForOneStrategy<T> implements ValidateStrategy {
+export class OneForOneStrategy<T extends Object> implements ValidateStrategy {
 
     constructor(
         public form: FieldFeedback<T>,
         public validator: FieldValidator) { }
 
-    validate({ name, value }: FieldEvent) {
+    validate({ name, value }: FieldInputEvent) {
 
         let { form, validator } = this;
         let eResult = validator.validate(name, value);
@@ -117,24 +123,24 @@ export class OneForOneStrategy<T> implements ValidateStrategy {
 }
 
 /**
- * AllForOneStrategy validtes FieldEvent input and invokes the 
+ * AllForOneStrategy validtes FieldInputEvent input and invokes the 
  * respective callbacks.
  *
  * Callbacks for the entire form are also invoked.
  */
-export class AllForOneStrategy<T> implements ValidateStrategy {
+export class AllForOneStrategy<T extends Object> implements ValidateStrategy {
 
     constructor(
         public form: FormFeedback<T>,
         public validator: FormValidator<T>) { }
 
-    getFormValues() {
+    getValues() {
 
         return this.form.getValues();
 
     }
 
-    validate({ name, value }: FieldEvent) {
+    validate({ name, value }: FieldInputEvent) {
 
         let { form, validator } = this;
         let eResult = validator.validate(name, value);
@@ -151,7 +157,7 @@ export class AllForOneStrategy<T> implements ValidateStrategy {
             form.set(name, value);
             form.onFieldValid(name, value);
 
-            let eAllResult = validator.validateAll(this.getFormValues());
+            let eAllResult = validator.validateAll(this.getValues());
 
             if (eAllResult.isRight())
                 form.onFormValid();
@@ -169,11 +175,13 @@ export class AllForOneStrategy<T> implements ValidateStrategy {
  * but only considers the values that have been modified when validating
  * the entire form.
  */
-export class AllForOneModifiedStrategy<T> extends AllForOneStrategy<T> {
+export class AllForOneModifiedStrategy<T extends Object>
+    extends
+    AllForOneStrategy<T> {
 
-    getFormValues() {
+    getValues() {
 
-        return this.form.getModifiedValues();
+        return <T>this.form.getModifiedValues();
 
     }
 

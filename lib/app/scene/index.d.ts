@@ -76,12 +76,7 @@ export declare abstract class AppScene<Req, MResumed> extends Mutable implements
     constructor(system: App);
     abstract beforeSuspended(s: Suspend): AppScene<Req, MResumed>;
     abstract beforeResumed(r: Resume<Req>): AppScene<Req, MResumed>;
-    getResumedBehaviour(r: Resume<Req>): Case<ResumedMessage<MResumed>>[];
-    /**
-     * getAdditionalResumedBehaviour can be overriden to provide additional Case
-     * classes for the resumed behaviour.
-     */
-    getAdditionalResumedBehaviour(_: Resume<Req>): Case<MResumed>[];
+    getResumedBehaviour(_: Resume<Req>): Case<ResumedMessage<MResumed>>[];
     spawn(t: Template<App>): Address;
     getSuspendedBehaviour(): Case<SuspendedMessage<Req>>[];
 }

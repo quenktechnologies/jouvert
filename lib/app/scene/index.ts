@@ -124,25 +124,13 @@ export abstract class AppScene<Req, MResumed>
 
     abstract beforeResumed(r: Resume<Req>): AppScene<Req, MResumed>
 
-    getResumedBehaviour(r: Resume<Req>): Case<ResumedMessage<MResumed>>[] {
+    getResumedBehaviour(_: Resume<Req>): Case<ResumedMessage<MResumed>>[] {
 
         return <Case<ResumedMessage<MResumed>>[]>[
-
-            ...this.getAdditionalResumedBehaviour(r),
 
             new SuspendCase<Req>(this)
 
         ];
-
-    }
-
-    /**
-     * getAdditionalResumedBehaviour can be overriden to provide additional Case
-     * classes for the resumed behaviour.
-     */
-    getAdditionalResumedBehaviour(_: Resume<Req>): Case<MResumed>[] {
-
-        return [];
 
     }
 

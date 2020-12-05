@@ -1,6 +1,5 @@
 import { Value } from '@quenk/noni/lib/data/jsonx';
 import { Address } from '@quenk/potoo/lib/actor/address';
-import { Case } from '@quenk/potoo/lib/actor/resident/case';
 /**
  * FieldName
  */
@@ -32,26 +31,6 @@ export interface FieldInputEvent {
      * value of the control at the time the event occurred.
      */
     value: Value;
-}
-/**
- * FormAbortedListener is implemented by actors interested in the FormAborted
- * message.
- */
-export interface FormAbortedListener {
-    /**
-     * afterFormAborted handler.
-     */
-    afterFormAborted(m: FormAborted): void;
-}
-/**
- * FormSavedListener is implemented by actors interested in the FormSaved
- * message.
- */
-export interface FormSavedListener {
-    /**
-     * afterFormSaved handler.
-     */
-    afterFormSaved(m: FormSaved): void;
 }
 /**
  * Abort causes an ActiveForm to cease operations and return control to the
@@ -91,18 +70,4 @@ export declare class FormAborted {
 export declare class FormSaved {
     form: Address;
     constructor(form: Address);
-}
-/**
- * FormAbortedCase invokes the afterFormAborted() handler.
- */
-export declare class FormAbortedCase extends Case<FormAborted> {
-    form: FormAbortedListener;
-    constructor(form: FormAbortedListener);
-}
-/**
- * FormSavedCase invokes the afterFormSaved() handler.
- */
-export declare class FormSavedCase extends Case<FormSaved> {
-    form: FormSavedListener;
-    constructor(form: FormSavedListener);
 }

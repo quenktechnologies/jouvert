@@ -78,7 +78,7 @@ var Proxy = /** @class */ (function () {
 }());
 exports.Proxy = Proxy;
 
-},{"@quenk/potoo/lib/actor/resident":32}],2:[function(require,module,exports){
+},{"@quenk/potoo/lib/actor/resident":33}],2:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -362,7 +362,7 @@ var defaultConfig = function (c) {
     return record_1.merge({ timeout: exports.DEFAULT_TIMEOUT }, c);
 };
 
-},{"../actor":1,"@quenk/noni/lib/control/monad/future":16,"@quenk/noni/lib/data/record":23,"@quenk/noni/lib/data/type":26,"@quenk/potoo/lib/actor/resident/case":31}],3:[function(require,module,exports){
+},{"../actor":1,"@quenk/noni/lib/control/monad/future":17,"@quenk/noni/lib/data/record":24,"@quenk/noni/lib/data/type":27,"@quenk/potoo/lib/actor/resident/case":32}],3:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -385,73 +385,19 @@ var __spreadArrays = (this && this.__spreadArrays) || function () {
     return r;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.AbstractActiveForm = exports.SaveOkCase = exports.FailedCase = exports.SaveCase = exports.AbortCase = exports.FieldInputEventCase = exports.FormSaved = exports.FormAborted = exports.SaveFailed = exports.SaveOk = exports.Save = exports.Abort = void 0;
+exports.AbstractActiveForm = exports.SaveOkCase = exports.FailedCase = exports.SaveCase = exports.AbortCase = exports.FieldInputEventCase = exports.FormSaved = exports.FormAborted = exports.SaveOk = exports.SaveFailed = exports.Save = exports.Abort = void 0;
 var type_1 = require("@quenk/noni/lib/data/type");
 var record_1 = require("@quenk/noni/lib/data/record");
+var array_1 = require("@quenk/noni/lib/data/array");
 var case_1 = require("@quenk/potoo/lib/actor/resident/case");
 var actor_1 = require("../../../actor");
-var array_1 = require("@quenk/noni/lib/data/array");
-/**
- * Abort causes an ActiveForm to cease operations and return control to the
- * actor that owns it.
- */
-var Abort = /** @class */ (function () {
-    function Abort() {
-    }
-    return Abort;
-}());
-exports.Abort = Abort;
-/**
- * Save causes an ActiveForm to trigger saving of the data collected thus far.
- */
-var Save = /** @class */ (function () {
-    function Save() {
-    }
-    return Save;
-}());
-exports.Save = Save;
-/**
- * SaveOk signals to an ActiveForm that its "save" operation was successful.
- */
-var SaveOk = /** @class */ (function () {
-    function SaveOk() {
-    }
-    return SaveOk;
-}());
-exports.SaveOk = SaveOk;
-/**
- * SaveFailed signals to an ActiveForm that its "save" operation has failed.
- */
-var SaveFailed = /** @class */ (function () {
-    function SaveFailed(errors) {
-        if (errors === void 0) { errors = {}; }
-        this.errors = errors;
-    }
-    return SaveFailed;
-}());
-exports.SaveFailed = SaveFailed;
-/**
- * FormAborted is sent by an ActiveForm to its owner when the form has been
- * aborted.
- */
-var FormAborted = /** @class */ (function () {
-    function FormAborted(form) {
-        this.form = form;
-    }
-    return FormAborted;
-}());
-exports.FormAborted = FormAborted;
-/**
- * FormSaved is sent by an ActiveForm to its owner when it has been successfully
- * saved its data.
- */
-var FormSaved = /** @class */ (function () {
-    function FormSaved(form) {
-        this.form = form;
-    }
-    return FormSaved;
-}());
-exports.FormSaved = FormSaved;
+var __1 = require("../");
+Object.defineProperty(exports, "Abort", { enumerable: true, get: function () { return __1.Abort; } });
+Object.defineProperty(exports, "Save", { enumerable: true, get: function () { return __1.Save; } });
+Object.defineProperty(exports, "SaveFailed", { enumerable: true, get: function () { return __1.SaveFailed; } });
+Object.defineProperty(exports, "SaveOk", { enumerable: true, get: function () { return __1.SaveOk; } });
+Object.defineProperty(exports, "FormAborted", { enumerable: true, get: function () { return __1.FormAborted; } });
+Object.defineProperty(exports, "FormSaved", { enumerable: true, get: function () { return __1.FormSaved; } });
 /**
  * FieldInputEventCase defers input to the ValidateStategy.
  */
@@ -473,8 +419,8 @@ exports.FieldInputEventCase = FieldInputEventCase;
 var AbortCase = /** @class */ (function (_super) {
     __extends(AbortCase, _super);
     function AbortCase(form) {
-        var _this = _super.call(this, Abort, function (_) {
-            form.tell(form.owner, new FormAborted(form.self()));
+        var _this = _super.call(this, __1.Abort, function (_) {
+            form.tell(form.owner, new __1.FormAborted(form.self()));
             form.exit();
         }) || this;
         _this.form = form;
@@ -489,7 +435,7 @@ exports.AbortCase = AbortCase;
 var SaveCase = /** @class */ (function (_super) {
     __extends(SaveCase, _super);
     function SaveCase(form) {
-        var _this = _super.call(this, Save, function (_) {
+        var _this = _super.call(this, __1.Save, function (_) {
             form.save();
         }) || this;
         _this.form = form;
@@ -504,7 +450,7 @@ exports.SaveCase = SaveCase;
 var FailedCase = /** @class */ (function (_super) {
     __extends(FailedCase, _super);
     function FailedCase(form) {
-        var _this = _super.call(this, SaveFailed, function (f) { return form.onSaveFailed(f); }) || this;
+        var _this = _super.call(this, __1.SaveFailed, function (f) { return form.onSaveFailed(f); }) || this;
         _this.form = form;
         return _this;
     }
@@ -517,8 +463,8 @@ exports.FailedCase = FailedCase;
 var SaveOkCase = /** @class */ (function (_super) {
     __extends(SaveOkCase, _super);
     function SaveOkCase(form) {
-        var _this = _super.call(this, SaveOk, function (_) {
-            form.tell(form.owner, new FormSaved(form.self()));
+        var _this = _super.call(this, __1.SaveOk, function (_) {
+            form.tell(form.owner, new __1.FormSaved(form.self()));
             form.exit();
         }) || this;
         _this.form = form;
@@ -594,7 +540,7 @@ var AbstractActiveForm = /** @class */ (function (_super) {
 }(actor_1.Immutable));
 exports.AbstractActiveForm = AbstractActiveForm;
 
-},{"../../../actor":1,"@quenk/noni/lib/data/array":19,"@quenk/noni/lib/data/record":23,"@quenk/noni/lib/data/type":26,"@quenk/potoo/lib/actor/resident/case":31}],4:[function(require,module,exports){
+},{"../":5,"../../../actor":1,"@quenk/noni/lib/data/array":20,"@quenk/noni/lib/data/record":24,"@quenk/noni/lib/data/type":27,"@quenk/potoo/lib/actor/resident/case":32}],4:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -707,6 +653,116 @@ exports.AllForOneModifiedStrategy = AllForOneModifiedStrategy;
 
 },{}],5:[function(require,module,exports){
 "use strict";
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+        return extendStatics(d, b);
+    };
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.FormSavedCase = exports.FormAbortedCase = exports.FormSaved = exports.FormAborted = exports.SaveFailed = exports.SaveOk = exports.Save = exports.Abort = void 0;
+var case_1 = require("@quenk/potoo/lib/actor/resident/case");
+/**
+ * Abort causes an ActiveForm to cease operations and return control to the
+ * actor that owns it.
+ */
+var Abort = /** @class */ (function () {
+    function Abort() {
+    }
+    return Abort;
+}());
+exports.Abort = Abort;
+/**
+ * Save causes an ActiveForm to trigger saving of the data collected thus far.
+ */
+var Save = /** @class */ (function () {
+    function Save() {
+    }
+    return Save;
+}());
+exports.Save = Save;
+/**
+ * SaveOk signals to an ActiveForm that its "save" operation was successful.
+ */
+var SaveOk = /** @class */ (function () {
+    function SaveOk() {
+    }
+    return SaveOk;
+}());
+exports.SaveOk = SaveOk;
+/**
+ * SaveFailed signals to an ActiveForm that its "save" operation has failed.
+ */
+var SaveFailed = /** @class */ (function () {
+    function SaveFailed(errors) {
+        if (errors === void 0) { errors = {}; }
+        this.errors = errors;
+    }
+    return SaveFailed;
+}());
+exports.SaveFailed = SaveFailed;
+/**
+ * FormAborted is sent by an ActiveForm to its owner when the form has been
+ * aborted.
+ */
+var FormAborted = /** @class */ (function () {
+    function FormAborted(form) {
+        this.form = form;
+    }
+    return FormAborted;
+}());
+exports.FormAborted = FormAborted;
+/**
+ * FormSaved is sent by an ActiveForm to its owner when it has been successfully
+ * saved its data.
+ */
+var FormSaved = /** @class */ (function () {
+    function FormSaved(form) {
+        this.form = form;
+    }
+    return FormSaved;
+}());
+exports.FormSaved = FormSaved;
+/**
+ * FormAbortedCase invokes the afterFormAborted() handler.
+ */
+var FormAbortedCase = /** @class */ (function (_super) {
+    __extends(FormAbortedCase, _super);
+    function FormAbortedCase(form) {
+        var _this = _super.call(this, FormAborted, function (m) {
+            form.afterFormAborted(m);
+        }) || this;
+        _this.form = form;
+        return _this;
+    }
+    return FormAbortedCase;
+}(case_1.Case));
+exports.FormAbortedCase = FormAbortedCase;
+/**
+ * FormSavedCase invokes the afterFormSaved() handler.
+ */
+var FormSavedCase = /** @class */ (function (_super) {
+    __extends(FormSavedCase, _super);
+    function FormSavedCase(form) {
+        var _this = _super.call(this, FormSaved, function (m) {
+            form.afterFormSaved(m);
+        }) || this;
+        _this.form = form;
+        return _this;
+    }
+    return FormSavedCase;
+}(case_1.Case));
+exports.FormSavedCase = FormSavedCase;
+
+},{"@quenk/potoo/lib/actor/resident/case":32}],6:[function(require,module,exports){
+"use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.JApp = void 0;
 var vm_1 = require("@quenk/potoo/lib/actor/system/vm");
@@ -736,7 +792,7 @@ var JApp = /** @class */ (function () {
 }());
 exports.JApp = JApp;
 
-},{"@quenk/potoo/lib/actor/system/vm":36}],6:[function(require,module,exports){
+},{"@quenk/potoo/lib/actor/system/vm":37}],7:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -887,7 +943,7 @@ var Remote = /** @class */ (function (_super) {
 }(actor_1.Immutable));
 exports.Remote = Remote;
 
-},{"../../actor":1,"@quenk/noni/lib/control/monad/future":16,"@quenk/potoo/lib/actor/resident/case":31}],7:[function(require,module,exports){
+},{"../../actor":1,"@quenk/noni/lib/control/monad/future":17,"@quenk/potoo/lib/actor/resident/case":32}],8:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -1046,7 +1102,7 @@ var ObservableRemote = /** @class */ (function (_super) {
 }(actor_1.Mutable));
 exports.ObservableRemote = ObservableRemote;
 
-},{"../../actor":1,"./":6,"@quenk/jhr/lib/response":11,"@quenk/noni/lib/control/match":15,"@quenk/potoo/lib/actor/resident/case":31}],8:[function(require,module,exports){
+},{"../../actor":1,"./":7,"@quenk/jhr/lib/response":12,"@quenk/noni/lib/control/match":16,"@quenk/potoo/lib/actor/resident/case":32}],9:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.MockAgent = void 0;
@@ -1094,7 +1150,7 @@ var MockAgent = /** @class */ (function () {
 }());
 exports.MockAgent = MockAgent;
 
-},{"../response":11,"@quenk/noni/lib/control/monad/future":16,"@quenk/test/lib/mock":13}],9:[function(require,module,exports){
+},{"../response":12,"@quenk/noni/lib/control/monad/future":17,"@quenk/test/lib/mock":14}],10:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -1197,7 +1253,7 @@ var Delete = /** @class */ (function (_super) {
 }(Post));
 exports.Delete = Delete;
 
-},{"./method":10}],10:[function(require,module,exports){
+},{"./method":11}],11:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Method = void 0;
@@ -1214,7 +1270,7 @@ var Method;
     Method["Patch"] = "PATCH";
 })(Method = exports.Method || (exports.Method = {}));
 
-},{}],11:[function(require,module,exports){
+},{}],12:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -1473,7 +1529,7 @@ exports.createResponse = function (code, body, headers, options) {
     }
 };
 
-},{"./status":12}],12:[function(require,module,exports){
+},{"./status":13}],13:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.NETWORK_AUTHENTICATION_REQUIRED = exports.NOT_EXTENDED = exports.LOOP_DETECTED = exports.INSUFFICIENT_STORAGE = exports.VARIANT_ALSO_NEGOTIATES = exports.HTTP_VERSION_NOT_SUPPORTED = exports.GATEWAY_TIMEOUT = exports.SERVICE_UNAVAILABLE = exports.BAD_GATEWAY = exports.NOT_IMPLEMENTED = exports.INTERNAL_SERVER_ERROR = exports.UNAVAILABLE_FOR_LEGAL_RREASONS = exports.REQUEST_HEADER_FIELDS_TOO_LARGE = exports.TOO_MANY_REQUESTS = exports.PRECONDITION_REQUIRED = exports.UPGRADE_REQUIRED = exports.FAILED_DEPENDENCY = exports.LOCKED = exports.UNPROCESSABLE_ENTITY = exports.TEAPOT = exports.EXPECTATION_FAILED = exports.REQUESTED_RANGE_NOT_SATISFIABLE = exports.UNSUPPORTED_MEDIA_TYPE = exports.REQUEST_URI_TOO_LONG = exports.REQUEST_ENTITY_TOO_LARGE = exports.PRECONDITION_FAILED = exports.LENGTH_REQUIRED = exports.GONE = exports.CONFLICT = exports.REQUEST_TIMEOUT = exports.PROXY_AUTH_REQUIRED = exports.NOT_ACCEPTABLE = exports.METHOD_NOT_ALLOWED = exports.NOT_FOUND = exports.FORBIDDEN = exports.PAYMENT_REQUIRED = exports.UNAUTHORIZED = exports.BAD_REQUEST = exports.PERMANENT_REDIRECT = exports.TEMPORARY_REDIRECT = exports.USE_PROXY = exports.NOT_MODIFIED = exports.SEE_OTHER = exports.FOUND = exports.MOVED_PERMANENTLY = exports.MULTIPLE_CHOICES = exports.IM_USED = exports.ALREADY_REPORTED = exports.MULTI_STATUS = exports.PARTIAL_CONTENT = exports.RESET_CONTENT = exports.NO_CONTENT = exports.NON_AUTHORITATIV_INFO = exports.ACCEPTED = exports.CREATED = exports.OK = exports.PROCESSING = exports.SWITCHING_PROTOCOLS = exports.CONTINUE = void 0;
@@ -1537,7 +1593,7 @@ exports.LOOP_DETECTED = 508;
 exports.NOT_EXTENDED = 510;
 exports.NETWORK_AUTHENTICATION_REQUIRED = 511;
 
-},{}],13:[function(require,module,exports){
+},{}],14:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var deepEqual = require("deep-equal");
@@ -1689,7 +1745,7 @@ var Mock = /** @class */ (function () {
 }());
 exports.Mock = Mock;
 
-},{"deep-equal":66}],14:[function(require,module,exports){
+},{"deep-equal":67}],15:[function(require,module,exports){
 "use strict";
 /**
  * This module provides functions and types to make dealing with ES errors
@@ -1734,7 +1790,7 @@ var attempt = function (f) {
 };
 exports.attempt = attempt;
 
-},{"../data/either":20}],15:[function(require,module,exports){
+},{"../data/either":21}],16:[function(require,module,exports){
 "use strict";
 /**
  * The match module provides a best effort pattern runtime pattern matching
@@ -1822,7 +1878,7 @@ exports.Matched = Matched;
 var match = function (value) { return new UnMatched(value); };
 exports.match = match;
 
-},{"../data/type":26}],16:[function(require,module,exports){
+},{"../data/type":27}],17:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -2373,7 +2429,7 @@ exports.liftP = liftP;
 var doFuture = function (f) { return _1.doN(f); };
 exports.doFuture = doFuture;
 
-},{"../../data/function":21,"../error":14,"../timer":18,"./":17}],17:[function(require,module,exports){
+},{"../../data/function":22,"../error":15,"../timer":19,"./":18}],18:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.doMonad = exports.doN = exports.pipeN = exports.pipe = exports.compose = exports.join = void 0;
@@ -2467,7 +2523,7 @@ var doN = function (f) {
 exports.doN = doN;
 exports.doMonad = exports.doN;
 
-},{}],18:[function(require,module,exports){
+},{}],19:[function(require,module,exports){
 (function (process){(function (){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
@@ -2521,7 +2577,7 @@ var throttle = function (f, duration) {
 exports.throttle = throttle;
 
 }).call(this)}).call(this,require('_process'))
-},{"_process":86}],19:[function(require,module,exports){
+},{"_process":87}],20:[function(require,module,exports){
 "use strict";
 var __spreadArrays = (this && this.__spreadArrays) || function () {
     for (var s = 0, i = 0, il = arguments.length; i < il; i++) s += arguments[i].length;
@@ -2697,7 +2753,7 @@ var compact = function (list) {
 };
 exports.compact = compact;
 
-},{"../../math":27,"../record":23}],20:[function(require,module,exports){
+},{"../../math":28,"../record":24}],21:[function(require,module,exports){
 "use strict";
 /**
  * Either represents a value that may be one of two types.
@@ -2897,7 +2953,7 @@ var either = function (f) { return function (g) { return function (e) {
 }; }; };
 exports.either = either;
 
-},{"./maybe":22}],21:[function(require,module,exports){
+},{"./maybe":23}],22:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.noop = exports.curry5 = exports.curry4 = exports.curry3 = exports.curry = exports.id = exports.identity = exports.flip = exports.cons = exports.compose5 = exports.compose4 = exports.compose3 = exports.compose = void 0;
@@ -2969,7 +3025,7 @@ exports.curry5 = curry5;
 var noop = function () { };
 exports.noop = noop;
 
-},{}],22:[function(require,module,exports){
+},{}],23:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.fromNaN = exports.fromNumber = exports.fromBoolean = exports.fromString = exports.fromObject = exports.fromArray = exports.fromNullable = exports.just = exports.nothing = exports.of = exports.Just = exports.Nothing = void 0;
@@ -3213,7 +3269,7 @@ var fromNaN = function (n) {
 };
 exports.fromNaN = fromNaN;
 
-},{}],23:[function(require,module,exports){
+},{}],24:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.pickValue = exports.pickKey = exports.make = exports.rcompact = exports.compact = exports.isBadKey = exports.set = exports.every = exports.some = exports.empty = exports.count = exports.clone = exports.hasKey = exports.values = exports.group = exports.partition = exports.exclude = exports.rmerge5 = exports.rmerge4 = exports.rmerge3 = exports.rmerge = exports.merge5 = exports.merge4 = exports.merge3 = exports.merge = exports.filter = exports.reduce = exports.forEach = exports.mapTo = exports.map = exports.keys = exports.isRecord = exports.assign = exports.badKeys = void 0;
@@ -3585,7 +3641,7 @@ var pickValue = function (rec, test) {
 };
 exports.pickValue = pickValue;
 
-},{"../array":19,"../maybe":22,"../type":26}],24:[function(require,module,exports){
+},{"../array":20,"../maybe":23,"../type":27}],25:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.project = exports.unflatten = exports.flatten = exports.unescapeRecord = exports.escapeRecord = exports.unescape = exports.escape = exports.set = exports.getString = exports.getDefault = exports.get = exports.unsafeGet = exports.tokenize = void 0;
@@ -3865,7 +3921,7 @@ var project = function (spec, rec) {
 };
 exports.project = project;
 
-},{"../maybe":22,"./":23}],25:[function(require,module,exports){
+},{"../maybe":23,"./":24}],26:[function(require,module,exports){
 "use strict";
 /**
  *  Common functions used to manipulate strings.
@@ -4057,7 +4113,7 @@ var alphanumeric = function (str) {
 };
 exports.alphanumeric = alphanumeric;
 
-},{"../record":23,"../record/path":24}],26:[function(require,module,exports){
+},{"../record":24,"../record/path":25}],27:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.toString = exports.show = exports.test = exports.is = exports.isPrim = exports.isFunction = exports.isBoolean = exports.isNumber = exports.isString = exports.isArray = exports.isObject = exports.Any = void 0;
@@ -4197,7 +4253,7 @@ var toString = function (val) {
 };
 exports.toString = toString;
 
-},{}],27:[function(require,module,exports){
+},{}],28:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.round = exports.isMultipleOf = void 0;
@@ -4243,7 +4299,7 @@ var round = function (x, n) {
 };
 exports.round = round;
 
-},{}],28:[function(require,module,exports){
+},{}],29:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.randomID = exports.isGroup = exports.isChild = exports.getId = exports.getParent = exports.make = exports.isRestricted = exports.ADDRESS_RESTRICTED = exports.ADDRESS_EMPTY = exports.ADDRESS_SYSTEM = exports.ADDRESS_DISCARD = exports.SEPERATOR = void 0;
@@ -4327,7 +4383,7 @@ exports.isGroup = function (addr) {
  */
 exports.randomID = function () { return uuid.v4().split('-').join(''); };
 
-},{"@quenk/noni/lib/data/array":19,"@quenk/noni/lib/data/string":25,"uuid":55}],29:[function(require,module,exports){
+},{"@quenk/noni/lib/data/array":20,"@quenk/noni/lib/data/string":26,"uuid":56}],30:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.isRouter = exports.isBuffered = exports.isImmutable = exports.FLAG_ROUTER = exports.FLAG_TEMPORARY = exports.FLAG_BUFFERED = exports.FLAG_IMMUTABLE = void 0;
@@ -4354,7 +4410,7 @@ exports.isRouter = function (f) {
     return (f & exports.FLAG_ROUTER) === exports.FLAG_ROUTER;
 };
 
-},{}],30:[function(require,module,exports){
+},{}],31:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Envelope = void 0;
@@ -4373,7 +4429,7 @@ var Envelope = /** @class */ (function () {
 }());
 exports.Envelope = Envelope;
 
-},{}],31:[function(require,module,exports){
+},{}],32:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -4435,7 +4491,7 @@ var Default = /** @class */ (function (_super) {
 }(Case));
 exports.Default = Default;
 
-},{"@quenk/noni/lib/data/type":26}],32:[function(require,module,exports){
+},{"@quenk/noni/lib/data/type":27}],33:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -4610,7 +4666,7 @@ var receiveFun = function (cases) {
     });
 };
 
-},{"../address":28,"../flags":29,"../system/vm/event":35,"../system/vm/script/info":50,"../template":53,"./scripts":33,"@quenk/noni/lib/data/record":23,"@quenk/noni/lib/data/type":26}],33:[function(require,module,exports){
+},{"../address":29,"../flags":30,"../system/vm/event":36,"../system/vm/script/info":51,"../template":54,"./scripts":34,"@quenk/noni/lib/data/record":24,"@quenk/noni/lib/data/type":27}],34:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Kill = exports.Raise = exports.Notify = exports.Receive = exports.Tell = exports.Self = exports.Spawn = void 0;
@@ -4814,7 +4870,7 @@ var Kill = /** @class */ (function () {
 }());
 exports.Kill = Kill;
 
-},{"../system/vm/runtime/heap/object/es":41,"../system/vm/runtime/op":45,"../system/vm/script/info":50,"@quenk/noni/lib/data/type":26}],34:[function(require,module,exports){
+},{"../system/vm/runtime/heap/object/es":42,"../system/vm/runtime/op":46,"../system/vm/script/info":51,"@quenk/noni/lib/data/type":27}],35:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.defaults = void 0;
@@ -4830,7 +4886,7 @@ exports.defaults = function () { return ({
     on: {}
 }); };
 
-},{"./log":37}],35:[function(require,module,exports){
+},{"./log":38}],36:[function(require,module,exports){
 "use strict";
 var _a;
 Object.defineProperty(exports, "__esModule", { value: true });
@@ -4889,7 +4945,7 @@ exports.events = (_a = {},
 exports.getLevel = function (e) { return exports.events.hasOwnProperty(e) ?
     exports.events[e].level : log_1.LOG_LEVEL_DEBUG; };
 
-},{"./log":37}],36:[function(require,module,exports){
+},{"./log":38}],37:[function(require,module,exports){
 "use strict";
 var __spreadArrays = (this && this.__spreadArrays) || function () {
     for (var s = 0, i = 0, il = arguments.length; i < il; i++) s += arguments[i].length;
@@ -5295,7 +5351,7 @@ var scheduleFutures = function (work) {
         .chain(function () { return future_1.pure(undefined); });
 };
 
-},{"../../address":28,"../../flags":29,"../../message":30,"../../resident":32,"../../template":53,"./conf":34,"./event":35,"./log":37,"./runtime/context":38,"./runtime/error":39,"./runtime/heap":40,"./runtime/op":45,"./runtime/thread":48,"./state":51,"@quenk/noni/lib/control/monad/future":16,"@quenk/noni/lib/data/array":19,"@quenk/noni/lib/data/either":20,"@quenk/noni/lib/data/maybe":22,"@quenk/noni/lib/data/record":23,"@quenk/noni/lib/data/type":26}],37:[function(require,module,exports){
+},{"../../address":29,"../../flags":30,"../../message":31,"../../resident":33,"../../template":54,"./conf":35,"./event":36,"./log":38,"./runtime/context":39,"./runtime/error":40,"./runtime/heap":41,"./runtime/op":46,"./runtime/thread":49,"./state":52,"@quenk/noni/lib/control/monad/future":17,"@quenk/noni/lib/data/array":20,"@quenk/noni/lib/data/either":21,"@quenk/noni/lib/data/maybe":23,"@quenk/noni/lib/data/record":24,"@quenk/noni/lib/data/type":27}],38:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.LOG_LEVEL_ERROR = exports.LOG_LEVEL_WARN = exports.LOG_LEVEL_NOTICE = exports.LOG_LEVEL_INFO = exports.LOG_LEVEL_DEBUG = void 0;
@@ -5305,7 +5361,7 @@ exports.LOG_LEVEL_NOTICE = 5;
 exports.LOG_LEVEL_WARN = 4;
 exports.LOG_LEVEL_ERROR = 3;
 
-},{}],38:[function(require,module,exports){
+},{}],39:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.newContext = void 0;
@@ -5321,7 +5377,7 @@ exports.newContext = function (actor, address, template) { return ({
     template: template
 }); };
 
-},{}],39:[function(require,module,exports){
+},{}],40:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -5610,7 +5666,7 @@ var InvalidFunctionErr = /** @class */ (function (_super) {
 }(Error));
 exports.InvalidFunctionErr = InvalidFunctionErr;
 
-},{"../../../address":28,"./stack/frame":47}],40:[function(require,module,exports){
+},{"../../../address":29,"./stack/frame":48}],41:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Heap = void 0;
@@ -5699,7 +5755,7 @@ var Heap = /** @class */ (function () {
 }());
 exports.Heap = Heap;
 
-},{"../stack/frame":47,"@quenk/noni/lib/data/maybe":22,"@quenk/noni/lib/data/type":26}],41:[function(require,module,exports){
+},{"../stack/frame":48,"@quenk/noni/lib/data/maybe":23,"@quenk/noni/lib/data/type":27}],42:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ESArray = exports.ESObject = void 0;
@@ -5807,7 +5863,7 @@ var marshal = function (heap, typ, val) {
     }
 };
 
-},{"../../../type":52,"@quenk/noni/lib/data/maybe":22,"@quenk/noni/lib/data/record":23,"@quenk/noni/lib/data/type":26}],42:[function(require,module,exports){
+},{"../../../type":53,"@quenk/noni/lib/data/maybe":23,"@quenk/noni/lib/data/record":24,"@quenk/noni/lib/data/type":27}],43:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.MAX_INSTRUCTION = exports.OPERAND_RANGE_END = exports.OPERAND_RANGE_START = exports.OPCODE_RANGE_END = exports.OPCODE_RANGE_START = exports.OPERAND_MASK = exports.OPCODE_MASK = void 0;
@@ -5819,7 +5875,7 @@ exports.OPERAND_RANGE_START = 0x0;
 exports.OPERAND_RANGE_END = 0xffffff;
 exports.MAX_INSTRUCTION = 0xffffffff;
 
-},{}],43:[function(require,module,exports){
+},{}],44:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.stop = exports.read = exports.maildq = exports.mailcount = exports.recvcount = exports.recv = exports.send = exports.run = exports.self = exports.alloc = void 0;
@@ -5974,7 +6030,7 @@ exports.stop = function (r, f, _) {
     r.kill(eaddr.takeRight());
 };
 
-},{"../../../../flags":29,"../error":39}],44:[function(require,module,exports){
+},{"../../../../flags":30,"../error":40}],45:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ifneqjmp = exports.ifeqjmp = exports.ifnzjmp = exports.ifzjmp = exports.jmp = exports.raise = exports.call = exports.addui32 = exports.ceq = exports.load = exports.store = exports.dup = exports.ldn = exports.lds = exports.pushui32 = exports.pushui16 = exports.pushui8 = exports.nop = void 0;
@@ -6200,7 +6256,7 @@ exports.ifneqjmp = function (r, f, oper) {
         f.seek(oper);
 };
 
-},{"../error":39,"../stack/frame":47,"@quenk/noni/lib/data/array":19}],45:[function(require,module,exports){
+},{"../error":40,"../stack/frame":48,"@quenk/noni/lib/data/array":20}],46:[function(require,module,exports){
 "use strict";
 var _a;
 Object.defineProperty(exports, "__esModule", { value: true });
@@ -6435,7 +6491,7 @@ exports.toLog = function (op, r, f, oper) {
     return exports.opcodes.hasOwnProperty(op) ? exports.opcodes[op].log(r, f, oper) : [];
 };
 
-},{"../stack/frame":47,"./actor":43,"./base":44,"./object":46,"@quenk/noni/lib/data/record":23}],46:[function(require,module,exports){
+},{"../stack/frame":48,"./actor":44,"./base":45,"./object":47,"@quenk/noni/lib/data/record":24}],47:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.arelm = exports.arlength = exports.getprop = void 0;
@@ -6499,7 +6555,7 @@ exports.arelm = function (r, f, _) {
     }
 };
 
-},{}],47:[function(require,module,exports){
+},{}],48:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.StackFrame = exports.BYTE_CONSTANT_INFO = exports.BYTE_CONSTANT_STR = exports.BYTE_CONSTANT_NUM = exports.DATA_TYPE_SELF = exports.DATA_TYPE_MAILBOX = exports.DATA_TYPE_LOCAL = exports.DATA_TYPE_HEAP_STRING = exports.DATA_TYPE_HEAP_OBJECT = exports.DATA_TYPE_INFO = exports.DATA_TYPE_STRING = exports.DATA_MAX_SAFE_UINT32 = exports.DATA_MAX_SIZE = exports.DATA_MASK_VALUE32 = exports.DATA_MASK_VALUE24 = exports.DATA_MASK_VALUE16 = exports.DATA_MASK_VALUE8 = exports.DATA_MASK_TYPE = exports.DATA_RANGE_TYPE_STEP = exports.DATA_RANGE_TYPE_LOW = exports.DATA_RANGE_TYPE_HIGH = void 0;
@@ -6716,7 +6772,7 @@ var missingSymbol = function (data) {
     return either_1.left(new error.MissingSymbolErr(data));
 };
 
-},{"../../script":49,"../../type":52,"../error":39,"@quenk/noni/lib/data/either":20,"@quenk/noni/lib/data/maybe":22}],48:[function(require,module,exports){
+},{"../../script":50,"../../type":53,"../error":40,"@quenk/noni/lib/data/either":21,"@quenk/noni/lib/data/maybe":23}],49:[function(require,module,exports){
 "use strict";
 var __spreadArrays = (this && this.__spreadArrays) || function () {
     for (var s = 0, i = 0, il = arguments.length; i < il; i++) s += arguments[i].length;
@@ -6831,7 +6887,7 @@ var Thread = /** @class */ (function () {
 }());
 exports.Thread = Thread;
 
-},{"./":42,"./op":45,"./stack/frame":47,"@quenk/noni/lib/control/monad/future":16,"@quenk/noni/lib/data/array":19,"@quenk/noni/lib/data/maybe":22}],49:[function(require,module,exports){
+},{"./":43,"./op":46,"./stack/frame":48,"@quenk/noni/lib/control/monad/future":17,"@quenk/noni/lib/data/array":20,"@quenk/noni/lib/data/maybe":23}],50:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getInfo = exports.PScript = exports.CONSTANTS_INDEX_STRING = exports.CONSTANTS_INDEX_NUMBER = void 0;
@@ -6864,7 +6920,7 @@ exports.getInfo = function (s, idx) {
     return either_1.right(s.info[idx]);
 };
 
-},{"../runtime/error":39,"@quenk/noni/lib/data/either":20}],50:[function(require,module,exports){
+},{"../runtime/error":40,"@quenk/noni/lib/data/either":21}],51:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.funType = exports.objectType = exports.arrayType = exports.stringType = exports.booleanType = exports.uint32Type = exports.uint16Type = exports.uint8Type = exports.int32Type = exports.int16Type = exports.int8Type = exports.voidType = exports.NewPropInfo = exports.NewArrayTypeInfo = exports.NewTypeInfo = exports.NewForeignFunInfo = exports.NewFunInfo = exports.NewArrayInfo = exports.NewObjectInfo = exports.NewStringInfo = exports.NewBooleanInfo = exports.Int32Info = exports.NewInt16Info = exports.NewInt8Info = exports.NewUInt32Info = exports.NewUInt16Info = exports.NewUInt8Info = exports.VoidInfo = void 0;
@@ -7124,7 +7180,7 @@ exports.objectType = new NewTypeInfo('object', 0, [], types.TYPE_OBJECT);
  */
 exports.funType = new NewTypeInfo('function', 0, [], types.TYPE_FUN);
 
-},{"../type":52}],51:[function(require,module,exports){
+},{"../type":53}],52:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.removeMember = exports.putMember = exports.getGroup = exports.removeGroup = exports.removeRoute = exports.putRoute = exports.getRouter = exports.getParent = exports.getChildren = exports.getAddress = exports.remove = exports.put = exports.get = exports.exists = void 0;
@@ -7241,7 +7297,7 @@ exports.removeMember = function (s, group, member) {
     return s;
 };
 
-},{"../../address":28,"@quenk/noni/lib/data/maybe":22,"@quenk/noni/lib/data/record":23,"@quenk/noni/lib/data/string":25}],52:[function(require,module,exports){
+},{"../../address":29,"@quenk/noni/lib/data/maybe":23,"@quenk/noni/lib/data/record":24,"@quenk/noni/lib/data/string":26}],53:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getType = exports.TYPE_CONS = exports.TYPE_FUN = exports.TYPE_ARRAY = exports.TYPE_OBJECT = exports.TYPE_STRING = exports.TYPE_BOOLEAN = exports.TYPE_INT32 = exports.TYPE_INT16 = exports.TYPE_INT8 = exports.TYPE_UINT32 = exports.TYPE_UINT16 = exports.TYPE_UINT8 = exports.TYPE_VOID = exports.BYTE_INDEX = exports.BYTE_TYPE = exports.TYPE_STEP = void 0;
@@ -7270,7 +7326,7 @@ exports.getType = function (d) {
     return d & exports.BYTE_TYPE;
 };
 
-},{}],53:[function(require,module,exports){
+},{}],54:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.normalize = exports.ACTION_STOP = exports.ACTION_RESTART = exports.ACTION_IGNORE = exports.ACTION_RAISE = void 0;
@@ -7289,7 +7345,7 @@ exports.normalize = function (t) { return record_1.merge(t, {
         record_1.mapTo(t.children, function (c, k) { return record_1.merge(c, { id: k }); }) : t.children
 }); };
 
-},{"./address":28,"@quenk/noni/lib/data/record":23}],54:[function(require,module,exports){
+},{"./address":29,"@quenk/noni/lib/data/record":24}],55:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -7317,7 +7373,7 @@ function bytesToUuid(buf, offset) {
 var _default = bytesToUuid;
 exports.default = _default;
 module.exports = exports.default;
-},{}],55:[function(require,module,exports){
+},{}],56:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -7357,7 +7413,7 @@ var _v3 = _interopRequireDefault(require("./v4.js"));
 var _v4 = _interopRequireDefault(require("./v5.js"));
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-},{"./v1.js":59,"./v3.js":60,"./v4.js":62,"./v5.js":63}],56:[function(require,module,exports){
+},{"./v1.js":60,"./v3.js":61,"./v4.js":63,"./v5.js":64}],57:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -7583,7 +7639,7 @@ function md5ii(a, b, c, d, x, s, t) {
 var _default = md5;
 exports.default = _default;
 module.exports = exports.default;
-},{}],57:[function(require,module,exports){
+},{}],58:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -7607,7 +7663,7 @@ function rng() {
 }
 
 module.exports = exports.default;
-},{}],58:[function(require,module,exports){
+},{}],59:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -7704,7 +7760,7 @@ function sha1(bytes) {
 var _default = sha1;
 exports.default = _default;
 module.exports = exports.default;
-},{}],59:[function(require,module,exports){
+},{}],60:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -7813,7 +7869,7 @@ function v1(options, buf, offset) {
 var _default = v1;
 exports.default = _default;
 module.exports = exports.default;
-},{"./bytesToUuid.js":54,"./rng.js":57}],60:[function(require,module,exports){
+},{"./bytesToUuid.js":55,"./rng.js":58}],61:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -7831,7 +7887,7 @@ const v3 = (0, _v.default)('v3', 0x30, _md.default);
 var _default = v3;
 exports.default = _default;
 module.exports = exports.default;
-},{"./md5.js":56,"./v35.js":61}],61:[function(require,module,exports){
+},{"./md5.js":57,"./v35.js":62}],62:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -7901,7 +7957,7 @@ function _default(name, version, hashfunc) {
   generateUUID.URL = URL;
   return generateUUID;
 }
-},{"./bytesToUuid.js":54}],62:[function(require,module,exports){
+},{"./bytesToUuid.js":55}],63:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -7943,7 +7999,7 @@ function v4(options, buf, offset) {
 var _default = v4;
 exports.default = _default;
 module.exports = exports.default;
-},{"./bytesToUuid.js":54,"./rng.js":57}],63:[function(require,module,exports){
+},{"./bytesToUuid.js":55,"./rng.js":58}],64:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -7961,7 +8017,7 @@ const v5 = (0, _v.default)('v5', 0x50, _sha.default);
 var _default = v5;
 exports.default = _default;
 module.exports = exports.default;
-},{"./sha1.js":58,"./v35.js":61}],64:[function(require,module,exports){
+},{"./sha1.js":59,"./v35.js":62}],65:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -8144,7 +8200,7 @@ exports.toString = toString;
 var assert = function (value) { return new Positive(value, true); };
 exports.assert = assert;
 
-},{"deep-equal":66,"json-stringify-safe":78}],65:[function(require,module,exports){
+},{"deep-equal":67,"json-stringify-safe":79}],66:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Mock = exports.ReturnCallback = exports.ReturnValue = exports.Invocation = void 0;
@@ -8297,7 +8353,7 @@ var Mock = /** @class */ (function () {
 }());
 exports.Mock = Mock;
 
-},{"deep-equal":66}],66:[function(require,module,exports){
+},{"deep-equal":67}],67:[function(require,module,exports){
 var objectKeys = require('object-keys');
 var isArguments = require('is-arguments');
 var is = require('object-is');
@@ -8411,7 +8467,7 @@ function objEquiv(a, b, opts) {
 
 module.exports = deepEqual;
 
-},{"is-arguments":75,"is-date-object":76,"is-regex":77,"object-is":80,"object-keys":84,"regexp.prototype.flags":88}],67:[function(require,module,exports){
+},{"is-arguments":76,"is-date-object":77,"is-regex":78,"object-is":81,"object-keys":85,"regexp.prototype.flags":89}],68:[function(require,module,exports){
 'use strict';
 
 var keys = require('object-keys');
@@ -8471,7 +8527,7 @@ defineProperties.supportsDescriptors = !!supportsDescriptors;
 
 module.exports = defineProperties;
 
-},{"object-keys":84}],68:[function(require,module,exports){
+},{"object-keys":85}],69:[function(require,module,exports){
 'use strict';
 
 /* globals
@@ -8691,7 +8747,7 @@ module.exports = function GetIntrinsic(name, allowMissing) {
 	return value;
 };
 
-},{"function-bind":71,"has-symbols":72}],69:[function(require,module,exports){
+},{"function-bind":72,"has-symbols":73}],70:[function(require,module,exports){
 'use strict';
 
 var bind = require('function-bind');
@@ -8710,7 +8766,7 @@ module.exports.apply = function applyBind() {
 	return bind.apply($apply, arguments);
 };
 
-},{"../GetIntrinsic":68,"function-bind":71}],70:[function(require,module,exports){
+},{"../GetIntrinsic":69,"function-bind":72}],71:[function(require,module,exports){
 'use strict';
 
 /* eslint no-invalid-this: 1 */
@@ -8764,14 +8820,14 @@ module.exports = function bind(that) {
     return bound;
 };
 
-},{}],71:[function(require,module,exports){
+},{}],72:[function(require,module,exports){
 'use strict';
 
 var implementation = require('./implementation');
 
 module.exports = Function.prototype.bind || implementation;
 
-},{"./implementation":70}],72:[function(require,module,exports){
+},{"./implementation":71}],73:[function(require,module,exports){
 (function (global){(function (){
 'use strict';
 
@@ -8788,7 +8844,7 @@ module.exports = function hasNativeSymbols() {
 };
 
 }).call(this)}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./shams":73}],73:[function(require,module,exports){
+},{"./shams":74}],74:[function(require,module,exports){
 'use strict';
 
 /* eslint complexity: [2, 18], max-statements: [2, 33] */
@@ -8832,14 +8888,14 @@ module.exports = function hasSymbols() {
 	return true;
 };
 
-},{}],74:[function(require,module,exports){
+},{}],75:[function(require,module,exports){
 'use strict';
 
 var bind = require('function-bind');
 
 module.exports = bind.call(Function.call, Object.prototype.hasOwnProperty);
 
-},{"function-bind":71}],75:[function(require,module,exports){
+},{"function-bind":72}],76:[function(require,module,exports){
 'use strict';
 
 var hasToStringTag = typeof Symbol === 'function' && typeof Symbol.toStringTag === 'symbol';
@@ -8872,7 +8928,7 @@ isStandardArguments.isLegacyArguments = isLegacyArguments; // for tests
 
 module.exports = supportsStandardArguments ? isStandardArguments : isLegacyArguments;
 
-},{}],76:[function(require,module,exports){
+},{}],77:[function(require,module,exports){
 'use strict';
 
 var getDay = Date.prototype.getDay;
@@ -8896,7 +8952,7 @@ module.exports = function isDateObject(value) {
 	return hasToStringTag ? tryDateObject(value) : toStr.call(value) === dateClass;
 };
 
-},{}],77:[function(require,module,exports){
+},{}],78:[function(require,module,exports){
 'use strict';
 
 var has = require('has');
@@ -8937,7 +8993,7 @@ module.exports = function isRegex(value) {
 	return tryRegexExecCall(value);
 };
 
-},{"has":74}],78:[function(require,module,exports){
+},{"has":75}],79:[function(require,module,exports){
 exports = module.exports = stringify
 exports.getSerialize = serializer
 
@@ -8966,7 +9022,7 @@ function serializer(replacer, cycleReplacer) {
   }
 }
 
-},{}],79:[function(require,module,exports){
+},{}],80:[function(require,module,exports){
 'use strict';
 
 var numberIsNaN = function (value) {
@@ -8987,7 +9043,7 @@ module.exports = function is(a, b) {
 };
 
 
-},{}],80:[function(require,module,exports){
+},{}],81:[function(require,module,exports){
 'use strict';
 
 var define = require('define-properties');
@@ -9007,7 +9063,7 @@ define(polyfill, {
 
 module.exports = polyfill;
 
-},{"./implementation":79,"./polyfill":81,"./shim":82,"define-properties":67,"es-abstract/helpers/callBind":69}],81:[function(require,module,exports){
+},{"./implementation":80,"./polyfill":82,"./shim":83,"define-properties":68,"es-abstract/helpers/callBind":70}],82:[function(require,module,exports){
 'use strict';
 
 var implementation = require('./implementation');
@@ -9016,7 +9072,7 @@ module.exports = function getPolyfill() {
 	return typeof Object.is === 'function' ? Object.is : implementation;
 };
 
-},{"./implementation":79}],82:[function(require,module,exports){
+},{"./implementation":80}],83:[function(require,module,exports){
 'use strict';
 
 var getPolyfill = require('./polyfill');
@@ -9032,7 +9088,7 @@ module.exports = function shimObjectIs() {
 	return polyfill;
 };
 
-},{"./polyfill":81,"define-properties":67}],83:[function(require,module,exports){
+},{"./polyfill":82,"define-properties":68}],84:[function(require,module,exports){
 'use strict';
 
 var keysShim;
@@ -9156,7 +9212,7 @@ if (!Object.keys) {
 }
 module.exports = keysShim;
 
-},{"./isArguments":85}],84:[function(require,module,exports){
+},{"./isArguments":86}],85:[function(require,module,exports){
 'use strict';
 
 var slice = Array.prototype.slice;
@@ -9190,7 +9246,7 @@ keysShim.shim = function shimObjectKeys() {
 
 module.exports = keysShim;
 
-},{"./implementation":83,"./isArguments":85}],85:[function(require,module,exports){
+},{"./implementation":84,"./isArguments":86}],86:[function(require,module,exports){
 'use strict';
 
 var toStr = Object.prototype.toString;
@@ -9209,7 +9265,7 @@ module.exports = function isArguments(value) {
 	return isArgs;
 };
 
-},{}],86:[function(require,module,exports){
+},{}],87:[function(require,module,exports){
 // shim for using process in browser
 var process = module.exports = {};
 
@@ -9395,7 +9451,7 @@ process.chdir = function (dir) {
 };
 process.umask = function() { return 0; };
 
-},{}],87:[function(require,module,exports){
+},{}],88:[function(require,module,exports){
 'use strict';
 
 var $Object = Object;
@@ -9427,7 +9483,7 @@ module.exports = function flags() {
 	return result;
 };
 
-},{}],88:[function(require,module,exports){
+},{}],89:[function(require,module,exports){
 'use strict';
 
 var define = require('define-properties');
@@ -9447,7 +9503,7 @@ define(flagsBound, {
 
 module.exports = flagsBound;
 
-},{"./implementation":87,"./polyfill":89,"./shim":90,"define-properties":67,"es-abstract/helpers/callBind":69}],89:[function(require,module,exports){
+},{"./implementation":88,"./polyfill":90,"./shim":91,"define-properties":68,"es-abstract/helpers/callBind":70}],90:[function(require,module,exports){
 'use strict';
 
 var implementation = require('./implementation');
@@ -9469,7 +9525,7 @@ module.exports = function getPolyfill() {
 	return implementation;
 };
 
-},{"./implementation":87,"define-properties":67}],90:[function(require,module,exports){
+},{"./implementation":88,"define-properties":68}],91:[function(require,module,exports){
 'use strict';
 
 var supportsDescriptors = require('define-properties').supportsDescriptors;
@@ -9497,7 +9553,7 @@ module.exports = function shimFlags() {
 	return polyfill;
 };
 
-},{"./polyfill":89,"define-properties":67}],91:[function(require,module,exports){
+},{"./polyfill":90,"define-properties":68}],92:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -9811,7 +9867,7 @@ describe('director', function () {
     });
 });
 
-},{"../../../lib/actor":1,"../../../lib/app/director":2,"../app/fixtures/app":93,"@quenk/noni/lib/control/monad/future":16,"@quenk/noni/lib/data/record":23,"@quenk/noni/lib/data/string":25,"@quenk/potoo/lib/actor/resident/case":31,"@quenk/test/lib/assert":64,"@quenk/test/lib/mock":65}],92:[function(require,module,exports){
+},{"../../../lib/actor":1,"../../../lib/app/director":2,"../app/fixtures/app":94,"@quenk/noni/lib/control/monad/future":17,"@quenk/noni/lib/data/record":24,"@quenk/noni/lib/data/string":26,"@quenk/potoo/lib/actor/resident/case":32,"@quenk/test/lib/assert":65,"@quenk/test/lib/mock":66}],93:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -9848,7 +9904,7 @@ var GenericImmutable = /** @class */ (function (_super) {
 }(actor_1.Immutable));
 exports.GenericImmutable = GenericImmutable;
 
-},{"../../../../lib/actor":1}],93:[function(require,module,exports){
+},{"../../../../lib/actor":1}],94:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -9879,7 +9935,7 @@ var TestApp = /** @class */ (function (_super) {
 }(app_1.JApp));
 exports.TestApp = TestApp;
 
-},{"../../../../lib/app":5}],94:[function(require,module,exports){
+},{"../../../../lib/app":6}],95:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -10206,7 +10262,7 @@ describe('active', function () {
     });
 });
 
-},{"../../../../lib/app/form/active":3,"../../../../lib/app/form/active/validate/strategy":4,"../../app/fixtures/app":93,"../fixtures/actor":92,"@quenk/noni/lib/control/monad/future":16,"@quenk/noni/lib/data/either":20,"@quenk/potoo/lib/actor/resident/case":31,"@quenk/test/lib/assert":64,"@quenk/test/lib/mock":65}],95:[function(require,module,exports){
+},{"../../../../lib/app/form/active":3,"../../../../lib/app/form/active/validate/strategy":4,"../../app/fixtures/app":94,"../fixtures/actor":93,"@quenk/noni/lib/control/monad/future":17,"@quenk/noni/lib/data/either":21,"@quenk/potoo/lib/actor/resident/case":32,"@quenk/test/lib/assert":65,"@quenk/test/lib/mock":66}],96:[function(require,module,exports){
 "use strict";
 var __generator = (this && this.__generator) || function (thisArg, body) {
     var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
@@ -10412,7 +10468,7 @@ describe('remote', function () {
     });
 });
 
-},{"../../../../lib/app/remote":6,"../../app/fixtures/actor":92,"../../app/fixtures/app":93,"@quenk/jhr/lib/agent/mock":8,"@quenk/jhr/lib/request":9,"@quenk/jhr/lib/response":11,"@quenk/noni/lib/control/monad/future":16,"@quenk/potoo/lib/actor/resident/case":31,"@quenk/test/lib/assert":64}],96:[function(require,module,exports){
+},{"../../../../lib/app/remote":7,"../../app/fixtures/actor":93,"../../app/fixtures/app":94,"@quenk/jhr/lib/agent/mock":9,"@quenk/jhr/lib/request":10,"@quenk/jhr/lib/response":12,"@quenk/noni/lib/control/monad/future":17,"@quenk/potoo/lib/actor/resident/case":32,"@quenk/test/lib/assert":65}],97:[function(require,module,exports){
 "use strict";
 var __generator = (this && this.__generator) || function (thisArg, body) {
     var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
@@ -10755,10 +10811,10 @@ describe('observable', function () {
     });
 });
 
-},{"../../../../lib/app/remote/observable":7,"../../app/fixtures/actor":92,"../../app/fixtures/app":93,"@quenk/jhr/lib/agent/mock":8,"@quenk/jhr/lib/request":9,"@quenk/jhr/lib/response":11,"@quenk/noni/lib/control/monad/future":16,"@quenk/potoo/lib/actor/resident/case":31,"@quenk/test/lib/assert":64,"@quenk/test/lib/mock":65}],97:[function(require,module,exports){
+},{"../../../../lib/app/remote/observable":8,"../../app/fixtures/actor":93,"../../app/fixtures/app":94,"@quenk/jhr/lib/agent/mock":9,"@quenk/jhr/lib/request":10,"@quenk/jhr/lib/response":12,"@quenk/noni/lib/control/monad/future":17,"@quenk/potoo/lib/actor/resident/case":32,"@quenk/test/lib/assert":65,"@quenk/test/lib/mock":66}],98:[function(require,module,exports){
 require("./app/remote/observable_test.js");
 require("./app/remote/index_test.js");
 require("./app/form/active_test.js");
 require("./app/director_test.js");
 
-},{"./app/director_test.js":91,"./app/form/active_test.js":94,"./app/remote/index_test.js":95,"./app/remote/observable_test.js":96}]},{},[97]);
+},{"./app/director_test.js":92,"./app/form/active_test.js":95,"./app/remote/index_test.js":96,"./app/remote/observable_test.js":97}]},{},[98]);

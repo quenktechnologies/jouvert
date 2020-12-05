@@ -1,16 +1,35 @@
-import { Value, Object } from '@quenk/noni/lib/data/jsonx';
+import { Object } from '@quenk/noni/lib/data/jsonx';
 import { Any } from '@quenk/noni/lib/data/type';
 import { clone, filter } from '@quenk/noni/lib/data/record';
+import { contains } from '@quenk/noni/lib/data/array';
 
 import { Address } from '@quenk/potoo/lib/actor/address';
 import { Case } from '@quenk/potoo/lib/actor/resident/case';
 
 import { Api, Immutable } from '../../../actor';
 import { App } from '../../';
-import { FieldName, FieldValue, FieldError, FormErrors } from '../';
+import { FieldName, FieldValue, FieldError } from '../';
 
 import { ValidateStrategy } from './validate/strategy';
-import { contains } from '@quenk/noni/lib/data/array';
+import {
+    FieldInputEvent,
+    Abort,
+    Save,
+    SaveFailed,
+    SaveOk,
+    FormAborted,
+    FormSaved
+} from '../'
+
+export {
+    Abort,
+    Save,
+    SaveFailed,
+    SaveOk,
+    FormAborted,
+    FormSaved,
+    FieldInputEvent
+}
 
 /**
  * ActiveFormMessage type.
@@ -23,24 +42,6 @@ export type ActiveFormMessage<M>
     | FieldInputEvent
     | M
     ;
-
-/**
- * FieldInputEvent is any object that stores the name and associated value of a
- * field in the view of the form.
- */
-export interface FieldInputEvent {
-
-    /**
-     * name of the control the event originated from.
-     */
-    name: string,
-
-    /**
-     * value of the control at the time the event occurred.
-     */
-    value: Value
-
-}
 
 /**
  * ActiveForm is an interface implemented by actors interested in providing
@@ -136,51 +137,6 @@ export interface FormFeedback<T extends Object> extends FieldFeedback<T> {
      * onFormValid is applied when the entire form becomes valid.
      */
     onFormValid(): void
-
-}
-
-/**
- * Abort causes an ActiveForm to cease operations and return control to the
- * actor that owns it.
- */
-export class Abort { }
-
-/**
- * Save causes an ActiveForm to trigger saving of the data collected thus far.
- */
-export class Save { }
-
-/**
- * SaveOk signals to an ActiveForm that its "save" operation was successful.
- */
-export class SaveOk { }
-
-/**
- * SaveFailed signals to an ActiveForm that its "save" operation has failed.
- */
-export class SaveFailed {
-
-    constructor(public errors: FormErrors={}) { }
-
-}
-
-/**
- * FormAborted is sent by an ActiveForm to its owner when the form has been
- * aborted.
- */
-export class FormAborted {
-
-    constructor(public form: Address) { }
-
-}
-
-/**
- * FormSaved is sent by an ActiveForm to its owner when it has been successfully
- * saved its data.
- */
-export class FormSaved {
-
-    constructor(public form: Address) { }
 
 }
 

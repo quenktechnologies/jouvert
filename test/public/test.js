@@ -740,10 +740,6 @@ var JApp = /** @class */ (function () {
     JApp.prototype.execNow = function (i, s) {
         return this.vm.execNow(i, s);
     };
-    JApp.prototype.spawn = function (temp) {
-        this.vm.spawn(temp);
-        return this;
-    };
     return JApp;
 }());
 exports.JApp = JApp;

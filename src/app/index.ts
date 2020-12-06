@@ -42,11 +42,5 @@ export abstract class JApp implements App {
 
     }
 
-    spawn(temp: Template<JApp>): JApp {
-
-        this.vm.spawn(<Template<this>><object>temp);
-        return this;
-
-    }
 
 }

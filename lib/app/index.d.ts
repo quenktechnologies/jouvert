@@ -24,8 +24,7 @@ export interface App extends System {
 export declare abstract class JApp implements App {
     conf: Partial<Conf>;
     constructor(conf?: Partial<Conf>);
-    vm: PVM<this>;
+    vm: PVM;
     exec(i: Instance, s: Script): void;
     execNow(i: Instance, s: Script): Maybe<PTValue>;
-    spawn(temp: Template<JApp>): JApp;
 }

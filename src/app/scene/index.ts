@@ -134,9 +134,9 @@ export abstract class AppScene<Req, MResumed>
 
     }
 
-    spawn(t: Template<App>): Address {
+    spawn(t: Template): Address {
 
-        return super.spawn(<Template<App>>t);
+        return super.spawn(t);
 
     }
 

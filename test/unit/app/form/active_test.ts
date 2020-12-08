@@ -133,8 +133,8 @@ describe('active', () => {
 
                         id: 'parent',
 
-                        create: (s: TestApp) =>
-                            new GenericImmutable(s, cases, that => {
+                        create: s =>
+                            new GenericImmutable(<TestApp>s, cases, that => {
 
                                 let addr = that.spawn(form(that.self()));
                                 that.tell(addr, new Abort());
@@ -165,8 +165,8 @@ describe('active', () => {
 
                         id: 'parent',
 
-                        create: (s: TestApp) =>
-                            new GenericImmutable(s, [], that => {
+                        create: s =>
+                            new GenericImmutable(<TestApp>s, [], that => {
 
                                 let addr = that.spawn(form(that.self()));
                                 that.tell(addr, new Save());
@@ -202,8 +202,8 @@ describe('active', () => {
 
                         id: 'parent',
 
-                        create: (s: TestApp) =>
-                            new GenericImmutable(s, cases, that => {
+                        create: s =>
+                            new GenericImmutable(<TestApp>s, cases, that => {
 
                                 let addr = that.spawn(form(that.self()));
                                 that.tell(addr, new SaveOk());
@@ -234,8 +234,8 @@ describe('active', () => {
 
                         id: 'parent',
 
-                        create: (s: TestApp) =>
-                            new GenericImmutable(s, [], that => {
+                        create: s =>
+                            new GenericImmutable(<TestApp>s, [], that => {
 
                                 let addr = that.spawn(form(that.self()));
                                 that.tell(addr, new SaveFailed());
@@ -266,8 +266,8 @@ describe('active', () => {
 
                         id: 'parent',
 
-                        create: (s: TestApp) =>
-                            new GenericImmutable(s, [], that => {
+                        create: s =>
+                            new GenericImmutable(<TestApp>s, [], that => {
 
                                 let addr = that.spawn(form(that.self()));
                                 that.tell(addr, { name: 'name', value: 'asp' });

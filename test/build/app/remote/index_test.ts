@@ -53,7 +53,7 @@ describe('remote', () => {
 
                     id: 'remote',
 
-                    create: (s: TestApp) => new Remote(mock, s)
+                    create: s => new Remote(mock, s)
 
                 });
 
@@ -61,8 +61,8 @@ describe('remote', () => {
 
                     id: 'client',
 
-                    create: (s: TestApp) =>
-                        new GenericImmutable(s, cases, that => {
+                    create: s =>
+                        new GenericImmutable(<TestApp>s, cases, that => {
 
                             let msg = new Send(that.self(), new Get('', {}));
                             that.tell('remote', msg);
@@ -105,7 +105,7 @@ describe('remote', () => {
 
                         id: 'remote',
 
-                        create: (s: TestApp) => new Remote(mock, s)
+                        create: s => new Remote(mock, <TestApp>s)
 
                     });
 
@@ -113,8 +113,8 @@ describe('remote', () => {
 
                         id: 'client',
 
-                        create: (s: TestApp) =>
-                            new GenericImmutable(s, cases, that => {
+                        create: s =>
+                            new GenericImmutable(<TestApp>s, cases, that => {
 
                                 let msg = new ParSend(that.self(), [
                                     new Get('', {}),
@@ -162,7 +162,7 @@ describe('remote', () => {
 
                         id: 'remote',
 
-                        create: (s: TestApp) => new Remote(mock, s)
+                        create: s => new Remote(mock, s)
 
                     });
 
@@ -170,8 +170,8 @@ describe('remote', () => {
 
                         id: 'client',
 
-                        create: (s: TestApp) =>
-                            new GenericImmutable(s, cases, that => {
+                        create: s =>
+                            new GenericImmutable(<TestApp>s, cases, that => {
 
                                 let msg = new SeqSend(that.self(), [
                                     new Get('', {}),
@@ -219,7 +219,7 @@ describe('remote', () => {
 
                         id: 'remote',
 
-                        create: (s: TestApp) => new Remote(mock, s)
+                        create: s => new Remote(mock, <TestApp>s)
 
                     });
 
@@ -227,8 +227,8 @@ describe('remote', () => {
 
                         id: 'client',
 
-                        create: (s: TestApp) =>
-                            new GenericImmutable(s, cases, that => {
+                        create: s =>
+                            new GenericImmutable(<TestApp>s, cases, that => {
 
                                 let msg = new Send(that.self(), req);
                                 that.tell('remote', msg);

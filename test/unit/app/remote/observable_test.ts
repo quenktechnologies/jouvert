@@ -49,7 +49,7 @@ class MockRemoteObserver<Req, Res> {
 
     }
 
-    onServerError(e: Response< Res>) {
+    onServerError(e: Response<Res>) {
 
         return this.__mock__.invoke('onServerError', [e], undefined);
 
@@ -99,8 +99,8 @@ describe('observable', () => {
 
                     id: 'remote',
 
-                    create: (s: TestApp) =>
-                        new ObservableRemote(agent, observer, s)
+                    create: s =>
+                        new ObservableRemote(agent, observer, <TestApp>s)
 
                 });
 
@@ -108,8 +108,8 @@ describe('observable', () => {
 
                     id: 'client',
 
-                    create: (s: TestApp) =>
-                        new GenericImmutable(s, cases, that => {
+                    create: s =>
+                        new GenericImmutable(<TestApp>s, cases, that => {
 
                             let msg = new Send(that.self(), new Get('', {}));
                             that.tell('remote', msg);
@@ -158,8 +158,8 @@ describe('observable', () => {
 
                         id: 'remote',
 
-                        create: (s: TestApp) =>
-                            new ObservableRemote(agent, observer, s)
+                        create: s =>
+                            new ObservableRemote(agent, observer, <TestApp>s)
 
                     });
 
@@ -167,8 +167,8 @@ describe('observable', () => {
 
                         id: 'client',
 
-                        create: (s: TestApp) =>
-                            new GenericImmutable(s, cases, that => {
+                        create: s =>
+                            new GenericImmutable(<TestApp>s, cases, that => {
 
                                 let msg = new ParSend(that.self(), [
                                     new Get('', {}),
@@ -222,8 +222,8 @@ describe('observable', () => {
 
                         id: 'remote',
 
-                        create: (s: TestApp) =>
-                            new ObservableRemote(agent, observer, s)
+                        create: s =>
+                            new ObservableRemote(agent, observer, <TestApp>s)
 
                     });
 
@@ -231,8 +231,8 @@ describe('observable', () => {
 
                         id: 'client',
 
-                        create: (s: TestApp) =>
-                            new GenericImmutable(s, cases, that => {
+                        create: s =>
+                            new GenericImmutable(<TestApp>s, cases, that => {
 
                                 let msg = new SeqSend(that.self(), [
                                     new Get('', {}),
@@ -287,8 +287,8 @@ describe('observable', () => {
 
                         id: 'remote',
 
-                        create: (s: TestApp) =>
-                            new ObservableRemote(agent, observer, s)
+                        create: s =>
+                            new ObservableRemote(agent, observer, <TestApp>s)
 
                     });
 
@@ -296,8 +296,8 @@ describe('observable', () => {
 
                         id: 'client',
 
-                        create: (s: TestApp) =>
-                            new GenericImmutable(s, cases, that => {
+                        create: s =>
+                            new GenericImmutable(<TestApp>s, cases, that => {
 
                                 let msg = new Send(that.self(), req);
                                 that.tell('remote', msg);
@@ -336,8 +336,8 @@ describe('observable', () => {
 
                         id: 'remote',
 
-                        create: (s: TestApp) =>
-                            new ObservableRemote(agent, observer, s)
+                        create: s =>
+                            new ObservableRemote(agent, observer, <TestApp>s)
 
                     });
 
@@ -345,8 +345,8 @@ describe('observable', () => {
 
                         id: 'client',
 
-                        create: (s: TestApp) =>
-                            new GenericImmutable(s, [], that => {
+                        create: s =>
+                            new GenericImmutable(<TestApp>s, [], that => {
 
                                 let msg = new Send(that.self(), req);
                                 that.tell('remote', msg);
@@ -384,8 +384,8 @@ describe('observable', () => {
 
                         id: 'remote',
 
-                        create: (s: TestApp) =>
-                            new ObservableRemote(agent, observer, s)
+                        create: s =>
+                            new ObservableRemote(agent, observer, <TestApp>s)
 
                     });
 
@@ -393,8 +393,8 @@ describe('observable', () => {
 
                         id: 'client',
 
-                        create: (s: TestApp) =>
-                            new GenericImmutable(s, [], that => {
+                        create: s =>
+                            new GenericImmutable(<TestApp>s, [], that => {
 
                                 let msg = new Send(that.self(), req);
                                 that.tell('remote', msg);

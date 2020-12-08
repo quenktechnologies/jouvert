@@ -1,43 +1,10 @@
 (function(){function r(e,n,t){function o(i,f){if(!n[i]){if(!e[i]){var c="function"==typeof require&&require;if(!f&&c)return c(i,!0);if(u)return u(i,!0);var a=new Error("Cannot find module '"+i+"'");throw a.code="MODULE_NOT_FOUND",a}var p=n[i]={exports:{}};e[i][0].call(p.exports,function(r){var n=e[i][1][r];return o(n||r)},p,p.exports,r,e,n,t)}return n[i].exports}for(var u="function"==typeof require&&require,i=0;i<t.length;i++)o(t[i]);return o}return r})()({1:[function(require,module,exports){
 "use strict";
-var __extends = (this && this.__extends) || (function () {
-    var extendStatics = function (d, b) {
-        extendStatics = Object.setPrototypeOf ||
-            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
-        return extendStatics(d, b);
-    };
-    return function (d, b) {
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Proxy = exports.Immutable = exports.Mutable = void 0;
 var resident_1 = require("@quenk/potoo/lib/actor/resident");
-/**
- * Mutable constrained to App.
- */
-var Mutable = /** @class */ (function (_super) {
-    __extends(Mutable, _super);
-    function Mutable() {
-        return _super !== null && _super.apply(this, arguments) || this;
-    }
-    return Mutable;
-}(resident_1.Mutable));
-exports.Mutable = Mutable;
-/**
- * Immutable constrained to App.
- */
-var Immutable = /** @class */ (function (_super) {
-    __extends(Immutable, _super);
-    function Immutable() {
-        return _super !== null && _super.apply(this, arguments) || this;
-    }
-    return Immutable;
-}(resident_1.Immutable));
-exports.Immutable = Immutable;
+Object.defineProperty(exports, "Mutable", { enumerable: true, get: function () { return resident_1.Mutable; } });
+Object.defineProperty(exports, "Immutable", { enumerable: true, get: function () { return resident_1.Immutable; } });
 /**
  * Proxy provides an actor API implementation that delegates
  * all its operations to a target actor.
@@ -4623,9 +4590,9 @@ var receiveFun = function (cases) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Kill = exports.Raise = exports.Notify = exports.Receive = exports.Tell = exports.Self = exports.Spawn = void 0;
 var op = require("../system/vm/runtime/op");
+var type_1 = require("@quenk/noni/lib/data/type");
 var info_1 = require("../system/vm/script/info");
 var es_1 = require("../system/vm/runtime/heap/object/es");
-var type_1 = require("@quenk/noni/lib/data/type");
 //XXX: The following is declared here because we need the children section to
 //be recursive. In the future we may support lazily getting properties by 
 //using functions or some other mechanism.

@@ -1,37 +1,21 @@
 import { Err } from '@quenk/noni/lib/control/error';
-import { Api as PotooApi } from '@quenk/potoo/lib/actor/resident/api';
+import { Api } from '@quenk/potoo/lib/actor/resident/api';
 import { Case } from '@quenk/potoo/lib/actor/resident/case';
-import { Mutable as M, Immutable as I } from '@quenk/potoo/lib/actor/resident';
+import { Mutable , Immutable } from '@quenk/potoo/lib/actor/resident';
 import { Templates, Template } from '@quenk/potoo/lib/actor/template';
 import { AddressMap, Address } from '@quenk/potoo/lib/actor/address';
 
 import { App } from './app';
 
-/**
- * Api is an alias for `potoo/lib/actor/resident#Api` constrained to App. 
- *
- * It is useful in locations where we are only interested in the resident Api 
- * methods.
- */
-export interface Api extends PotooApi<App> { }
-
-/**
- * Mutable constrained to App.
- */
-export abstract class Mutable extends M<App> { }
-
-/**
- * Immutable constrained to App.
- */
-export abstract class Immutable<T> extends I<T, App> { }
+export { Api, Mutable, Immutable}
 
 /**
  * Proxy provides an actor API implementation that delegates
  * all its operations to a target actor.
  */
-export class Proxy<A extends App> implements PotooApi<A> {
+export class Proxy<A extends App> implements Api {
 
-    constructor(public instance: PotooApi<A>) { }
+    constructor(public instance: Api) { }
 
     self(): Address {
 
@@ -39,13 +23,13 @@ export class Proxy<A extends App> implements PotooApi<A> {
 
     }
 
-    spawn(t: Template<A>): Address {
+    spawn(t: Template): Address {
 
         return this.instance.spawn(t);
 
     }
 
-    spawnGroup(name: string | string[], tmpls: Templates<A>): AddressMap {
+    spawnGroup(name: string | string[], tmpls: Templates): AddressMap {
 
         return this.instance.spawnGroup(name, tmpls);
 

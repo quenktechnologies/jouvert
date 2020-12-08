@@ -30,7 +30,7 @@
     "@quenk/potoo": "^3.0.0-rc.3",
     "@quenk/preconditions": "^5.5.0",
     "@quenk/wml": "^2.6.2",
-    "@quenk/wml-widgets": "^1.27.14",
+    "@quenk/wml-widgets": "^1.27.15",
     "path-to-regexp": "^6.2.0",
     "uuid": "^8.3.1"
   }

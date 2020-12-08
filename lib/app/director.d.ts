@@ -44,7 +44,7 @@ export declare type DirectorMessage<T> = RouteChanged<T> | ActorSuspended;
  * Values of this type can be an Address of an existing actor, a template for
  * spawning a new actor or a function that provides one of the former.
  */
-export declare type RouteTarget<A> = Address | Template<App> | ((r: Resume<A>) => Address | Template<App>);
+export declare type RouteTarget<A> = Address | Template | ((r: Resume<A>) => Address | Template);
 /**
  * RoutingTable is a map of routes to CandidateTargets.
  */

@@ -69,8 +69,8 @@ export type DirectorMessage<T>
  */
 export type RouteTarget<A>
     = Address
-    | Template<App>
-    | ((r: Resume<A>) => Address | Template<App>)
+    | Template
+    | ((r: Resume<A>) => Address | Template)
     ;
 
 /**
@@ -256,7 +256,7 @@ export class Supervisor<R> extends Immutable<SupervisorMessage> {
         let candidate = isFunction(spec) ? spec(r) : spec;
 
         if (isObject(candidate))
-            this.actor = this.spawn(<Template<App>>candidate);
+            this.actor = this.spawn(<Template>candidate);
         else
             this.actor = <string>candidate;
 

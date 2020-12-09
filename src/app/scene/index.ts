@@ -2,153 +2,75 @@ import { Template } from '@quenk/potoo/lib/actor/template';
 import { Address } from '@quenk/potoo/lib/actor/address';
 import { Case } from '@quenk/potoo/lib/actor/resident/case';
 
-import { Resume, Suspend, Suspended } from '../director';
-import { Mutable, Api } from '../../actor';
-import { App } from '../';
+import { Suspend, Suspended } from '../director';
+import { Immutable, Api } from '../../actor';
 
 /**
- *  SuspendedMessage are messages handled when the actor is suspended.
+ * AppSceneMessage is the type of messages an AppScene handles.
  */
-export type SuspendedMessage<Req>
-    = Resume<Req>
-    ;
-
-/**
- * ResumedMessage are messages handled when the actor is resumed.
- */
-export type ResumedMessage<M>
+export type AppSceneMessage<M>
     = Suspend
     | M
     ;
 
 /**
- * SuspendListener is an interface for actors interested in responding to the
- * Director's Suspend message.
+ * SuspendListener is an interface for actors interested in triggering some
+ * action when the Director's Suspend message is received.
  */
-export interface SuspendListener<Req> extends Api {
+export interface SuspendListener extends Api {
 
     /**
      * beforeSuspend handler.
      */
-    beforeSuspended(s: Suspend): SuspendListener<Req>
-
-    /**
-     * getSuspendedBehaviour provides the Case classes for handling messages
-     * during the suspended behaviour.
-     */
-    getSuspendedBehaviour(): Case<SuspendedMessage<Req>>[];
+    beforeSuspended(s: Suspend): SuspendListener
 
 }
 
 /**
- * ResumeListener is an interface for actors interested in responding to the
- * Director's Resume message.
+ * SuspendCase invokes the [[SuspendListener.beforeSuspend]] callback.
  */
-export interface ResumeListener<Req, MResumed> extends Api {
+export class SuspendCase extends Case<Suspend> {
 
-    /**
-     * beforeResumed handler.
-     */
-    beforeResumed(r: Resume<Req>): ResumeListener<Req, MResumed>
-
-    /**
-     * getResumedBehaviour provides the Case classes to handle messages during
-     * the suspened behaviour.
-     */
-    getResumedBehaviour(r: Resume<Req>): Case<ResumedMessage<MResumed>>[]
-
-}
-
-/**
- * SuspendCase invokes the [[AppScene.beforeSuspend]] callback and transitions
- * to the suspended behaviour.
- */
-export class SuspendCase<Req> extends Case<Suspend> {
-
-    constructor(public listener: SuspendListener<Req>) {
+    constructor(public listener: SuspendListener) {
 
         super(Suspend, (s: Suspend) => {
 
             listener
                 .beforeSuspended(s)
-                .tell(s.director, new Suspended(listener.self()))
-                .select(listener.getSuspendedBehaviour());
+                .tell(listener.self(), new Suspended(listener.self()));
 
         });
     }
 }
 
 /**
- * ResumeCase invokes the [[AppScene.beforeREsume]] callback and transitions
- * to the resumed behaviour.
- */
-export class ResumeCase<Req, MResumed> extends Case<Resume<Req>> {
-
-    constructor(public listener: ResumeListener<Req, MResumed>) {
-
-        super(Resume, (r: Resume<Req>) => {
-
-            listener
-                .beforeResumed(r)
-                .select(listener.getResumedBehaviour(r));
-
-        });
-    }
-}
-
-/**
- * Scene is an actor used to provide one of the main activities of an
- * application.
+ * AppScene is an actor used to provide a main activity of an application.
  *
- * When used with a [[Director]], children of this class are expected to respond
- * to Resume and Suspend messages to provide the designated functionality to
- * users of the application.
+ * These are typically the actors that react to [[Director]] messages (Resume
+ * and Suspend). This class however is designed to be spawned directly by the
+ * Director so it is killed when it loses control.
+ *
+ * Spawn them directly in the Director's route configuation.
  */
-export interface Scene<Req, MResumed>
+export abstract class AppScene<M>
     extends
-    SuspendListener<Req>,
-    ResumeListener<Req, MResumed> { }
+    Immutable<AppSceneMessage<M>> {
 
-/**
- * AppScene provides a starter Scene implementation.
- */
-export abstract class AppScene<Req, MResumed>
-    extends
-    Mutable
-    implements
-    Scene<Req, MResumed> {
+    receive = <Case<AppSceneMessage<M>>[]>[
 
-    constructor(public system: App) { super(system); }
+        new SuspendCase(this)
 
-    abstract beforeSuspended(s: Suspend): AppScene<Req, MResumed>
+    ];
 
-    abstract beforeResumed(r: Resume<Req>): AppScene<Req, MResumed>
+    beforeSuspended(_: Suspend): AppScene<M> {
 
-    getResumedBehaviour(_: Resume<Req>): Case<ResumedMessage<MResumed>>[] {
-
-        return <Case<ResumedMessage<MResumed>>[]>[
-
-            new SuspendCase<Req>(this)
-
-        ];
+        return this;
 
     }
 
     spawn(t: Template): Address {
 
         return super.spawn(t);
-
-    }
-
-    getSuspendedBehaviour(): Case<SuspendedMessage<Req>>[] {
-
-        return [
-
-            new ResumeCase(this),
-
-            new SuspendCase(this)
-
-        ];
 
     }
 

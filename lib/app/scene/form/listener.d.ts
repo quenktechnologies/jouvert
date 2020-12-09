@@ -1,41 +1,38 @@
 import { Case } from '@quenk/potoo/lib/actor/resident/case';
 import { FormAborted, FormSaved } from '../../form';
-import { ResumeListener } from '../';
-import { Resume } from '../../director';
+import { Api } from '../../../actor';
 export { FormAborted, FormSaved };
 /**
  * FormAbortedListener is implemented by actors interested in the FormAborted
  * message.
  */
-export interface FormAbortedListener<Req, MResumed> extends ResumeListener<Req, MResumed> {
+export interface FormAbortedListener extends Api {
     /**
      * afterFormAborted handler.
      */
-    afterFormAborted(m: FormAborted): FormAbortedListener<Req, MResumed>;
+    afterFormAborted(m: FormAborted): FormAbortedListener;
 }
 /**
  * FormSavedListener is implemented by actors interested in the FormSaved
  * message.
  */
-export interface FormSavedListener<Req, MResumed> extends ResumeListener<Req, MResumed> {
+export interface FormSavedListener extends Api {
     /**
      * afterFormSaved handler.
      */
-    afterFormSaved(m: FormSaved): FormSavedListener<Req, MResumed>;
+    afterFormSaved(m: FormSaved): FormSavedListener;
 }
 /**
  * FormAbortedCase invokes the afterFormAborted() handler.
  */
-export declare class FormAbortedCase<Req, MResumed> extends Case<FormAborted> {
-    resume: Resume<Req>;
-    listener: FormAbortedListener<Req, MResumed>;
-    constructor(resume: Resume<Req>, listener: FormAbortedListener<Req, MResumed>);
+export declare class FormAbortedCase extends Case<FormAborted> {
+    listener: FormAbortedListener;
+    constructor(listener: FormAbortedListener);
 }
 /**
  * FormSavedCase invokes the afterFormSaved() handler.
  */
-export declare class FormSavedCase<Req, MResumed> extends Case<FormSaved> {
-    resume: Resume<Req>;
-    listener: FormSavedListener<Req, MResumed>;
-    constructor(resume: Resume<Req>, listener: FormSavedListener<Req, MResumed>);
+export declare class FormSavedCase extends Case<FormSaved> {
+    listener: FormSavedListener;
+    constructor(listener: FormSavedListener);
 }

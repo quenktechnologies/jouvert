@@ -104,7 +104,7 @@ export interface RoutingLogic<T> {
 export interface Conf {
 
     /**
-     * timeout specifies how long the Director awaits a response from a 
+     * timeout specifies how long the Director awaits a response from a
      * Release message.
      */
     timeout?: Milliseconds
@@ -130,7 +130,7 @@ export class Resume<T> {
  * Reload can be sent by the current actor to repeat the steps involved in
  * giving the actor control.
  *
- * Note: The will only repeat the steps taken by the Director and not any 
+ * Note: The will only repeat the steps taken by the Director and not any
  * external libraries.
  */
 export class Reload {
@@ -150,7 +150,7 @@ export class Suspend {
 }
 
 /**
- * Suspended MUST be sent by the current actor when a Suspend request has 
+ * Suspended MUST be sent by the current actor when a Suspend request has
  * been received. Failure to do so indicates the actor is no longer responding.
  */
 export class Suspended { constructor(public actor: Address) { } }
@@ -207,8 +207,8 @@ export class SuspendActor { }
 /**
  * Supervisor is used to contain communication between the actor in control
  * and the director.
- * 
- * By treating the Supervisor as the Director instead of the actual Director, 
+ *
+ * By treating the Supervisor as the Director instead of the actual Director,
  * we can prevent actors that have been blacklisted from communicating.
  *
  * Once a Supervisor has exited, messages sent to that address are dropped.
@@ -255,10 +255,20 @@ export class Supervisor<R> extends Immutable<SupervisorMessage> {
         let r = new Resume(this.self(), request);
         let candidate = isFunction(spec) ? spec(r) : spec;
 
-        if (isObject(candidate))
-            this.actor = this.spawn(<Template>candidate);
-        else
+        if (isObject(candidate)) {
+
+            let tmpl = <Template>candidate;
+            let args = tmpl.args ? tmpl.args : [];
+
+            tmpl = merge(tmpl, { args: [r, ...args] });
+
+            this.actor = this.spawn(tmpl);
+
+        } else {
+
             this.actor = <string>candidate;
+
+        }
 
         this.tell(this.actor, r);
 
@@ -285,7 +295,7 @@ export class RouteChanged<T> {
 export class ActorSuspended { }
 
 /**
- * Director is an actor used to mediate control of a single view or "display" 
+ * Director is an actor used to mediate control of a single view or "display"
  * between various actors.
  *
  * It using an implementation of a RoutingLogic to determine what actor should
@@ -302,7 +312,7 @@ export class ActorSuspended { }
  * 2. Stop streaming when it receives a Suspend message from the Router.
  * 3. Reply with a Suspended message after it has received a Suspend.
  *
- * If the Suspended message is not received in time, the actor will not be 
+ * If the Suspended message is not received in time, the actor will not be
  * allowed to stream again by the Director.
  */
 export class Director<T> extends Immutable<DirectorMessage<T>> {

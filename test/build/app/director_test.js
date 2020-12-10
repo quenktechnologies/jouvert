@@ -185,25 +185,35 @@ describe('director', function () {
         });
         it('should spawn templates ', function () {
             return future_1.toPromise(future_1.doFuture(function () {
-                var app, router, passed;
+                var app, router, passed, actualResume, actualTemplate, tmpl;
                 return __generator(this, function (_a) {
                     switch (_a.label) {
                         case 0:
                             app = system();
                             router = new Router();
                             passed = false;
-                            app.spawn(director({
-                                '/foo': Controller.template('foo', function () { return [
-                                    new case_1.Case(director_1.Resume, function () { passed = true; })
-                                ]; })
-                            }, router, 0));
+                            tmpl = {
+                                id: 'foo',
+                                create: function (s, t, r) {
+                                    actualResume = r;
+                                    actualTemplate = t;
+                                    return new Controller(function () { return [
+                                        new case_1.Case(director_1.Resume, function () { passed = true; })
+                                    ]; }, s);
+                                }
+                            };
+                            app.spawn(director({ '/foo': tmpl }, router, 0));
                             return [4 /*yield*/, router.handlers['/foo']('/foo')];
                         case 1:
                             _a.sent();
                             return [4 /*yield*/, future_1.fromCallback(function (cb) { return setTimeout(cb); })];
                         case 2:
                             _a.sent();
-                            return [2 /*return*/, future_1.attempt(function () { return assert_1.assert(passed).true(); })];
+                            return [2 /*return*/, future_1.attempt(function () {
+                                    assert_1.assert(passed).true();
+                                    assert_1.assert(actualTemplate.id).equal("foo");
+                                    assert_1.assert(actualResume).instance.of(director_1.Resume);
+                                })];
                     }
                 });
             }));

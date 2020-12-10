@@ -1,5 +1,6 @@
 import { Mock } from '@quenk/test/lib/mock';
 import { assert } from '@quenk/test/lib/assert';
+
 import { startsWith } from '@quenk/noni/lib/data/string';
 import { reduce } from '@quenk/noni/lib/data/record';
 import {
@@ -9,7 +10,10 @@ import {
     toPromise,
     fromCallback,
 } from '@quenk/noni/lib/control/monad/future';
+import { Type } from '@quenk/noni/lib/data/type';
+
 import { Case } from '@quenk/potoo/lib/actor/resident/case';
+
 import {
     RoutingTable,
     Director,
@@ -187,21 +191,37 @@ describe('director', () => {
                 let app = system();
                 let router = new Router();
                 let passed = false;
+                let actualResume: Type;
+                let actualTemplate: Type;
 
-                app.spawn(director({
+                let tmpl = {
 
-                    '/foo': Controller.template('foo', () => [
+                    id: 'foo',
 
-                        new Case(Resume, () => { passed = true; })
+                    create: (s: App, t: object, r: Resume<string>) => {
 
-                    ])
+                        actualResume = r;
+                        actualTemplate = t;
 
-                }, router, 0));
+                        return new Controller(() => [
+                            new Case(Resume, () => { passed = true; })
+                        ], <App>s);
 
+                    }
+                };
+
+                app.spawn(director({ '/foo': tmpl }, router, 0));
 
                 yield router.handlers['/foo']('/foo');
                 yield fromCallback(cb => setTimeout(cb));
-                return attempt(() => assert(passed).true());
+
+                return attempt(() => {
+
+                    assert(passed).true();
+                    assert(actualTemplate.id).equal("foo");
+                    assert(actualResume).instance.of(Resume);
+
+                });
 
             })));
 

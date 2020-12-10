@@ -60,6 +60,13 @@ var __extends = (this && this.__extends) || (function () {
         d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
     };
 })();
+var __spreadArrays = (this && this.__spreadArrays) || function () {
+    for (var s = 0, i = 0, il = arguments.length; i < il; i++) s += arguments[i].length;
+    for (var r = Array(s), k = 0, i = 0; i < il; i++)
+        for (var a = arguments[i], j = 0, jl = a.length; j < jl; j++, k++)
+            r[k] = a[j];
+    return r;
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Director = exports.ActorSuspended = exports.RouteChanged = exports.Supervisor = exports.SuspendActor = exports.SuspendTimer = exports.CancelTimer = exports.Suspended = exports.Suspend = exports.Reload = exports.Resume = exports.DEFAULT_TIMEOUT = void 0;
 var record_1 = require("@quenk/noni/lib/data/record");
@@ -210,10 +217,15 @@ var Supervisor = /** @class */ (function (_super) {
         var _a = this.info, request = _a.request, spec = _a.spec;
         var r = new Resume(this.self(), request);
         var candidate = type_1.isFunction(spec) ? spec(r) : spec;
-        if (type_1.isObject(candidate))
-            this.actor = this.spawn(candidate);
-        else
+        if (type_1.isObject(candidate)) {
+            var tmpl = candidate;
+            var args = tmpl.args ? tmpl.args : [];
+            tmpl = record_1.merge(tmpl, { args: __spreadArrays([r], args) });
+            this.actor = this.spawn(tmpl);
+        }
+        else {
             this.actor = candidate;
+        }
         this.tell(this.actor, r);
     };
     return Supervisor;
@@ -9660,25 +9672,35 @@ describe('director', function () {
         });
         it('should spawn templates ', function () {
             return future_1.toPromise(future_1.doFuture(function () {
-                var app, router, passed;
+                var app, router, passed, actualResume, actualTemplate, tmpl;
                 return __generator(this, function (_a) {
                     switch (_a.label) {
                         case 0:
                             app = system();
                             router = new Router();
                             passed = false;
-                            app.spawn(director({
-                                '/foo': Controller.template('foo', function () { return [
-                                    new case_1.Case(director_1.Resume, function () { passed = true; })
-                                ]; })
-                            }, router, 0));
+                            tmpl = {
+                                id: 'foo',
+                                create: function (s, t, r) {
+                                    actualResume = r;
+                                    actualTemplate = t;
+                                    return new Controller(function () { return [
+                                        new case_1.Case(director_1.Resume, function () { passed = true; })
+                                    ]; }, s);
+                                }
+                            };
+                            app.spawn(director({ '/foo': tmpl }, router, 0));
                             return [4 /*yield*/, router.handlers['/foo']('/foo')];
                         case 1:
                             _a.sent();
                             return [4 /*yield*/, future_1.fromCallback(function (cb) { return setTimeout(cb); })];
                         case 2:
                             _a.sent();
-                            return [2 /*return*/, future_1.attempt(function () { return assert_1.assert(passed).true(); })];
+                            return [2 /*return*/, future_1.attempt(function () {
+                                    assert_1.assert(passed).true();
+                                    assert_1.assert(actualTemplate.id).equal("foo");
+                                    assert_1.assert(actualResume).instance.of(director_1.Resume);
+                                })];
                     }
                 });
             }));

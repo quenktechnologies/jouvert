@@ -45,7 +45,7 @@ var Proxy = /** @class */ (function () {
 }());
 exports.Proxy = Proxy;
 
-},{"@quenk/potoo/lib/actor/resident":33}],2:[function(require,module,exports){
+},{"@quenk/potoo/lib/actor/resident":35}],2:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -341,7 +341,7 @@ var defaultConfig = function (c) {
     return record_1.merge({ timeout: exports.DEFAULT_TIMEOUT }, c);
 };
 
-},{"../actor":1,"@quenk/noni/lib/control/monad/future":17,"@quenk/noni/lib/data/record":24,"@quenk/noni/lib/data/type":27,"@quenk/potoo/lib/actor/resident/case":32}],3:[function(require,module,exports){
+},{"../actor":1,"@quenk/noni/lib/control/monad/future":19,"@quenk/noni/lib/data/record":26,"@quenk/noni/lib/data/type":29,"@quenk/potoo/lib/actor/resident/case":34}],3:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -519,7 +519,7 @@ var AbstractActiveForm = /** @class */ (function (_super) {
 }(actor_1.Immutable));
 exports.AbstractActiveForm = AbstractActiveForm;
 
-},{"../":5,"../../../actor":1,"@quenk/noni/lib/data/array":20,"@quenk/noni/lib/data/record":24,"@quenk/noni/lib/data/type":27,"@quenk/potoo/lib/actor/resident/case":32}],4:[function(require,module,exports){
+},{"../":5,"../../../actor":1,"@quenk/noni/lib/data/array":22,"@quenk/noni/lib/data/record":26,"@quenk/noni/lib/data/type":29,"@quenk/potoo/lib/actor/resident/case":34}],4:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -723,7 +723,205 @@ var JApp = /** @class */ (function () {
 }());
 exports.JApp = JApp;
 
-},{"@quenk/potoo/lib/actor/system/vm":37}],7:[function(require,module,exports){
+},{"@quenk/potoo/lib/actor/system/vm":39}],7:[function(require,module,exports){
+"use strict";
+/**
+ * This module provides actors for sending requests to a [[Remote]] and
+ * executing some action depending on the result. Callbacks should be spawned
+ * each time a parent actor wants to make a request, once a response is
+ * received, they exit. The response from the request can be handled
+ * by specifying a handler object to the callback's constructor.
+ */
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+        return extendStatics(d, b);
+    };
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.SeqSendCallback = exports.ParSendCallback = exports.SendCallback = exports.CompositeBatchCompleteHandler = exports.CompositeCompleteHandler = exports.AbstractBatchCompleteHandler = exports.AbstractCompleteHandler = exports.SeqSend = exports.ParSend = exports.Send = void 0;
+/** imports */
+var type_1 = require("@quenk/noni/lib/data/type");
+var case_1 = require("@quenk/potoo/lib/actor/resident/case");
+var resident_1 = require("@quenk/potoo/lib/actor/resident");
+var _1 = require("./");
+Object.defineProperty(exports, "Send", { enumerable: true, get: function () { return _1.Send; } });
+Object.defineProperty(exports, "ParSend", { enumerable: true, get: function () { return _1.ParSend; } });
+Object.defineProperty(exports, "SeqSend", { enumerable: true, get: function () { return _1.SeqSend; } });
+var typeMatch = { code: Number, options: Object, body: type_1.Any, headers: Object };
+/**
+ * AbstractCompleteHandler can be extended to partially implement a
+ * [[CompleteHandler]].
+ */
+var AbstractCompleteHandler = /** @class */ (function () {
+    function AbstractCompleteHandler() {
+    }
+    AbstractCompleteHandler.prototype.onError = function (_) { };
+    AbstractCompleteHandler.prototype.onClientError = function (_) { };
+    AbstractCompleteHandler.prototype.onServerError = function (_) { };
+    AbstractCompleteHandler.prototype.onComplete = function (_) { };
+    return AbstractCompleteHandler;
+}());
+exports.AbstractCompleteHandler = AbstractCompleteHandler;
+/**
+ * AbstractBatchCompleteHandler can be extended to partially implement a
+ * [[BatchCompleteHandler]].
+ */
+var AbstractBatchCompleteHandler = /** @class */ (function (_super) {
+    __extends(AbstractBatchCompleteHandler, _super);
+    function AbstractBatchCompleteHandler() {
+        return _super !== null && _super.apply(this, arguments) || this;
+    }
+    AbstractBatchCompleteHandler.prototype.onBatchComplete = function (_) { };
+    return AbstractBatchCompleteHandler;
+}(AbstractCompleteHandler));
+exports.AbstractBatchCompleteHandler = AbstractBatchCompleteHandler;
+/**
+ * CompositeCompleteHandler allows multiple [[CompleteHandler]]s to be used as
+ * one.
+ */
+var CompositeCompleteHandler = /** @class */ (function () {
+    function CompositeCompleteHandler(handlers) {
+        this.handlers = handlers;
+    }
+    CompositeCompleteHandler.prototype.onError = function (e) {
+        this.handlers.forEach(function (h) { return h.onError(e); });
+    };
+    CompositeCompleteHandler.prototype.onClientError = function (r) {
+        this.handlers.forEach(function (h) { return h.onClientError(r); });
+    };
+    CompositeCompleteHandler.prototype.onServerError = function (r) {
+        this.handlers.forEach(function (h) { return h.onServerError(r); });
+    };
+    CompositeCompleteHandler.prototype.onComplete = function (r) {
+        this.handlers.forEach(function (h) { return h.onComplete(r); });
+    };
+    return CompositeCompleteHandler;
+}());
+exports.CompositeCompleteHandler = CompositeCompleteHandler;
+/**
+ * CompositeBatchCompleteHandler allows multiple [[BatchCompleteHandler]]s to
+ * be used as one.
+ */
+var CompositeBatchCompleteHandler = /** @class */ (function () {
+    function CompositeBatchCompleteHandler(handlers) {
+        this.handlers = handlers;
+    }
+    CompositeBatchCompleteHandler.prototype.onError = function (e) {
+        this.handlers.forEach(function (h) { return h.onError(e); });
+    };
+    CompositeBatchCompleteHandler.prototype.onClientError = function (r) {
+        this.handlers.forEach(function (h) { return h.onClientError(r); });
+    };
+    CompositeBatchCompleteHandler.prototype.onServerError = function (r) {
+        this.handlers.forEach(function (h) { return h.onServerError(r); });
+    };
+    CompositeBatchCompleteHandler.prototype.onBatchComplete = function (r) {
+        this.handlers.forEach(function (h) { return h.onBatchComplete(r); });
+    };
+    return CompositeBatchCompleteHandler;
+}());
+exports.CompositeBatchCompleteHandler = CompositeBatchCompleteHandler;
+/**
+ * SendCallback sends a Send to a Remote's address, processing the response
+ * with the provided handler.
+ */
+var SendCallback = /** @class */ (function (_super) {
+    __extends(SendCallback, _super);
+    function SendCallback(system, remote, request, handler) {
+        var _this = _super.call(this, system) || this;
+        _this.system = system;
+        _this.remote = remote;
+        _this.request = request;
+        _this.handler = handler;
+        _this.receive = [
+            new case_1.Case(_1.TransportErr, function (e) {
+                _this.handler.onError(e);
+            }),
+            new case_1.Case(typeMatch, function (r) {
+                if (r.code > 499) {
+                    _this.handler.onServerError(r);
+                }
+                else if (r.code > 399) {
+                    _this.handler.onClientError(r);
+                }
+                else {
+                    _this.handler.onComplete(r);
+                }
+            })
+        ];
+        return _this;
+    }
+    SendCallback.prototype.run = function () {
+        this.tell(this.remote, new _1.Send(this.self(), this.request));
+    };
+    return SendCallback;
+}(resident_1.Temp));
+exports.SendCallback = SendCallback;
+/**
+ * ParSendCallback sends a ParSend request to a remote, processing the result
+ * with the provided handler.
+ */
+var ParSendCallback = /** @class */ (function (_super) {
+    __extends(ParSendCallback, _super);
+    function ParSendCallback(system, remote, requests, handler) {
+        var _this = _super.call(this, system) || this;
+        _this.system = system;
+        _this.remote = remote;
+        _this.requests = requests;
+        _this.handler = handler;
+        _this.receive = [
+            new case_1.Case(_1.TransportErr, function (e) {
+                _this.handler.onError(e);
+            }),
+            new case_1.Case(_1.BatchResponse, function (r) {
+                var failed = r.value.filter(function (r) { return r.code > 299; });
+                if (failed.length > 0) {
+                    var res = failed[0];
+                    if (res.code > 499) {
+                        _this.handler.onServerError(res);
+                    }
+                    else {
+                        _this.handler.onClientError(res);
+                    }
+                }
+                else {
+                    _this.handler.onBatchComplete(r);
+                }
+            })
+        ];
+        return _this;
+    }
+    ParSendCallback.prototype.run = function () {
+        this.tell(this.remote, new _1.ParSend(this.self(), this.requests));
+    };
+    return ParSendCallback;
+}(resident_1.Temp));
+exports.ParSendCallback = ParSendCallback;
+/**
+ * SeqSendCallback sends a SeqSend request to a remote, processing the
+ * response using the provided handler.
+ */
+var SeqSendCallback = /** @class */ (function (_super) {
+    __extends(SeqSendCallback, _super);
+    function SeqSendCallback() {
+        return _super !== null && _super.apply(this, arguments) || this;
+    }
+    SeqSendCallback.prototype.run = function () {
+        this.tell(this.remote, new _1.SeqSend(this.self(), this.requests));
+    };
+    return SeqSendCallback;
+}(ParSendCallback));
+exports.SeqSendCallback = SeqSendCallback;
+
+},{"./":8,"@quenk/noni/lib/data/type":29,"@quenk/potoo/lib/actor/resident":35,"@quenk/potoo/lib/actor/resident/case":34}],8:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -874,7 +1072,181 @@ var Remote = /** @class */ (function (_super) {
 }(actor_1.Immutable));
 exports.Remote = Remote;
 
-},{"../../actor":1,"@quenk/noni/lib/control/monad/future":17,"@quenk/potoo/lib/actor/resident/case":32}],8:[function(require,module,exports){
+},{"../../actor":1,"@quenk/noni/lib/control/monad/future":19,"@quenk/potoo/lib/actor/resident/case":34}],9:[function(require,module,exports){
+"use strict";
+/**
+ * Provides a base data model implementation based on the remote and callback
+ * apis. NOTE: Responses received by this API are expected to be in the result
+ * format specified.
+ */
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+        return extendStatics(d, b);
+    };
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.RemoteModel = exports.NotFoundHandler = exports.FutureHandler = void 0;
+/** imports */
+var future_1 = require("@quenk/noni/lib/control/monad/future");
+var maybe_1 = require("@quenk/noni/lib/data/maybe");
+var string_1 = require("@quenk/noni/lib/data/string");
+var request_1 = require("@quenk/jhr/lib/request");
+var callback_1 = require("./callback");
+var DefaultCompleteHandler = /** @class */ (function (_super) {
+    __extends(DefaultCompleteHandler, _super);
+    function DefaultCompleteHandler() {
+        return _super !== null && _super.apply(this, arguments) || this;
+    }
+    return DefaultCompleteHandler;
+}(callback_1.AbstractCompleteHandler));
+/**
+ * FutureHandler is used to proxy the events of a request's lifecycle to a noni
+ * [[Future]].
+ *
+ * The [[CompleteHandler]] provided also receives the events as they happen
+ * however work is assumed to be handled in the Future.
+ */
+var FutureHandler = /** @class */ (function () {
+    function FutureHandler(handler, onFailure, onSuccess) {
+        this.handler = handler;
+        this.onFailure = onFailure;
+        this.onSuccess = onSuccess;
+    }
+    FutureHandler.prototype.onError = function (e) {
+        this.handler.onError(e);
+        this.onFailure(e.error instanceof Error ?
+            e.error :
+            new Error(e.error.message));
+    };
+    FutureHandler.prototype.onClientError = function (r) {
+        this.handler.onClientError(r);
+        var e = new Error('ClientError');
+        e.code = r.code;
+        this.onFailure(e);
+    };
+    FutureHandler.prototype.onServerError = function (r) {
+        this.handler.onServerError(r);
+        var e = new Error('ServerError');
+        e.code = r.code;
+        this.onFailure(e);
+    };
+    FutureHandler.prototype.onComplete = function (r) {
+        this.handler.onComplete(r);
+        this.onSuccess(r);
+    };
+    return FutureHandler;
+}());
+exports.FutureHandler = FutureHandler;
+/**
+ * NotFoundHandler does not treat a 404 as an error.
+ *
+ * The onNotFound handler is used instead.
+ */
+var NotFoundHandler = /** @class */ (function (_super) {
+    __extends(NotFoundHandler, _super);
+    function NotFoundHandler(handler, onFailure, onNotFound, onSuccess) {
+        var _this = _super.call(this, handler, onFailure, onSuccess) || this;
+        _this.handler = handler;
+        _this.onFailure = onFailure;
+        _this.onNotFound = onNotFound;
+        _this.onSuccess = onSuccess;
+        return _this;
+    }
+    NotFoundHandler.prototype.onClientError = function (r) {
+        if (r.code === 404)
+            this.onNotFound();
+        else
+            _super.prototype.onClientError.call(this, r);
+    };
+    return NotFoundHandler;
+}(FutureHandler));
+exports.NotFoundHandler = NotFoundHandler;
+/**
+ * RemoteModel provides a Model implementation that relies on the [[Remote]]
+ * actor.
+ *
+ * A handler can be provided to observe the result of requests if more data
+ * is needed than the Model api provides.
+ */
+var RemoteModel = /** @class */ (function () {
+    function RemoteModel(path, remote, spawn, handler) {
+        if (handler === void 0) { handler = new DefaultCompleteHandler(); }
+        this.path = path;
+        this.remote = remote;
+        this.spawn = spawn;
+        this.handler = handler;
+    }
+    /**
+     * create a new entry for the data type.
+     */
+    RemoteModel.prototype.create = function (data) {
+        var _this = this;
+        return future_1.fromCallback(function (cb) {
+            _this.spawn(function (s) { return new callback_1.SendCallback(s, _this.remote, new request_1.Post(_this.path, data), new FutureHandler(_this.handler, cb, function (r) {
+                cb(null, r.body.data.id);
+            })); });
+        });
+    };
+    /**
+     * search for entries that match the provided query.
+     */
+    RemoteModel.prototype.search = function (qry) {
+        var _this = this;
+        return future_1.fromCallback(function (cb) {
+            _this.spawn(function (s) { return new callback_1.SendCallback(s, _this.remote, new request_1.Get(_this.path, qry), new FutureHandler(_this.handler, cb, function (r) {
+                cb(null, (r.code === 204) ?
+                    [] : r.body.data);
+            })); });
+        });
+    };
+    /**
+     * update a single entry using its id.
+     */
+    RemoteModel.prototype.update = function (id, changes) {
+        var _this = this;
+        return future_1.fromCallback(function (cb) {
+            _this.spawn(function (s) { return new callback_1.SendCallback(s, _this.remote, new request_1.Patch(string_1.interpolate(_this.path, { id: id }), changes), new FutureHandler(_this.handler, cb, function (r) {
+                cb(null, (r.code === 200) ? true : false);
+            })); });
+        });
+    };
+    /**
+     * get a single entry by its id.
+     */
+    RemoteModel.prototype.get = function (id) {
+        var _this = this;
+        return future_1.fromCallback(function (cb) {
+            _this.spawn(function (s) { return new callback_1.SendCallback(s, _this.remote, new request_1.Get(string_1.interpolate(_this.path, { id: id }), {}), new NotFoundHandler(_this.handler, cb, function () {
+                cb(null, maybe_1.nothing());
+            }, function (r) {
+                cb(null, maybe_1.fromNullable(r.body.data));
+            })); });
+        });
+    };
+    /**
+     * remove a single entry by its id.
+     */
+    RemoteModel.prototype.remove = function (id) {
+        var _this = this;
+        return future_1.fromCallback(function (cb) {
+            _this.spawn(function (s) { return new callback_1.SendCallback(s, _this.remote, new request_1.Delete(string_1.interpolate(_this.path, { id: id }), {}), new FutureHandler(_this.handler, cb, function (r) {
+                cb(null, (r.code === 200) ? true : false);
+            })); });
+        });
+    };
+    return RemoteModel;
+}());
+exports.RemoteModel = RemoteModel;
+
+},{"./callback":7,"@quenk/jhr/lib/request":12,"@quenk/noni/lib/control/monad/future":19,"@quenk/noni/lib/data/maybe":25,"@quenk/noni/lib/data/string":28}],10:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -897,48 +1269,31 @@ var __spreadArrays = (this && this.__spreadArrays) || function () {
     return r;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ObservableRemote = exports.AbstractRemoteObserver = exports.BatchResponse = exports.SeqSend = exports.ParSend = exports.Send = exports.TransportErr = void 0;
+exports.RemoteObserver = exports.BatchResponse = exports.SeqSend = exports.ParSend = exports.Send = exports.TransportErr = void 0;
 var match_1 = require("@quenk/noni/lib/control/match");
 var response_1 = require("@quenk/jhr/lib/response");
 var case_1 = require("@quenk/potoo/lib/actor/resident/case");
-var actor_1 = require("../../actor");
-var _1 = require("./");
-Object.defineProperty(exports, "TransportErr", { enumerable: true, get: function () { return _1.TransportErr; } });
-Object.defineProperty(exports, "Send", { enumerable: true, get: function () { return _1.Send; } });
-Object.defineProperty(exports, "ParSend", { enumerable: true, get: function () { return _1.ParSend; } });
-Object.defineProperty(exports, "SeqSend", { enumerable: true, get: function () { return _1.SeqSend; } });
-Object.defineProperty(exports, "BatchResponse", { enumerable: true, get: function () { return _1.BatchResponse; } });
+var actor_1 = require("../../../actor");
+var __1 = require("../");
+Object.defineProperty(exports, "TransportErr", { enumerable: true, get: function () { return __1.TransportErr; } });
+Object.defineProperty(exports, "Send", { enumerable: true, get: function () { return __1.Send; } });
+Object.defineProperty(exports, "ParSend", { enumerable: true, get: function () { return __1.ParSend; } });
+Object.defineProperty(exports, "SeqSend", { enumerable: true, get: function () { return __1.SeqSend; } });
+Object.defineProperty(exports, "BatchResponse", { enumerable: true, get: function () { return __1.BatchResponse; } });
 /**
- * AbstractRemoteObserver implementation.
- */
-var AbstractRemoteObserver = /** @class */ (function () {
-    function AbstractRemoteObserver() {
-    }
-    AbstractRemoteObserver.prototype.onStart = function (_) { };
-    AbstractRemoteObserver.prototype.onError = function (_) { };
-    AbstractRemoteObserver.prototype.onClientError = function (_) { };
-    AbstractRemoteObserver.prototype.onServerError = function (_) { };
-    AbstractRemoteObserver.prototype.onComplete = function (_) { };
-    AbstractRemoteObserver.prototype.onFinish = function () { };
-    return AbstractRemoteObserver;
-}());
-exports.AbstractRemoteObserver = AbstractRemoteObserver;
-/**
- * ObservableRemote is a bridge to a Remote that allows the requests and
- * responses to be observed.
+ * RemoteObserver is a bridge to a [[Remote]] (the Remote is spawned internally)
+ * that allows requests and responses to be observed.
  *
- * Observation is done through the RemoteObserver API an instance of which can
- * be passed to the ObservableRemote constructor.
- *
- * This actor exists mostly to allow the manipulation of UI indicators when
- * requests are being made in the foreground of an application.
+ * Observation is done via the passed StageListener. This actor exists primarly
+ * for the manipulation of UI indicators when requests are made in the
+ * foreground of an application.
  */
-var ObservableRemote = /** @class */ (function (_super) {
-    __extends(ObservableRemote, _super);
-    function ObservableRemote(agent, observer, system) {
+var RemoteObserver = /** @class */ (function (_super) {
+    __extends(RemoteObserver, _super);
+    function RemoteObserver(agent, listener, system) {
         var _this = _super.call(this, system) || this;
         _this.agent = agent;
-        _this.observer = observer;
+        _this.listener = listener;
         _this.system = system;
         _this.remote = '?';
         _this.onWake = function (req) {
@@ -951,14 +1306,14 @@ var ObservableRemote = /** @class */ (function (_super) {
             };
         };
         _this.onError = function (current) { return function (err) {
-            _this.observer.onError(err);
-            _this.observer.onFinish();
-            _this.tell(current.client, new _1.TransportErr(current.client, err.error));
+            _this.listener.onError(err);
+            _this.listener.onFinish();
+            _this.tell(current.client, new __1.TransportErr(current.client, err.error));
         }; };
         _this.onResponse = function (current, buffer) {
             return function (r) {
                 var res = r;
-                if (r instanceof _1.BatchResponse) {
+                if (r instanceof __1.BatchResponse) {
                     var failed = r.value.filter(function (r) { return r.code > 299; });
                     if (failed.length > 0)
                         res = failed[0];
@@ -967,15 +1322,15 @@ var ObservableRemote = /** @class */ (function (_super) {
                     res = r;
                 }
                 if (res.code > 499) {
-                    _this.observer.onServerError(res);
+                    _this.listener.onServerError(res);
                 }
                 else if (res.code > 399) {
-                    _this.observer.onClientError(res);
+                    _this.listener.onClientError(res);
                 }
                 else {
-                    _this.observer.onComplete(res);
+                    _this.listener.onComplete(res);
                 }
-                _this.observer.onFinish();
+                _this.listener.onFinish();
                 _this.tell(current.client, res);
                 if (buffer.length > 0) {
                     var next = buffer[0];
@@ -989,51 +1344,51 @@ var ObservableRemote = /** @class */ (function (_super) {
         };
         return _this;
     }
-    ObservableRemote.prototype.idle = function () {
+    RemoteObserver.prototype.idle = function () {
         return [
-            new case_1.Case(_1.Send, this.onWake),
-            new case_1.Case(_1.ParSend, this.onWake),
-            new case_1.Case(_1.SeqSend, this.onWake),
+            new case_1.Case(__1.Send, this.onWake),
+            new case_1.Case(__1.ParSend, this.onWake),
+            new case_1.Case(__1.SeqSend, this.onWake),
         ];
     };
-    ObservableRemote.prototype.pending = function (current, buffer) {
+    RemoteObserver.prototype.pending = function (current, buffer) {
         var onReq = this.onRequest(current, buffer);
         var onRes = this.onResponse(current, buffer);
         return [
-            new case_1.Case(_1.Send, onReq),
-            new case_1.Case(_1.ParSend, onReq),
-            new case_1.Case(_1.SeqSend, onReq),
-            new case_1.Case(_1.TransportErr, this.onError(current)),
+            new case_1.Case(__1.Send, onReq),
+            new case_1.Case(__1.ParSend, onReq),
+            new case_1.Case(__1.SeqSend, onReq),
+            new case_1.Case(__1.TransportErr, this.onError(current)),
             new case_1.Case(response_1.GenericResponse, onRes),
-            new case_1.Case(_1.BatchResponse, onRes),
+            new case_1.Case(__1.BatchResponse, onRes),
         ];
     };
-    ObservableRemote.prototype.send = function (req) {
+    RemoteObserver.prototype.send = function (req) {
         var self = this.self();
-        this.observer.onStart(req);
+        this.listener.onStart(req);
         var msg = match_1.match(req)
-            .caseOf(_1.Send, function (msg) {
-            return new _1.Send(self, msg.request);
+            .caseOf(__1.Send, function (msg) {
+            return new __1.Send(self, msg.request);
         })
-            .caseOf(_1.ParSend, function (msg) {
-            return new _1.ParSend(self, msg.requests);
+            .caseOf(__1.ParSend, function (msg) {
+            return new __1.ParSend(self, msg.requests);
         })
-            .caseOf(_1.SeqSend, function (msg) {
-            return new _1.SeqSend(self, msg.requests);
+            .caseOf(__1.SeqSend, function (msg) {
+            return new __1.SeqSend(self, msg.requests);
         })
             .end();
         this.tell(this.remote, msg);
     };
-    ObservableRemote.prototype.run = function () {
+    RemoteObserver.prototype.run = function () {
         var _this = this;
-        this.remote = this.spawn(function (s) { return new _1.Remote(_this.agent, s); });
+        this.remote = this.spawn(function (s) { return new __1.Remote(_this.agent, s); });
         this.select(this.idle());
     };
-    return ObservableRemote;
+    return RemoteObserver;
 }(actor_1.Mutable));
-exports.ObservableRemote = ObservableRemote;
+exports.RemoteObserver = RemoteObserver;
 
-},{"../../actor":1,"./":7,"@quenk/jhr/lib/response":12,"@quenk/noni/lib/control/match":16,"@quenk/potoo/lib/actor/resident/case":32}],9:[function(require,module,exports){
+},{"../":8,"../../../actor":1,"@quenk/jhr/lib/response":14,"@quenk/noni/lib/control/match":18,"@quenk/potoo/lib/actor/resident/case":34}],11:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.MockAgent = void 0;
@@ -1081,7 +1436,7 @@ var MockAgent = /** @class */ (function () {
 }());
 exports.MockAgent = MockAgent;
 
-},{"../response":12,"@quenk/noni/lib/control/monad/future":17,"@quenk/test/lib/mock":14}],10:[function(require,module,exports){
+},{"../response":14,"@quenk/noni/lib/control/monad/future":19,"@quenk/test/lib/mock":16}],12:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -1184,7 +1539,7 @@ var Delete = /** @class */ (function (_super) {
 }(Post));
 exports.Delete = Delete;
 
-},{"./method":11}],11:[function(require,module,exports){
+},{"./method":13}],13:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Method = void 0;
@@ -1201,7 +1556,7 @@ var Method;
     Method["Patch"] = "PATCH";
 })(Method = exports.Method || (exports.Method = {}));
 
-},{}],12:[function(require,module,exports){
+},{}],14:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -1460,7 +1815,7 @@ exports.createResponse = function (code, body, headers, options) {
     }
 };
 
-},{"./status":13}],13:[function(require,module,exports){
+},{"./status":15}],15:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.NETWORK_AUTHENTICATION_REQUIRED = exports.NOT_EXTENDED = exports.LOOP_DETECTED = exports.INSUFFICIENT_STORAGE = exports.VARIANT_ALSO_NEGOTIATES = exports.HTTP_VERSION_NOT_SUPPORTED = exports.GATEWAY_TIMEOUT = exports.SERVICE_UNAVAILABLE = exports.BAD_GATEWAY = exports.NOT_IMPLEMENTED = exports.INTERNAL_SERVER_ERROR = exports.UNAVAILABLE_FOR_LEGAL_RREASONS = exports.REQUEST_HEADER_FIELDS_TOO_LARGE = exports.TOO_MANY_REQUESTS = exports.PRECONDITION_REQUIRED = exports.UPGRADE_REQUIRED = exports.FAILED_DEPENDENCY = exports.LOCKED = exports.UNPROCESSABLE_ENTITY = exports.TEAPOT = exports.EXPECTATION_FAILED = exports.REQUESTED_RANGE_NOT_SATISFIABLE = exports.UNSUPPORTED_MEDIA_TYPE = exports.REQUEST_URI_TOO_LONG = exports.REQUEST_ENTITY_TOO_LARGE = exports.PRECONDITION_FAILED = exports.LENGTH_REQUIRED = exports.GONE = exports.CONFLICT = exports.REQUEST_TIMEOUT = exports.PROXY_AUTH_REQUIRED = exports.NOT_ACCEPTABLE = exports.METHOD_NOT_ALLOWED = exports.NOT_FOUND = exports.FORBIDDEN = exports.PAYMENT_REQUIRED = exports.UNAUTHORIZED = exports.BAD_REQUEST = exports.PERMANENT_REDIRECT = exports.TEMPORARY_REDIRECT = exports.USE_PROXY = exports.NOT_MODIFIED = exports.SEE_OTHER = exports.FOUND = exports.MOVED_PERMANENTLY = exports.MULTIPLE_CHOICES = exports.IM_USED = exports.ALREADY_REPORTED = exports.MULTI_STATUS = exports.PARTIAL_CONTENT = exports.RESET_CONTENT = exports.NO_CONTENT = exports.NON_AUTHORITATIV_INFO = exports.ACCEPTED = exports.CREATED = exports.OK = exports.PROCESSING = exports.SWITCHING_PROTOCOLS = exports.CONTINUE = void 0;
@@ -1524,7 +1879,7 @@ exports.LOOP_DETECTED = 508;
 exports.NOT_EXTENDED = 510;
 exports.NETWORK_AUTHENTICATION_REQUIRED = 511;
 
-},{}],14:[function(require,module,exports){
+},{}],16:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var deepEqual = require("deep-equal");
@@ -1676,7 +2031,7 @@ var Mock = /** @class */ (function () {
 }());
 exports.Mock = Mock;
 
-},{"deep-equal":67}],15:[function(require,module,exports){
+},{"deep-equal":69}],17:[function(require,module,exports){
 "use strict";
 /**
  * This module provides functions and types to make dealing with ES errors
@@ -1721,7 +2076,7 @@ var attempt = function (f) {
 };
 exports.attempt = attempt;
 
-},{"../data/either":21}],16:[function(require,module,exports){
+},{"../data/either":23}],18:[function(require,module,exports){
 "use strict";
 /**
  * The match module provides a best effort pattern runtime pattern matching
@@ -1809,7 +2164,7 @@ exports.Matched = Matched;
 var match = function (value) { return new UnMatched(value); };
 exports.match = match;
 
-},{"../data/type":27}],17:[function(require,module,exports){
+},{"../data/type":29}],19:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -2360,7 +2715,7 @@ exports.liftP = liftP;
 var doFuture = function (f) { return _1.doN(f); };
 exports.doFuture = doFuture;
 
-},{"../../data/function":22,"../error":15,"../timer":19,"./":18}],18:[function(require,module,exports){
+},{"../../data/function":24,"../error":17,"../timer":21,"./":20}],20:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.doMonad = exports.doN = exports.pipeN = exports.pipe = exports.compose = exports.join = void 0;
@@ -2454,7 +2809,7 @@ var doN = function (f) {
 exports.doN = doN;
 exports.doMonad = exports.doN;
 
-},{}],19:[function(require,module,exports){
+},{}],21:[function(require,module,exports){
 (function (process){(function (){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
@@ -2508,7 +2863,7 @@ var throttle = function (f, duration) {
 exports.throttle = throttle;
 
 }).call(this)}).call(this,require('_process'))
-},{"_process":87}],20:[function(require,module,exports){
+},{"_process":89}],22:[function(require,module,exports){
 "use strict";
 var __spreadArrays = (this && this.__spreadArrays) || function () {
     for (var s = 0, i = 0, il = arguments.length; i < il; i++) s += arguments[i].length;
@@ -2684,7 +3039,7 @@ var compact = function (list) {
 };
 exports.compact = compact;
 
-},{"../../math":28,"../record":24}],21:[function(require,module,exports){
+},{"../../math":30,"../record":26}],23:[function(require,module,exports){
 "use strict";
 /**
  * Either represents a value that may be one of two types.
@@ -2884,7 +3239,7 @@ var either = function (f) { return function (g) { return function (e) {
 }; }; };
 exports.either = either;
 
-},{"./maybe":23}],22:[function(require,module,exports){
+},{"./maybe":25}],24:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.noop = exports.curry5 = exports.curry4 = exports.curry3 = exports.curry = exports.id = exports.identity = exports.flip = exports.cons = exports.compose5 = exports.compose4 = exports.compose3 = exports.compose = void 0;
@@ -2956,7 +3311,7 @@ exports.curry5 = curry5;
 var noop = function () { };
 exports.noop = noop;
 
-},{}],23:[function(require,module,exports){
+},{}],25:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.fromNaN = exports.fromNumber = exports.fromBoolean = exports.fromString = exports.fromObject = exports.fromArray = exports.fromNullable = exports.just = exports.nothing = exports.of = exports.Just = exports.Nothing = void 0;
@@ -3200,7 +3555,7 @@ var fromNaN = function (n) {
 };
 exports.fromNaN = fromNaN;
 
-},{}],24:[function(require,module,exports){
+},{}],26:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.pickValue = exports.pickKey = exports.make = exports.rcompact = exports.compact = exports.isBadKey = exports.set = exports.every = exports.some = exports.empty = exports.count = exports.clone = exports.hasKey = exports.values = exports.group = exports.partition = exports.exclude = exports.rmerge5 = exports.rmerge4 = exports.rmerge3 = exports.rmerge = exports.merge5 = exports.merge4 = exports.merge3 = exports.merge = exports.filter = exports.reduce = exports.forEach = exports.mapTo = exports.map = exports.keys = exports.isRecord = exports.assign = exports.badKeys = void 0;
@@ -3572,7 +3927,7 @@ var pickValue = function (rec, test) {
 };
 exports.pickValue = pickValue;
 
-},{"../array":20,"../maybe":23,"../type":27}],25:[function(require,module,exports){
+},{"../array":22,"../maybe":25,"../type":29}],27:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.project = exports.unflatten = exports.flatten = exports.unescapeRecord = exports.escapeRecord = exports.unescape = exports.escape = exports.set = exports.getString = exports.getDefault = exports.get = exports.unsafeGet = exports.tokenize = void 0;
@@ -3852,7 +4207,7 @@ var project = function (spec, rec) {
 };
 exports.project = project;
 
-},{"../maybe":23,"./":24}],26:[function(require,module,exports){
+},{"../maybe":25,"./":26}],28:[function(require,module,exports){
 "use strict";
 /**
  *  Common functions used to manipulate strings.
@@ -4044,7 +4399,7 @@ var alphanumeric = function (str) {
 };
 exports.alphanumeric = alphanumeric;
 
-},{"../record":24,"../record/path":25}],27:[function(require,module,exports){
+},{"../record":26,"../record/path":27}],29:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.toString = exports.show = exports.test = exports.is = exports.isPrim = exports.isFunction = exports.isBoolean = exports.isNumber = exports.isString = exports.isArray = exports.isObject = exports.Any = void 0;
@@ -4184,7 +4539,7 @@ var toString = function (val) {
 };
 exports.toString = toString;
 
-},{}],28:[function(require,module,exports){
+},{}],30:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.round = exports.isMultipleOf = void 0;
@@ -4230,7 +4585,7 @@ var round = function (x, n) {
 };
 exports.round = round;
 
-},{}],29:[function(require,module,exports){
+},{}],31:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.randomID = exports.isGroup = exports.isChild = exports.getId = exports.getParent = exports.make = exports.isRestricted = exports.ADDRESS_RESTRICTED = exports.ADDRESS_EMPTY = exports.ADDRESS_SYSTEM = exports.ADDRESS_DISCARD = exports.SEPERATOR = void 0;
@@ -4314,7 +4669,7 @@ exports.isGroup = function (addr) {
  */
 exports.randomID = function () { return uuid.v4().split('-').join(''); };
 
-},{"@quenk/noni/lib/data/array":20,"@quenk/noni/lib/data/string":26,"uuid":56}],30:[function(require,module,exports){
+},{"@quenk/noni/lib/data/array":22,"@quenk/noni/lib/data/string":28,"uuid":58}],32:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.isRouter = exports.isBuffered = exports.isImmutable = exports.FLAG_ROUTER = exports.FLAG_TEMPORARY = exports.FLAG_BUFFERED = exports.FLAG_IMMUTABLE = void 0;
@@ -4341,7 +4696,7 @@ exports.isRouter = function (f) {
     return (f & exports.FLAG_ROUTER) === exports.FLAG_ROUTER;
 };
 
-},{}],31:[function(require,module,exports){
+},{}],33:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Envelope = void 0;
@@ -4360,7 +4715,7 @@ var Envelope = /** @class */ (function () {
 }());
 exports.Envelope = Envelope;
 
-},{}],32:[function(require,module,exports){
+},{}],34:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -4422,7 +4777,7 @@ var Default = /** @class */ (function (_super) {
 }(Case));
 exports.Default = Default;
 
-},{"@quenk/noni/lib/data/type":27}],33:[function(require,module,exports){
+},{"@quenk/noni/lib/data/type":29}],35:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -4597,7 +4952,7 @@ var receiveFun = function (cases) {
     });
 };
 
-},{"../address":29,"../flags":30,"../system/vm/event":36,"../system/vm/script/info":51,"../template":54,"./scripts":34,"@quenk/noni/lib/data/record":24,"@quenk/noni/lib/data/type":27}],34:[function(require,module,exports){
+},{"../address":31,"../flags":32,"../system/vm/event":38,"../system/vm/script/info":53,"../template":56,"./scripts":36,"@quenk/noni/lib/data/record":26,"@quenk/noni/lib/data/type":29}],36:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Kill = exports.Raise = exports.Notify = exports.Receive = exports.Tell = exports.Self = exports.Spawn = void 0;
@@ -4801,7 +5156,7 @@ var Kill = /** @class */ (function () {
 }());
 exports.Kill = Kill;
 
-},{"../system/vm/runtime/heap/object/es":42,"../system/vm/runtime/op":46,"../system/vm/script/info":51,"@quenk/noni/lib/data/type":27}],35:[function(require,module,exports){
+},{"../system/vm/runtime/heap/object/es":44,"../system/vm/runtime/op":48,"../system/vm/script/info":53,"@quenk/noni/lib/data/type":29}],37:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.defaults = void 0;
@@ -4817,7 +5172,7 @@ exports.defaults = function () { return ({
     on: {}
 }); };
 
-},{"./log":38}],36:[function(require,module,exports){
+},{"./log":40}],38:[function(require,module,exports){
 "use strict";
 var _a;
 Object.defineProperty(exports, "__esModule", { value: true });
@@ -4876,7 +5231,7 @@ exports.events = (_a = {},
 exports.getLevel = function (e) { return exports.events.hasOwnProperty(e) ?
     exports.events[e].level : log_1.LOG_LEVEL_DEBUG; };
 
-},{"./log":38}],37:[function(require,module,exports){
+},{"./log":40}],39:[function(require,module,exports){
 "use strict";
 var __spreadArrays = (this && this.__spreadArrays) || function () {
     for (var s = 0, i = 0, il = arguments.length; i < il; i++) s += arguments[i].length;
@@ -5282,7 +5637,7 @@ var scheduleFutures = function (work) {
         .chain(function () { return future_1.pure(undefined); });
 };
 
-},{"../../address":29,"../../flags":30,"../../message":31,"../../resident":33,"../../template":54,"./conf":35,"./event":36,"./log":38,"./runtime/context":39,"./runtime/error":40,"./runtime/heap":41,"./runtime/op":46,"./runtime/thread":49,"./state":52,"@quenk/noni/lib/control/monad/future":17,"@quenk/noni/lib/data/array":20,"@quenk/noni/lib/data/either":21,"@quenk/noni/lib/data/maybe":23,"@quenk/noni/lib/data/record":24,"@quenk/noni/lib/data/type":27}],38:[function(require,module,exports){
+},{"../../address":31,"../../flags":32,"../../message":33,"../../resident":35,"../../template":56,"./conf":37,"./event":38,"./log":40,"./runtime/context":41,"./runtime/error":42,"./runtime/heap":43,"./runtime/op":48,"./runtime/thread":51,"./state":54,"@quenk/noni/lib/control/monad/future":19,"@quenk/noni/lib/data/array":22,"@quenk/noni/lib/data/either":23,"@quenk/noni/lib/data/maybe":25,"@quenk/noni/lib/data/record":26,"@quenk/noni/lib/data/type":29}],40:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.LOG_LEVEL_ERROR = exports.LOG_LEVEL_WARN = exports.LOG_LEVEL_NOTICE = exports.LOG_LEVEL_INFO = exports.LOG_LEVEL_DEBUG = void 0;
@@ -5292,7 +5647,7 @@ exports.LOG_LEVEL_NOTICE = 5;
 exports.LOG_LEVEL_WARN = 4;
 exports.LOG_LEVEL_ERROR = 3;
 
-},{}],39:[function(require,module,exports){
+},{}],41:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.newContext = void 0;
@@ -5308,7 +5663,7 @@ exports.newContext = function (actor, address, template) { return ({
     template: template
 }); };
 
-},{}],40:[function(require,module,exports){
+},{}],42:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -5597,7 +5952,7 @@ var InvalidFunctionErr = /** @class */ (function (_super) {
 }(Error));
 exports.InvalidFunctionErr = InvalidFunctionErr;
 
-},{"../../../address":29,"./stack/frame":48}],41:[function(require,module,exports){
+},{"../../../address":31,"./stack/frame":50}],43:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Heap = void 0;
@@ -5686,7 +6041,7 @@ var Heap = /** @class */ (function () {
 }());
 exports.Heap = Heap;
 
-},{"../stack/frame":48,"@quenk/noni/lib/data/maybe":23,"@quenk/noni/lib/data/type":27}],42:[function(require,module,exports){
+},{"../stack/frame":50,"@quenk/noni/lib/data/maybe":25,"@quenk/noni/lib/data/type":29}],44:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ESArray = exports.ESObject = void 0;
@@ -5794,7 +6149,7 @@ var marshal = function (heap, typ, val) {
     }
 };
 
-},{"../../../type":53,"@quenk/noni/lib/data/maybe":23,"@quenk/noni/lib/data/record":24,"@quenk/noni/lib/data/type":27}],43:[function(require,module,exports){
+},{"../../../type":55,"@quenk/noni/lib/data/maybe":25,"@quenk/noni/lib/data/record":26,"@quenk/noni/lib/data/type":29}],45:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.MAX_INSTRUCTION = exports.OPERAND_RANGE_END = exports.OPERAND_RANGE_START = exports.OPCODE_RANGE_END = exports.OPCODE_RANGE_START = exports.OPERAND_MASK = exports.OPCODE_MASK = void 0;
@@ -5806,7 +6161,7 @@ exports.OPERAND_RANGE_START = 0x0;
 exports.OPERAND_RANGE_END = 0xffffff;
 exports.MAX_INSTRUCTION = 0xffffffff;
 
-},{}],44:[function(require,module,exports){
+},{}],46:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.stop = exports.read = exports.maildq = exports.mailcount = exports.recvcount = exports.recv = exports.send = exports.run = exports.self = exports.alloc = void 0;
@@ -5961,7 +6316,7 @@ exports.stop = function (r, f, _) {
     r.kill(eaddr.takeRight());
 };
 
-},{"../../../../flags":30,"../error":40}],45:[function(require,module,exports){
+},{"../../../../flags":32,"../error":42}],47:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ifneqjmp = exports.ifeqjmp = exports.ifnzjmp = exports.ifzjmp = exports.jmp = exports.raise = exports.call = exports.addui32 = exports.ceq = exports.load = exports.store = exports.dup = exports.ldn = exports.lds = exports.pushui32 = exports.pushui16 = exports.pushui8 = exports.nop = void 0;
@@ -6187,7 +6542,7 @@ exports.ifneqjmp = function (r, f, oper) {
         f.seek(oper);
 };
 
-},{"../error":40,"../stack/frame":48,"@quenk/noni/lib/data/array":20}],46:[function(require,module,exports){
+},{"../error":42,"../stack/frame":50,"@quenk/noni/lib/data/array":22}],48:[function(require,module,exports){
 "use strict";
 var _a;
 Object.defineProperty(exports, "__esModule", { value: true });
@@ -6422,7 +6777,7 @@ exports.toLog = function (op, r, f, oper) {
     return exports.opcodes.hasOwnProperty(op) ? exports.opcodes[op].log(r, f, oper) : [];
 };
 
-},{"../stack/frame":48,"./actor":44,"./base":45,"./object":47,"@quenk/noni/lib/data/record":24}],47:[function(require,module,exports){
+},{"../stack/frame":50,"./actor":46,"./base":47,"./object":49,"@quenk/noni/lib/data/record":26}],49:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.arelm = exports.arlength = exports.getprop = void 0;
@@ -6486,7 +6841,7 @@ exports.arelm = function (r, f, _) {
     }
 };
 
-},{}],48:[function(require,module,exports){
+},{}],50:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.StackFrame = exports.BYTE_CONSTANT_INFO = exports.BYTE_CONSTANT_STR = exports.BYTE_CONSTANT_NUM = exports.DATA_TYPE_SELF = exports.DATA_TYPE_MAILBOX = exports.DATA_TYPE_LOCAL = exports.DATA_TYPE_HEAP_STRING = exports.DATA_TYPE_HEAP_OBJECT = exports.DATA_TYPE_INFO = exports.DATA_TYPE_STRING = exports.DATA_MAX_SAFE_UINT32 = exports.DATA_MAX_SIZE = exports.DATA_MASK_VALUE32 = exports.DATA_MASK_VALUE24 = exports.DATA_MASK_VALUE16 = exports.DATA_MASK_VALUE8 = exports.DATA_MASK_TYPE = exports.DATA_RANGE_TYPE_STEP = exports.DATA_RANGE_TYPE_LOW = exports.DATA_RANGE_TYPE_HIGH = void 0;
@@ -6703,7 +7058,7 @@ var missingSymbol = function (data) {
     return either_1.left(new error.MissingSymbolErr(data));
 };
 
-},{"../../script":50,"../../type":53,"../error":40,"@quenk/noni/lib/data/either":21,"@quenk/noni/lib/data/maybe":23}],49:[function(require,module,exports){
+},{"../../script":52,"../../type":55,"../error":42,"@quenk/noni/lib/data/either":23,"@quenk/noni/lib/data/maybe":25}],51:[function(require,module,exports){
 "use strict";
 var __spreadArrays = (this && this.__spreadArrays) || function () {
     for (var s = 0, i = 0, il = arguments.length; i < il; i++) s += arguments[i].length;
@@ -6818,7 +7173,7 @@ var Thread = /** @class */ (function () {
 }());
 exports.Thread = Thread;
 
-},{"./":43,"./op":46,"./stack/frame":48,"@quenk/noni/lib/control/monad/future":17,"@quenk/noni/lib/data/array":20,"@quenk/noni/lib/data/maybe":23}],50:[function(require,module,exports){
+},{"./":45,"./op":48,"./stack/frame":50,"@quenk/noni/lib/control/monad/future":19,"@quenk/noni/lib/data/array":22,"@quenk/noni/lib/data/maybe":25}],52:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getInfo = exports.PScript = exports.CONSTANTS_INDEX_STRING = exports.CONSTANTS_INDEX_NUMBER = void 0;
@@ -6851,7 +7206,7 @@ exports.getInfo = function (s, idx) {
     return either_1.right(s.info[idx]);
 };
 
-},{"../runtime/error":40,"@quenk/noni/lib/data/either":21}],51:[function(require,module,exports){
+},{"../runtime/error":42,"@quenk/noni/lib/data/either":23}],53:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.funType = exports.objectType = exports.arrayType = exports.stringType = exports.booleanType = exports.uint32Type = exports.uint16Type = exports.uint8Type = exports.int32Type = exports.int16Type = exports.int8Type = exports.voidType = exports.NewPropInfo = exports.NewArrayTypeInfo = exports.NewTypeInfo = exports.NewForeignFunInfo = exports.NewFunInfo = exports.NewArrayInfo = exports.NewObjectInfo = exports.NewStringInfo = exports.NewBooleanInfo = exports.Int32Info = exports.NewInt16Info = exports.NewInt8Info = exports.NewUInt32Info = exports.NewUInt16Info = exports.NewUInt8Info = exports.VoidInfo = void 0;
@@ -7111,7 +7466,7 @@ exports.objectType = new NewTypeInfo('object', 0, [], types.TYPE_OBJECT);
  */
 exports.funType = new NewTypeInfo('function', 0, [], types.TYPE_FUN);
 
-},{"../type":53}],52:[function(require,module,exports){
+},{"../type":55}],54:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.removeMember = exports.putMember = exports.getGroup = exports.removeGroup = exports.removeRoute = exports.putRoute = exports.getRouter = exports.getParent = exports.getChildren = exports.getAddress = exports.remove = exports.put = exports.get = exports.exists = void 0;
@@ -7228,7 +7583,7 @@ exports.removeMember = function (s, group, member) {
     return s;
 };
 
-},{"../../address":29,"@quenk/noni/lib/data/maybe":23,"@quenk/noni/lib/data/record":24,"@quenk/noni/lib/data/string":26}],53:[function(require,module,exports){
+},{"../../address":31,"@quenk/noni/lib/data/maybe":25,"@quenk/noni/lib/data/record":26,"@quenk/noni/lib/data/string":28}],55:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getType = exports.TYPE_CONS = exports.TYPE_FUN = exports.TYPE_ARRAY = exports.TYPE_OBJECT = exports.TYPE_STRING = exports.TYPE_BOOLEAN = exports.TYPE_INT32 = exports.TYPE_INT16 = exports.TYPE_INT8 = exports.TYPE_UINT32 = exports.TYPE_UINT16 = exports.TYPE_UINT8 = exports.TYPE_VOID = exports.BYTE_INDEX = exports.BYTE_TYPE = exports.TYPE_STEP = void 0;
@@ -7257,7 +7612,7 @@ exports.getType = function (d) {
     return d & exports.BYTE_TYPE;
 };
 
-},{}],54:[function(require,module,exports){
+},{}],56:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.normalize = exports.ACTION_STOP = exports.ACTION_RESTART = exports.ACTION_IGNORE = exports.ACTION_RAISE = void 0;
@@ -7276,7 +7631,7 @@ exports.normalize = function (t) { return record_1.merge(t, {
         record_1.mapTo(t.children, function (c, k) { return record_1.merge(c, { id: k }); }) : t.children
 }); };
 
-},{"./address":29,"@quenk/noni/lib/data/record":24}],55:[function(require,module,exports){
+},{"./address":31,"@quenk/noni/lib/data/record":26}],57:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -7304,7 +7659,7 @@ function bytesToUuid(buf, offset) {
 var _default = bytesToUuid;
 exports.default = _default;
 module.exports = exports.default;
-},{}],56:[function(require,module,exports){
+},{}],58:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -7344,7 +7699,7 @@ var _v3 = _interopRequireDefault(require("./v4.js"));
 var _v4 = _interopRequireDefault(require("./v5.js"));
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-},{"./v1.js":60,"./v3.js":61,"./v4.js":63,"./v5.js":64}],57:[function(require,module,exports){
+},{"./v1.js":62,"./v3.js":63,"./v4.js":65,"./v5.js":66}],59:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -7570,7 +7925,7 @@ function md5ii(a, b, c, d, x, s, t) {
 var _default = md5;
 exports.default = _default;
 module.exports = exports.default;
-},{}],58:[function(require,module,exports){
+},{}],60:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -7594,7 +7949,7 @@ function rng() {
 }
 
 module.exports = exports.default;
-},{}],59:[function(require,module,exports){
+},{}],61:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -7691,7 +8046,7 @@ function sha1(bytes) {
 var _default = sha1;
 exports.default = _default;
 module.exports = exports.default;
-},{}],60:[function(require,module,exports){
+},{}],62:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -7800,7 +8155,7 @@ function v1(options, buf, offset) {
 var _default = v1;
 exports.default = _default;
 module.exports = exports.default;
-},{"./bytesToUuid.js":55,"./rng.js":58}],61:[function(require,module,exports){
+},{"./bytesToUuid.js":57,"./rng.js":60}],63:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -7818,7 +8173,7 @@ const v3 = (0, _v.default)('v3', 0x30, _md.default);
 var _default = v3;
 exports.default = _default;
 module.exports = exports.default;
-},{"./md5.js":57,"./v35.js":62}],62:[function(require,module,exports){
+},{"./md5.js":59,"./v35.js":64}],64:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -7888,7 +8243,7 @@ function _default(name, version, hashfunc) {
   generateUUID.URL = URL;
   return generateUUID;
 }
-},{"./bytesToUuid.js":55}],63:[function(require,module,exports){
+},{"./bytesToUuid.js":57}],65:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -7930,7 +8285,7 @@ function v4(options, buf, offset) {
 var _default = v4;
 exports.default = _default;
 module.exports = exports.default;
-},{"./bytesToUuid.js":55,"./rng.js":58}],64:[function(require,module,exports){
+},{"./bytesToUuid.js":57,"./rng.js":60}],66:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -7948,7 +8303,7 @@ const v5 = (0, _v.default)('v5', 0x50, _sha.default);
 var _default = v5;
 exports.default = _default;
 module.exports = exports.default;
-},{"./sha1.js":59,"./v35.js":62}],65:[function(require,module,exports){
+},{"./sha1.js":61,"./v35.js":64}],67:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -8131,7 +8486,7 @@ exports.toString = toString;
 var assert = function (value) { return new Positive(value, true); };
 exports.assert = assert;
 
-},{"deep-equal":67,"json-stringify-safe":79}],66:[function(require,module,exports){
+},{"deep-equal":69,"json-stringify-safe":81}],68:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Mock = exports.ReturnCallback = exports.ReturnValue = exports.Invocation = void 0;
@@ -8284,7 +8639,7 @@ var Mock = /** @class */ (function () {
 }());
 exports.Mock = Mock;
 
-},{"deep-equal":67}],67:[function(require,module,exports){
+},{"deep-equal":69}],69:[function(require,module,exports){
 var objectKeys = require('object-keys');
 var isArguments = require('is-arguments');
 var is = require('object-is');
@@ -8398,7 +8753,7 @@ function objEquiv(a, b, opts) {
 
 module.exports = deepEqual;
 
-},{"is-arguments":76,"is-date-object":77,"is-regex":78,"object-is":81,"object-keys":85,"regexp.prototype.flags":89}],68:[function(require,module,exports){
+},{"is-arguments":78,"is-date-object":79,"is-regex":80,"object-is":83,"object-keys":87,"regexp.prototype.flags":91}],70:[function(require,module,exports){
 'use strict';
 
 var keys = require('object-keys');
@@ -8458,7 +8813,7 @@ defineProperties.supportsDescriptors = !!supportsDescriptors;
 
 module.exports = defineProperties;
 
-},{"object-keys":85}],69:[function(require,module,exports){
+},{"object-keys":87}],71:[function(require,module,exports){
 'use strict';
 
 /* globals
@@ -8678,7 +9033,7 @@ module.exports = function GetIntrinsic(name, allowMissing) {
 	return value;
 };
 
-},{"function-bind":72,"has-symbols":73}],70:[function(require,module,exports){
+},{"function-bind":74,"has-symbols":75}],72:[function(require,module,exports){
 'use strict';
 
 var bind = require('function-bind');
@@ -8697,7 +9052,7 @@ module.exports.apply = function applyBind() {
 	return bind.apply($apply, arguments);
 };
 
-},{"../GetIntrinsic":69,"function-bind":72}],71:[function(require,module,exports){
+},{"../GetIntrinsic":71,"function-bind":74}],73:[function(require,module,exports){
 'use strict';
 
 /* eslint no-invalid-this: 1 */
@@ -8751,14 +9106,14 @@ module.exports = function bind(that) {
     return bound;
 };
 
-},{}],72:[function(require,module,exports){
+},{}],74:[function(require,module,exports){
 'use strict';
 
 var implementation = require('./implementation');
 
 module.exports = Function.prototype.bind || implementation;
 
-},{"./implementation":71}],73:[function(require,module,exports){
+},{"./implementation":73}],75:[function(require,module,exports){
 (function (global){(function (){
 'use strict';
 
@@ -8775,7 +9130,7 @@ module.exports = function hasNativeSymbols() {
 };
 
 }).call(this)}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./shams":74}],74:[function(require,module,exports){
+},{"./shams":76}],76:[function(require,module,exports){
 'use strict';
 
 /* eslint complexity: [2, 18], max-statements: [2, 33] */
@@ -8819,14 +9174,14 @@ module.exports = function hasSymbols() {
 	return true;
 };
 
-},{}],75:[function(require,module,exports){
+},{}],77:[function(require,module,exports){
 'use strict';
 
 var bind = require('function-bind');
 
 module.exports = bind.call(Function.call, Object.prototype.hasOwnProperty);
 
-},{"function-bind":72}],76:[function(require,module,exports){
+},{"function-bind":74}],78:[function(require,module,exports){
 'use strict';
 
 var hasToStringTag = typeof Symbol === 'function' && typeof Symbol.toStringTag === 'symbol';
@@ -8859,7 +9214,7 @@ isStandardArguments.isLegacyArguments = isLegacyArguments; // for tests
 
 module.exports = supportsStandardArguments ? isStandardArguments : isLegacyArguments;
 
-},{}],77:[function(require,module,exports){
+},{}],79:[function(require,module,exports){
 'use strict';
 
 var getDay = Date.prototype.getDay;
@@ -8883,7 +9238,7 @@ module.exports = function isDateObject(value) {
 	return hasToStringTag ? tryDateObject(value) : toStr.call(value) === dateClass;
 };
 
-},{}],78:[function(require,module,exports){
+},{}],80:[function(require,module,exports){
 'use strict';
 
 var has = require('has');
@@ -8924,7 +9279,7 @@ module.exports = function isRegex(value) {
 	return tryRegexExecCall(value);
 };
 
-},{"has":75}],79:[function(require,module,exports){
+},{"has":77}],81:[function(require,module,exports){
 exports = module.exports = stringify
 exports.getSerialize = serializer
 
@@ -8953,7 +9308,7 @@ function serializer(replacer, cycleReplacer) {
   }
 }
 
-},{}],80:[function(require,module,exports){
+},{}],82:[function(require,module,exports){
 'use strict';
 
 var numberIsNaN = function (value) {
@@ -8974,7 +9329,7 @@ module.exports = function is(a, b) {
 };
 
 
-},{}],81:[function(require,module,exports){
+},{}],83:[function(require,module,exports){
 'use strict';
 
 var define = require('define-properties');
@@ -8994,7 +9349,7 @@ define(polyfill, {
 
 module.exports = polyfill;
 
-},{"./implementation":80,"./polyfill":82,"./shim":83,"define-properties":68,"es-abstract/helpers/callBind":70}],82:[function(require,module,exports){
+},{"./implementation":82,"./polyfill":84,"./shim":85,"define-properties":70,"es-abstract/helpers/callBind":72}],84:[function(require,module,exports){
 'use strict';
 
 var implementation = require('./implementation');
@@ -9003,7 +9358,7 @@ module.exports = function getPolyfill() {
 	return typeof Object.is === 'function' ? Object.is : implementation;
 };
 
-},{"./implementation":80}],83:[function(require,module,exports){
+},{"./implementation":82}],85:[function(require,module,exports){
 'use strict';
 
 var getPolyfill = require('./polyfill');
@@ -9019,7 +9374,7 @@ module.exports = function shimObjectIs() {
 	return polyfill;
 };
 
-},{"./polyfill":82,"define-properties":68}],84:[function(require,module,exports){
+},{"./polyfill":84,"define-properties":70}],86:[function(require,module,exports){
 'use strict';
 
 var keysShim;
@@ -9143,7 +9498,7 @@ if (!Object.keys) {
 }
 module.exports = keysShim;
 
-},{"./isArguments":86}],85:[function(require,module,exports){
+},{"./isArguments":88}],87:[function(require,module,exports){
 'use strict';
 
 var slice = Array.prototype.slice;
@@ -9177,7 +9532,7 @@ keysShim.shim = function shimObjectKeys() {
 
 module.exports = keysShim;
 
-},{"./implementation":84,"./isArguments":86}],86:[function(require,module,exports){
+},{"./implementation":86,"./isArguments":88}],88:[function(require,module,exports){
 'use strict';
 
 var toStr = Object.prototype.toString;
@@ -9196,7 +9551,7 @@ module.exports = function isArguments(value) {
 	return isArgs;
 };
 
-},{}],87:[function(require,module,exports){
+},{}],89:[function(require,module,exports){
 // shim for using process in browser
 var process = module.exports = {};
 
@@ -9382,7 +9737,7 @@ process.chdir = function (dir) {
 };
 process.umask = function() { return 0; };
 
-},{}],88:[function(require,module,exports){
+},{}],90:[function(require,module,exports){
 'use strict';
 
 var $Object = Object;
@@ -9414,7 +9769,7 @@ module.exports = function flags() {
 	return result;
 };
 
-},{}],89:[function(require,module,exports){
+},{}],91:[function(require,module,exports){
 'use strict';
 
 var define = require('define-properties');
@@ -9434,7 +9789,7 @@ define(flagsBound, {
 
 module.exports = flagsBound;
 
-},{"./implementation":88,"./polyfill":90,"./shim":91,"define-properties":68,"es-abstract/helpers/callBind":70}],90:[function(require,module,exports){
+},{"./implementation":90,"./polyfill":92,"./shim":93,"define-properties":70,"es-abstract/helpers/callBind":72}],92:[function(require,module,exports){
 'use strict';
 
 var implementation = require('./implementation');
@@ -9456,7 +9811,7 @@ module.exports = function getPolyfill() {
 	return implementation;
 };
 
-},{"./implementation":88,"define-properties":68}],91:[function(require,module,exports){
+},{"./implementation":90,"define-properties":70}],93:[function(require,module,exports){
 'use strict';
 
 var supportsDescriptors = require('define-properties').supportsDescriptors;
@@ -9484,7 +9839,7 @@ module.exports = function shimFlags() {
 	return polyfill;
 };
 
-},{"./polyfill":90,"define-properties":68}],92:[function(require,module,exports){
+},{"./polyfill":92,"define-properties":70}],94:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -9808,7 +10163,7 @@ describe('director', function () {
     });
 });
 
-},{"../../../lib/actor":1,"../../../lib/app/director":2,"../app/fixtures/app":94,"@quenk/noni/lib/control/monad/future":17,"@quenk/noni/lib/data/record":24,"@quenk/noni/lib/data/string":26,"@quenk/potoo/lib/actor/resident/case":32,"@quenk/test/lib/assert":65,"@quenk/test/lib/mock":66}],93:[function(require,module,exports){
+},{"../../../lib/actor":1,"../../../lib/app/director":2,"../app/fixtures/app":96,"@quenk/noni/lib/control/monad/future":19,"@quenk/noni/lib/data/record":26,"@quenk/noni/lib/data/string":28,"@quenk/potoo/lib/actor/resident/case":34,"@quenk/test/lib/assert":67,"@quenk/test/lib/mock":68}],95:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -9845,7 +10200,7 @@ var GenericImmutable = /** @class */ (function (_super) {
 }(actor_1.Immutable));
 exports.GenericImmutable = GenericImmutable;
 
-},{"../../../../lib/actor":1}],94:[function(require,module,exports){
+},{"../../../../lib/actor":1}],96:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -9876,7 +10231,7 @@ var TestApp = /** @class */ (function (_super) {
 }(app_1.JApp));
 exports.TestApp = TestApp;
 
-},{"../../../../lib/app":6}],95:[function(require,module,exports){
+},{"../../../../lib/app":6}],97:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -10203,7 +10558,7 @@ describe('active', function () {
     });
 });
 
-},{"../../../../lib/app/form/active":3,"../../../../lib/app/form/active/validate/strategy":4,"../../app/fixtures/app":94,"../fixtures/actor":93,"@quenk/noni/lib/control/monad/future":17,"@quenk/noni/lib/data/either":21,"@quenk/potoo/lib/actor/resident/case":32,"@quenk/test/lib/assert":65,"@quenk/test/lib/mock":66}],96:[function(require,module,exports){
+},{"../../../../lib/app/form/active":3,"../../../../lib/app/form/active/validate/strategy":4,"../../app/fixtures/app":96,"../fixtures/actor":95,"@quenk/noni/lib/control/monad/future":19,"@quenk/noni/lib/data/either":23,"@quenk/potoo/lib/actor/resident/case":34,"@quenk/test/lib/assert":67,"@quenk/test/lib/mock":68}],98:[function(require,module,exports){
 "use strict";
 var __generator = (this && this.__generator) || function (thisArg, body) {
     var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
@@ -10409,7 +10764,380 @@ describe('remote', function () {
     });
 });
 
-},{"../../../../lib/app/remote":7,"../../app/fixtures/actor":93,"../../app/fixtures/app":94,"@quenk/jhr/lib/agent/mock":9,"@quenk/jhr/lib/request":10,"@quenk/jhr/lib/response":12,"@quenk/noni/lib/control/monad/future":17,"@quenk/potoo/lib/actor/resident/case":32,"@quenk/test/lib/assert":65}],97:[function(require,module,exports){
+},{"../../../../lib/app/remote":8,"../../app/fixtures/actor":95,"../../app/fixtures/app":96,"@quenk/jhr/lib/agent/mock":11,"@quenk/jhr/lib/request":12,"@quenk/jhr/lib/response":14,"@quenk/noni/lib/control/monad/future":19,"@quenk/potoo/lib/actor/resident/case":34,"@quenk/test/lib/assert":67}],99:[function(require,module,exports){
+"use strict";
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+        return extendStatics(d, b);
+    };
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
+var __generator = (this && this.__generator) || function (thisArg, body) {
+    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
+    return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
+    function verb(n) { return function (v) { return step([n, v]); }; }
+    function step(op) {
+        if (f) throw new TypeError("Generator is already executing.");
+        while (_) try {
+            if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
+            if (y = 0, t) op = [op[0] & 2, t.value];
+            switch (op[0]) {
+                case 0: case 1: t = op; break;
+                case 4: _.label++; return { value: op[1], done: false };
+                case 5: _.label++; y = op[1]; op = [0]; continue;
+                case 7: op = _.ops.pop(); _.trys.pop(); continue;
+                default:
+                    if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) { _ = 0; continue; }
+                    if (op[0] === 3 && (!t || (op[1] > t[0] && op[1] < t[3]))) { _.label = op[1]; break; }
+                    if (op[0] === 6 && _.label < t[1]) { _.label = t[1]; t = op; break; }
+                    if (t && _.label < t[2]) { _.label = t[2]; _.ops.push(op); break; }
+                    if (t[2]) _.ops.pop();
+                    _.trys.pop(); continue;
+            }
+            op = body.call(thisArg, _);
+        } catch (e) { op = [6, e]; y = 0; } finally { f = t = 0; }
+        if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
+    }
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+var assert_1 = require("@quenk/test/lib/assert");
+var mock_1 = require("@quenk/test/lib/mock");
+var record_1 = require("@quenk/noni/lib/data/record");
+var future_1 = require("@quenk/noni/lib/control/monad/future");
+var case_1 = require("@quenk/potoo/lib/actor/resident/case");
+var resident_1 = require("@quenk/potoo/lib/actor/resident");
+var response_1 = require("@quenk/jhr/lib/response");
+var request_1 = require("@quenk/jhr/lib/request");
+var model_1 = require("../../../../lib/app/remote/model");
+var remote_1 = require("../../../../lib/app/remote");
+var app_1 = require("../../app/fixtures/app");
+var TestRemote = /** @class */ (function (_super) {
+    __extends(TestRemote, _super);
+    function TestRemote(system, receive) {
+        var _this = _super.call(this, system) || this;
+        _this.system = system;
+        _this.receive = receive;
+        return _this;
+    }
+    TestRemote.prototype.run = function () { };
+    return TestRemote;
+}(resident_1.Immutable));
+var MockHandler = /** @class */ (function () {
+    function MockHandler() {
+        this.MOCK = new mock_1.Mock();
+    }
+    MockHandler.prototype.onError = function (e) {
+        this.MOCK.invoke('onError', [e], undefined);
+    };
+    MockHandler.prototype.onClientError = function (r) {
+        this.MOCK.invoke('onClientError', [r], undefined);
+    };
+    MockHandler.prototype.onServerError = function (r) {
+        this.MOCK.invoke('onServerError', [r], undefined);
+    };
+    MockHandler.prototype.onComplete = function (r) {
+        this.MOCK.invoke('onComplete', [r], undefined);
+    };
+    return MockHandler;
+}());
+describe('model', function () {
+    describe('RemoteModel', function () {
+        describe('create', function () {
+            it('should provide the created id', function () {
+                return future_1.toPromise(future_1.doFuture(function () {
+                    var app, handler, model, response, request, remote, payload, id;
+                    return __generator(this, function (_a) {
+                        switch (_a.label) {
+                            case 0:
+                                app = new app_1.TestApp();
+                                handler = new MockHandler();
+                                model = new model_1.RemoteModel('/', 'remote', function (create) {
+                                    var id = 'callback';
+                                    app.spawn({ id: id, create: create });
+                                    return id;
+                                }, handler);
+                                response = new response_1.Created({ data: { id: 1 } }, {}, {});
+                                remote = new TestRemote(app, [
+                                    new case_1.Case(remote_1.Send, function (s) {
+                                        request = s.request;
+                                        remote.tell(s.client, response);
+                                    })
+                                ]);
+                                app.spawn({ id: 'remote', create: function () { return remote; } });
+                                payload = { name: 'Dennis Hall' };
+                                return [4 /*yield*/, model.create(payload)];
+                            case 1:
+                                id = _a.sent();
+                                return [2 /*return*/, future_1.attempt(function () {
+                                        assert_1.assert(request).instance.of(request_1.Post);
+                                        assert_1.assert(request.body).equate(payload);
+                                        assert_1.assert(id).equal(1);
+                                        assert_1.assert(handler.MOCK.getCalledList())
+                                            .equate(['onComplete']);
+                                    })];
+                        }
+                    });
+                }));
+            });
+        });
+        describe('search', function () {
+            it('should provide the list of results', function () {
+                return future_1.toPromise(future_1.doFuture(function () {
+                    var app, handler, model, request, responseBody, response, remote, qry, results;
+                    return __generator(this, function (_a) {
+                        switch (_a.label) {
+                            case 0:
+                                app = new app_1.TestApp();
+                                handler = new MockHandler();
+                                model = new model_1.RemoteModel('/', 'remote', function (create) {
+                                    var id = 'callback';
+                                    app.spawn({ id: id, create: create });
+                                    return id;
+                                }, handler);
+                                responseBody = {
+                                    data: [
+                                        { name: 'Tony Hall' },
+                                        { name: 'Dennis Hall' }
+                                    ]
+                                };
+                                response = new response_1.Ok(responseBody, {}, {});
+                                remote = new TestRemote(app, [
+                                    new case_1.Case(remote_1.Send, function (s) {
+                                        request = s.request;
+                                        remote.tell(s.client, response);
+                                    })
+                                ]);
+                                app.spawn({ id: 'remote', create: function () { return remote; } });
+                                qry = { limit: 10, filter: 'name:Hall' };
+                                return [4 /*yield*/, model.search(qry)];
+                            case 1:
+                                results = _a.sent();
+                                return [2 /*return*/, future_1.attempt(function () {
+                                        assert_1.assert(request).instance.of(request_1.Get);
+                                        assert_1.assert(request.params).equate(qry);
+                                        assert_1.assert(handler.MOCK.getCalledList())
+                                            .equate(['onComplete']);
+                                        assert_1.assert(handler.MOCK.wasCalledWith('onComplete', [response]));
+                                        assert_1.assert(results).equate(responseBody.data);
+                                    })];
+                        }
+                    });
+                }));
+            });
+        });
+        describe('update', function () {
+            it('should work', function () {
+                return future_1.toPromise(future_1.doFuture(function () {
+                    var app, handler, model, request, response, remote, changes, result;
+                    return __generator(this, function (_a) {
+                        switch (_a.label) {
+                            case 0:
+                                app = new app_1.TestApp();
+                                handler = new MockHandler();
+                                model = new model_1.RemoteModel('/{id}', 'remote', function (create) {
+                                    var id = 'callback';
+                                    app.spawn({ id: id, create: create });
+                                    return id;
+                                }, handler);
+                                response = new response_1.Ok({}, {}, {});
+                                remote = new TestRemote(app, [
+                                    new case_1.Case(remote_1.Send, function (s) {
+                                        request = s.request;
+                                        remote.tell(s.client, response);
+                                    })
+                                ]);
+                                app.spawn({ id: 'remote', create: function () { return remote; } });
+                                changes = { active: true };
+                                return [4 /*yield*/, model.update(1, changes)];
+                            case 1:
+                                result = _a.sent();
+                                return [2 /*return*/, future_1.attempt(function () {
+                                        assert_1.assert(request).instance.of(request_1.Patch);
+                                        assert_1.assert(request.body).equate(changes);
+                                        assert_1.assert(handler.MOCK.getCalledList())
+                                            .equate(['onComplete']);
+                                        assert_1.assert(handler.MOCK.wasCalledWith('onComplete', [response]));
+                                        assert_1.assert(result).true();
+                                    })];
+                        }
+                    });
+                }));
+            });
+        });
+        describe('get', function () {
+            it('should provide the target record', function () {
+                return future_1.toPromise(future_1.doFuture(function () {
+                    var app, handler, model, request, response, remote, mtarget;
+                    return __generator(this, function (_a) {
+                        switch (_a.label) {
+                            case 0:
+                                app = new app_1.TestApp();
+                                handler = new MockHandler();
+                                model = new model_1.RemoteModel('/{id}', 'remote', function (create) {
+                                    var id = 'callback';
+                                    app.spawn({ id: id, create: create });
+                                    return id;
+                                }, handler);
+                                response = new response_1.Ok({ data: { name: 'Dennis Hall' } }, {}, {});
+                                remote = new TestRemote(app, [
+                                    new case_1.Case(remote_1.Send, function (s) {
+                                        request = s.request;
+                                        remote.tell(s.client, response);
+                                    })
+                                ]);
+                                app.spawn({ id: 'remote', create: function () { return remote; } });
+                                return [4 /*yield*/, model.get(1)];
+                            case 1:
+                                mtarget = _a.sent();
+                                return [2 /*return*/, future_1.attempt(function () {
+                                        assert_1.assert(request).instance.of(request_1.Get);
+                                        assert_1.assert(request.path).equal('/1');
+                                        assert_1.assert(handler.MOCK.getCalledList())
+                                            .equate(['onComplete']);
+                                        assert_1.assert(handler.MOCK.wasCalledWith('onComplete', [response]));
+                                        assert_1.assert(mtarget.get()).equate({ name: 'Dennis Hall' });
+                                    })];
+                        }
+                    });
+                }));
+            });
+            it('should return Nothing if not found', function () {
+                return future_1.toPromise(future_1.doFuture(function () {
+                    var app, handler, model, response, remote, mresult;
+                    return __generator(this, function (_a) {
+                        switch (_a.label) {
+                            case 0:
+                                app = new app_1.TestApp();
+                                handler = new MockHandler();
+                                model = new model_1.RemoteModel('/{id}', 'remote', function (create) {
+                                    var id = 'callback';
+                                    app.spawn({ id: id, create: create });
+                                    return id;
+                                }, handler);
+                                response = new response_1.NotFound({}, {}, {});
+                                remote = new TestRemote(app, [
+                                    new case_1.Case(remote_1.Send, function (s) {
+                                        remote.tell(s.client, response);
+                                    })
+                                ]);
+                                app.spawn({ id: 'remote', create: function () { return remote; } });
+                                return [4 /*yield*/, model.get(1)];
+                            case 1:
+                                mresult = _a.sent();
+                                return [2 /*return*/, future_1.attempt(function () {
+                                        assert_1.assert(handler.MOCK.getCalledList())
+                                            .equate([]);
+                                        assert_1.assert(mresult.isNothing()).true();
+                                    })];
+                        }
+                    });
+                }));
+            });
+        });
+        describe('remove', function () {
+            it('should remove the target record', function () {
+                return future_1.toPromise(future_1.doFuture(function () {
+                    var app, handler, model, request, response, remote;
+                    return __generator(this, function (_a) {
+                        switch (_a.label) {
+                            case 0:
+                                app = new app_1.TestApp();
+                                handler = new MockHandler();
+                                model = new model_1.RemoteModel('/{id}', 'remote', function (create) {
+                                    var id = 'callback';
+                                    app.spawn({ id: id, create: create });
+                                    return id;
+                                }, handler);
+                                response = new response_1.Ok({}, {}, {});
+                                remote = new TestRemote(app, [
+                                    new case_1.Case(remote_1.Send, function (s) {
+                                        request = s.request;
+                                        remote.tell(s.client, response);
+                                    })
+                                ]);
+                                app.spawn({ id: 'remote', create: function () { return remote; } });
+                                return [4 /*yield*/, model.remove(1)];
+                            case 1:
+                                _a.sent();
+                                return [2 /*return*/, future_1.attempt(function () {
+                                        assert_1.assert(request).instance.of(request_1.Delete);
+                                        assert_1.assert(request.path).equal('/1');
+                                        assert_1.assert(handler.MOCK.getCalledList())
+                                            .equate(['onComplete']);
+                                        assert_1.assert(handler.MOCK.wasCalledWith('onComplete', [response]));
+                                    })];
+                        }
+                    });
+                }));
+            });
+        });
+        describe('handlers', function () {
+            it('should call the correct hooks', function () {
+                var methods = [
+                    ['create', [{}]],
+                    ['search', [{}]],
+                    ['update', [1, {}]],
+                    ['get', [1]],
+                    ['remove', [1]]
+                ];
+                var codes = {
+                    400: ['onClientError'],
+                    401: ['onClientError'],
+                    403: ['onClientError'],
+                    404: ['onClientError'],
+                    409: ['onClientError'],
+                    500: ['onServerError']
+                };
+                var work = methods.map(function (method) {
+                    return record_1.mapTo(codes, function (expected, code) { return future_1.doFuture(function () {
+                        var app, handler, model, response, remote, ft;
+                        return __generator(this, function (_a) {
+                            switch (_a.label) {
+                                case 0:
+                                    app = new app_1.TestApp();
+                                    handler = new MockHandler();
+                                    model = new model_1.RemoteModel('/', 'remote', function (create) {
+                                        var id = 'callback';
+                                        app.spawn({ id: id, create: create });
+                                        return id;
+                                    }, handler);
+                                    response = new response_1.GenericResponse(Number(code), {}, {}, {});
+                                    remote = new TestRemote(app, [
+                                        new case_1.Case(remote_1.Send, function (s) {
+                                            remote.tell(s.client, response);
+                                        })
+                                    ]);
+                                    app.spawn({ id: 'remote', create: function () { return remote; } });
+                                    ft = model[method[0]].call(model, method[1]);
+                                    return [4 /*yield*/, ft.catch(function () { return future_1.pure(undefined); })];
+                                case 1:
+                                    _a.sent();
+                                    return [2 /*return*/, future_1.attempt(function () {
+                                            if ((code === '404') && (method[0] === 'get'))
+                                                assert_1.assert(handler.MOCK.getCalledList())
+                                                    .equate([]);
+                                            else
+                                                assert_1.assert(handler.MOCK.getCalledList())
+                                                    .equate(expected);
+                                        })];
+                            }
+                        });
+                    }); });
+                });
+                return future_1.toPromise(future_1.batch(work));
+            });
+        });
+    });
+});
+
+},{"../../../../lib/app/remote":8,"../../../../lib/app/remote/model":9,"../../app/fixtures/app":96,"@quenk/jhr/lib/request":12,"@quenk/jhr/lib/response":14,"@quenk/noni/lib/control/monad/future":19,"@quenk/noni/lib/data/record":26,"@quenk/potoo/lib/actor/resident":35,"@quenk/potoo/lib/actor/resident/case":34,"@quenk/test/lib/assert":67,"@quenk/test/lib/mock":68}],100:[function(require,module,exports){
 "use strict";
 var __generator = (this && this.__generator) || function (thisArg, body) {
     var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
@@ -10446,7 +11174,7 @@ var case_1 = require("@quenk/potoo/lib/actor/resident/case");
 var mock_2 = require("@quenk/jhr/lib/agent/mock");
 var request_1 = require("@quenk/jhr/lib/request");
 var response_1 = require("@quenk/jhr/lib/response");
-var observable_1 = require("../../../../lib/app/remote/observable");
+var observer_1 = require("../../../../lib/app/remote/observer");
 var actor_1 = require("../../app/fixtures/actor");
 var app_1 = require("../../app/fixtures/app");
 var MockRemoteObserver = /** @class */ (function () {
@@ -10474,7 +11202,7 @@ var MockRemoteObserver = /** @class */ (function () {
     return MockRemoteObserver;
 }());
 describe('observable', function () {
-    describe('ObservableRemote', function () {
+    describe('RemoteObserver', function () {
         describe('api', function () {
             it('should handle Send', function () { return future_1.toPromise(future_1.doFuture(function () {
                 var s, agent, observer, res, success, cases;
@@ -10495,14 +11223,14 @@ describe('observable', function () {
                             s.spawn({
                                 id: 'remote',
                                 create: function (s) {
-                                    return new observable_1.ObservableRemote(agent, observer, s);
+                                    return new observer_1.RemoteObserver(agent, observer, s);
                                 }
                             });
                             s.spawn({
                                 id: 'client',
                                 create: function (s) {
                                     return new actor_1.GenericImmutable(s, cases, function (that) {
-                                        var msg = new observable_1.Send(that.self(), new request_1.Get('', {}));
+                                        var msg = new observer_1.Send(that.self(), new request_1.Get('', {}));
                                         that.tell('remote', msg);
                                     });
                                 }
@@ -10534,21 +11262,21 @@ describe('observable', function () {
                                 success = false;
                                 agent.__MOCK__.setReturnValue('send', future_1.pure(res));
                                 cases = [
-                                    new case_1.Case(observable_1.BatchResponse, function (r) {
+                                    new case_1.Case(observer_1.BatchResponse, function (r) {
                                         success = r.value.every(function (r) { return r === res; });
                                     })
                                 ];
                                 s.spawn({
                                     id: 'remote',
                                     create: function (s) {
-                                        return new observable_1.ObservableRemote(agent, observer, s);
+                                        return new observer_1.RemoteObserver(agent, observer, s);
                                     }
                                 });
                                 s.spawn({
                                     id: 'client',
                                     create: function (s) {
                                         return new actor_1.GenericImmutable(s, cases, function (that) {
-                                            var msg = new observable_1.ParSend(that.self(), [
+                                            var msg = new observer_1.ParSend(that.self(), [
                                                 new request_1.Get('', {}),
                                                 new request_1.Get('', {}),
                                                 new request_1.Get('', {})
@@ -10585,21 +11313,21 @@ describe('observable', function () {
                                 success = false;
                                 agent.__MOCK__.setReturnValue('send', future_1.pure(res));
                                 cases = [
-                                    new case_1.Case(observable_1.BatchResponse, function (r) {
+                                    new case_1.Case(observer_1.BatchResponse, function (r) {
                                         success = r.value.every(function (r) { return r === res; });
                                     })
                                 ];
                                 s.spawn({
                                     id: 'remote',
                                     create: function (s) {
-                                        return new observable_1.ObservableRemote(agent, observer, s);
+                                        return new observer_1.RemoteObserver(agent, observer, s);
                                     }
                                 });
                                 s.spawn({
                                     id: 'client',
                                     create: function (s) {
                                         return new actor_1.GenericImmutable(s, cases, function (that) {
-                                            var msg = new observable_1.SeqSend(that.self(), [
+                                            var msg = new observer_1.SeqSend(that.self(), [
                                                 new request_1.Get('', {}),
                                                 new request_1.Get('', {}),
                                                 new request_1.Get('', {})
@@ -10634,21 +11362,21 @@ describe('observable', function () {
                                 observer = new MockRemoteObserver();
                                 req = new request_1.Get('', {});
                                 failed = false;
-                                agent.__MOCK__.setReturnValue('send', future_1.raise(new observable_1.TransportErr('client', new Error('err'))));
+                                agent.__MOCK__.setReturnValue('send', future_1.raise(new observer_1.TransportErr('client', new Error('err'))));
                                 cases = [
-                                    new case_1.Case(observable_1.TransportErr, function (_) { failed = true; })
+                                    new case_1.Case(observer_1.TransportErr, function (_) { failed = true; })
                                 ];
                                 s.spawn({
                                     id: 'remote',
                                     create: function (s) {
-                                        return new observable_1.ObservableRemote(agent, observer, s);
+                                        return new observer_1.RemoteObserver(agent, observer, s);
                                     }
                                 });
                                 s.spawn({
                                     id: 'client',
                                     create: function (s) {
                                         return new actor_1.GenericImmutable(s, cases, function (that) {
-                                            var msg = new observable_1.Send(that.self(), req);
+                                            var msg = new observer_1.Send(that.self(), req);
                                             that.tell('remote', msg);
                                         });
                                     }
@@ -10682,14 +11410,14 @@ describe('observable', function () {
                                 s.spawn({
                                     id: 'remote',
                                     create: function (s) {
-                                        return new observable_1.ObservableRemote(agent, observer, s);
+                                        return new observer_1.RemoteObserver(agent, observer, s);
                                     }
                                 });
                                 s.spawn({
                                     id: 'client',
                                     create: function (s) {
                                         return new actor_1.GenericImmutable(s, [], function (that) {
-                                            var msg = new observable_1.Send(that.self(), req);
+                                            var msg = new observer_1.Send(that.self(), req);
                                             that.tell('remote', msg);
                                         });
                                     }
@@ -10722,14 +11450,14 @@ describe('observable', function () {
                                 s.spawn({
                                     id: 'remote',
                                     create: function (s) {
-                                        return new observable_1.ObservableRemote(agent, observer, s);
+                                        return new observer_1.RemoteObserver(agent, observer, s);
                                     }
                                 });
                                 s.spawn({
                                     id: 'client',
                                     create: function (s) {
                                         return new actor_1.GenericImmutable(s, [], function (that) {
-                                            var msg = new observable_1.Send(that.self(), req);
+                                            var msg = new observer_1.Send(that.self(), req);
                                             that.tell('remote', msg);
                                         });
                                     }
@@ -10752,10 +11480,11 @@ describe('observable', function () {
     });
 });
 
-},{"../../../../lib/app/remote/observable":8,"../../app/fixtures/actor":93,"../../app/fixtures/app":94,"@quenk/jhr/lib/agent/mock":9,"@quenk/jhr/lib/request":10,"@quenk/jhr/lib/response":12,"@quenk/noni/lib/control/monad/future":17,"@quenk/potoo/lib/actor/resident/case":32,"@quenk/test/lib/assert":65,"@quenk/test/lib/mock":66}],98:[function(require,module,exports){
-require("./app/remote/observable_test.js");
+},{"../../../../lib/app/remote/observer":10,"../../app/fixtures/actor":95,"../../app/fixtures/app":96,"@quenk/jhr/lib/agent/mock":11,"@quenk/jhr/lib/request":12,"@quenk/jhr/lib/response":14,"@quenk/noni/lib/control/monad/future":19,"@quenk/potoo/lib/actor/resident/case":34,"@quenk/test/lib/assert":67,"@quenk/test/lib/mock":68}],101:[function(require,module,exports){
 require("./app/remote/index_test.js");
+require("./app/remote/model_test.js");
+require("./app/remote/observer_test.js");
 require("./app/form/active_test.js");
 require("./app/director_test.js");
 
-},{"./app/director_test.js":92,"./app/form/active_test.js":95,"./app/remote/index_test.js":96,"./app/remote/observable_test.js":97}]},{},[98]);
+},{"./app/director_test.js":94,"./app/form/active_test.js":97,"./app/remote/index_test.js":98,"./app/remote/model_test.js":99,"./app/remote/observer_test.js":100}]},{},[101]);

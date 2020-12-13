@@ -311,7 +311,11 @@ export class RemoteModel<T extends Object> implements Model<T> {
                 new NotFoundHandler(
                     this.handler,
                     cb,
-                    () => { cb(null, nothing()); },
+                    () => {
+
+                        cb(null, nothing());
+
+                    },
                     r => {
 
                         cb(null, fromNullable((<GetResult<T>>r.body).data));

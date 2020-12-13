@@ -1,11 +1,22 @@
+/**
+ * This module provides actors for sending requests to a [[Remote]] and
+ * executing some action depending on the result. Callbacks should be spawned
+ * each time a parent actor wants to make a request, once a response is
+ * received, they exit. The response from the request can be handled
+ * by specifying a handler object to the callback's constructor.
+ */
+
+/** imports */
 import { Any } from '@quenk/noni/lib/data/type';
+
 import { Request } from '@quenk/jhr/lib/request';
 import { Response } from '@quenk/jhr/lib/response';
-import { Case } from '@quenk/potoo/lib/actor/resident/case';
-import { Address } from '@quenk/potoo/lib/actor/address';
 
-import { Immutable } from '../../actor';
-import { JApp } from '../';
+import { Case } from '@quenk/potoo/lib/actor/resident/case';
+import { Temp } from '@quenk/potoo/lib/actor/resident';
+import { Address } from '@quenk/potoo/lib/actor/address';
+import {System} from '@quenk/potoo/lib/actor/system';
+
 import {
     Send,
     ParSend,
@@ -47,7 +58,9 @@ export interface ErrorBody {
 }
 
 /**
- * FailHandler provides callbacks for failed network requests.
+ * FailHandler is a handler that deals with the failure of requests.
+ *
+ * The other handler interfaces inherit from this.
  */
 export interface FailHandler {
 
@@ -71,34 +84,32 @@ export interface FailHandler {
 }
 
 /**
- * CompleteHandler adds the onComplete callback for handling successful 
- * requests.
+ * CompleteHandler provides a method for handling successful non-batch requests.
  */
 export interface CompleteHandler<B> extends FailHandler {
 
     /**
-     * onComplete is invoked on the successful completion of a request.
+     * onComplete handler.
      */
     onComplete(r: Response<B>): void
 
 }
 
 /**
- * BatchComplete handler adds the onBatchComplete callback for successful 
- * batch requests.
+ * BatchComplete provides a method for handling successful batch request.
  */
 export interface BatchCompleteHandler<B> extends FailHandler {
 
     /**
-     * onBatchComplete is invoked on the successful completion of a batch request.
+     * onBatchComplete handler.
      */
     onBatchComplete(r: BatchResponse<B>): void
 
 }
 
 /**
- * AbstractCompleteHandler can be extended to partially implement the
- * CompleteHandler API.
+ * AbstractCompleteHandler can be extended to partially implement a
+ * [[CompleteHandler]].
  */
 export class AbstractCompleteHandler<B>
     implements
@@ -115,8 +126,8 @@ export class AbstractCompleteHandler<B>
 }
 
 /**
- * AbstractBatchCompleteHandler can be extended to partially implement the 
- * BatchCompleteHandler API.
+ * AbstractBatchCompleteHandler can be extended to partially implement a
+ * [[BatchCompleteHandler]].
  */
 export class AbstractBatchCompleteHandler<B>
     extends AbstractCompleteHandler<B>
@@ -127,7 +138,8 @@ export class AbstractBatchCompleteHandler<B>
 }
 
 /**
- * CompositeCompleteHandler allows multiple CompleteHandlers to be used as one.
+ * CompositeCompleteHandler allows multiple [[CompleteHandler]]s to be used as
+ * one.
  */
 export class CompositeCompleteHandler<B>
     implements
@@ -162,7 +174,7 @@ export class CompositeCompleteHandler<B>
 }
 
 /**
- * CompositeBatchCompleteHandler allows multiple BatchCompleteHandlers to 
+ * CompositeBatchCompleteHandler allows multiple [[BatchCompleteHandler]]s to
  * be used as one.
  */
 export class CompositeBatchCompleteHandler<B>
@@ -203,10 +215,10 @@ export class CompositeBatchCompleteHandler<B>
  */
 export class SendCallback<Req, Res>
     extends
-    Immutable<SendCallbackMessage<Res>> {
+    Temp<SendCallbackMessage<Res>> {
 
     constructor(
-        public system: JApp,
+        public system: System,
         public remote: Address,
         public request: Request<Req>,
         public handler: CompleteHandler<Res>) { super(system); }
@@ -216,7 +228,6 @@ export class SendCallback<Req, Res>
         new Case(TransportErr, (e: TransportErr) => {
 
             this.handler.onError(e);
-            this.exit();
 
         }),
 
@@ -236,8 +247,6 @@ export class SendCallback<Req, Res>
 
             }
 
-            this.exit();
-
         })
 
     ]
@@ -256,10 +265,10 @@ export class SendCallback<Req, Res>
  */
 export class ParSendCallback<Req, Res>
     extends
-    Immutable<BatchCallbackMessage<Res>> {
+    Temp<BatchCallbackMessage<Res>> {
 
     constructor(
-        public system: JApp,
+        public system: System,
         public remote: Address,
         public requests: Request<Req>[],
         public handler: BatchCompleteHandler<Res>) { super(system); }
@@ -269,7 +278,6 @@ export class ParSendCallback<Req, Res>
         new Case(TransportErr, (e: TransportErr) => {
 
             this.handler.onError(e);
-            this.exit();
 
         }),
 
@@ -296,8 +304,6 @@ export class ParSendCallback<Req, Res>
                 this.handler.onBatchComplete(r);
 
             }
-
-            this.exit();
 
         })
 

@@ -1,17 +1,22 @@
+/**
+ * Provides a base data model implementation based on the remote and callback
+ * apis. NOTE: Responses received by this API are expected to be in the result
+ * format specified.
+ */
+/** imports */
 import { Future } from '@quenk/noni/lib/control/monad/future';
 import { Maybe } from '@quenk/noni/lib/data/maybe';
 import { Object } from '@quenk/noni/lib/data/jsonx';
 import { Address } from '@quenk/potoo/lib/actor/address';
-import { Instance } from '@quenk/potoo/lib/actor';
+import { Spawnable } from '@quenk/potoo/lib/actor/template';
 import { Response } from '@quenk/jhr/lib/response';
 import { Id, Model } from '../model';
-import { CompleteHandler, ErrorBody } from './callback';
-import { JApp } from '../';
-import { TransportErr } from '.';
+import { ErrorBody, CompleteHandler } from './callback';
+import { TransportErr } from './';
 /**
  * SpawnFunc used by RemoteModels to spawn remote callbacks.
  */
-export declare type SpawnFunc = (f: (s: JApp) => Instance) => Address;
+export declare type SpawnFunc = (tmpl: Spawnable) => Address;
 /**
  * Result is the structure of the response body expected after a succesful
  * CSUGR operation.
@@ -73,10 +78,11 @@ export interface GetResult<T extends Object> {
     data: T;
 }
 /**
- * FutureHandler is used to proxy the events of a request's response to a
- * Future.
+ * FutureHandler is used to proxy the events of a request's lifecycle to a noni
+ * [[Future]].
  *
- * The handler provided also receives the events as they happen.
+ * The [[CompleteHandler]] provided also receives the events as they happen
+ * however work is assumed to be handled in the Future.
  */
 export declare class FutureHandler<T extends Object> implements CompleteHandler<Result<T>> {
     handler: CompleteHandler<Result<T>>;
@@ -89,18 +95,31 @@ export declare class FutureHandler<T extends Object> implements CompleteHandler<
     onComplete(r: Response<Result<T>>): void;
 }
 /**
- * RemoteModel provides a Model implementation that relies on Remote actors
- * underneath.
+ * NotFoundHandler does not treat a 404 as an error.
+ *
+ * The onNotFound handler is used instead.
+ */
+export declare class NotFoundHandler<T extends Object> extends FutureHandler<T> {
+    handler: CompleteHandler<Result<T>>;
+    onFailure: (err?: Error) => void;
+    onNotFound: () => void;
+    onSuccess: (r: Response<Result<T>>) => void;
+    constructor(handler: CompleteHandler<Result<T>>, onFailure: (err?: Error) => void, onNotFound: () => void, onSuccess: (r: Response<Result<T>>) => void);
+    onClientError(r: Response<ErrorBody>): void;
+}
+/**
+ * RemoteModel provides a Model implementation that relies on the [[Remote]]
+ * actor.
  *
  * A handler can be provided to observe the result of requests if more data
  * is needed than the Model api provides.
  */
 export declare class RemoteModel<T extends Object> implements Model<T> {
-    remote: Address;
     path: string;
+    remote: Address;
     spawn: SpawnFunc;
     handler: CompleteHandler<Result<T>>;
-    constructor(remote: Address, path: string, spawn: SpawnFunc, handler: CompleteHandler<Result<T>>);
+    constructor(path: string, remote: Address, spawn: SpawnFunc, handler?: CompleteHandler<Result<T>>);
     /**
      * create a new entry for the data type.
      */

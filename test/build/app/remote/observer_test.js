@@ -34,7 +34,7 @@ var case_1 = require("@quenk/potoo/lib/actor/resident/case");
 var mock_2 = require("@quenk/jhr/lib/agent/mock");
 var request_1 = require("@quenk/jhr/lib/request");
 var response_1 = require("@quenk/jhr/lib/response");
-var observable_1 = require("../../../../lib/app/remote/observable");
+var observer_1 = require("../../../../lib/app/remote/observer");
 var actor_1 = require("../../app/fixtures/actor");
 var app_1 = require("../../app/fixtures/app");
 var MockRemoteObserver = /** @class */ (function () {
@@ -62,7 +62,7 @@ var MockRemoteObserver = /** @class */ (function () {
     return MockRemoteObserver;
 }());
 describe('observable', function () {
-    describe('ObservableRemote', function () {
+    describe('RemoteObserver', function () {
         describe('api', function () {
             it('should handle Send', function () { return future_1.toPromise(future_1.doFuture(function () {
                 var s, agent, observer, res, success, cases;
@@ -83,14 +83,14 @@ describe('observable', function () {
                             s.spawn({
                                 id: 'remote',
                                 create: function (s) {
-                                    return new observable_1.ObservableRemote(agent, observer, s);
+                                    return new observer_1.RemoteObserver(agent, observer, s);
                                 }
                             });
                             s.spawn({
                                 id: 'client',
                                 create: function (s) {
                                     return new actor_1.GenericImmutable(s, cases, function (that) {
-                                        var msg = new observable_1.Send(that.self(), new request_1.Get('', {}));
+                                        var msg = new observer_1.Send(that.self(), new request_1.Get('', {}));
                                         that.tell('remote', msg);
                                     });
                                 }
@@ -122,21 +122,21 @@ describe('observable', function () {
                                 success = false;
                                 agent.__MOCK__.setReturnValue('send', future_1.pure(res));
                                 cases = [
-                                    new case_1.Case(observable_1.BatchResponse, function (r) {
+                                    new case_1.Case(observer_1.BatchResponse, function (r) {
                                         success = r.value.every(function (r) { return r === res; });
                                     })
                                 ];
                                 s.spawn({
                                     id: 'remote',
                                     create: function (s) {
-                                        return new observable_1.ObservableRemote(agent, observer, s);
+                                        return new observer_1.RemoteObserver(agent, observer, s);
                                     }
                                 });
                                 s.spawn({
                                     id: 'client',
                                     create: function (s) {
                                         return new actor_1.GenericImmutable(s, cases, function (that) {
-                                            var msg = new observable_1.ParSend(that.self(), [
+                                            var msg = new observer_1.ParSend(that.self(), [
                                                 new request_1.Get('', {}),
                                                 new request_1.Get('', {}),
                                                 new request_1.Get('', {})
@@ -173,21 +173,21 @@ describe('observable', function () {
                                 success = false;
                                 agent.__MOCK__.setReturnValue('send', future_1.pure(res));
                                 cases = [
-                                    new case_1.Case(observable_1.BatchResponse, function (r) {
+                                    new case_1.Case(observer_1.BatchResponse, function (r) {
                                         success = r.value.every(function (r) { return r === res; });
                                     })
                                 ];
                                 s.spawn({
                                     id: 'remote',
                                     create: function (s) {
-                                        return new observable_1.ObservableRemote(agent, observer, s);
+                                        return new observer_1.RemoteObserver(agent, observer, s);
                                     }
                                 });
                                 s.spawn({
                                     id: 'client',
                                     create: function (s) {
                                         return new actor_1.GenericImmutable(s, cases, function (that) {
-                                            var msg = new observable_1.SeqSend(that.self(), [
+                                            var msg = new observer_1.SeqSend(that.self(), [
                                                 new request_1.Get('', {}),
                                                 new request_1.Get('', {}),
                                                 new request_1.Get('', {})
@@ -222,21 +222,21 @@ describe('observable', function () {
                                 observer = new MockRemoteObserver();
                                 req = new request_1.Get('', {});
                                 failed = false;
-                                agent.__MOCK__.setReturnValue('send', future_1.raise(new observable_1.TransportErr('client', new Error('err'))));
+                                agent.__MOCK__.setReturnValue('send', future_1.raise(new observer_1.TransportErr('client', new Error('err'))));
                                 cases = [
-                                    new case_1.Case(observable_1.TransportErr, function (_) { failed = true; })
+                                    new case_1.Case(observer_1.TransportErr, function (_) { failed = true; })
                                 ];
                                 s.spawn({
                                     id: 'remote',
                                     create: function (s) {
-                                        return new observable_1.ObservableRemote(agent, observer, s);
+                                        return new observer_1.RemoteObserver(agent, observer, s);
                                     }
                                 });
                                 s.spawn({
                                     id: 'client',
                                     create: function (s) {
                                         return new actor_1.GenericImmutable(s, cases, function (that) {
-                                            var msg = new observable_1.Send(that.self(), req);
+                                            var msg = new observer_1.Send(that.self(), req);
                                             that.tell('remote', msg);
                                         });
                                     }
@@ -270,14 +270,14 @@ describe('observable', function () {
                                 s.spawn({
                                     id: 'remote',
                                     create: function (s) {
-                                        return new observable_1.ObservableRemote(agent, observer, s);
+                                        return new observer_1.RemoteObserver(agent, observer, s);
                                     }
                                 });
                                 s.spawn({
                                     id: 'client',
                                     create: function (s) {
                                         return new actor_1.GenericImmutable(s, [], function (that) {
-                                            var msg = new observable_1.Send(that.self(), req);
+                                            var msg = new observer_1.Send(that.self(), req);
                                             that.tell('remote', msg);
                                         });
                                     }
@@ -310,14 +310,14 @@ describe('observable', function () {
                                 s.spawn({
                                     id: 'remote',
                                     create: function (s) {
-                                        return new observable_1.ObservableRemote(agent, observer, s);
+                                        return new observer_1.RemoteObserver(agent, observer, s);
                                     }
                                 });
                                 s.spawn({
                                     id: 'client',
                                     create: function (s) {
                                         return new actor_1.GenericImmutable(s, [], function (that) {
-                                            var msg = new observable_1.Send(that.self(), req);
+                                            var msg = new observer_1.Send(that.self(), req);
                                             that.tell('remote', msg);
                                         });
                                     }
@@ -339,4 +339,4 @@ describe('observable', function () {
         });
     });
 });
-//# sourceMappingURL=observable_test.js.map
+//# sourceMappingURL=observer_test.js.map

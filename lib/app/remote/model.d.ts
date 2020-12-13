@@ -115,11 +115,11 @@ export declare class NotFoundHandler<T extends Object> extends FutureHandler<T> 
  * is needed than the Model api provides.
  */
 export declare class RemoteModel<T extends Object> implements Model<T> {
-    path: string;
     remote: Address;
+    path: string;
     spawn: SpawnFunc;
     handler: CompleteHandler<Result<T>>;
-    constructor(path: string, remote: Address, spawn: SpawnFunc, handler?: CompleteHandler<Result<T>>);
+    constructor(remote: Address, path: string, spawn: SpawnFunc, handler?: CompleteHandler<Result<T>>);
     /**
      * create a new entry for the data type.
      */

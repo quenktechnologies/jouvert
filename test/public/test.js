@@ -1177,10 +1177,10 @@ exports.NotFoundHandler = NotFoundHandler;
  * is needed than the Model api provides.
  */
 var RemoteModel = /** @class */ (function () {
-    function RemoteModel(path, remote, spawn, handler) {
+    function RemoteModel(remote, path, spawn, handler) {
         if (handler === void 0) { handler = new DefaultCompleteHandler(); }
-        this.path = path;
         this.remote = remote;
+        this.path = path;
         this.spawn = spawn;
         this.handler = handler;
     }
@@ -10858,7 +10858,7 @@ describe('model', function () {
                             case 0:
                                 app = new app_1.TestApp();
                                 handler = new MockHandler();
-                                model = new model_1.RemoteModel('/', 'remote', function (create) {
+                                model = new model_1.RemoteModel('remote', '/', function (create) {
                                     var id = 'callback';
                                     app.spawn({ id: id, create: create });
                                     return id;
@@ -10896,7 +10896,7 @@ describe('model', function () {
                             case 0:
                                 app = new app_1.TestApp();
                                 handler = new MockHandler();
-                                model = new model_1.RemoteModel('/', 'remote', function (create) {
+                                model = new model_1.RemoteModel('remote', '/', function (create) {
                                     var id = 'callback';
                                     app.spawn({ id: id, create: create });
                                     return id;
@@ -10941,7 +10941,7 @@ describe('model', function () {
                             case 0:
                                 app = new app_1.TestApp();
                                 handler = new MockHandler();
-                                model = new model_1.RemoteModel('/{id}', 'remote', function (create) {
+                                model = new model_1.RemoteModel('remote', '/{id}', function (create) {
                                     var id = 'callback';
                                     app.spawn({ id: id, create: create });
                                     return id;
@@ -10980,7 +10980,7 @@ describe('model', function () {
                             case 0:
                                 app = new app_1.TestApp();
                                 handler = new MockHandler();
-                                model = new model_1.RemoteModel('/{id}', 'remote', function (create) {
+                                model = new model_1.RemoteModel('remote', '/{id}', function (create) {
                                     var id = 'callback';
                                     app.spawn({ id: id, create: create });
                                     return id;
@@ -11016,7 +11016,7 @@ describe('model', function () {
                             case 0:
                                 app = new app_1.TestApp();
                                 handler = new MockHandler();
-                                model = new model_1.RemoteModel('/{id}', 'remote', function (create) {
+                                model = new model_1.RemoteModel('remote', '/{id}', function (create) {
                                     var id = 'callback';
                                     app.spawn({ id: id, create: create });
                                     return id;
@@ -11050,7 +11050,7 @@ describe('model', function () {
                             case 0:
                                 app = new app_1.TestApp();
                                 handler = new MockHandler();
-                                model = new model_1.RemoteModel('/{id}', 'remote', function (create) {
+                                model = new model_1.RemoteModel('remote', '/{id}', function (create) {
                                     var id = 'callback';
                                     app.spawn({ id: id, create: create });
                                     return id;
@@ -11103,7 +11103,7 @@ describe('model', function () {
                                 case 0:
                                     app = new app_1.TestApp();
                                     handler = new MockHandler();
-                                    model = new model_1.RemoteModel('/', 'remote', function (create) {
+                                    model = new model_1.RemoteModel('remote', '/', function (create) {
                                         var id = 'callback';
                                         app.spawn({ id: id, create: create });
                                         return id;

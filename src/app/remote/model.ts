@@ -224,8 +224,8 @@ export class NotFoundHandler<T extends Object> extends FutureHandler<T>{
 export class RemoteModel<T extends Object> implements Model<T> {
 
     constructor(
-        public path: string,
         public remote: Address,
+        public path: string,
         public spawn: SpawnFunc,
         public handler: CompleteHandler<Result<T>> = new DefaultCompleteHandler()
     ) { }

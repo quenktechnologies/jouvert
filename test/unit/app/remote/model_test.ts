@@ -93,8 +93,8 @@ describe('model', () => {
                     let handler = new MockHandler();
 
                     let model = new RemoteModel(
-                        '/',
                         'remote',
+                        '/',
                         (create: Type) => {
 
                             let id = 'callback';
@@ -154,8 +154,8 @@ describe('model', () => {
                     let handler = new MockHandler();
 
                     let model = new RemoteModel(
-                        '/',
                         'remote',
+                        '/',
                         (create: Type) => {
 
                             let id = 'callback';
@@ -224,8 +224,8 @@ describe('model', () => {
                     let handler = new MockHandler();
 
                     let model = new RemoteModel(
-                        '/{id}',
                         'remote',
+                        '/{id}',
                         (create: Type) => {
 
                             let id = 'callback';
@@ -288,8 +288,8 @@ describe('model', () => {
                     let handler = new MockHandler();
 
                     let model = new RemoteModel(
-                        '/{id}',
                         'remote',
+                        '/{id}',
                         (create: Type) => {
 
                             let id = 'callback';
@@ -347,8 +347,8 @@ describe('model', () => {
                     let handler = new MockHandler();
 
                     let model = new RemoteModel(
-                        '/{id}',
                         'remote',
+                        '/{id}',
                         (create: Type) => {
 
                             let id = 'callback';
@@ -397,8 +397,8 @@ describe('model', () => {
                     let handler = new MockHandler();
 
                     let model = new RemoteModel(
-                        '/{id}',
                         'remote',
+                        '/{id}',
                         (create: Type) => {
 
                             let id = 'callback';
@@ -478,8 +478,8 @@ describe('model', () => {
                         let handler = new MockHandler();
 
                         let model = new RemoteModel(
-                            '/',
                             'remote',
+                            '/',
                             (create: Type) => {
 
                                 let id = 'callback';

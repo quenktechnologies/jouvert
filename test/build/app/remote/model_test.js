@@ -91,7 +91,7 @@ describe('model', function () {
                             case 0:
                                 app = new app_1.TestApp();
                                 handler = new MockHandler();
-                                model = new model_1.RemoteModel('/', 'remote', function (create) {
+                                model = new model_1.RemoteModel('remote', '/', function (create) {
                                     var id = 'callback';
                                     app.spawn({ id: id, create: create });
                                     return id;
@@ -129,7 +129,7 @@ describe('model', function () {
                             case 0:
                                 app = new app_1.TestApp();
                                 handler = new MockHandler();
-                                model = new model_1.RemoteModel('/', 'remote', function (create) {
+                                model = new model_1.RemoteModel('remote', '/', function (create) {
                                     var id = 'callback';
                                     app.spawn({ id: id, create: create });
                                     return id;
@@ -174,7 +174,7 @@ describe('model', function () {
                             case 0:
                                 app = new app_1.TestApp();
                                 handler = new MockHandler();
-                                model = new model_1.RemoteModel('/{id}', 'remote', function (create) {
+                                model = new model_1.RemoteModel('remote', '/{id}', function (create) {
                                     var id = 'callback';
                                     app.spawn({ id: id, create: create });
                                     return id;
@@ -213,7 +213,7 @@ describe('model', function () {
                             case 0:
                                 app = new app_1.TestApp();
                                 handler = new MockHandler();
-                                model = new model_1.RemoteModel('/{id}', 'remote', function (create) {
+                                model = new model_1.RemoteModel('remote', '/{id}', function (create) {
                                     var id = 'callback';
                                     app.spawn({ id: id, create: create });
                                     return id;
@@ -249,7 +249,7 @@ describe('model', function () {
                             case 0:
                                 app = new app_1.TestApp();
                                 handler = new MockHandler();
-                                model = new model_1.RemoteModel('/{id}', 'remote', function (create) {
+                                model = new model_1.RemoteModel('remote', '/{id}', function (create) {
                                     var id = 'callback';
                                     app.spawn({ id: id, create: create });
                                     return id;
@@ -283,7 +283,7 @@ describe('model', function () {
                             case 0:
                                 app = new app_1.TestApp();
                                 handler = new MockHandler();
-                                model = new model_1.RemoteModel('/{id}', 'remote', function (create) {
+                                model = new model_1.RemoteModel('remote', '/{id}', function (create) {
                                     var id = 'callback';
                                     app.spawn({ id: id, create: create });
                                     return id;
@@ -336,7 +336,7 @@ describe('model', function () {
                                 case 0:
                                     app = new app_1.TestApp();
                                     handler = new MockHandler();
-                                    model = new model_1.RemoteModel('/', 'remote', function (create) {
+                                    model = new model_1.RemoteModel('remote', '/', function (create) {
                                         var id = 'callback';
                                         app.spawn({ id: id, create: create });
                                         return id;

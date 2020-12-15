@@ -147,7 +147,7 @@ export declare abstract class AbstractActiveForm<T extends Object, M> extends Im
      *
      * This should not be edited directly, instead use [[set()]].
      */
-    values: Partial<T>;
+    value: Partial<T>;
     /**
      * fieldsModified tracks the names of those fields whose values have been
      * modified via this class's APIs.

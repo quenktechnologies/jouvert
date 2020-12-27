@@ -35,7 +35,7 @@ export type Request<B>
 
 /**
  * Response the Remote received from the remote server.
- * 
+ *
  * This is either a single HTTPResponse or a wrapper for batch results.
  */
 export type Response<T> = GenericResponse<T> | BatchResponse<T>;
@@ -102,7 +102,7 @@ export class BatchResponse<B> {
  * Remote represents an HTTP server the app has access to.
  *
  * This actor is an abstraction over the `@quenk/jhr` so that requests
- * can be sent via message passing. However, this abstraction is more 
+ * can be sent via message passing. However, this abstraction is more
  * concerned with application level logic than the details of the HTTP
  * protocols.
  */
@@ -166,7 +166,6 @@ export class Remote<Req, Res> extends Immutable<Request<Req>> {
         new Case(ParSend, this.onParallel),
 
         new Case(SeqSend, this.onSequential)
-
 
     ];
 

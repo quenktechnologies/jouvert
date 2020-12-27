@@ -1,21 +1,36 @@
+/**
+ * Provides a base data model implementation based on the remote and callback
+ * apis. NOTE: Responses received by this API are expected to be in the result
+ * format specified.
+ */
+
+/** imports */
 import { Future, fromCallback } from '@quenk/noni/lib/control/monad/future';
-import { Maybe, fromNullable } from '@quenk/noni/lib/data/maybe';
+import { Maybe, fromNullable, nothing } from '@quenk/noni/lib/data/maybe';
 import { Object } from '@quenk/noni/lib/data/jsonx';
 import { interpolate } from '@quenk/noni/lib/data/string';
+
 import { Address } from '@quenk/potoo/lib/actor/address';
-import { Instance } from '@quenk/potoo/lib/actor';
+import { Spawnable } from '@quenk/potoo/lib/actor/template';
+import { System } from '@quenk/potoo/lib/actor/system';
+
 import { Response } from '@quenk/jhr/lib/response';
 import { Post, Get, Patch, Delete } from '@quenk/jhr/lib/request';
 
 import { Id, Model } from '../model';
-import { SendCallback, CompleteHandler, ErrorBody } from './callback';
-import { JApp } from '../';
-import { TransportErr } from '.';
+
+import {
+    ErrorBody,
+    SendCallback,
+    CompleteHandler,
+    AbstractCompleteHandler
+} from './callback';
+import { TransportErr } from './';
 
 /**
  * SpawnFunc used by RemoteModels to spawn remote callbacks.
  */
-export type SpawnFunc = (f: (s: JApp) => Instance) => Address;
+export type SpawnFunc = (tmpl: Spawnable) => Address;
 
 /**
  * Result is the structure of the response body expected after a succesful
@@ -108,11 +123,16 @@ export interface GetResult<T extends Object> {
 
 }
 
+class DefaultCompleteHandler<T extends Object>
+    extends
+    AbstractCompleteHandler<Result<T>> { }
+
 /**
- * FutureHandler is used to proxy the events of a request's response to a 
- * Future.
+ * FutureHandler is used to proxy the events of a request's lifecycle to a noni
+ * [[Future]].
  *
- * The handler provided also receives the events as they happen.
+ * The [[CompleteHandler]] provided also receives the events as they happen
+ * however work is assumed to be handled in the Future.
  */
 export class FutureHandler<T extends Object>
     implements
@@ -136,14 +156,24 @@ export class FutureHandler<T extends Object>
     onClientError(r: Response<ErrorBody>) {
 
         this.handler.onClientError(r);
-        this.onFailure(new Error(`ClientError: ${r.code}`));
+
+        let e = new Error('ClientError');
+
+        (<{ code: number }><object>e).code = r.code;
+
+        this.onFailure(e);
 
     }
 
     onServerError(r: Response<ErrorBody>) {
 
         this.handler.onServerError(r);
-        this.onFailure(new Error(`ServerError: ${r.code}`));
+
+        let e = new Error('ServerError');
+
+        (<{ code: number }><object>e).code = r.code;
+
+        this.onFailure(e);
 
     }
 
@@ -157,8 +187,36 @@ export class FutureHandler<T extends Object>
 }
 
 /**
- * RemoteModel provides a Model implementation that relies on Remote actors
- * underneath.
+ * NotFoundHandler does not treat a 404 as an error.
+ *
+ * The onNotFound handler is used instead.
+ */
+export class NotFoundHandler<T extends Object> extends FutureHandler<T>{
+
+    constructor(
+        public handler: CompleteHandler<Result<T>>,
+        public onFailure: (err?: Error) => void,
+        public onNotFound: () => void,
+        public onSuccess: (r: Response<Result<T>>) => void) {
+
+        super(handler, onFailure, onSuccess);
+
+    }
+
+    onClientError(r: Response<ErrorBody>) {
+
+        if (r.code === 404)
+            this.onNotFound();
+        else
+            super.onClientError(r);
+
+    }
+
+}
+
+/**
+ * RemoteModel provides a Model implementation that relies on the [[Remote]]
+ * actor.
  *
  * A handler can be provided to observe the result of requests if more data
  * is needed than the Model api provides.
@@ -169,7 +227,8 @@ export class RemoteModel<T extends Object> implements Model<T> {
         public remote: Address,
         public path: string,
         public spawn: SpawnFunc,
-        public handler: CompleteHandler<Result<T>>) { }
+        public handler: CompleteHandler<Result<T>> = new DefaultCompleteHandler()
+    ) { }
 
     /**
      * create a new entry for the data type.
@@ -178,7 +237,7 @@ export class RemoteModel<T extends Object> implements Model<T> {
 
         return fromCallback(cb => {
 
-            this.spawn(s => new SendCallback(
+            this.spawn((s: System) => new SendCallback(
                 s,
                 this.remote,
                 new Post(this.path, data),
@@ -199,7 +258,7 @@ export class RemoteModel<T extends Object> implements Model<T> {
 
         return fromCallback(cb => {
 
-            this.spawn(s => new SendCallback(
+            this.spawn((s: System) => new SendCallback(
                 s,
                 this.remote,
                 new Get(this.path, qry),
@@ -221,36 +280,47 @@ export class RemoteModel<T extends Object> implements Model<T> {
 
         return fromCallback(cb => {
 
-            this.spawn(s => new SendCallback(
+            this.spawn((s: System) => new SendCallback(
                 s,
                 this.remote,
                 new Patch(interpolate(this.path, { id }), changes),
-                new FutureHandler(this.handler, cb, r => {
+                new FutureHandler(
+                    this.handler,
+                    cb,
+                    r => {
 
-                    cb(null, (r.code === 200) ? true : false);
+                        cb(null, (r.code === 200) ? true : false);
 
-                })));
+                    })));
 
         });
 
     }
 
-    /** 
+    /**
      * get a single entry by its id.
      */
     get(id: Id): Future<Maybe<T>> {
 
         return fromCallback(cb => {
 
-            this.spawn(s => new SendCallback(
+            this.spawn((s: System) => new SendCallback(
                 s,
                 this.remote,
                 new Get(interpolate(this.path, { id }), {}),
-                new FutureHandler(this.handler, cb, r => {
+                new NotFoundHandler(
+                    this.handler,
+                    cb,
+                    () => {
 
-                    cb(null, fromNullable((<GetResult<T>>r.body).data));
+                        cb(null, nothing());
 
-                })));
+                    },
+                    r => {
+
+                        cb(null, fromNullable((<GetResult<T>>r.body).data));
+
+                    })));
 
         });
 
@@ -263,7 +333,7 @@ export class RemoteModel<T extends Object> implements Model<T> {
 
         return fromCallback(cb => {
 
-            this.spawn(s => new SendCallback(
+            this.spawn((s: System) => new SendCallback(
                 s,
                 this.remote,
                 new Delete(interpolate(this.path, { id }), {}),

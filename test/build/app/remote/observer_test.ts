@@ -1,5 +1,6 @@
 import { assert } from '@quenk/test/lib/assert';
 import { Mock } from '@quenk/test/lib/mock';
+
 import { Type } from '@quenk/noni/lib/data/type';
 import {
     doFuture,
@@ -9,7 +10,9 @@ import {
     raise,
     delay
 } from '@quenk/noni/lib/control/monad/future';
+
 import { Case } from '@quenk/potoo/lib/actor/resident/case';
+
 import { MockAgent } from '@quenk/jhr/lib/agent/mock';
 import { Get } from '@quenk/jhr/lib/request';
 import { Ok, BadRequest, InternalServerError } from '@quenk/jhr/lib/response';
@@ -18,12 +21,12 @@ import {
     Request,
     Response,
     Send,
-    ObservableRemote,
+    RemoteObserver,
     BatchResponse,
     ParSend,
     SeqSend,
     TransportErr,
-} from '../../../../lib/app/remote/observable';
+} from '../../../../lib/app/remote/observer';
 import { GenericImmutable } from '../../app/fixtures/actor';
 import { TestApp } from '../../app/fixtures/app';
 
@@ -71,7 +74,7 @@ class MockRemoteObserver<Req, Res> {
 
 describe('observable', () => {
 
-    describe('ObservableRemote', () => {
+    describe('RemoteObserver', () => {
 
         describe('api', () => {
 
@@ -100,7 +103,7 @@ describe('observable', () => {
                     id: 'remote',
 
                     create: s =>
-                        new ObservableRemote(agent, observer, <TestApp>s)
+                        new RemoteObserver(agent, observer, <TestApp>s)
 
                 });
 
@@ -159,7 +162,7 @@ describe('observable', () => {
                         id: 'remote',
 
                         create: s =>
-                            new ObservableRemote(agent, observer, <TestApp>s)
+                            new RemoteObserver(agent, observer, <TestApp>s)
 
                     });
 
@@ -223,7 +226,7 @@ describe('observable', () => {
                         id: 'remote',
 
                         create: s =>
-                            new ObservableRemote(agent, observer, <TestApp>s)
+                            new RemoteObserver(agent, observer, <TestApp>s)
 
                     });
 
@@ -288,7 +291,7 @@ describe('observable', () => {
                         id: 'remote',
 
                         create: s =>
-                            new ObservableRemote(agent, observer, <TestApp>s)
+                            new RemoteObserver(agent, observer, <TestApp>s)
 
                     });
 
@@ -337,7 +340,7 @@ describe('observable', () => {
                         id: 'remote',
 
                         create: s =>
-                            new ObservableRemote(agent, observer, <TestApp>s)
+                            new RemoteObserver(agent, observer, <TestApp>s)
 
                     });
 
@@ -385,7 +388,7 @@ describe('observable', () => {
                         id: 'remote',
 
                         create: s =>
-                            new ObservableRemote(agent, observer, <TestApp>s)
+                            new RemoteObserver(agent, observer, <TestApp>s)
 
                     });
 

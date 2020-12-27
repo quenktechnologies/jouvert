@@ -51,7 +51,7 @@ export type ActiveFormMessage<M>
  * for one or more.
  *
  * The interface is named ActiveForm because it's designed around the concept of
- * the controller actively monitoring input and optionally giving the user 
+ * the controller actively monitoring input and optionally giving the user
  * feedback (if desired) on the validity of the fields.
  *
  * The details of such is left up to implementors of the interface.
@@ -68,14 +68,14 @@ export interface ActiveForm<T extends Object> extends Api {
     /**
      * validateStraregy for the ActiveForm.
      *
-     * This determines how data is validated and what callbacks will be 
+     * This determines how data is validated and what callbacks will be
      * applied.
      */
     validateStrategy: ValidateStrategy;
 
     /**
      * set changes the stored value of a field captured by the ActiveForm.
-     * 
+     *
      * The field's name will be included in the list of modified fields.
      */
     set(name: FieldName, value: FieldValue): ActiveForm<T>
@@ -218,8 +218,8 @@ export class SaveOkCase<T extends Object> extends Case<SaveOk> {
 /**
  * AbstractActiveForm implements the FormFeedback interface.
  *
- * Child classes provide a ValidateStrategy and a save() implementation to 
- * provide the logic of saving data. This actor listens for ActiveFormMessage 
+ * Child classes provide a ValidateStrategy and a save() implementation to
+ * provide the logic of saving data. This actor listens for ActiveFormMessage
  * messages including anything that looks like a FieldInputEvent.
  *
  * These messages can be used to update the values captured or the [[set]]
@@ -242,10 +242,10 @@ export abstract class AbstractActiveForm<T extends Object, M>
      *
      * This should not be edited directly, instead use [[set()]].
      */
-    values: Partial<T> = {};
+    value: Partial<T> = {};
 
     /**
-     * fieldsModified tracks the names of those fields whose values have been 
+     * fieldsModified tracks the names of those fields whose values have been
      * modified via this class's APIs.
      */
     fieldsModifed: string[] = [];
@@ -271,7 +271,7 @@ export abstract class AbstractActiveForm<T extends Object, M>
         if (!contains(this.fieldsModifed, name))
             this.fieldsModifed.push(name);
 
-        (<Object>this.values)[name] = value;
+        (<Object>this.value)[name] = value;
 
         return this;
 
@@ -279,13 +279,13 @@ export abstract class AbstractActiveForm<T extends Object, M>
 
     getValues(): T {
 
-        return <T>clone(this.values);
+        return <T>clone(this.value);
 
     }
 
     getModifiedValues(): Partial<T> {
 
-        return <Partial<T>>filter(<Object>this.values, (_, k) =>
+        return <Partial<T>>filter(<Object>this.value, (_, k) =>
             contains(this.fieldsModifed, k));
 
     }

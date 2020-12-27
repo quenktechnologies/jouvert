@@ -4,8 +4,10 @@ import { GenericResponse } from '@quenk/jhr/lib/response';
 import { Case } from '@quenk/potoo/lib/actor/resident/case';
 import { Address } from '@quenk/potoo/lib/actor/address';
 
-import { Mutable } from '../../actor';
-import { JApp } from '../';
+import { Mutable } from '../../../actor';
+import { JApp } from '../../';
+
+import { StageListener} from './stage/listener';
 import {
     TransportErr,
     Remote,
@@ -16,7 +18,7 @@ import {
     ParSend,
     SeqSend,
     BatchResponse
-} from './';
+} from '../';
 
 export {
     TransportErr,
@@ -29,9 +31,9 @@ export {
 }
 
 /**
- * Message type.
+ * RemoteObserverMessage type.
  */
-export type Message<Req, Res>
+export type RemoteObserverMessage<Req, Res>
     = Send<Req>
     | ParSend<Req>
     | SeqSend<Req>
@@ -41,83 +43,20 @@ export type Message<Req, Res>
     ;
 
 /**
- * RemoteObserver is an interface for receiving events during the 
- * lifecycle of a request.
- */
-export interface RemoteObserver<Req, Res> {
-
-    /**
-     * onStart is applied before each request.
-     */
-    onStart(req: Request<Req>): void
-
-    /**
-     * onError is applied when a TransportErr occurs.
-     */
-    onError(e: TransportErr): void
-
-    /**
-     * onClientError is applied whenever the response of a request is a client
-     * error.
-     */
-    onClientError(e: Response<Res>): void
-
-    /**
-     * onServerError is applied whenever the response of a request is a server
-     * error.
-     */
-    onServerError(e: Response<Res>): void
-
-    /**
-     * onComplete is applied when a request completes successfully.
-     */
-    onComplete(e: Response<Res>): void
-
-    /**
-     * onFinish is applied whether a request results in success or failure.
-     */
-    onFinish(): void
-
-}
-
-/**
- * AbstractRemoteObserver implementation.
- */
-export abstract class AbstractRemoteObserver<Req, Res>
-    implements
-    RemoteObserver<Req, Res> {
-
-    onStart(_: Request<Req>) { }
-
-    onError(_: TransportErr) { }
-
-    onClientError(_: Response<Res>) { }
-
-    onServerError(_: Response<Res>) { }
-
-    onComplete(_: Response<Res>) { }
-
-    onFinish() { }
-
-}
-
-/**
- * ObservableRemote is a bridge to a Remote that allows the requests and 
- * responses to be observed.
+ * RemoteObserver is a bridge to a [[Remote]] (the Remote is spawned internally)
+ * that allows requests and responses to be observed.
  *
- * Observation is done through the RemoteObserver API an instance of which can
- * be passed to the ObservableRemote constructor.
- *
- * This actor exists mostly to allow the manipulation of UI indicators when 
- * requests are being made in the foreground of an application.
+ * Observation is done via the passed StageListener. This actor exists primarly
+ * for the manipulation of UI indicators when requests are made in the
+ * foreground of an application.
  */
-export class ObservableRemote<Req, Res>
+export class RemoteObserver<Req, Res>
     extends
     Mutable {
 
     constructor(
         public agent: HTTPAgent<Req, Res>,
-        public observer: RemoteObserver<Req, Res>,
+        public listener: StageListener<Req, Res>,
         public system: JApp) {
 
         super(system);
@@ -142,8 +81,8 @@ export class ObservableRemote<Req, Res>
 
     onError = (current: Request<Req>) => (err: TransportErr) => {
 
-        this.observer.onError(err);
-        this.observer.onFinish();
+        this.listener.onError(err);
+        this.listener.onFinish();
 
         this.tell(current.client,
             new TransportErr(current.client, err.error));
@@ -170,19 +109,19 @@ export class ObservableRemote<Req, Res>
 
             if (res.code > 499) {
 
-                this.observer.onServerError(res);
+                this.listener.onServerError(res);
 
             } else if (res.code > 399) {
 
-                this.observer.onClientError(res);
+                this.listener.onClientError(res);
 
             } else {
 
-                this.observer.onComplete(res);
+                this.listener.onComplete(res);
 
             }
 
-            this.observer.onFinish();
+            this.listener.onFinish();
 
             this.tell(current.client, res);
 
@@ -221,7 +160,7 @@ export class ObservableRemote<Req, Res>
         let onReq = this.onRequest(current, buffer);
         let onRes = this.onResponse(current, buffer);
 
-        return <Case<Message<Req, Res>>[]>[
+        return <Case<RemoteObserverMessage<Req, Res>>[]>[
 
             new Case(Send, onReq),
 
@@ -243,7 +182,7 @@ export class ObservableRemote<Req, Res>
 
         let self = this.self();
 
-        this.observer.onStart(req);
+        this.listener.onStart(req);
 
         let msg = match(req)
             .caseOf(Send, (msg: Send<Req>) =>

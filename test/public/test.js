@@ -74,7 +74,7 @@ var type_1 = require("@quenk/noni/lib/data/type");
 var future_1 = require("@quenk/noni/lib/control/monad/future");
 var case_1 = require("@quenk/potoo/lib/actor/resident/case");
 var actor_1 = require("../actor");
-exports.DEFAULT_TIMEOUT = 10000;
+exports.DEFAULT_TIMEOUT = 1000;
 /**
  * Resume hints to the receiving actor that is now the current actor and can
  * stream messages.
@@ -5243,6 +5243,7 @@ var __spreadArrays = (this && this.__spreadArrays) || function () {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.PVM = exports.MAX_WORK_LOAD = void 0;
 var template = require("../../template");
+var scripts = require("../../resident/scripts");
 var errors = require("./runtime/error");
 var events = require("./event");
 var future_1 = require("@quenk/noni/lib/control/monad/future");
@@ -5565,6 +5566,15 @@ var PVM = /** @class */ (function () {
     PVM.prototype.spawn = function (t) {
         return resident_1.spawn(this.system, this, t);
     };
+    /**
+     * tell allows the vm to send a message to another actor via opcodes.
+     *
+     * If you want to immediately deliver a message, use [[sendMessage]] instead.
+     */
+    PVM.prototype.tell = function (ref, m) {
+        this.system.exec(this, new scripts.Tell(ref, m));
+        return this;
+    };
     PVM.prototype.execNow = function (i, s) {
         var mslot = getSlot(this.state, i);
         if (mslot.isNothing()) {
@@ -5637,7 +5647,7 @@ var scheduleFutures = function (work) {
         .chain(function () { return future_1.pure(undefined); });
 };
 
-},{"../../address":31,"../../flags":32,"../../message":33,"../../resident":35,"../../template":56,"./conf":37,"./event":38,"./log":40,"./runtime/context":41,"./runtime/error":42,"./runtime/heap":43,"./runtime/op":48,"./runtime/thread":51,"./state":54,"@quenk/noni/lib/control/monad/future":19,"@quenk/noni/lib/data/array":22,"@quenk/noni/lib/data/either":23,"@quenk/noni/lib/data/maybe":25,"@quenk/noni/lib/data/record":26,"@quenk/noni/lib/data/type":29}],40:[function(require,module,exports){
+},{"../../address":31,"../../flags":32,"../../message":33,"../../resident":35,"../../resident/scripts":36,"../../template":56,"./conf":37,"./event":38,"./log":40,"./runtime/context":41,"./runtime/error":42,"./runtime/heap":43,"./runtime/op":48,"./runtime/thread":51,"./state":54,"@quenk/noni/lib/control/monad/future":19,"@quenk/noni/lib/data/array":22,"@quenk/noni/lib/data/either":23,"@quenk/noni/lib/data/maybe":25,"@quenk/noni/lib/data/record":26,"@quenk/noni/lib/data/type":29}],40:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.LOG_LEVEL_ERROR = exports.LOG_LEVEL_WARN = exports.LOG_LEVEL_NOTICE = exports.LOG_LEVEL_INFO = exports.LOG_LEVEL_DEBUG = void 0;

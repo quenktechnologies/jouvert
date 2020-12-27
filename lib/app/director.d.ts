@@ -6,7 +6,7 @@ import { Address } from '@quenk/potoo/lib/actor/address';
 import { Template } from '@quenk/potoo/lib/actor/template';
 import { Immutable } from '../actor';
 import { App } from './';
-export declare const DEFAULT_TIMEOUT = 10000;
+export declare const DEFAULT_TIMEOUT = 1000;
 /**
  * RouteString is the identifier used by the RoutingLogic to determine which
  * route to execute.

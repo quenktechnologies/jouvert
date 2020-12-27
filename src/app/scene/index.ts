@@ -1,9 +1,10 @@
 import { Template } from '@quenk/potoo/lib/actor/template';
 import { Address } from '@quenk/potoo/lib/actor/address';
 import { Case } from '@quenk/potoo/lib/actor/resident/case';
+import { System } from '@quenk/potoo/lib/actor/system';
 
-import { Suspend, Suspended } from '../director';
 import { Immutable, Api } from '../../actor';
+import { Resume, Suspend, Suspended } from '../director';
 
 /**
  * AppSceneMessage is the type of messages an AppScene handles.
@@ -29,15 +30,15 @@ export interface SuspendListener extends Api {
 /**
  * SuspendCase invokes the [[SuspendListener.beforeSuspend]] callback.
  */
-export class SuspendCase extends Case<Suspend> {
+export class SuspendCase<T, M> extends Case<Suspend> {
 
-    constructor(public listener: SuspendListener) {
+    constructor(public listener: AppScene<T, M>) {
 
         super(Suspend, (s: Suspend) => {
 
             listener
                 .beforeSuspended(s)
-                .tell(listener.self(), new Suspended(listener.self()));
+                .tell(listener.resume.director, new Suspended(listener.self()));
 
         });
     }
@@ -52,9 +53,15 @@ export class SuspendCase extends Case<Suspend> {
  *
  * Spawn them directly in the Director's route configuation.
  */
-export abstract class AppScene<M>
+export abstract class AppScene<T, M>
     extends
     Immutable<AppSceneMessage<M>> {
+
+    constructor(public resume: Resume<T>, public system: System,) {
+
+        super(system);
+
+    }
 
     receive = <Case<AppSceneMessage<M>>[]>[
 
@@ -62,7 +69,7 @@ export abstract class AppScene<M>
 
     ];
 
-    beforeSuspended(_: Suspend): AppScene<M> {
+    beforeSuspended(_: Suspend): AppScene<T, M> {
 
         return this;
 

@@ -1099,7 +1099,7 @@ var future_1 = require("@quenk/noni/lib/control/monad/future");
 var maybe_1 = require("@quenk/noni/lib/data/maybe");
 var string_1 = require("@quenk/noni/lib/data/string");
 var request_1 = require("@quenk/jhr/lib/request");
-var callback_1 = require("./callback");
+var callback_1 = require("../callback");
 var DefaultCompleteHandler = /** @class */ (function (_super) {
     __extends(DefaultCompleteHandler, _super);
     function DefaultCompleteHandler() {
@@ -1246,7 +1246,7 @@ var RemoteModel = /** @class */ (function () {
 }());
 exports.RemoteModel = RemoteModel;
 
-},{"./callback":7,"@quenk/jhr/lib/request":12,"@quenk/noni/lib/control/monad/future":19,"@quenk/noni/lib/data/maybe":25,"@quenk/noni/lib/data/string":28}],10:[function(require,module,exports){
+},{"../callback":7,"@quenk/jhr/lib/request":12,"@quenk/noni/lib/control/monad/future":19,"@quenk/noni/lib/data/maybe":25,"@quenk/noni/lib/data/string":28}],10:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {

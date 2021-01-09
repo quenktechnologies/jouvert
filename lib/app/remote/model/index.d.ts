@@ -10,9 +10,9 @@ import { Object } from '@quenk/noni/lib/data/jsonx';
 import { Address } from '@quenk/potoo/lib/actor/address';
 import { Spawnable } from '@quenk/potoo/lib/actor/template';
 import { Response } from '@quenk/jhr/lib/response';
-import { Id, Model } from '../model';
-import { ErrorBody, CompleteHandler } from './callback';
-import { TransportErr } from './';
+import { Id, Model } from '../../model';
+import { ErrorBody, CompleteHandler } from '../callback';
+import { TransportErr } from '../';
 /**
  * SpawnFunc used by RemoteModels to spawn remote callbacks.
  */

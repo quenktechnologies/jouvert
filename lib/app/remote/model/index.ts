@@ -17,15 +17,14 @@ import { System } from '@quenk/potoo/lib/actor/system';
 import { Response } from '@quenk/jhr/lib/response';
 import { Post, Get, Patch, Delete } from '@quenk/jhr/lib/request';
 
-import { Id, Model } from '../model';
-
+import { Id, Model } from '../../model';
 import {
     ErrorBody,
     SendCallback,
     CompleteHandler,
     AbstractCompleteHandler
-} from './callback';
-import { TransportErr } from './';
+} from '../callback';
+import { TransportErr } from '../';
 
 /**
  * SpawnFunc used by RemoteModels to spawn remote callbacks.

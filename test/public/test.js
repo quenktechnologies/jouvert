@@ -461,19 +461,21 @@ exports.SaveOkCase = SaveOkCase;
  *
  * These messages can be used to update the values captured or the [[set]]
  * method can be used directly (bypasses validation).
+ *
+ * @param owner   The address of the class that owns this actor.
+ * @param system  The potoo System this actor belongs to.
+ * @param value   Value of the AbstractActiveForm tracked by the APIs of this
+ *                class. This should not be modified directly or outside this
+ *                class.
  */
 var AbstractActiveForm = /** @class */ (function (_super) {
     __extends(AbstractActiveForm, _super);
-    function AbstractActiveForm(owner, system) {
+    function AbstractActiveForm(owner, system, value) {
+        if (value === void 0) { value = {}; }
         var _this = _super.call(this, system) || this;
         _this.owner = owner;
         _this.system = system;
-        /**
-         * value of the AbstractActiveForm tracked by the APIs of this class.
-         *
-         * This should not be edited directly, instead use [[set()]].
-         */
-        _this.value = {};
+        _this.value = value;
         /**
          * fieldsModified tracks the names of those fields whose values have been
          * modified via this class's APIs.
@@ -2031,7 +2033,7 @@ var Mock = /** @class */ (function () {
 }());
 exports.Mock = Mock;
 
-},{"deep-equal":69}],17:[function(require,module,exports){
+},{"deep-equal":70}],17:[function(require,module,exports){
 "use strict";
 /**
  * This module provides functions and types to make dealing with ES errors
@@ -2863,7 +2865,7 @@ var throttle = function (f, duration) {
 exports.throttle = throttle;
 
 }).call(this)}).call(this,require('_process'))
-},{"_process":89}],22:[function(require,module,exports){
+},{"_process":90}],22:[function(require,module,exports){
 "use strict";
 var __spreadArrays = (this && this.__spreadArrays) || function () {
     for (var s = 0, i = 0, il = arguments.length; i < il; i++) s += arguments[i].length;
@@ -5169,7 +5171,8 @@ exports.defaults = function () { return ({
         level: log_1.LOG_LEVEL_ERROR,
         logger: console
     },
-    on: {}
+    on: {},
+    accept: function () { }
 }); };
 
 },{"./log":40}],38:[function(require,module,exports){
@@ -5308,7 +5311,8 @@ var PVM = /** @class */ (function () {
     PVM.prototype.init = function (c) {
         return c;
     };
-    PVM.prototype.accept = function (_) {
+    PVM.prototype.accept = function (m) {
+        return this.conf.accept(m);
     };
     PVM.prototype.start = function () {
     };
@@ -8496,13 +8500,15 @@ exports.toString = toString;
 var assert = function (value) { return new Positive(value, true); };
 exports.assert = assert;
 
-},{"deep-equal":69,"json-stringify-safe":81}],68:[function(require,module,exports){
+},{"deep-equal":70,"json-stringify-safe":82}],68:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Mock = exports.ReturnCallback = exports.ReturnValue = exports.Invocation = void 0;
-var deepEqual = require("deep-equal");
+exports.Invocation = exports.Mock = void 0;
+// Legacy export (deprecated).
+var object_1 = require("./object");
+Object.defineProperty(exports, "Mock", { enumerable: true, get: function () { return object_1.MockObject; } });
 /**
- * Invocation is a recording of method invocations stored by a Mock.
+ * Invocation is a recording of method invocations stored by a MockObject.
  */
 var Invocation = /** @class */ (function () {
     function Invocation(name, args, value) {
@@ -8513,6 +8519,13 @@ var Invocation = /** @class */ (function () {
     return Invocation;
 }());
 exports.Invocation = Invocation;
+
+},{"./object":69}],69:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.MockObject = exports.ReturnCallback = exports.ReturnValue = void 0;
+var deepEqual = require("deep-equal");
+var _1 = require("./");
 /**
  * ReturnValue stores a value to be returned by a mocked method.
  */
@@ -8550,47 +8563,23 @@ var ReturnCallback = /** @class */ (function () {
 }());
 exports.ReturnCallback = ReturnCallback;
 /**
- * Mock is a class that can be used to keep track of the mocking of some
+ * MockObject is a class that can be used to keep track of the mocking of some
  * interface.
  *
  * It provides methods for recording the invocation of methods and setting
- * their return values. Generally, embedding a Mock instance is preffered to
- * extending the class.
+ * their return values. Generally, embedding a MockObject instance is preffered
+ * to extending the class.
  */
-var Mock = /** @class */ (function () {
-    function Mock(calls, returns) {
-        if (calls === void 0) { calls = []; }
-        if (returns === void 0) { returns = {}; }
-        this.calls = calls;
-        this.returns = returns;
+var MockObject = /** @class */ (function () {
+    function MockObject() {
+        this.calls = [];
+        this.returns = {};
     }
     /**
-     * invoke records the invocation of a method.
-     * @param method - The method name.
-     * @param args   - An array of arguments the method is called with.
-     * @param ret    - The return value of the method invocation.
+     * getCalledCount provides the number of times a method was called.
      */
-    Mock.prototype.invoke = function (method, args, ret) {
-        this.calls.push(new Invocation(method, args, ret));
-        return this.returns.hasOwnProperty(method) ?
-            this.returns[method].get.apply(this.returns[method], args) : ret;
-    };
-    /**
-     * setReturnValue so that invocation of a method always return the desired
-     * result.
-     */
-    Mock.prototype.setReturnValue = function (method, value) {
-        this.returns[method] = new ReturnValue(method, value);
-        return this;
-    };
-    /**
-     * setReturnCallback allows a function to provide the return value
-     * of a method on invocation.
-     */
-    Mock.prototype.setReturnCallback = function (method, value) {
-        this.returns[method] =
-            new ReturnCallback(method, value);
-        return this;
+    MockObject.prototype.getCalledCount = function (method) {
+        return this.calls.reduce(function (p, c) { return (c.name === method) ? p + 1 : p; }, 0);
     };
     /**
      * getCalledArgs provides the first set of arguments a method was called
@@ -8598,18 +8587,52 @@ var Mock = /** @class */ (function () {
      *
      * The array is empty if the method was never called.
      */
-    Mock.prototype.getCalledArgs = function (name) {
+    MockObject.prototype.getCalledArgs = function (name) {
         return this.calls.reduce(function (p, c) {
             return (p.length > 0) ? p : (c.name === name) ?
                 c.args : p;
         }, []);
     };
     /**
+     * getCalledList returns a list of methods that have been called so far.
+     */
+    MockObject.prototype.getCalledList = function () {
+        return this.calls.map(function (c) { return c.name; });
+    };
+    /**
+     * setReturnValue so that invocation of a method always return the desired
+     * result.
+     */
+    MockObject.prototype.setReturnValue = function (method, value) {
+        this.returns[method] = new ReturnValue(method, value);
+        return this;
+    };
+    /**
+     * setReturnCallback allows a function to provide the return value
+     * of a method on invocation.
+     */
+    MockObject.prototype.setReturnCallback = function (method, value) {
+        this.returns[method] =
+            new ReturnCallback(method, value);
+        return this;
+    };
+    /**
+     * invoke records the invocation of a method.
+     * @param method - The method name.
+     * @param args   - An array of arguments the method is called with.
+     * @param ret    - The return value of the method invocation.
+     */
+    MockObject.prototype.invoke = function (method, args, ret) {
+        this.calls.push(new _1.Invocation(method, args, ret));
+        return this.returns.hasOwnProperty(method) ?
+            this.returns[method].get.apply(this.returns[method], args) : ret;
+    };
+    /**
      * wasCalledWith tests whether a method was called with the specified args.
      *
      * Compared using === .
      */
-    Mock.prototype.wasCalledWith = function (name, args) {
+    MockObject.prototype.wasCalledWith = function (name, args) {
         return this.calls.some(function (c) { return (c.name === name) &&
             c.args.every(function (a, i) { return a === args[i]; }); });
     };
@@ -8619,37 +8642,32 @@ var Mock = /** @class */ (function () {
      *
      * Compared using deepEqual.
      */
-    Mock.prototype.wasCalledWithDeep = function (name, args) {
+    MockObject.prototype.wasCalledWithDeep = function (name, args) {
         return this.calls.some(function (c) {
             return (c.name === name) && deepEqual(c.args, args);
         });
     };
     /**
-     * getCalledList returns a list of methods that have been called so far.
-     */
-    Mock.prototype.getCalledList = function () {
-        return this.calls.map(function (c) { return c.name; });
-    };
-    /**
      * wasCalled tests whether a method was called.
      */
-    Mock.prototype.wasCalled = function (method) {
+    MockObject.prototype.wasCalled = function (method) {
         return this.getCalledList().indexOf(method) > -1;
     };
     /**
      * wasCalledNTimes tests whether a method was called a certain amount of
      * times.
      */
-    Mock.prototype.wasCalledNTimes = function (method, n) {
+    MockObject.prototype.wasCalledNTimes = function (method, n) {
+        console.warn('wasCalledNTimes: deprecated, use getCalledCount() instead.');
         return this.getCalledList().reduce(function (p, c) {
             return (c === method) ? p + 1 : p;
         }, 0) === n;
     };
-    return Mock;
+    return MockObject;
 }());
-exports.Mock = Mock;
+exports.MockObject = MockObject;
 
-},{"deep-equal":69}],69:[function(require,module,exports){
+},{"./":68,"deep-equal":70}],70:[function(require,module,exports){
 var objectKeys = require('object-keys');
 var isArguments = require('is-arguments');
 var is = require('object-is');
@@ -8763,7 +8781,7 @@ function objEquiv(a, b, opts) {
 
 module.exports = deepEqual;
 
-},{"is-arguments":78,"is-date-object":79,"is-regex":80,"object-is":83,"object-keys":87,"regexp.prototype.flags":91}],70:[function(require,module,exports){
+},{"is-arguments":79,"is-date-object":80,"is-regex":81,"object-is":84,"object-keys":88,"regexp.prototype.flags":92}],71:[function(require,module,exports){
 'use strict';
 
 var keys = require('object-keys');
@@ -8823,7 +8841,7 @@ defineProperties.supportsDescriptors = !!supportsDescriptors;
 
 module.exports = defineProperties;
 
-},{"object-keys":87}],71:[function(require,module,exports){
+},{"object-keys":88}],72:[function(require,module,exports){
 'use strict';
 
 /* globals
@@ -9043,7 +9061,7 @@ module.exports = function GetIntrinsic(name, allowMissing) {
 	return value;
 };
 
-},{"function-bind":74,"has-symbols":75}],72:[function(require,module,exports){
+},{"function-bind":75,"has-symbols":76}],73:[function(require,module,exports){
 'use strict';
 
 var bind = require('function-bind');
@@ -9062,7 +9080,7 @@ module.exports.apply = function applyBind() {
 	return bind.apply($apply, arguments);
 };
 
-},{"../GetIntrinsic":71,"function-bind":74}],73:[function(require,module,exports){
+},{"../GetIntrinsic":72,"function-bind":75}],74:[function(require,module,exports){
 'use strict';
 
 /* eslint no-invalid-this: 1 */
@@ -9116,14 +9134,14 @@ module.exports = function bind(that) {
     return bound;
 };
 
-},{}],74:[function(require,module,exports){
+},{}],75:[function(require,module,exports){
 'use strict';
 
 var implementation = require('./implementation');
 
 module.exports = Function.prototype.bind || implementation;
 
-},{"./implementation":73}],75:[function(require,module,exports){
+},{"./implementation":74}],76:[function(require,module,exports){
 (function (global){(function (){
 'use strict';
 
@@ -9140,7 +9158,7 @@ module.exports = function hasNativeSymbols() {
 };
 
 }).call(this)}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./shams":76}],76:[function(require,module,exports){
+},{"./shams":77}],77:[function(require,module,exports){
 'use strict';
 
 /* eslint complexity: [2, 18], max-statements: [2, 33] */
@@ -9184,14 +9202,14 @@ module.exports = function hasSymbols() {
 	return true;
 };
 
-},{}],77:[function(require,module,exports){
+},{}],78:[function(require,module,exports){
 'use strict';
 
 var bind = require('function-bind');
 
 module.exports = bind.call(Function.call, Object.prototype.hasOwnProperty);
 
-},{"function-bind":74}],78:[function(require,module,exports){
+},{"function-bind":75}],79:[function(require,module,exports){
 'use strict';
 
 var hasToStringTag = typeof Symbol === 'function' && typeof Symbol.toStringTag === 'symbol';
@@ -9224,7 +9242,7 @@ isStandardArguments.isLegacyArguments = isLegacyArguments; // for tests
 
 module.exports = supportsStandardArguments ? isStandardArguments : isLegacyArguments;
 
-},{}],79:[function(require,module,exports){
+},{}],80:[function(require,module,exports){
 'use strict';
 
 var getDay = Date.prototype.getDay;
@@ -9248,7 +9266,7 @@ module.exports = function isDateObject(value) {
 	return hasToStringTag ? tryDateObject(value) : toStr.call(value) === dateClass;
 };
 
-},{}],80:[function(require,module,exports){
+},{}],81:[function(require,module,exports){
 'use strict';
 
 var has = require('has');
@@ -9289,7 +9307,7 @@ module.exports = function isRegex(value) {
 	return tryRegexExecCall(value);
 };
 
-},{"has":77}],81:[function(require,module,exports){
+},{"has":78}],82:[function(require,module,exports){
 exports = module.exports = stringify
 exports.getSerialize = serializer
 
@@ -9318,7 +9336,7 @@ function serializer(replacer, cycleReplacer) {
   }
 }
 
-},{}],82:[function(require,module,exports){
+},{}],83:[function(require,module,exports){
 'use strict';
 
 var numberIsNaN = function (value) {
@@ -9339,7 +9357,7 @@ module.exports = function is(a, b) {
 };
 
 
-},{}],83:[function(require,module,exports){
+},{}],84:[function(require,module,exports){
 'use strict';
 
 var define = require('define-properties');
@@ -9359,7 +9377,7 @@ define(polyfill, {
 
 module.exports = polyfill;
 
-},{"./implementation":82,"./polyfill":84,"./shim":85,"define-properties":70,"es-abstract/helpers/callBind":72}],84:[function(require,module,exports){
+},{"./implementation":83,"./polyfill":85,"./shim":86,"define-properties":71,"es-abstract/helpers/callBind":73}],85:[function(require,module,exports){
 'use strict';
 
 var implementation = require('./implementation');
@@ -9368,7 +9386,7 @@ module.exports = function getPolyfill() {
 	return typeof Object.is === 'function' ? Object.is : implementation;
 };
 
-},{"./implementation":82}],85:[function(require,module,exports){
+},{"./implementation":83}],86:[function(require,module,exports){
 'use strict';
 
 var getPolyfill = require('./polyfill');
@@ -9384,7 +9402,7 @@ module.exports = function shimObjectIs() {
 	return polyfill;
 };
 
-},{"./polyfill":84,"define-properties":70}],86:[function(require,module,exports){
+},{"./polyfill":85,"define-properties":71}],87:[function(require,module,exports){
 'use strict';
 
 var keysShim;
@@ -9508,7 +9526,7 @@ if (!Object.keys) {
 }
 module.exports = keysShim;
 
-},{"./isArguments":88}],87:[function(require,module,exports){
+},{"./isArguments":89}],88:[function(require,module,exports){
 'use strict';
 
 var slice = Array.prototype.slice;
@@ -9542,7 +9560,7 @@ keysShim.shim = function shimObjectKeys() {
 
 module.exports = keysShim;
 
-},{"./implementation":86,"./isArguments":88}],88:[function(require,module,exports){
+},{"./implementation":87,"./isArguments":89}],89:[function(require,module,exports){
 'use strict';
 
 var toStr = Object.prototype.toString;
@@ -9561,7 +9579,7 @@ module.exports = function isArguments(value) {
 	return isArgs;
 };
 
-},{}],89:[function(require,module,exports){
+},{}],90:[function(require,module,exports){
 // shim for using process in browser
 var process = module.exports = {};
 
@@ -9747,7 +9765,7 @@ process.chdir = function (dir) {
 };
 process.umask = function() { return 0; };
 
-},{}],90:[function(require,module,exports){
+},{}],91:[function(require,module,exports){
 'use strict';
 
 var $Object = Object;
@@ -9779,7 +9797,7 @@ module.exports = function flags() {
 	return result;
 };
 
-},{}],91:[function(require,module,exports){
+},{}],92:[function(require,module,exports){
 'use strict';
 
 var define = require('define-properties');
@@ -9799,7 +9817,7 @@ define(flagsBound, {
 
 module.exports = flagsBound;
 
-},{"./implementation":90,"./polyfill":92,"./shim":93,"define-properties":70,"es-abstract/helpers/callBind":72}],92:[function(require,module,exports){
+},{"./implementation":91,"./polyfill":93,"./shim":94,"define-properties":71,"es-abstract/helpers/callBind":73}],93:[function(require,module,exports){
 'use strict';
 
 var implementation = require('./implementation');
@@ -9821,7 +9839,7 @@ module.exports = function getPolyfill() {
 	return implementation;
 };
 
-},{"./implementation":90,"define-properties":70}],93:[function(require,module,exports){
+},{"./implementation":91,"define-properties":71}],94:[function(require,module,exports){
 'use strict';
 
 var supportsDescriptors = require('define-properties').supportsDescriptors;
@@ -9849,7 +9867,7 @@ module.exports = function shimFlags() {
 	return polyfill;
 };
 
-},{"./polyfill":92,"define-properties":70}],94:[function(require,module,exports){
+},{"./polyfill":93,"define-properties":71}],95:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -10173,7 +10191,7 @@ describe('director', function () {
     });
 });
 
-},{"../../../lib/actor":1,"../../../lib/app/director":2,"../app/fixtures/app":96,"@quenk/noni/lib/control/monad/future":19,"@quenk/noni/lib/data/record":26,"@quenk/noni/lib/data/string":28,"@quenk/potoo/lib/actor/resident/case":34,"@quenk/test/lib/assert":67,"@quenk/test/lib/mock":68}],95:[function(require,module,exports){
+},{"../../../lib/actor":1,"../../../lib/app/director":2,"../app/fixtures/app":97,"@quenk/noni/lib/control/monad/future":19,"@quenk/noni/lib/data/record":26,"@quenk/noni/lib/data/string":28,"@quenk/potoo/lib/actor/resident/case":34,"@quenk/test/lib/assert":67,"@quenk/test/lib/mock":68}],96:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -10210,7 +10228,7 @@ var GenericImmutable = /** @class */ (function (_super) {
 }(actor_1.Immutable));
 exports.GenericImmutable = GenericImmutable;
 
-},{"../../../../lib/actor":1}],96:[function(require,module,exports){
+},{"../../../../lib/actor":1}],97:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -10241,7 +10259,7 @@ var TestApp = /** @class */ (function (_super) {
 }(app_1.JApp));
 exports.TestApp = TestApp;
 
-},{"../../../../lib/app":6}],97:[function(require,module,exports){
+},{"../../../../lib/app":6}],98:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -10568,7 +10586,7 @@ describe('active', function () {
     });
 });
 
-},{"../../../../lib/app/form/active":3,"../../../../lib/app/form/active/validate/strategy":4,"../../app/fixtures/app":96,"../fixtures/actor":95,"@quenk/noni/lib/control/monad/future":19,"@quenk/noni/lib/data/either":23,"@quenk/potoo/lib/actor/resident/case":34,"@quenk/test/lib/assert":67,"@quenk/test/lib/mock":68}],98:[function(require,module,exports){
+},{"../../../../lib/app/form/active":3,"../../../../lib/app/form/active/validate/strategy":4,"../../app/fixtures/app":97,"../fixtures/actor":96,"@quenk/noni/lib/control/monad/future":19,"@quenk/noni/lib/data/either":23,"@quenk/potoo/lib/actor/resident/case":34,"@quenk/test/lib/assert":67,"@quenk/test/lib/mock":68}],99:[function(require,module,exports){
 "use strict";
 var __generator = (this && this.__generator) || function (thisArg, body) {
     var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
@@ -10774,7 +10792,7 @@ describe('remote', function () {
     });
 });
 
-},{"../../../../lib/app/remote":8,"../../app/fixtures/actor":95,"../../app/fixtures/app":96,"@quenk/jhr/lib/agent/mock":11,"@quenk/jhr/lib/request":12,"@quenk/jhr/lib/response":14,"@quenk/noni/lib/control/monad/future":19,"@quenk/potoo/lib/actor/resident/case":34,"@quenk/test/lib/assert":67}],99:[function(require,module,exports){
+},{"../../../../lib/app/remote":8,"../../app/fixtures/actor":96,"../../app/fixtures/app":97,"@quenk/jhr/lib/agent/mock":11,"@quenk/jhr/lib/request":12,"@quenk/jhr/lib/response":14,"@quenk/noni/lib/control/monad/future":19,"@quenk/potoo/lib/actor/resident/case":34,"@quenk/test/lib/assert":67}],100:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -11147,7 +11165,7 @@ describe('model', function () {
     });
 });
 
-},{"../../../../lib/app/remote":8,"../../../../lib/app/remote/model":9,"../../app/fixtures/app":96,"@quenk/jhr/lib/request":12,"@quenk/jhr/lib/response":14,"@quenk/noni/lib/control/monad/future":19,"@quenk/noni/lib/data/record":26,"@quenk/potoo/lib/actor/resident":35,"@quenk/potoo/lib/actor/resident/case":34,"@quenk/test/lib/assert":67,"@quenk/test/lib/mock":68}],100:[function(require,module,exports){
+},{"../../../../lib/app/remote":8,"../../../../lib/app/remote/model":9,"../../app/fixtures/app":97,"@quenk/jhr/lib/request":12,"@quenk/jhr/lib/response":14,"@quenk/noni/lib/control/monad/future":19,"@quenk/noni/lib/data/record":26,"@quenk/potoo/lib/actor/resident":35,"@quenk/potoo/lib/actor/resident/case":34,"@quenk/test/lib/assert":67,"@quenk/test/lib/mock":68}],101:[function(require,module,exports){
 "use strict";
 var __generator = (this && this.__generator) || function (thisArg, body) {
     var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
@@ -11490,11 +11508,11 @@ describe('observable', function () {
     });
 });
 
-},{"../../../../lib/app/remote/observer":10,"../../app/fixtures/actor":95,"../../app/fixtures/app":96,"@quenk/jhr/lib/agent/mock":11,"@quenk/jhr/lib/request":12,"@quenk/jhr/lib/response":14,"@quenk/noni/lib/control/monad/future":19,"@quenk/potoo/lib/actor/resident/case":34,"@quenk/test/lib/assert":67,"@quenk/test/lib/mock":68}],101:[function(require,module,exports){
+},{"../../../../lib/app/remote/observer":10,"../../app/fixtures/actor":96,"../../app/fixtures/app":97,"@quenk/jhr/lib/agent/mock":11,"@quenk/jhr/lib/request":12,"@quenk/jhr/lib/response":14,"@quenk/noni/lib/control/monad/future":19,"@quenk/potoo/lib/actor/resident/case":34,"@quenk/test/lib/assert":67,"@quenk/test/lib/mock":68}],102:[function(require,module,exports){
 require("./app/remote/index_test.js");
 require("./app/remote/model_test.js");
 require("./app/remote/observer_test.js");
 require("./app/form/active_test.js");
 require("./app/director_test.js");
 
-},{"./app/director_test.js":94,"./app/form/active_test.js":97,"./app/remote/index_test.js":98,"./app/remote/model_test.js":99,"./app/remote/observer_test.js":100}]},{},[101]);
+},{"./app/director_test.js":95,"./app/form/active_test.js":98,"./app/remote/index_test.js":99,"./app/remote/model_test.js":100,"./app/remote/observer_test.js":101}]},{},[102]);

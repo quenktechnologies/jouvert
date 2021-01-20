@@ -224,6 +224,12 @@ export class SaveOkCase<T extends Object> extends Case<SaveOk> {
  *
  * These messages can be used to update the values captured or the [[set]]
  * method can be used directly (bypasses validation).
+ *
+ * @param owner   The address of the class that owns this actor.
+ * @param system  The potoo System this actor belongs to.
+ * @param value   Value of the AbstractActiveForm tracked by the APIs of this 
+ *                class. This should not be modified directly or outside this 
+ *                class.
  */
 export abstract class AbstractActiveForm<T extends Object, M>
     extends
@@ -231,18 +237,14 @@ export abstract class AbstractActiveForm<T extends Object, M>
     implements
     FormFeedback<T> {
 
-    constructor(public owner: Address, public system: App) { super(system); }
+    constructor(
+        public owner: Address,
+        public system: App,
+        public value: Partial<T> = {}) { super(system); }
 
     abstract validateStrategy: ValidateStrategy;
 
     abstract save(): void;
-
-    /**
-     * value of the AbstractActiveForm tracked by the APIs of this class.
-     *
-     * This should not be edited directly, instead use [[set()]].
-     */
-    value: Partial<T> = {};
 
     /**
      * fieldsModified tracks the names of those fields whose values have been

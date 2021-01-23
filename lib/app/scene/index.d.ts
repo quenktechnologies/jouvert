@@ -1,5 +1,3 @@
-import { Template } from '@quenk/potoo/lib/actor/template';
-import { Address } from '@quenk/potoo/lib/actor/address';
 import { Case } from '@quenk/potoo/lib/actor/resident/case';
 import { System } from '@quenk/potoo/lib/actor/system';
 import { Immutable, Api } from '../../actor';
@@ -40,5 +38,4 @@ export declare abstract class AppScene<T, M> extends Immutable<AppSceneMessage<M
     constructor(resume: Resume<T>, system: System);
     receive: Case<AppSceneMessage<M>>[];
     beforeSuspended(_: Suspend): AppScene<T, M>;
-    spawn(t: Template): Address;
 }

@@ -1,5 +1,3 @@
-import { Template } from '@quenk/potoo/lib/actor/template';
-import { Address } from '@quenk/potoo/lib/actor/address';
 import { Case } from '@quenk/potoo/lib/actor/resident/case';
 import { System } from '@quenk/potoo/lib/actor/system';
 
@@ -72,12 +70,6 @@ export abstract class AppScene<T, M>
     beforeSuspended(_: Suspend): AppScene<T, M> {
 
         return this;
-
-    }
-
-    spawn(t: Template): Address {
-
-        return super.spawn(t);
 
     }
 

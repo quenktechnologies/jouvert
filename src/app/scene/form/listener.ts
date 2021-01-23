@@ -1,7 +1,7 @@
 import { Case } from '@quenk/potoo/lib/actor/resident/case';
 
 import { FormAborted, FormSaved } from '../../form';
-import {  Api } from '../../../actor';
+import { Api } from '../../../actor';
 
 export { FormAborted, FormSaved }
 
@@ -30,6 +30,12 @@ export interface FormSavedListener extends Api {
     afterFormSaved(m: FormSaved): FormSavedListener
 
 }
+
+/**
+ * FormListener combines the abort and save listener into one interface for
+ * convenience.
+ */
+export interface FormListener extends FormAbortedListener, FormSavedListener {}
 
 /**
  * FormAbortedCase invokes the afterFormAborted() handler.

@@ -23,6 +23,12 @@ export interface FormSavedListener extends Api {
     afterFormSaved(m: FormSaved): FormSavedListener;
 }
 /**
+ * FormListener combines the abort and save listener into one interface for
+ * convenience.
+ */
+export interface FormListener extends FormAbortedListener, FormSavedListener {
+}
+/**
  * FormAbortedCase invokes the afterFormAborted() handler.
  */
 export declare class FormAbortedCase extends Case<FormAborted> {

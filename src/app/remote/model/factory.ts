@@ -3,21 +3,23 @@ import { Object } from '@quenk/noni/lib/data/jsonx';
 import { Address } from '@quenk/potoo/lib/actor/address';
 import { Api } from '@quenk/potoo/lib/actor/resident/api';
 
-import { RemoteModel, Result } from '.';
 import { CompleteHandler } from '../callback';
+import { RemoteModel, Result } from '.';
 
 /**
  * RemoteModelFactory is a convenience class for creating RemoteModel instances.
  */
 export class RemoteModelFactory<T extends Object> {
 
-    constructor(public remote: Address, public parent: Api) { }
+    constructor(public parent: Api, public remote: Address) { }
 
-    static getInstance<T extends Object>(
-        remote: Address,
-        parent: Api): RemoteModelFactory<T> {
+    /**
+     * getInstance provides a new RemoteModelFactory instance.
+     */
+    static getInstance<T extends Object>(parent: Api, remote: Address)
+        : RemoteModelFactory<T> {
 
-        return new RemoteModelFactory(remote, parent);
+        return new RemoteModelFactory(parent, remote);
 
     }
 

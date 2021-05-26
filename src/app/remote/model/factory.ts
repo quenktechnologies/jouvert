@@ -1,25 +1,29 @@
 import { Object } from '@quenk/noni/lib/data/jsonx';
 
 import { Address } from '@quenk/potoo/lib/actor/address';
-import { Api } from '@quenk/potoo/lib/actor/resident/api';
 
 import { CompleteHandler } from '../callback';
-import { RemoteModel, Result } from '.';
+import { SpawnFunc, RemoteModel, Result } from './';
 
 /**
  * RemoteModelFactory is a convenience class for creating RemoteModel instances.
  */
 export class RemoteModelFactory<T extends Object> {
 
-    constructor(public parent: Api, public remote: Address) { }
+    /**
+     * @param spawn    A function that will be used to spawn needed actors.
+     * @param remote   The address of the actor that will receive the network 
+     *                 requests.
+     */
+    constructor(public spawn: SpawnFunc, public remote: Address) { }
 
     /**
      * getInstance provides a new RemoteModelFactory instance.
      */
-    static getInstance<T extends Object>(parent: Api, remote: Address)
+    static getInstance<T extends Object>(spawn: SpawnFunc, remote: Address)
         : RemoteModelFactory<T> {
 
-        return new RemoteModelFactory(parent, remote);
+        return new RemoteModelFactory(spawn, remote);
 
     }
 
@@ -28,11 +32,7 @@ export class RemoteModelFactory<T extends Object> {
      */
     create(path: string, handler?: CompleteHandler<Result<T>>): RemoteModel<T> {
 
-        return new RemoteModel(
-            this.remote,
-            path,
-            tmp => this.parent.spawn(tmp),
-            handler);
+        return new RemoteModel(this.remote, path, this.spawn, handler);
 
     }
 

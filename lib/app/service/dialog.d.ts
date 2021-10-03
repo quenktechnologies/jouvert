@@ -8,10 +8,10 @@ import { Case } from '@quenk/potoo/lib/actor/resident/case';
  */
 export declare type DialogServiceMessage = ShowDialogView | PushDialogView | PopDialogView | CloseDialog;
 /**
- * DialogViewManager is an object that knows how to get a wml [[View]] into the
+ * DialogManager is an object that knows how to get a wml [[View]] into the
  * DOM.
  */
-export interface DialogViewManager {
+export interface DialogManager {
     /**
      * openDialog using the supplied [[View]] for content.
      */
@@ -86,10 +86,10 @@ export declare class ViewContentDestroyed {
 export declare class DialogClosed {
 }
 /**
- * DOMDialogViewManager is a DialogViewManager that renders wml views to a
+ * DOMDialogManager is a DialogManager that renders wml views to a
  * DOM node.
  */
-export declare class DOMDialogViewManager implements DialogViewManager {
+export declare class DOMDialogManager implements DialogManager {
     node: Node;
     constructor(node: Node);
     openDialog(view: View): void;
@@ -110,15 +110,15 @@ export declare class DOMDialogViewManager implements DialogViewManager {
  *
  * Note: This actor is not interested in the details of actually inserting the
  * dialog into the DOM. The details of that are left up to the provided
- * [[DialogViewManager]]
+ * [[DialogManager]]
  */
 export declare class DialogService extends Immutable<DialogServiceMessage> {
-    manager: DialogViewManager;
+    manager: DialogManager;
     system: System;
-    constructor(manager: DialogViewManager, system: System);
+    constructor(manager: DialogManager, system: System);
     stack: ShowDialogView[];
     /**
-     * show changes what View is shown by the DialogViewManager.
+     * show changes what View is shown by the DialogManager.
      *
      * The stack is first cleared.
      */

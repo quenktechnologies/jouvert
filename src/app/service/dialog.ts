@@ -18,10 +18,10 @@ export type DialogServiceMessage
     ;
 
 /**
- * DialogViewManager is an object that knows how to get a wml [[View]] into the
+ * DialogManager is an object that knows how to get a wml [[View]] into the
  * DOM.
  */
-export interface DialogViewManager {
+export interface DialogManager {
 
     /**
      * openDialog using the supplied [[View]] for content.
@@ -104,10 +104,10 @@ export class ViewContentDestroyed { }
 export class DialogClosed { }
 
 /**
- * DOMDialogViewManager is a DialogViewManager that renders wml views to a 
+ * DOMDialogManager is a DialogManager that renders wml views to a 
  * DOM node.
- */ 
-export class DOMDialogViewManager implements DialogViewManager {
+ */
+export class DOMDialogManager implements DialogManager {
 
     constructor(public node: Node) { }
 
@@ -159,18 +159,18 @@ const unsetView = (node: Node) => {
  *
  * Note: This actor is not interested in the details of actually inserting the
  * dialog into the DOM. The details of that are left up to the provided
- * [[DialogViewManager]]
+ * [[DialogManager]]
  */
 export class DialogService extends Immutable<DialogServiceMessage> {
 
     constructor(
-        public manager: DialogViewManager,
+        public manager: DialogManager,
         public system: System) { super(system); }
 
     stack: ShowDialogView[] = [];
 
     /**
-     * show changes what View is shown by the DialogViewManager.
+     * show changes what View is shown by the DialogManager.
      *
      * The stack is first cleared.
      */

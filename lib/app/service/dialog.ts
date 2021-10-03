@@ -104,6 +104,48 @@ export class ViewContentDestroyed { }
 export class DialogClosed { }
 
 /**
+ * DOMDialogViewManager is a DialogViewManager that renders wml views to a 
+ * DOM node.
+ */ 
+export class DOMDialogViewManager implements DialogViewManager {
+
+    constructor(public node: Node) { }
+
+    openDialog(view: View) {
+
+        setView(this.node, view);
+
+    }
+
+    setDialogView(view: View) {
+
+        setView(this.node, view);
+
+    }
+
+    closeDialog() {
+
+        unsetView(this.node);
+
+    }
+
+}
+
+const setView = (node: Node, view: View) => {
+
+    unsetView(node);
+    node.appendChild(<Node>view.render());
+
+}
+
+const unsetView = (node: Node) => {
+
+    while (node.firstChild != null)
+        node.removeChild(node.firstChild);
+
+}
+
+/**
  * DialogService acts as a manager for an object that knows how to display a
  * dialog to the user.
  *
@@ -214,8 +256,6 @@ export class DialogService extends Immutable<DialogServiceMessage> {
 
     ];
 
-    run() {
-
-    }
+    run() { }
 
 }

@@ -86,6 +86,17 @@ export declare class ViewContentDestroyed {
 export declare class DialogClosed {
 }
 /**
+ * DOMDialogViewManager is a DialogViewManager that renders wml views to a
+ * DOM node.
+ */
+export declare class DOMDialogViewManager implements DialogViewManager {
+    node: Node;
+    constructor(node: Node);
+    openDialog(view: View): void;
+    setDialogView(view: View): void;
+    closeDialog(): void;
+}
+/**
  * DialogService acts as a manager for an object that knows how to display a
  * dialog to the user.
  *

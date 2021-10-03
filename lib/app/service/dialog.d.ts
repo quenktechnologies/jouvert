@@ -8,22 +8,23 @@ import { Case } from '@quenk/potoo/lib/actor/resident/case';
  */
 export declare type DialogServiceMessage = ShowDialogView | PushDialogView | PopDialogView | CloseDialog;
 /**
- * ViewDisplay is an object that knows how to get a wml [[View]] into the
+ * DialogViewManager is an object that knows how to get a wml [[View]] into the
  * DOM.
  */
-export interface ViewDisplay {
+export interface DialogViewManager {
     /**
-     * open the dialog with the provided [[View]] used as content.
+     * openDialog using the supplied [[View]] for content.
      */
-    open(view: View): void;
+    openDialog(view: View): void;
     /**
-     * setView changes the [[View]] currently displayed.
+     * setDialogView changes the content currently displayed in the dialog
+     * using the provided [[View]].
      */
-    setView(view: View): void;
+    setDialogView(view: View): void;
     /**
-     * close the dialog.
+     * closeDialog closes the dialog.
      */
-    close(): void;
+    closeDialog(): void;
 }
 /**
  * ShowDialogView triggers the display of dialog content.
@@ -98,15 +99,15 @@ export declare class DialogClosed {
  *
  * Note: This actor is not interested in the details of actually inserting the
  * dialog into the DOM. The details of that are left up to the provided
- * [[ViewDisplay]]
+ * [[DialogViewManager]]
  */
 export declare class DialogService extends Immutable<DialogServiceMessage> {
-    display: ViewDisplay;
+    manager: DialogViewManager;
     system: System;
-    constructor(display: ViewDisplay, system: System);
+    constructor(manager: DialogViewManager, system: System);
     stack: ShowDialogView[];
     /**
-     * show changes what View is shown by the ViewDisplay.
+     * show changes what View is shown by the DialogViewManager.
      *
      * The stack is first cleared.
      */
@@ -119,7 +120,7 @@ export declare class DialogService extends Immutable<DialogServiceMessage> {
     push: (m: PushDialogView) => void;
     pop: (m: PopDialogView) => void;
     /**
-     * close clears the display and the stack of any Views.
+     * close clears the manager and the stack of any Views.
      */
     close: () => void;
     receive: Case<DialogServiceMessage>[];

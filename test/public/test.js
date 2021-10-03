@@ -11536,10 +11536,10 @@ describe('observable', function () {
 });
 
 },{"../../../../lib/app/remote/observer":10,"../../app/fixtures/actor":96,"../../app/fixtures/app":97,"@quenk/jhr/lib/agent/mock":11,"@quenk/jhr/lib/request":12,"@quenk/jhr/lib/response":14,"@quenk/noni/lib/control/monad/future":18,"@quenk/potoo/lib/actor/resident/case":33,"@quenk/test/lib/assert":66,"@quenk/test/lib/mock":67}],102:[function(require,module,exports){
+require("./app/form/active_test.js");
+require("./app/director_test.js");
 require("./app/remote/index_test.js");
 require("./app/remote/model_test.js");
 require("./app/remote/observer_test.js");
-require("./app/form/active_test.js");
-require("./app/director_test.js");
 
 },{"./app/director_test.js":95,"./app/form/active_test.js":98,"./app/remote/index_test.js":99,"./app/remote/model_test.js":100,"./app/remote/observer_test.js":101}]},{},[102]);

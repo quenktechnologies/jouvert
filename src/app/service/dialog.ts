@@ -18,25 +18,26 @@ export type DialogServiceMessage
     ;
 
 /**
- * ViewDisplay is an object that knows how to get a wml [[View]] into the
+ * DialogViewManager is an object that knows how to get a wml [[View]] into the
  * DOM.
  */
-export interface ViewDisplay {
+export interface DialogViewManager {
 
     /**
-     * open the dialog with the provided [[View]] used as content.
+     * openDialog using the supplied [[View]] for content.
      */
-    open(view: View): void
+    openDialog(view: View): void
 
     /**
-     * setView changes the [[View]] currently displayed.
+     * setDialogView changes the content currently displayed in the dialog 
+     * using the provided [[View]].
      */
-    setView(view: View): void
+    setDialogView(view: View): void
 
     /**
-     * close the dialog.
+     * closeDialog closes the dialog.
      */
-    close(): void
+    closeDialog(): void
 
 }
 
@@ -116,18 +117,18 @@ export class DialogClosed { }
  *
  * Note: This actor is not interested in the details of actually inserting the
  * dialog into the DOM. The details of that are left up to the provided
- * [[ViewDisplay]]
+ * [[DialogViewManager]]
  */
 export class DialogService extends Immutable<DialogServiceMessage> {
 
     constructor(
-        public display: ViewDisplay,
+        public manager: DialogViewManager,
         public system: System) { super(system); }
 
     stack: ShowDialogView[] = [];
 
     /**
-     * show changes what View is shown by the ViewDisplay.
+     * show changes what View is shown by the DialogViewManager.
      *
      * The stack is first cleared.
      */
@@ -149,7 +150,7 @@ export class DialogService extends Immutable<DialogServiceMessage> {
     push = (m: PushDialogView) => {
 
         this.stack.push(m);
-        this.display.setView(m.view);
+        this.manager.setDialogView(m.view);
         this.tell(m.source, new ViewContentCreated());
 
     };
@@ -183,11 +184,11 @@ export class DialogService extends Immutable<DialogServiceMessage> {
     };
 
     /**
-     * close clears the display and the stack of any Views.
+     * close clears the manager and the stack of any Views.
      */
     close = () => {
 
-        this.display.close();
+        this.manager.closeDialog();
 
         this.stack.forEach(m => {
 
@@ -205,7 +206,7 @@ export class DialogService extends Immutable<DialogServiceMessage> {
 
         new Case(ShowDialogView, this.show),
 
-      new Case(PushDialogView, this.push),
+        new Case(PushDialogView, this.push),
 
         new Case(PopDialogView, this.pop),
 

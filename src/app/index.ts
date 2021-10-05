@@ -7,6 +7,8 @@ import { Conf } from '@quenk/potoo/lib/actor/system/vm/conf';
 import { PVM } from '@quenk/potoo/lib/actor/system/vm';
 import { System } from '@quenk/potoo/lib/actor/system';
 import { Instance } from '@quenk/potoo/lib/actor';
+import { Address } from '@quenk/potoo/lib/actor/address';
+import { Message } from '@quenk/potoo/lib/actor/message';
 
 export { Template }
 
@@ -42,5 +44,18 @@ export abstract class JApp implements App {
 
     }
 
+    tell(addr: Address, msg: Message): JApp {
+
+        this.vm.tell(addr, msg);
+        return this;
+
+    }
+
+    spawn(t: Template): JApp {
+
+        this.vm.spawn(t);
+        return this;
+
+    }
 
 }

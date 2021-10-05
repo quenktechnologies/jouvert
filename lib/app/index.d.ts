@@ -6,6 +6,8 @@ import { Conf } from '@quenk/potoo/lib/actor/system/vm/conf';
 import { PVM } from '@quenk/potoo/lib/actor/system/vm';
 import { System } from '@quenk/potoo/lib/actor/system';
 import { Instance } from '@quenk/potoo/lib/actor';
+import { Address } from '@quenk/potoo/lib/actor/address';
+import { Message } from '@quenk/potoo/lib/actor/message';
 export { Template };
 /**
  * App is the main class of any j'ouvert app.
@@ -27,4 +29,6 @@ export declare abstract class JApp implements App {
     vm: PVM;
     exec(i: Instance, s: Script): void;
     execNow(i: Instance, s: Script): Maybe<PTValue>;
+    tell(addr: Address, msg: Message): JApp;
+    spawn(t: Template): JApp;
 }

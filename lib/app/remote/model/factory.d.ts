@@ -3,6 +3,10 @@ import { Address } from '@quenk/potoo/lib/actor/address';
 import { CompleteHandler } from '../callback';
 import { SpawnFunc, RemoteModel, Result } from './';
 /**
+ * CompleteHandlerSpec type allows one or more CompletHandlers to be specified.
+ */
+export declare type CompleteHandlerSpec<D extends Object> = CompleteHandler<Result<D>> | CompleteHandler<Result<D>>[];
+/**
  * RemoteModelFactory is a convenience class for creating RemoteModel instances.
  */
 export declare class RemoteModelFactory<T extends Object> {
@@ -21,5 +25,5 @@ export declare class RemoteModelFactory<T extends Object> {
     /**
      * create a new RemoteModel based on teh path specified.
      */
-    create(path: string, handler?: CompleteHandler<Result<T>>): RemoteModel<T>;
+    create(path: string, handlers?: CompleteHandlerSpec<T>): RemoteModel<T>;
 }

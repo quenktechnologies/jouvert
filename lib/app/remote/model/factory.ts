@@ -2,8 +2,16 @@ import { Object } from '@quenk/noni/lib/data/jsonx';
 
 import { Address } from '@quenk/potoo/lib/actor/address';
 
-import { CompleteHandler } from '../callback';
+import { CompleteHandler, CompositeCompleteHandler } from '../callback';
 import { SpawnFunc, RemoteModel, Result } from './';
+
+/**
+ * CompleteHandlerSpec type allows one or more CompletHandlers to be specified.
+ */
+export type CompleteHandlerSpec<D extends Object>
+    = CompleteHandler<Result<D>>
+    | CompleteHandler<Result<D>>[]
+    ;
 
 /**
  * RemoteModelFactory is a convenience class for creating RemoteModel instances.
@@ -30,9 +38,11 @@ export class RemoteModelFactory<T extends Object> {
     /**
      * create a new RemoteModel based on teh path specified.
      */
-    create(path: string, handler?: CompleteHandler<Result<T>>): RemoteModel<T> {
+    create(path: string, handlers?: CompleteHandlerSpec<T>): RemoteModel<T> {
 
-        return new RemoteModel(this.remote, path, this.spawn, handler);
+        return new RemoteModel(this.remote, path,
+            this.spawn, Array.isArray(handlers) ?
+            new CompositeCompleteHandler(handlers) : handlers);
 
     }
 

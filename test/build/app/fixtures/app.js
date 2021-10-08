@@ -21,8 +21,7 @@ var TestApp = /** @class */ (function (_super) {
         return _super !== null && _super.apply(this, arguments) || this;
     }
     TestApp.prototype.spawn = function (temp) {
-        this.vm.spawn(temp);
-        return this;
+        return this.vm.spawn(temp);
     };
     return TestApp;
 }(app_1.JApp));

@@ -30,5 +30,5 @@ export declare abstract class JApp implements App {
     exec(i: Instance, s: Script): void;
     execNow(i: Instance, s: Script): Maybe<PTValue>;
     tell(addr: Address, msg: Message): JApp;
-    spawn(t: Template): JApp;
+    spawn(t: Template): Address;
 }

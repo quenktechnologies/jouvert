@@ -51,10 +51,9 @@ export abstract class JApp implements App {
 
     }
 
-    spawn(t: Template): JApp {
+    spawn(t: Template): Address {
 
-        this.vm.spawn(t);
-        return this;
+        return this.vm.spawn(t);
 
     }
 

@@ -7,21 +7,63 @@ import { System } from '@quenk/potoo/lib/actor/system';
 import { Address } from '@quenk/potoo/lib/actor/address';
 import { Case } from '@quenk/potoo/lib/actor/resident/case';
 
-import { ViewDelegate } from './delegate';
-
 /**
  * ViewName is used to identify views.
  */
 export type ViewName = string;
 
 /**
- * Message is the type of messages the ViewService handles.
+ * ViewServiceMessage is the type of messages the ViewService handles.
  */
-export type Message
+export type ViewServiceMessage
     = Show
     | Push
     | Pop
     ;
+
+/**
+ * ViewDelegate is the object the ViewService delegates actual handling of the
+ * view to.
+ */
+export interface ViewDelegate {
+
+    /**
+     * set changes which view (if any) is attached to the view.
+     */
+    set(view: View): void
+
+    /**
+     * unset removes the current view from the DOM.
+     */
+    unset(): void
+
+}
+
+/**
+ * HTMLElementViewDelegate is ViewDelegate implementation that uses a 
+ * HTMLElement as the entry point for the view.
+ */
+export class HTMLElementViewDelegate implements ViewDelegate {
+
+    constructor(public node: HTMLElement) { }
+
+    set(view: View) {
+
+        this.unset();
+        this.node.appendChild(<HTMLElement>view.render());
+
+    }
+
+    unset() {
+
+        let { node } = this;
+
+        while (node.firstChild != null)
+            node.removeChild(node.firstChild);
+
+    }
+
+}
 
 /**
  * Show triggers the display of dialog content.
@@ -46,6 +88,16 @@ export class Push extends Show { }
  * If there are no more Views, the dialog is closed.
  */
 export class Pop {
+
+    constructor(public source: Address) { }
+
+}
+
+/**
+ * Close instructs the service to "close" the view. The content displayed
+ * will be destroyed by the delegate.
+ */
+export class Close {
 
     constructor(public source: Address) { }
 
@@ -84,7 +136,7 @@ export class ViewRemoved {
  * views can be stacked up via [[Push]] messages and later restored via [[Pop]].
  * Use this to implement navigation independant of the address bar for example.
  */
-export class ViewService extends Immutable<Message> {
+export class ViewService extends Immutable<ViewServiceMessage> {
 
     constructor(
         public delegate: ViewDelegate,
@@ -92,25 +144,37 @@ export class ViewService extends Immutable<Message> {
 
     stack: Show[] = [];
 
-    show = (m: Show) => {
+    receive = <Case<ViewServiceMessage>[]>[
 
-        if (!empty(this.stack)) this.clear();
+        new Case(Show, (m: Show) => this.show(m)),
+
+        new Case(Push, (m: Push) => this.push(m)),
+
+        new Case(Pop, (m: Pop) => this.pop(m)),
+
+        new Case(Close, () => this.close())
+
+    ];
+
+    show(m: Show) {
+
+        if (!empty(this.stack)) this.close();
 
         this.push(m);
 
-    };
+    }
 
-    push = (m: Push) => {
+    push(m: Push) {
 
         this.stack.push(m);
 
-        this.delegate.setView(m.view);
+        this.delegate.set(m.view);
 
         this.tell(m.source, new ViewShown(m.name));
 
-    };
+    }
 
-    pop = (m: Pop) => {
+    pop(m: Pop) {
 
         if (empty(this.stack)) {
 
@@ -120,7 +184,7 @@ export class ViewService extends Immutable<Message> {
 
             let current = <Show>this.stack.pop();
 
-            this.delegate.unsetView();
+            this.delegate.unset();
 
             this.tell(current.source, new ViewRemoved(current.name));
 
@@ -134,29 +198,19 @@ export class ViewService extends Immutable<Message> {
 
     };
 
-    clear = () => {
+    close() {
 
-        if (!empty(this.stack)) {
+        this.delegate.unset();
 
-            let current = <Show>this.stack.pop();
+        this.stack.forEach(m => {
 
-            this.tell(current.source, new ViewRemoved(current.name));
+            this.tell(m.source, new ViewRemoved(m.name));
 
-        }
+        });
 
         this.stack = [];
 
-    };
-
-    receive = <Case<Message>[]>[
-
-        new Case(Show, this.show),
-
-        new Case(Push, this.push),
-
-        new Case(Pop, this.pop),
-
-    ];
+    }
 
     run() { }
 

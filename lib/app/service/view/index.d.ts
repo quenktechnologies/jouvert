@@ -3,15 +3,38 @@ import { Immutable } from '@quenk/potoo/lib/actor/resident';
 import { System } from '@quenk/potoo/lib/actor/system';
 import { Address } from '@quenk/potoo/lib/actor/address';
 import { Case } from '@quenk/potoo/lib/actor/resident/case';
-import { ViewDelegate } from './delegate';
 /**
  * ViewName is used to identify views.
  */
 export declare type ViewName = string;
 /**
- * Message is the type of messages the ViewService handles.
+ * ViewServiceMessage is the type of messages the ViewService handles.
  */
-export declare type Message = Show | Push | Pop;
+export declare type ViewServiceMessage = Show | Push | Pop;
+/**
+ * ViewDelegate is the object the ViewService delegates actual handling of the
+ * view to.
+ */
+export interface ViewDelegate {
+    /**
+     * set changes which view (if any) is attached to the view.
+     */
+    set(view: View): void;
+    /**
+     * unset removes the current view from the DOM.
+     */
+    unset(): void;
+}
+/**
+ * HTMLElementViewDelegate is ViewDelegate implementation that uses a
+ * HTMLElement as the entry point for the view.
+ */
+export declare class HTMLElementViewDelegate implements ViewDelegate {
+    node: HTMLElement;
+    constructor(node: HTMLElement);
+    set(view: View): void;
+    unset(): void;
+}
 /**
  * Show triggers the display of dialog content.
  */
@@ -32,6 +55,14 @@ export declare class Push extends Show {
  * If there are no more Views, the dialog is closed.
  */
 export declare class Pop {
+    source: Address;
+    constructor(source: Address);
+}
+/**
+ * Close instructs the service to "close" the view. The content displayed
+ * will be destroyed by the delegate.
+ */
+export declare class Close {
     source: Address;
     constructor(source: Address);
 }
@@ -64,15 +95,15 @@ export declare class ViewRemoved {
  * views can be stacked up via [[Push]] messages and later restored via [[Pop]].
  * Use this to implement navigation independant of the address bar for example.
  */
-export declare class ViewService extends Immutable<Message> {
+export declare class ViewService extends Immutable<ViewServiceMessage> {
     delegate: ViewDelegate;
     system: System;
     constructor(delegate: ViewDelegate, system: System);
     stack: Show[];
-    show: (m: Show) => void;
-    push: (m: Push) => void;
-    pop: (m: Pop) => void;
-    clear: () => void;
-    receive: Case<Message>[];
+    receive: Case<ViewServiceMessage>[];
+    show(m: Show): void;
+    push(m: Push): void;
+    pop(m: Pop): void;
+    close(): void;
     run(): void;
 }

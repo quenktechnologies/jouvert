@@ -1,9 +1,19 @@
 import { Object } from '@quenk/noni/lib/data/jsonx';
+import { isObject } from '@quenk/noni/lib/data/type';
 
+import { Spawner } from '@quenk/potoo/lib/actor/resident/api';
 import { Address } from '@quenk/potoo/lib/actor/address';
 
 import { CompleteHandler, CompositeCompleteHandler } from '../callback';
 import { SpawnFunc, RemoteModel, Result } from './';
+
+/**
+ * SpawnSpec is a type providing a way to spawn a new actor.
+ */
+export type SpawnSpec
+    = SpawnFunc
+    | Spawner
+    ;
 
 /**
  * CompleteHandlerSpec type allows one or more CompletHandlers to be specified.
@@ -28,10 +38,11 @@ export class RemoteModelFactory<T extends Object> {
     /**
      * getInstance provides a new RemoteModelFactory instance.
      */
-    static getInstance<T extends Object>(spawn: SpawnFunc, remote: Address)
+    static getInstance<T extends Object>(spawn: SpawnSpec, remote: Address)
         : RemoteModelFactory<T> {
 
-        return new RemoteModelFactory(spawn, remote);
+        return new RemoteModelFactory(isObject(spawn) ?
+            (<Spawner>spawn).spawn.bind(spawn) : spawn, remote);
 
     }
 

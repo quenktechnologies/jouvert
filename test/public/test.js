@@ -1401,48 +1401,40 @@ exports.RemoteObserver = RemoteObserver;
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.MockAgent = void 0;
-var mock_1 = require("@quenk/test/lib/mock");
-var future_1 = require("@quenk/noni/lib/control/monad/future");
-var response_1 = require("../response");
-var res = future_1.pure(new response_1.GenericResponse(0, {}, {}, { port: 0, ttl: 0, tags: {}, context: {} }));
+const mock_1 = require("@quenk/test/lib/mock");
+const future_1 = require("@quenk/noni/lib/control/monad/future");
+const response_1 = require("../response");
+const res = (0, future_1.pure)(new response_1.GenericResponse(0, {}, {}, { port: 0, ttl: 0, tags: {}, context: {} }));
 /**
  * MockAgent is an HTTPAgent that can be used when testing projects that use
  * this library.
  */
-var MockAgent = /** @class */ (function () {
-    function MockAgent() {
+class MockAgent {
+    constructor() {
         this.__MOCK__ = new mock_1.Mock();
     }
-    MockAgent.prototype.head = function (path, params, headers) {
-        if (params === void 0) { params = {}; }
-        if (headers === void 0) { headers = {}; }
+    head(path, params = {}, headers = {}) {
         return this.__MOCK__.invoke('head', [path, params, headers], res);
-    };
-    MockAgent.prototype.get = function (path, params, headers) {
-        if (params === void 0) { params = {}; }
-        if (headers === void 0) { headers = {}; }
+    }
+    get(path, params = {}, headers = {}) {
         return this.__MOCK__.invoke('get', [path, params, headers], res);
-    };
-    MockAgent.prototype.post = function (path, body, headers) {
-        if (headers === void 0) { headers = {}; }
+    }
+    post(path, body, headers = {}) {
         return this.__MOCK__.invoke('post', [path, body, headers], res);
-    };
-    MockAgent.prototype.put = function (path, body, headers) {
-        if (headers === void 0) { headers = {}; }
+    }
+    put(path, body, headers = {}) {
         return this.__MOCK__.invoke('put', [path, body, headers], res);
-    };
-    MockAgent.prototype.patch = function (path, body, headers) {
-        if (headers === void 0) { headers = {}; }
+    }
+    patch(path, body, headers = {}) {
         return this.__MOCK__.invoke('patch', [path, body, headers], res);
-    };
-    MockAgent.prototype.delete = function (path, body, headers) {
+    }
+    delete(path, body, headers) {
         return this.__MOCK__.invoke('delete', [path, body, headers], res);
-    };
-    MockAgent.prototype.send = function (req) {
+    }
+    send(req) {
         return this.__MOCK__.invoke('send', [req], res);
-    };
-    return MockAgent;
-}());
+    }
+}
 exports.MockAgent = MockAgent;
 
 },{"../response":14,"@quenk/noni/lib/control/monad/future":18,"@quenk/test/lib/mock":67}],12:[function(require,module,exports){
@@ -1455,6 +1447,8 @@ var __extends = (this && this.__extends) || (function () {
         return extendStatics(d, b);
     };
     return function (d, b) {
+        if (typeof b !== "function" && b !== null)
+            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
         extendStatics(d, b);
         function __() { this.constructor = d; }
         d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
@@ -1575,6 +1569,8 @@ var __extends = (this && this.__extends) || (function () {
         return extendStatics(d, b);
     };
     return function (d, b) {
+        if (typeof b !== "function" && b !== null)
+            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
         extendStatics(d, b);
         function __() { this.constructor = d; }
         d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
@@ -1790,7 +1786,7 @@ exports.InternalServerError = InternalServerError;
  * createResponse creates a new typed Response or a GenericResponse if
  * unsupported.
  */
-exports.createResponse = function (code, body, headers, options) {
+var createResponse = function (code, body, headers, options) {
     switch (code) {
         case status.OK:
             return new Ok(body, headers, options);
@@ -1823,11 +1819,13 @@ exports.createResponse = function (code, body, headers, options) {
                 return new GenericResponse(code, body, headers, options);
     }
 };
+exports.createResponse = createResponse;
 
 },{"./status":15}],15:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.NETWORK_AUTHENTICATION_REQUIRED = exports.NOT_EXTENDED = exports.LOOP_DETECTED = exports.INSUFFICIENT_STORAGE = exports.VARIANT_ALSO_NEGOTIATES = exports.HTTP_VERSION_NOT_SUPPORTED = exports.GATEWAY_TIMEOUT = exports.SERVICE_UNAVAILABLE = exports.BAD_GATEWAY = exports.NOT_IMPLEMENTED = exports.INTERNAL_SERVER_ERROR = exports.UNAVAILABLE_FOR_LEGAL_RREASONS = exports.REQUEST_HEADER_FIELDS_TOO_LARGE = exports.TOO_MANY_REQUESTS = exports.PRECONDITION_REQUIRED = exports.UPGRADE_REQUIRED = exports.FAILED_DEPENDENCY = exports.LOCKED = exports.UNPROCESSABLE_ENTITY = exports.TEAPOT = exports.EXPECTATION_FAILED = exports.REQUESTED_RANGE_NOT_SATISFIABLE = exports.UNSUPPORTED_MEDIA_TYPE = exports.REQUEST_URI_TOO_LONG = exports.REQUEST_ENTITY_TOO_LARGE = exports.PRECONDITION_FAILED = exports.LENGTH_REQUIRED = exports.GONE = exports.CONFLICT = exports.REQUEST_TIMEOUT = exports.PROXY_AUTH_REQUIRED = exports.NOT_ACCEPTABLE = exports.METHOD_NOT_ALLOWED = exports.NOT_FOUND = exports.FORBIDDEN = exports.PAYMENT_REQUIRED = exports.UNAUTHORIZED = exports.BAD_REQUEST = exports.PERMANENT_REDIRECT = exports.TEMPORARY_REDIRECT = exports.USE_PROXY = exports.NOT_MODIFIED = exports.SEE_OTHER = exports.FOUND = exports.MOVED_PERMANENTLY = exports.MULTIPLE_CHOICES = exports.IM_USED = exports.ALREADY_REPORTED = exports.MULTI_STATUS = exports.PARTIAL_CONTENT = exports.RESET_CONTENT = exports.NO_CONTENT = exports.NON_AUTHORITATIV_INFO = exports.ACCEPTED = exports.CREATED = exports.OK = exports.PROCESSING = exports.SWITCHING_PROTOCOLS = exports.CONTINUE = void 0;
+exports.NOT_IMPLEMENTED = exports.INTERNAL_SERVER_ERROR = exports.UNAVAILABLE_FOR_LEGAL_RREASONS = exports.REQUEST_HEADER_FIELDS_TOO_LARGE = exports.TOO_MANY_REQUESTS = exports.PRECONDITION_REQUIRED = exports.UPGRADE_REQUIRED = exports.FAILED_DEPENDENCY = exports.LOCKED = exports.UNPROCESSABLE_ENTITY = exports.TEAPOT = exports.EXPECTATION_FAILED = exports.REQUESTED_RANGE_NOT_SATISFIABLE = exports.UNSUPPORTED_MEDIA_TYPE = exports.REQUEST_URI_TOO_LONG = exports.REQUEST_ENTITY_TOO_LARGE = exports.PRECONDITION_FAILED = exports.LENGTH_REQUIRED = exports.GONE = exports.CONFLICT = exports.REQUEST_TIMEOUT = exports.PROXY_AUTH_REQUIRED = exports.NOT_ACCEPTABLE = exports.METHOD_NOT_ALLOWED = exports.NOT_FOUND = exports.FORBIDDEN = exports.PAYMENT_REQUIRED = exports.UNAUTHORIZED = exports.BAD_REQUEST = exports.PERMANENT_REDIRECT = exports.TEMPORARY_REDIRECT = exports.USE_PROXY = exports.NOT_MODIFIED = exports.SEE_OTHER = exports.FOUND = exports.MOVED_PERMANENTLY = exports.MULTIPLE_CHOICES = exports.IM_USED = exports.ALREADY_REPORTED = exports.MULTI_STATUS = exports.PARTIAL_CONTENT = exports.RESET_CONTENT = exports.NO_CONTENT = exports.NON_AUTHORITATIV_INFO = exports.ACCEPTED = exports.CREATED = exports.OK = exports.PROCESSING = exports.SWITCHING_PROTOCOLS = exports.CONTINUE = void 0;
+exports.NETWORK_AUTHENTICATION_REQUIRED = exports.NOT_EXTENDED = exports.LOOP_DETECTED = exports.INSUFFICIENT_STORAGE = exports.VARIANT_ALSO_NEGOTIATES = exports.HTTP_VERSION_NOT_SUPPORTED = exports.GATEWAY_TIMEOUT = exports.SERVICE_UNAVAILABLE = exports.BAD_GATEWAY = void 0;
 exports.CONTINUE = 100;
 exports.SWITCHING_PROTOCOLS = 101;
 exports.PROCESSING = 102;
@@ -1925,10 +1923,10 @@ exports.raise = raise;
  */
 var attempt = function (f) {
     try {
-        return either_1.right(f());
+        return (0, either_1.right)(f());
     }
     catch (e) {
-        return either_1.left(e);
+        return (0, either_1.left)(e);
     }
 };
 exports.attempt = attempt;
@@ -1970,7 +1968,7 @@ var UnMatched = /** @class */ (function () {
         this.value = value;
     }
     UnMatched.prototype.caseOf = function (pattern, f) {
-        return type_1.test(this.value, pattern) ?
+        return (0, type_1.test)(this.value, pattern) ?
             new Matched(f(this.value)) : this;
     };
     /**
@@ -1985,7 +1983,7 @@ var UnMatched = /** @class */ (function () {
      * Calling end on an UnMatched is an error.
      */
     UnMatched.prototype.end = function () {
-        throw new Error("The pattern '" + type_1.show(this.value) + "' was not matched!");
+        throw new Error("The pattern '" + (0, type_1.show)(this.value) + "' was not matched!");
     };
     return UnMatched;
 }());
@@ -2031,11 +2029,40 @@ var __extends = (this && this.__extends) || (function () {
         return extendStatics(d, b);
     };
     return function (d, b) {
+        if (typeof b !== "function" && b !== null)
+            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
         extendStatics(d, b);
         function __() { this.constructor = d; }
         d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
     };
 })();
+var __generator = (this && this.__generator) || function (thisArg, body) {
+    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
+    return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
+    function verb(n) { return function (v) { return step([n, v]); }; }
+    function step(op) {
+        if (f) throw new TypeError("Generator is already executing.");
+        while (_) try {
+            if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
+            if (y = 0, t) op = [op[0] & 2, t.value];
+            switch (op[0]) {
+                case 0: case 1: t = op; break;
+                case 4: _.label++; return { value: op[1], done: false };
+                case 5: _.label++; y = op[1]; op = [0]; continue;
+                case 7: op = _.ops.pop(); _.trys.pop(); continue;
+                default:
+                    if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) { _ = 0; continue; }
+                    if (op[0] === 3 && (!t || (op[1] > t[0] && op[1] < t[3]))) { _.label = op[1]; break; }
+                    if (op[0] === 6 && _.label < t[1]) { _.label = t[1]; t = op; break; }
+                    if (t && _.label < t[2]) { _.label = t[2]; _.ops.push(op); break; }
+                    if (t[2]) _.ops.pop();
+                    _.trys.pop(); continue;
+            }
+            op = body.call(thisArg, _);
+        } catch (e) { op = [6, e]; y = 0; } finally { f = t = 0; }
+        if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
+    }
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.doFuture = exports.liftP = exports.fromExcept = exports.toPromise = exports.race = exports.reduce = exports.sequential = exports.parallel = exports.batch = exports.fromCallback = exports.fromAbortable = exports.wait = exports.delay = exports.attempt = exports.raise = exports.pure = exports.Compute = exports.Run = exports.Raise = exports.Trap = exports.Finally = exports.Catch = exports.Step = exports.Bind = exports.Pure = exports.Future = void 0;
 var function_1 = require("../../data/function");
@@ -2097,7 +2124,7 @@ var Pure = /** @class */ (function (_super) {
     };
     Pure.prototype.__exec = function (c) {
         c.value = this.value;
-        timer_1.tick(function () { return c.run(); });
+        (0, timer_1.tick)(function () { return c.run(); });
         return false;
     };
     return Pure;
@@ -2225,7 +2252,7 @@ var Raise = /** @class */ (function (_super) {
     };
     Raise.prototype.__exec = function (c) {
         var finished = false;
-        var e = error_1.convert(this.value);
+        var e = (0, error_1.convert)(this.value);
         while (!finished) {
             if (c.stack.length === 0) {
                 c.exitError(e);
@@ -2350,15 +2377,19 @@ exports.raise = raise;
 /**
  * attempt a synchronous task, trapping any thrown errors in the Future.
  */
-var attempt = function (f) { return new Run(function (s) {
-    timer_1.tick(function () { try {
-        s.onSuccess(f());
-    }
-    catch (e) {
-        s.onError(e);
-    } });
-    return function_1.noop;
-}); };
+var attempt = function (f) {
+    return new Run(function (s) {
+        (0, timer_1.tick)(function () {
+            try {
+                s.onSuccess(f());
+            }
+            catch (e) {
+                s.onError(e);
+            }
+        });
+        return function_1.noop;
+    });
+};
 exports.attempt = attempt;
 /**
  * delay execution of a function f after n milliseconds have passed.
@@ -2408,7 +2439,7 @@ exports.fromAbortable = fromAbortable;
  *
  * Note: The function used here is not called in the "next tick".
  */
-var fromCallback = function (f) { return exports.fromAbortable(function_1.noop)(f); };
+var fromCallback = function (f) { return (0, exports.fromAbortable)(function_1.noop)(f); };
 exports.fromCallback = fromCallback;
 var Tag = /** @class */ (function () {
     function Tag(index, value) {
@@ -2421,7 +2452,7 @@ var Tag = /** @class */ (function () {
  * batch runs a list of batched Futures one batch at a time.
  */
 var batch = function (list) {
-    return exports.sequential(list.map(function (w) { return exports.parallel(w); }));
+    return (0, exports.sequential)(list.map(function (w) { return (0, exports.parallel)(w); }));
 };
 exports.batch = batch;
 /**
@@ -2482,29 +2513,29 @@ var sequential = function (list) { return new Run(function (s) {
 }); };
 exports.sequential = sequential;
 /**
- * reduce a list of futures into a single value.
- *
- * Starts with an initial value passing the result of
- * each future to the next.
+ * reduce a list of values into a single value using a reducer function that
+ * produces a Future.
  */
-var reduce = function (list, init, f) { return new Run(function (s) {
-    var i = 0;
-    var onErr = function (e) { return s.onError(e); };
-    var onSuccess = function (a) {
-        init = f(init, a, i);
-        next(init);
-    };
-    var abort;
-    var next = function (value) {
-        if (i < list.length)
-            abort = list[i].fork(onErr, onSuccess);
-        else
-            s.onSuccess(value);
-        i++;
-    };
-    next(init);
-    return function () { if (abort)
-        abort.abort(); };
+var reduce = function (list, initValue, f) { return (0, exports.doFuture)(function () {
+    var accumValue, i;
+    return __generator(this, function (_a) {
+        switch (_a.label) {
+            case 0:
+                accumValue = initValue;
+                i = 0;
+                _a.label = 1;
+            case 1:
+                if (!(i < list.length)) return [3 /*break*/, 4];
+                return [4 /*yield*/, f(accumValue, list[i], i)];
+            case 2:
+                accumValue = _a.sent();
+                _a.label = 3;
+            case 3:
+                i++;
+                return [3 /*break*/, 1];
+            case 4: return [2 /*return*/, (0, exports.pure)(accumValue)];
+        }
+    });
 }); };
 exports.reduce = reduce;
 /**
@@ -2543,15 +2574,15 @@ exports.race = race;
  * This function depends on the global promise constructor and
  * will fail if the enviornment does not provide one.
  */
-var toPromise = function (ft) { return new Promise(function (yes, no) {
-    return ft.fork(no, yes);
-}); };
+var toPromise = function (ft) {
+    return new Promise(function (yes, no) { return ft.fork(no, yes); });
+};
 exports.toPromise = toPromise;
 /**
  * fromExcept converts an Except to a Future.
  */
 var fromExcept = function (e) {
-    return e.fold(function (e) { return exports.raise(e); }, function (a) { return exports.pure(a); });
+    return e.fold(function (e) { return (0, exports.raise)(e); }, function (a) { return (0, exports.pure)(a); });
 };
 exports.fromExcept = fromExcept;
 /**
@@ -2569,7 +2600,7 @@ exports.liftP = liftP;
  *
  * Use this function to avoid explicit type assertions with control/monad#doN.
  */
-var doFuture = function (f) { return _1.doN(f); };
+var doFuture = function (f) { return (0, _1.doN)(f); };
 exports.doFuture = doFuture;
 
 },{"../../data/function":23,"../error":16,"../timer":20,"./":19}],19:[function(require,module,exports){
@@ -2587,7 +2618,7 @@ exports.join = join;
  * compose right composes functions that produce Monads so that the output
  * of the second is the input of the first.
  */
-var compose = function (g, f) { return exports.pipe(f, g); };
+var compose = function (g, f) { return (0, exports.pipe)(f, g); };
 exports.compose = compose;
 /**
  * pipe left composes functions that produce Monads so that the output of the
@@ -2720,14 +2751,16 @@ var throttle = function (f, duration) {
 exports.throttle = throttle;
 
 }).call(this)}).call(this,require('_process'))
-},{"_process":90}],21:[function(require,module,exports){
+},{"_process":91}],21:[function(require,module,exports){
 "use strict";
-var __spreadArrays = (this && this.__spreadArrays) || function () {
-    for (var s = 0, i = 0, il = arguments.length; i < il; i++) s += arguments[i].length;
-    for (var r = Array(s), k = 0, i = 0; i < il; i++)
-        for (var a = arguments[i], j = 0, jl = a.length; j < jl; j++, k++)
-            r[k] = a[j];
-    return r;
+var __spreadArray = (this && this.__spreadArray) || function (to, from, pack) {
+    if (pack || arguments.length === 2) for (var i = 0, l = from.length, ar; i < l; i++) {
+        if (ar || !(i in from)) {
+            if (!ar) ar = Array.prototype.slice.call(from, 0, i);
+            ar[i] = from[i];
+        }
+    }
+    return to.concat(ar || Array.prototype.slice.call(from));
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.compact = exports.flatten = exports.combine = exports.make = exports.removeAt = exports.remove = exports.dedupe = exports.distribute = exports.group = exports.partition = exports.concat = exports.flatMap = exports.map = exports.contains = exports.empty = exports.tail = exports.head = void 0;
@@ -2771,23 +2804,31 @@ var flatMap = function (list, f) {
 };
 exports.flatMap = flatMap;
 /**
- * concat concatenates an element to an array without destructuring
- * the element if itself is an array.
+ * concat concatenates elements to the end of an array without flattening
+ * if any of the elements are an array.
+ *
+ * This function also ignores null and undefined.
  */
-var concat = function (list, a) { return __spreadArrays(list, [a]); };
+var concat = function (list) {
+    var items = [];
+    for (var _i = 1; _i < arguments.length; _i++) {
+        items[_i - 1] = arguments[_i];
+    }
+    return __spreadArray(__spreadArray([], list, true), items.filter(function (item) { return item != null; }), true);
+};
 exports.concat = concat;
 /**
  * partition an array into two using a partitioning function.
  *
  * The first array contains values that return true and the second false.
  */
-var partition = function (list, f) { return exports.empty(list) ?
+var partition = function (list, f) { return (0, exports.empty)(list) ?
     [[], []] :
     list.reduce(function (_a, c, i) {
         var yes = _a[0], no = _a[1];
         return (f(c, i, list) ?
-            [exports.concat(yes, c), no] :
-            [yes, exports.concat(no, c)]);
+            [(0, exports.concat)(yes, c), no] :
+            [yes, (0, exports.concat)(no, c)]);
     }, [[], []]); };
 exports.partition = partition;
 /**
@@ -2798,9 +2839,9 @@ var group = function (list, f) {
     return list.reduce(function (p, c, i) {
         var _a;
         var g = f(c, i, list);
-        return record_1.merge(p, (_a = {},
+        return (0, record_1.merge)(p, (_a = {},
             _a[g] = Array.isArray(p[g]) ?
-                exports.concat(p[g], c) : [c],
+                (0, exports.concat)(p[g], c) : [c],
             _a));
     }, {});
 };
@@ -2811,11 +2852,11 @@ exports.group = group;
  */
 var distribute = function (list, size) {
     var r = list.reduce(function (p, c, i) {
-        return math_1.isMultipleOf(size, i + 1) ?
-            [exports.concat(p[0], exports.concat(p[1], c)), []] :
-            [p[0], exports.concat(p[1], c)];
+        return (0, math_1.isMultipleOf)(size, i + 1) ?
+            [(0, exports.concat)(p[0], (0, exports.concat)(p[1], c)), []] :
+            [p[0], (0, exports.concat)(p[1], c)];
     }, [[], []]);
-    return (r[1].length === 0) ? r[0] : exports.concat(r[0], r[1]);
+    return (r[1].length === 0) ? r[0] : (0, exports.concat)(r[0], r[1]);
 };
 exports.distribute = distribute;
 /**
@@ -2884,7 +2925,7 @@ exports.combine = combine;
  */
 var flatten = function (list) {
     return list.reduce(function (p, c) {
-        return p.concat(Array.isArray(c) ? exports.flatten(c) : c);
+        return p.concat(Array.isArray(c) ? (0, exports.flatten)(c) : c);
     }, []);
 };
 exports.flatten = flatten;
@@ -2925,6 +2966,8 @@ var __extends = (this && this.__extends) || (function () {
         return extendStatics(d, b);
     };
     return function (d, b) {
+        if (typeof b !== "function" && b !== null)
+            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
         extendStatics(d, b);
         function __() { this.constructor = d; }
         d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
@@ -3003,7 +3046,7 @@ var Left = /** @class */ (function (_super) {
         throw new TypeError("Not right!");
     };
     Left.prototype.toMaybe = function () {
-        return maybe_1.nothing();
+        return (0, maybe_1.nothing)();
     };
     return Left;
 }(Either));
@@ -3065,7 +3108,7 @@ var Right = /** @class */ (function (_super) {
         return this.value;
     };
     Right.prototype.toMaybe = function () {
-        return maybe_1.just(this.value);
+        return (0, maybe_1.just)(this.value);
     };
     return Right;
 }(Either));
@@ -3084,7 +3127,7 @@ exports.right = right;
  * fromBoolean constructs an Either using a boolean value.
  */
 var fromBoolean = function (b) {
-    return b ? exports.right(true) : exports.left(false);
+    return b ? (0, exports.right)(true) : (0, exports.left)(false);
 };
 exports.fromBoolean = fromBoolean;
 /**
@@ -3449,7 +3492,7 @@ function assign(target) {
             for (var nextKey in nextSource)
                 // Avoid bugs when hasOwnProperty is shadowed
                 if (Object.prototype.hasOwnProperty.call(nextSource, nextKey))
-                    exports.set(to, nextKey, nextSource[nextKey]);
+                    (0, exports.set)(to, nextKey, nextSource[nextKey]);
     }
     return to;
 }
@@ -3482,8 +3525,8 @@ exports.keys = keys;
  * The order of keys processed is not guaranteed.
  */
 var map = function (rec, f) {
-    return exports.keys(rec)
-        .reduce(function (p, k) { return exports.merge(p, exports.set({}, k, f(rec[k], k, rec))); }, {});
+    return (0, exports.keys)(rec)
+        .reduce(function (p, k) { return (0, exports.merge)(p, (0, exports.set)({}, k, f(rec[k], k, rec))); }, {});
 };
 exports.map = map;
 /**
@@ -3493,7 +3536,7 @@ exports.map = map;
  * to each property. The order of elements is not guaranteed.
  */
 var mapTo = function (rec, f) {
-    return exports.keys(rec).map(function (k) { return f(rec[k], k, rec); });
+    return (0, exports.keys)(rec).map(function (k) { return f(rec[k], k, rec); });
 };
 exports.mapTo = mapTo;
 /**
@@ -3502,7 +3545,7 @@ exports.mapTo = mapTo;
  * The order of keys processed is not guaranteed.
  */
 var forEach = function (rec, f) {
-    return exports.keys(rec).forEach(function (k) { return f(rec[k], k, rec); });
+    return (0, exports.keys)(rec).forEach(function (k) { return f(rec[k], k, rec); });
 };
 exports.forEach = forEach;
 /**
@@ -3513,16 +3556,16 @@ exports.forEach = forEach;
  * not guaranteed.
  */
 var reduce = function (rec, accum, f) {
-    return exports.keys(rec).reduce(function (p, k) { return f(p, rec[k], k); }, accum);
+    return (0, exports.keys)(rec).reduce(function (p, k) { return f(p, rec[k], k); }, accum);
 };
 exports.reduce = reduce;
 /**
  * filter the keys of a Record using a filter function.
  */
 var filter = function (rec, f) {
-    return exports.keys(rec)
+    return (0, exports.keys)(rec)
         .reduce(function (p, k) { return f(rec[k], k, rec) ?
-        exports.merge(p, exports.set({}, k, rec[k])) : p; }, {});
+        (0, exports.merge)(p, (0, exports.set)({}, k, rec[k])) : p; }, {});
 };
 exports.filter = filter;
 /**
@@ -3557,7 +3600,7 @@ exports.merge5 = merge5;
  * This function may violate type safety.
  */
 var rmerge = function (left, right) {
-    return exports.reduce(right, left, deepMerge);
+    return (0, exports.reduce)(right, left, deepMerge);
 };
 exports.rmerge = rmerge;
 /**
@@ -3566,7 +3609,7 @@ exports.rmerge = rmerge;
 var rmerge3 = function (r, s, t) {
     return [s, t]
         .reduce(function (p, c) {
-        return exports.reduce(c, (p), deepMerge);
+        return (0, exports.reduce)(c, (p), deepMerge);
     }, r);
 };
 exports.rmerge3 = rmerge3;
@@ -3576,7 +3619,7 @@ exports.rmerge3 = rmerge3;
 var rmerge4 = function (r, s, t, u) {
     return [s, t, u]
         .reduce(function (p, c) {
-        return exports.reduce(c, (p), deepMerge);
+        return (0, exports.reduce)(c, (p), deepMerge);
     }, r);
 };
 exports.rmerge4 = rmerge4;
@@ -3586,24 +3629,24 @@ exports.rmerge4 = rmerge4;
 var rmerge5 = function (r, s, t, u, v) {
     return [s, t, u, v]
         .reduce(function (p, c) {
-        return exports.reduce(c, (p), deepMerge);
+        return (0, exports.reduce)(c, (p), deepMerge);
     }, r);
 };
 exports.rmerge5 = rmerge5;
 var deepMerge = function (pre, curr, key) {
-    return exports.isRecord(curr) ?
-        exports.merge(pre, exports.set({}, key, exports.isRecord(pre[key]) ?
-            exports.rmerge(pre[key], curr) :
-            exports.merge({}, curr))) :
-        exports.merge(pre, exports.set({}, key, curr));
+    return (0, exports.isRecord)(curr) ?
+        (0, exports.merge)(pre, (0, exports.set)({}, key, (0, exports.isRecord)(pre[key]) ?
+            (0, exports.rmerge)(pre[key], curr) :
+            (0, exports.merge)({}, curr))) :
+        (0, exports.merge)(pre, (0, exports.set)({}, key, curr));
 };
 /**
  * exclude removes the specified properties from a Record.
  */
 var exclude = function (rec, keys) {
     var list = Array.isArray(keys) ? keys : [keys];
-    return exports.reduce(rec, {}, function (p, c, k) {
-        return list.indexOf(k) > -1 ? p : exports.merge(p, exports.set({}, k, c));
+    return (0, exports.reduce)(rec, {}, function (p, c, k) {
+        return list.indexOf(k) > -1 ? p : (0, exports.merge)(p, (0, exports.set)({}, k, c));
     });
 };
 exports.exclude = exclude;
@@ -3614,11 +3657,11 @@ exports.exclude = exclude;
  * of values that return true and the second, false.
  */
 var partition = function (r, f) {
-    return exports.reduce(r, [{}, {}], function (_a, c, k) {
+    return (0, exports.reduce)(r, [{}, {}], function (_a, c, k) {
         var yes = _a[0], no = _a[1];
         return f(c, k, r) ?
-            [exports.merge(yes, exports.set({}, k, c)), no] :
-            [yes, exports.merge(no, exports.set({}, k, c))];
+            [(0, exports.merge)(yes, (0, exports.set)({}, k, c)), no] :
+            [yes, (0, exports.merge)(no, (0, exports.set)({}, k, c))];
     });
 };
 exports.partition = partition;
@@ -3627,12 +3670,12 @@ exports.partition = partition;
  * function.
  */
 var group = function (rec, f) {
-    return exports.reduce(rec, {}, function (prev, curr, key) {
+    return (0, exports.reduce)(rec, {}, function (prev, curr, key) {
         var category = f(curr, key, rec);
-        var value = exports.isRecord(prev[category]) ?
-            exports.merge(prev[category], exports.set({}, key, curr)) :
-            exports.set({}, key, curr);
-        return exports.merge(prev, exports.set({}, category, value));
+        var value = (0, exports.isRecord)(prev[category]) ?
+            (0, exports.merge)(prev[category], (0, exports.set)({}, key, curr)) :
+            (0, exports.set)({}, key, curr);
+        return (0, exports.merge)(prev, (0, exports.set)({}, category, value));
     });
 };
 exports.group = group;
@@ -3640,7 +3683,7 @@ exports.group = group;
  * values returns a shallow array of the values of a record.
  */
 var values = function (r) {
-    return exports.reduce(r, [], function (p, c) { return array_1.concat(p, c); });
+    return (0, exports.reduce)(r, [], function (p, c) { return (0, array_1.concat)(p, c); });
 };
 exports.values = values;
 /**
@@ -3658,33 +3701,33 @@ exports.hasKey = hasKey;
  * are not class instances. This function may violate type safety.
  */
 var clone = function (r) {
-    return exports.reduce(r, {}, function (p, c, k) { exports.set(p, k, _clone(c)); return p; });
+    return (0, exports.reduce)(r, {}, function (p, c, k) { (0, exports.set)(p, k, _clone(c)); return p; });
 };
 exports.clone = clone;
 var _clone = function (a) {
-    if (type_1.isArray(a))
+    if ((0, type_1.isArray)(a))
         return a.map(_clone);
-    else if (exports.isRecord(a))
-        return exports.clone(a);
+    else if ((0, exports.isRecord)(a))
+        return (0, exports.clone)(a);
     else
         return a;
 };
 /**
  * count how many properties exist on the record.
  */
-var count = function (r) { return exports.keys(r).length; };
+var count = function (r) { return (0, exports.keys)(r).length; };
 exports.count = count;
 /**
  * empty tests whether the object has any properties or not.
  */
-var empty = function (r) { return exports.count(r) === 0; };
+var empty = function (r) { return (0, exports.count)(r) === 0; };
 exports.empty = empty;
 /**
  * some tests whether at least one property of a Record passes the
  * test implemented by the provided function.
  */
 var some = function (o, f) {
-    return exports.keys(o).some(function (k) { return f(o[k], k, o); });
+    return (0, exports.keys)(o).some(function (k) { return f(o[k], k, o); });
 };
 exports.some = some;
 /**
@@ -3692,7 +3735,7 @@ exports.some = some;
  * test implemented by the provided function.
  */
 var every = function (o, f) {
-    return exports.keys(o).every(function (k) { return f(o[k], k, o); });
+    return (0, exports.keys)(o).every(function (k) { return f(o[k], k, o); });
 };
 exports.every = every;
 /**
@@ -3711,7 +3754,7 @@ exports.every = every;
  * obj = set(obj, key, value);
  */
 var set = function (r, k, value) {
-    if (!exports.isBadKey(k))
+    if (!(0, exports.isBadKey)(k))
         r[k] = value;
     return r;
 };
@@ -3731,7 +3774,7 @@ var compact = function (rec) {
     for (var key in rec)
         if (rec.hasOwnProperty(key))
             if (rec[key] != null)
-                result = exports.set(result, key, rec[key]);
+                result = (0, exports.set)(result, key, rec[key]);
     return result;
 };
 exports.compact = compact;
@@ -3739,7 +3782,7 @@ exports.compact = compact;
  * rcompact recursively compacts a Record.
  */
 var rcompact = function (rec) {
-    return exports.compact(exports.map(rec, function (val) { return exports.isRecord(val) ? exports.rcompact(val) : val; }));
+    return (0, exports.compact)((0, exports.map)(rec, function (val) { return (0, exports.isRecord)(val) ? (0, exports.rcompact)(val) : val; }));
 };
 exports.rcompact = rcompact;
 /**
@@ -3768,8 +3811,8 @@ exports.make = make;
  * provided test.
  */
 var pickKey = function (rec, test) {
-    return exports.reduce(rec, maybe_1.nothing(), function (p, c, k) {
-        return p.isJust() ? p : test(c, k, rec) ? maybe_1.just(k) : p;
+    return (0, exports.reduce)(rec, (0, maybe_1.nothing)(), function (p, c, k) {
+        return p.isJust() ? p : test(c, k, rec) ? (0, maybe_1.just)(k) : p;
     });
 };
 exports.pickKey = pickKey;
@@ -3778,8 +3821,8 @@ exports.pickKey = pickKey;
  * provided test.
  */
 var pickValue = function (rec, test) {
-    return exports.reduce(rec, maybe_1.nothing(), function (p, c, k) {
-        return p.isJust() ? p : test(c, k, rec) ? maybe_1.just(c) : p;
+    return (0, exports.reduce)(rec, (0, maybe_1.nothing)(), function (p, c, k) {
+        return p.isJust() ? p : test(c, k, rec) ? (0, maybe_1.just)(c) : p;
     });
 };
 exports.pickValue = pickValue;
@@ -3909,7 +3952,7 @@ exports.tokenize = tokenize;
 var unsafeGet = function (path, src) {
     if (src == null)
         return undefined;
-    var toks = exports.tokenize(path);
+    var toks = (0, exports.tokenize)(path);
     var head = src[toks.shift()];
     return toks.reduce(function (p, c) { return (p == null) ? p : p[c]; }, head);
 };
@@ -3918,7 +3961,7 @@ exports.unsafeGet = unsafeGet;
  * get a value from a Record given its path safely.
  */
 var get = function (path, src) {
-    return maybe_1.fromNullable(exports.unsafeGet(path, src));
+    return (0, maybe_1.fromNullable)((0, exports.unsafeGet)(path, src));
 };
 exports.get = get;
 /**
@@ -3926,7 +3969,7 @@ exports.get = get;
  * the path is not found.
  */
 var getDefault = function (path, src, def) {
-    return exports.get(path, src).orJust(function () { return def; }).get();
+    return (0, exports.get)(path, src).orJust(function () { return def; }).get();
 };
 exports.getDefault = getDefault;
 /**
@@ -3935,14 +3978,14 @@ exports.getDefault = getDefault;
  * An empty string is provided if the path is not found.
  */
 var getString = function (path, src) {
-    return exports.get(path, src).map(function (v) { return String(v); }).orJust(function () { return ''; }).get();
+    return (0, exports.get)(path, src).map(function (v) { return String(v); }).orJust(function () { return ''; }).get();
 };
 exports.getString = getString;
 /**
  * set sets a value on an object given a path.
  */
 var set = function (p, v, r) {
-    var toks = exports.tokenize(p);
+    var toks = (0, exports.tokenize)(p);
     return _set(r, v, toks);
 };
 exports.set = set;
@@ -3950,8 +3993,8 @@ var _set = function (r, value, toks) {
     var o;
     if (toks.length === 0)
         return value;
-    o = _1.isRecord(r) ? _1.clone(r) : {};
-    o = _1.set(o, toks[0], _set(o[toks[0]], value, toks.slice(1)));
+    o = (0, _1.isRecord)(r) ? (0, _1.clone)(r) : {};
+    o = (0, _1.set)(o, toks[0], _set(o[toks[0]], value, toks.slice(1)));
     return o;
 };
 /**
@@ -4001,11 +4044,11 @@ exports.unescape = unescape;
  * escapeRecord escapes each property of a record recursively.
  */
 var escapeRecord = function (r) {
-    return _1.reduce(r, {}, function (p, c, k) {
+    return (0, _1.reduce)(r, {}, function (p, c, k) {
         if (typeof c === 'object')
-            p = _1.set(p, exports.escape(k), exports.escapeRecord(c));
+            p = (0, _1.set)(p, (0, exports.escape)(k), (0, exports.escapeRecord)(c));
         else
-            p = _1.set(p, exports.escape(k), c);
+            p = (0, _1.set)(p, (0, exports.escape)(k), c);
         return p;
     });
 };
@@ -4014,11 +4057,11 @@ exports.escapeRecord = escapeRecord;
  * unescapeRecord unescapes each property of a record recursively.
  */
 var unescapeRecord = function (r) {
-    return _1.reduce(r, {}, function (p, c, k) {
-        if (_1.isRecord(c))
-            p = _1.set(p, exports.unescape(k), exports.unescapeRecord(c));
+    return (0, _1.reduce)(r, {}, function (p, c, k) {
+        if ((0, _1.isRecord)(c))
+            p = (0, _1.set)(p, (0, exports.unescape)(k), (0, exports.unescapeRecord)(c));
         else
-            p = _1.set(p, exports.unescape(k), c);
+            p = (0, _1.set)(p, (0, exports.unescape)(k), c);
         return p;
     });
 };
@@ -4035,19 +4078,19 @@ var flatten = function (r) {
 exports.flatten = flatten;
 var flatImpl = function (pfix) { return function (prev) {
     return function (r) {
-        return _1.reduce(r, prev, function (p, c, k) { return _1.isRecord(c) ?
+        return (0, _1.reduce)(r, prev, function (p, c, k) { return (0, _1.isRecord)(c) ?
             (flatImpl(prefix(pfix, k))(p)(c)) :
-            _1.merge(p, _1.set({}, prefix(pfix, k), c)); });
+            (0, _1.merge)(p, (0, _1.set)({}, prefix(pfix, k), c)); });
     };
 }; };
 var prefix = function (pfix, key) { return (pfix === '') ?
-    exports.escape(key) : pfix + "." + exports.escape(key); };
+    (0, exports.escape)(key) : pfix + "." + (0, exports.escape)(key); };
 /**
  * unflatten a flattened Record so that any nested paths are expanded
  * to their full representation.
  */
 var unflatten = function (r) {
-    return _1.reduce(r, {}, function (p, c, k) { return exports.set(k, c, p); });
+    return (0, _1.reduce)(r, {}, function (p, c, k) { return (0, exports.set)(k, c, p); });
 };
 exports.unflatten = unflatten;
 /**
@@ -4058,8 +4101,8 @@ exports.unflatten = unflatten;
  * result.
  */
 var project = function (spec, rec) {
-    return _1.reduce(spec, {}, function (p, c, k) {
-        return (c === true) ? exports.set(k, exports.unsafeGet(k, rec), p) : p;
+    return (0, _1.reduce)(spec, {}, function (p, c, k) {
+        return (c === true) ? (0, exports.set)(k, (0, exports.unsafeGet)(k, rec), p) : p;
     });
 };
 exports.project = project;
@@ -4132,7 +4175,7 @@ exports.camelcase = camelcase;
  * upper case.
  */
 var classcase = function (str) {
-    return (str === '') ? '' : str[0].toUpperCase().concat(exports.camelcase(str).slice(1));
+    return (str === '') ? '' : str[0].toUpperCase().concat((0, exports.camelcase)(str).slice(1));
 };
 exports.classcase = classcase;
 /**
@@ -4213,10 +4256,10 @@ var interpolateDefaults = {
  */
 var interpolate = function (str, data, opts) {
     if (opts === void 0) { opts = {}; }
-    var options = record_1.assign({}, interpolateDefaults, opts);
+    var options = (0, record_1.assign)({}, interpolateDefaults, opts);
     var reg = new RegExp("" + options.start + options.regex + options.end, 'g');
     return str.replace(reg, function (_, k) {
-        return path_1.get(k, data)
+        return (0, path_1.get)(k, data)
             .map(function (v) {
             if (typeof v === 'function')
                 return v(k);
@@ -4276,7 +4319,7 @@ exports.Any = Any;
  * Does not consider an Array an object.
  */
 var isObject = function (value) {
-    return (typeof value === 'object') && (!exports.isArray(value));
+    return (typeof value === 'object') && (!(0, exports.isArray)(value));
 };
 exports.isObject = isObject;
 /**
@@ -4315,9 +4358,9 @@ exports.isFunction = isFunction;
  * isPrim test.
  */
 var isPrim = function (value) {
-    return !(exports.isObject(value) ||
-        exports.isArray(value) ||
-        exports.isFunction(value));
+    return !((0, exports.isObject)(value) ||
+        (0, exports.isArray)(value) ||
+        (0, exports.isFunction)(value));
 };
 exports.isPrim = isPrim;
 /**
@@ -4360,7 +4403,7 @@ var test = function (value, t) {
         return Object
             .keys(t)
             .every(function (k) { return Object.hasOwnProperty.call(value, k) ?
-            exports.test(value[k], t[k]) : false; });
+            (0, exports.test)(value[k], t[k]) : false; });
     return false;
 };
 exports.test = test;
@@ -8182,6 +8225,8 @@ var __extends = (this && this.__extends) || (function () {
         return extendStatics(d, b);
     };
     return function (d, b) {
+        if (typeof b !== "function" && b !== null)
+            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
         extendStatics(d, b);
         function __() { this.constructor = d; }
         d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
@@ -8195,7 +8240,8 @@ var deepEqual = require("deep-equal");
  * Positive value matcher.
  */
 var Positive = /** @class */ (function () {
-    function Positive(value, throwErrors) {
+    function Positive(name, value, throwErrors) {
+        this.name = name;
         this.value = value;
         this.throwErrors = throwErrors;
         this.prefix = 'must';
@@ -8207,9 +8253,16 @@ var Positive = /** @class */ (function () {
         enumerable: false,
         configurable: true
     });
+    Object.defineProperty(Positive.prototype, "is", {
+        get: function () {
+            return this;
+        },
+        enumerable: false,
+        configurable: true
+    });
     Object.defineProperty(Positive.prototype, "not", {
         get: function () {
-            return new Negative(this.value, this.throwErrors);
+            return new Negative(this.name, this.value, this.throwErrors);
         },
         enumerable: false,
         configurable: true
@@ -8224,9 +8277,8 @@ var Positive = /** @class */ (function () {
     Positive.prototype.assert = function (ok, condition) {
         if (!ok) {
             if (this.throwErrors)
-                throw new Error("The value " + exports.toString(this.value) + " " + this.prefix + " " +
-                    (condition + "!"));
-            return new Failed(this.value, this.throwErrors);
+                throw new Error(this.name + " " + this.prefix + " " + condition + "!");
+            return new Failed(this.name, this.value, this.throwErrors);
         }
         return this;
     };
@@ -8262,10 +8314,10 @@ var Positive = /** @class */ (function () {
         return this.assert((this.value === undefined), 'be undefined');
     };
     Positive.prototype.equal = function (b) {
-        return this.assert(this.value === b, "equal " + exports.toString(b));
+        return this.assert(this.value === b, "equal " + (0, exports.toString)(b));
     };
     Positive.prototype.equate = function (b) {
-        return this.assert(deepEqual(this.value, b), "equate " + exports.toString(b));
+        return this.assert(deepEqual(this.value, b), "equate " + (0, exports.toString)(b));
     };
     Positive.prototype.throw = function (message) {
         var ok = false;
@@ -8300,7 +8352,8 @@ var Negative = /** @class */ (function (_super) {
     };
     Object.defineProperty(Negative.prototype, "not", {
         get: function () {
-            return new Positive(this.value, this.throwErrors); // not not == true
+            // not not == true
+            return new Positive(this.name, this.value, this.throwErrors);
         },
         enumerable: false,
         configurable: true
@@ -8352,10 +8405,13 @@ exports.toString = toString;
  * The Matcher returned is positive and configured to throw
  * errors if any tests fail.
  */
-var assert = function (value) { return new Positive(value, true); };
+var assert = function (value, name) {
+    if (name === void 0) { name = ''; }
+    return new Positive(name ? name : (0, exports.toString)(value), value, true);
+};
 exports.assert = assert;
 
-},{"deep-equal":71,"json-stringify-safe":82}],67:[function(require,module,exports){
+},{"deep-equal":71,"json-stringify-safe":83}],67:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Invocation = exports.Mock = void 0;
@@ -8702,7 +8758,7 @@ function objEquiv(a, b, opts) {
 
 module.exports = deepEqual;
 
-},{"is-arguments":79,"is-date-object":80,"is-regex":81,"object-is":84,"object-keys":88,"regexp.prototype.flags":92}],72:[function(require,module,exports){
+},{"is-arguments":80,"is-date-object":81,"is-regex":82,"object-is":85,"object-keys":89,"regexp.prototype.flags":93}],72:[function(require,module,exports){
 'use strict';
 
 var keys = require('object-keys');
@@ -8762,7 +8818,7 @@ defineProperties.supportsDescriptors = !!supportsDescriptors;
 
 module.exports = defineProperties;
 
-},{"object-keys":88}],73:[function(require,module,exports){
+},{"object-keys":89}],73:[function(require,module,exports){
 'use strict';
 
 /* eslint no-invalid-this: 1 */
@@ -9155,7 +9211,7 @@ module.exports = function GetIntrinsic(name, allowMissing) {
 	return value;
 };
 
-},{"function-bind":74,"has":78,"has-symbols":76}],76:[function(require,module,exports){
+},{"function-bind":74,"has":79,"has-symbols":76}],76:[function(require,module,exports){
 'use strict';
 
 var origSymbol = typeof Symbol !== 'undefined' && Symbol;
@@ -9217,14 +9273,23 @@ module.exports = function hasSymbols() {
 },{}],78:[function(require,module,exports){
 'use strict';
 
+var hasSymbols = require('has-symbols/shams');
+
+module.exports = function hasToStringTagShams() {
+	return hasSymbols() && !!Symbol.toStringTag;
+};
+
+},{"has-symbols/shams":77}],79:[function(require,module,exports){
+'use strict';
+
 var bind = require('function-bind');
 
 module.exports = bind.call(Function.call, Object.prototype.hasOwnProperty);
 
-},{"function-bind":74}],79:[function(require,module,exports){
+},{"function-bind":74}],80:[function(require,module,exports){
 'use strict';
 
-var hasToStringTag = typeof Symbol === 'function' && typeof Symbol.toStringTag === 'symbol';
+var hasToStringTag = require('has-tostringtag/shams')();
 var callBound = require('call-bind/callBound');
 
 var $toString = callBound('Object.prototype.toString');
@@ -9256,7 +9321,7 @@ isStandardArguments.isLegacyArguments = isLegacyArguments; // for tests
 
 module.exports = supportsStandardArguments ? isStandardArguments : isLegacyArguments;
 
-},{"call-bind/callBound":69}],80:[function(require,module,exports){
+},{"call-bind/callBound":69,"has-tostringtag/shams":78}],81:[function(require,module,exports){
 'use strict';
 
 var getDay = Date.prototype.getDay;
@@ -9271,7 +9336,7 @@ var tryDateObject = function tryDateGetDayCall(value) {
 
 var toStr = Object.prototype.toString;
 var dateClass = '[object Date]';
-var hasToStringTag = typeof Symbol === 'function' && !!Symbol.toStringTag;
+var hasToStringTag = require('has-tostringtag/shams')();
 
 module.exports = function isDateObject(value) {
 	if (typeof value !== 'object' || value === null) {
@@ -9280,12 +9345,11 @@ module.exports = function isDateObject(value) {
 	return hasToStringTag ? tryDateObject(value) : toStr.call(value) === dateClass;
 };
 
-},{}],81:[function(require,module,exports){
+},{"has-tostringtag/shams":78}],82:[function(require,module,exports){
 'use strict';
 
 var callBound = require('call-bind/callBound');
-var hasSymbols = require('has-symbols/shams')();
-var hasToStringTag = hasSymbols && !!Symbol.toStringTag;
+var hasToStringTag = require('has-tostringtag/shams')();
 var has;
 var $exec;
 var isRegexMarker;
@@ -9341,7 +9405,7 @@ module.exports = hasToStringTag
 		return $toString(value) === regexClass;
 	};
 
-},{"call-bind/callBound":69,"has-symbols/shams":77}],82:[function(require,module,exports){
+},{"call-bind/callBound":69,"has-tostringtag/shams":78}],83:[function(require,module,exports){
 exports = module.exports = stringify
 exports.getSerialize = serializer
 
@@ -9370,7 +9434,7 @@ function serializer(replacer, cycleReplacer) {
   }
 }
 
-},{}],83:[function(require,module,exports){
+},{}],84:[function(require,module,exports){
 'use strict';
 
 var numberIsNaN = function (value) {
@@ -9391,7 +9455,7 @@ module.exports = function is(a, b) {
 };
 
 
-},{}],84:[function(require,module,exports){
+},{}],85:[function(require,module,exports){
 'use strict';
 
 var define = require('define-properties');
@@ -9411,7 +9475,7 @@ define(polyfill, {
 
 module.exports = polyfill;
 
-},{"./implementation":83,"./polyfill":85,"./shim":86,"call-bind":70,"define-properties":72}],85:[function(require,module,exports){
+},{"./implementation":84,"./polyfill":86,"./shim":87,"call-bind":70,"define-properties":72}],86:[function(require,module,exports){
 'use strict';
 
 var implementation = require('./implementation');
@@ -9420,7 +9484,7 @@ module.exports = function getPolyfill() {
 	return typeof Object.is === 'function' ? Object.is : implementation;
 };
 
-},{"./implementation":83}],86:[function(require,module,exports){
+},{"./implementation":84}],87:[function(require,module,exports){
 'use strict';
 
 var getPolyfill = require('./polyfill');
@@ -9436,7 +9500,7 @@ module.exports = function shimObjectIs() {
 	return polyfill;
 };
 
-},{"./polyfill":85,"define-properties":72}],87:[function(require,module,exports){
+},{"./polyfill":86,"define-properties":72}],88:[function(require,module,exports){
 'use strict';
 
 var keysShim;
@@ -9560,7 +9624,7 @@ if (!Object.keys) {
 }
 module.exports = keysShim;
 
-},{"./isArguments":89}],88:[function(require,module,exports){
+},{"./isArguments":90}],89:[function(require,module,exports){
 'use strict';
 
 var slice = Array.prototype.slice;
@@ -9594,7 +9658,7 @@ keysShim.shim = function shimObjectKeys() {
 
 module.exports = keysShim;
 
-},{"./implementation":87,"./isArguments":89}],89:[function(require,module,exports){
+},{"./implementation":88,"./isArguments":90}],90:[function(require,module,exports){
 'use strict';
 
 var toStr = Object.prototype.toString;
@@ -9613,7 +9677,7 @@ module.exports = function isArguments(value) {
 	return isArgs;
 };
 
-},{}],90:[function(require,module,exports){
+},{}],91:[function(require,module,exports){
 // shim for using process in browser
 var process = module.exports = {};
 
@@ -9799,7 +9863,7 @@ process.chdir = function (dir) {
 };
 process.umask = function() { return 0; };
 
-},{}],91:[function(require,module,exports){
+},{}],92:[function(require,module,exports){
 'use strict';
 
 var $Object = Object;
@@ -9831,7 +9895,7 @@ module.exports = function flags() {
 	return result;
 };
 
-},{}],92:[function(require,module,exports){
+},{}],93:[function(require,module,exports){
 'use strict';
 
 var define = require('define-properties');
@@ -9851,7 +9915,7 @@ define(flagsBound, {
 
 module.exports = flagsBound;
 
-},{"./implementation":91,"./polyfill":93,"./shim":94,"call-bind":70,"define-properties":72}],93:[function(require,module,exports){
+},{"./implementation":92,"./polyfill":94,"./shim":95,"call-bind":70,"define-properties":72}],94:[function(require,module,exports){
 'use strict';
 
 var implementation = require('./implementation');
@@ -9873,7 +9937,7 @@ module.exports = function getPolyfill() {
 	return implementation;
 };
 
-},{"./implementation":91,"define-properties":72}],94:[function(require,module,exports){
+},{"./implementation":92,"define-properties":72}],95:[function(require,module,exports){
 'use strict';
 
 var supportsDescriptors = require('define-properties').supportsDescriptors;
@@ -9901,7 +9965,7 @@ module.exports = function shimFlags() {
 	return polyfill;
 };
 
-},{"./polyfill":93,"define-properties":72}],95:[function(require,module,exports){
+},{"./polyfill":94,"define-properties":72}],96:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -10225,7 +10289,7 @@ describe('director', function () {
     });
 });
 
-},{"../../../lib/actor":1,"../../../lib/app/director":2,"../app/fixtures/app":97,"@quenk/noni/lib/control/monad/future":18,"@quenk/noni/lib/data/record":25,"@quenk/noni/lib/data/string":27,"@quenk/potoo/lib/actor/resident/case":33,"@quenk/test/lib/assert":66,"@quenk/test/lib/mock":67}],96:[function(require,module,exports){
+},{"../../../lib/actor":1,"../../../lib/app/director":2,"../app/fixtures/app":98,"@quenk/noni/lib/control/monad/future":18,"@quenk/noni/lib/data/record":25,"@quenk/noni/lib/data/string":27,"@quenk/potoo/lib/actor/resident/case":33,"@quenk/test/lib/assert":66,"@quenk/test/lib/mock":67}],97:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -10262,7 +10326,7 @@ var GenericImmutable = /** @class */ (function (_super) {
 }(actor_1.Immutable));
 exports.GenericImmutable = GenericImmutable;
 
-},{"../../../../lib/actor":1}],97:[function(require,module,exports){
+},{"../../../../lib/actor":1}],98:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -10292,7 +10356,7 @@ var TestApp = /** @class */ (function (_super) {
 }(app_1.JApp));
 exports.TestApp = TestApp;
 
-},{"../../../../lib/app":6}],98:[function(require,module,exports){
+},{"../../../../lib/app":6}],99:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -10619,7 +10683,7 @@ describe('active', function () {
     });
 });
 
-},{"../../../../lib/app/form/active":3,"../../../../lib/app/form/active/validate/strategy":4,"../../app/fixtures/app":97,"../fixtures/actor":96,"@quenk/noni/lib/control/monad/future":18,"@quenk/noni/lib/data/either":22,"@quenk/potoo/lib/actor/resident/case":33,"@quenk/test/lib/assert":66,"@quenk/test/lib/mock":67}],99:[function(require,module,exports){
+},{"../../../../lib/app/form/active":3,"../../../../lib/app/form/active/validate/strategy":4,"../../app/fixtures/app":98,"../fixtures/actor":97,"@quenk/noni/lib/control/monad/future":18,"@quenk/noni/lib/data/either":22,"@quenk/potoo/lib/actor/resident/case":33,"@quenk/test/lib/assert":66,"@quenk/test/lib/mock":67}],100:[function(require,module,exports){
 "use strict";
 var __generator = (this && this.__generator) || function (thisArg, body) {
     var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
@@ -10825,7 +10889,7 @@ describe('remote', function () {
     });
 });
 
-},{"../../../../lib/app/remote":8,"../../app/fixtures/actor":96,"../../app/fixtures/app":97,"@quenk/jhr/lib/agent/mock":11,"@quenk/jhr/lib/request":12,"@quenk/jhr/lib/response":14,"@quenk/noni/lib/control/monad/future":18,"@quenk/potoo/lib/actor/resident/case":33,"@quenk/test/lib/assert":66}],100:[function(require,module,exports){
+},{"../../../../lib/app/remote":8,"../../app/fixtures/actor":97,"../../app/fixtures/app":98,"@quenk/jhr/lib/agent/mock":11,"@quenk/jhr/lib/request":12,"@quenk/jhr/lib/response":14,"@quenk/noni/lib/control/monad/future":18,"@quenk/potoo/lib/actor/resident/case":33,"@quenk/test/lib/assert":66}],101:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -11198,7 +11262,7 @@ describe('model', function () {
     });
 });
 
-},{"../../../../lib/app/remote":8,"../../../../lib/app/remote/model":9,"../../app/fixtures/app":97,"@quenk/jhr/lib/request":12,"@quenk/jhr/lib/response":14,"@quenk/noni/lib/control/monad/future":18,"@quenk/noni/lib/data/record":25,"@quenk/potoo/lib/actor/resident":34,"@quenk/potoo/lib/actor/resident/case":33,"@quenk/test/lib/assert":66,"@quenk/test/lib/mock":67}],101:[function(require,module,exports){
+},{"../../../../lib/app/remote":8,"../../../../lib/app/remote/model":9,"../../app/fixtures/app":98,"@quenk/jhr/lib/request":12,"@quenk/jhr/lib/response":14,"@quenk/noni/lib/control/monad/future":18,"@quenk/noni/lib/data/record":25,"@quenk/potoo/lib/actor/resident":34,"@quenk/potoo/lib/actor/resident/case":33,"@quenk/test/lib/assert":66,"@quenk/test/lib/mock":67}],102:[function(require,module,exports){
 "use strict";
 var __generator = (this && this.__generator) || function (thisArg, body) {
     var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
@@ -11541,11 +11605,11 @@ describe('observable', function () {
     });
 });
 
-},{"../../../../lib/app/remote/observer":10,"../../app/fixtures/actor":96,"../../app/fixtures/app":97,"@quenk/jhr/lib/agent/mock":11,"@quenk/jhr/lib/request":12,"@quenk/jhr/lib/response":14,"@quenk/noni/lib/control/monad/future":18,"@quenk/potoo/lib/actor/resident/case":33,"@quenk/test/lib/assert":66,"@quenk/test/lib/mock":67}],102:[function(require,module,exports){
+},{"../../../../lib/app/remote/observer":10,"../../app/fixtures/actor":97,"../../app/fixtures/app":98,"@quenk/jhr/lib/agent/mock":11,"@quenk/jhr/lib/request":12,"@quenk/jhr/lib/response":14,"@quenk/noni/lib/control/monad/future":18,"@quenk/potoo/lib/actor/resident/case":33,"@quenk/test/lib/assert":66,"@quenk/test/lib/mock":67}],103:[function(require,module,exports){
 require("./app/form/active_test.js");
 require("./app/director_test.js");
 require("./app/remote/index_test.js");
 require("./app/remote/model_test.js");
 require("./app/remote/observer_test.js");
 
-},{"./app/director_test.js":95,"./app/form/active_test.js":98,"./app/remote/index_test.js":99,"./app/remote/model_test.js":100,"./app/remote/observer_test.js":101}]},{},[102]);
+},{"./app/director_test.js":96,"./app/form/active_test.js":99,"./app/remote/index_test.js":100,"./app/remote/model_test.js":101,"./app/remote/observer_test.js":102}]},{},[103]);

@@ -1,5 +1,6 @@
 import { Err } from '@quenk/noni/lib/control/error';
 import {
+    Future,
     parallel,
     raise,
     sequential
@@ -136,8 +137,12 @@ export class Remote<Req, Res> extends Immutable<Request<Req>> {
         let onSucc = (res: HTTPResponse<Res>[]) =>
             this.tell(client, new BatchResponse(res));
 
-        let rs = requests.map((r: HTTPRequest<Req>) =>
-            agent.send(r).catch(e => raise(new TransportErr(client, e))));
+        let rs: Future<HTTPResponse<Res>>[] =
+            requests
+                .map((r: HTTPRequest<Req>) =>
+                    agent
+                        .send(r)
+                        .catch(e => raise(new TransportErr(client, e))));
 
         parallel(rs).fork(onErr, onSucc);
 
@@ -152,8 +157,12 @@ export class Remote<Req, Res> extends Immutable<Request<Req>> {
         let onSucc = (res: HTTPResponse<Res>[]) =>
             this.tell(client, new BatchResponse(res));
 
-        let rs = requests.map((r: HTTPRequest<Req>) =>
-            agent.send(r).catch(e => raise(new TransportErr(client, e))));
+        let rs :Future<HTTPResponse<Res>>[] = 
+        requests
+        .map((r: HTTPRequest<Req>) =>
+            agent
+          .send(r)
+          .catch(e => raise(new TransportErr(client, e))));
 
         sequential(rs).fork(onErr, onSucc);
 

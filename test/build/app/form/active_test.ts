@@ -109,7 +109,7 @@ const form = (addr: string) => ({
 
     id: 'form',
 
-    create: (s: App) => new Form(addr, s)
+    create: (s: App) => new Form(s, addr)
 
 });
 
@@ -298,7 +298,7 @@ describe('active', () => {
 
             it('should invoke set', () => {
 
-                let form = new Form('?', system());
+                let form = new Form(system(), '?');
                 let strategy = new NoStrategy(form);
 
                 strategy.validate({ name: 'index', value: 1 });
@@ -316,7 +316,7 @@ describe('active', () => {
 
             it('should invoke the correct callbacks', () => {
 
-                let form = new Form('?', system());
+                let form = new Form(system(), '?');
 
                 let validYes = {
 
@@ -344,7 +344,7 @@ describe('active', () => {
                 assert(form.data['index']).equal('1');
                 assert(form.__MOCK__.wasCalled('onFieldValid')).true();
 
-                let form2 = new Form('?', system());
+                let form2 = new Form(system(), '?');
                 let strategy2 = new OneForOneStrategy(form2, validNo);
 
                 strategy2.validate({ name: 'index2', value: 2 });
@@ -364,7 +364,7 @@ describe('active', () => {
 
             it('should invoke the correct callbacks', () => {
 
-                let form = new Form('?', system());
+                let form = new Form(system(), '?');
 
                 let validYes = {
 
@@ -405,7 +405,7 @@ describe('active', () => {
                 assert(form.__MOCK__.wasCalled('onFieldValid')).true();
                 assert(form.__MOCK__.wasCalled('onFormValid')).true();
 
-                let form2 = new Form('?', system());
+                let form2 = new Form(system(), '?');
                 let strategy2 = new OneForOneStrategy(form2, validNo);
 
                 strategy2.validate({ name: 'index2', value: 2 });

@@ -92,7 +92,7 @@ var Form = /** @class */ (function (_super) {
 var system = function () { return new app_1.TestApp(); };
 var form = function (addr) { return ({
     id: 'form',
-    create: function (s) { return new Form(addr, s); }
+    create: function (s) { return new Form(s, addr); }
 }); };
 describe('active', function () {
     describe('AbstractActiveForm', function () {
@@ -251,7 +251,7 @@ describe('active', function () {
     describe('NoValidateStrategy', function () {
         describe('validate', function () {
             it('should invoke set', function () {
-                var form = new Form('?', system());
+                var form = new Form(system(), '?');
                 var strategy = new strategy_1.NoStrategy(form);
                 strategy.validate({ name: 'index', value: 1 });
                 assert_1.assert(form.__MOCK__.wasCalled('set')).true();
@@ -261,7 +261,7 @@ describe('active', function () {
     describe('OneForOneStrategy', function () {
         describe('validate', function () {
             it('should invoke the correct callbacks', function () {
-                var form = new Form('?', system());
+                var form = new Form(system(), '?');
                 var validYes = {
                     validate: function (_, value) {
                         return either_1.right(String(value));
@@ -277,7 +277,7 @@ describe('active', function () {
                 assert_1.assert(form.__MOCK__.wasCalled('set')).true();
                 assert_1.assert(form.data['index']).equal('1');
                 assert_1.assert(form.__MOCK__.wasCalled('onFieldValid')).true();
-                var form2 = new Form('?', system());
+                var form2 = new Form(system(), '?');
                 var strategy2 = new strategy_1.OneForOneStrategy(form2, validNo);
                 strategy2.validate({ name: 'index2', value: 2 });
                 assert_1.assert(form2.__MOCK__.wasCalled('set')).false();
@@ -289,7 +289,7 @@ describe('active', function () {
     describe('AllForOneStrategy', function () {
         describe('validate', function () {
             it('should invoke the correct callbacks', function () {
-                var form = new Form('?', system());
+                var form = new Form(system(), '?');
                 var validYes = {
                     validate: function (_, value) {
                         return either_1.right(String(value));
@@ -312,7 +312,7 @@ describe('active', function () {
                 assert_1.assert(form.data['index']).equal('1');
                 assert_1.assert(form.__MOCK__.wasCalled('onFieldValid')).true();
                 assert_1.assert(form.__MOCK__.wasCalled('onFormValid')).true();
-                var form2 = new Form('?', system());
+                var form2 = new Form(system(), '?');
                 var strategy2 = new strategy_1.OneForOneStrategy(form2, validNo);
                 strategy2.validate({ name: 'index2', value: 2 });
                 assert_1.assert(form2.__MOCK__.wasCalled('set')).false();

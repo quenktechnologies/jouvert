@@ -238,8 +238,8 @@ export abstract class AbstractActiveForm<T extends Object, M>
     FormFeedback<T> {
 
     constructor(
-        public owner: Address,
         public system: App,
+        public owner: Address,
         public value: Partial<T> = {}) { super(system); }
 
     abstract validateStrategy: ValidateStrategy;

@@ -143,10 +143,10 @@ export declare class SaveOkCase<T extends Object> extends Case<SaveOk> {
  *                class.
  */
 export declare abstract class AbstractActiveForm<T extends Object, M> extends Immutable<ActiveFormMessage<M>> implements FormFeedback<T> {
-    owner: Address;
     system: App;
+    owner: Address;
     value: Partial<T>;
-    constructor(owner: Address, system: App, value?: Partial<T>);
+    constructor(system: App, owner: Address, value?: Partial<T>);
     abstract validateStrategy: ValidateStrategy;
     abstract save(): void;
     /**

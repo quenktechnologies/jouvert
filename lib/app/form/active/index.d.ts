@@ -154,7 +154,7 @@ export declare abstract class AbstractActiveForm<T extends Object, M> extends Im
      * modified via this class's APIs.
      */
     fieldsModifed: string[];
-    receive: Case<ActiveFormMessage<M>>[];
+    receive(): Case<ActiveFormMessage<M>>[];
     set(name: FieldName, value: FieldValue): AbstractActiveForm<T, M>;
     getValues(): T;
     getModifiedValues(): Partial<T>;

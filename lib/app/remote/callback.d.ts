@@ -120,7 +120,7 @@ export declare class SendCallback<Req, Res> extends Temp<SendCallbackMessage<Res
     request: Request<Req>;
     handler: CompleteHandler<Res>;
     constructor(system: System, remote: Address, request: Request<Req>, handler: CompleteHandler<Res>);
-    receive: Case<SendCallbackMessage<Res>>[];
+    receive(): Case<SendCallbackMessage<Res>>[];
     run(): void;
 }
 /**
@@ -133,7 +133,7 @@ export declare class ParSendCallback<Req, Res> extends Temp<BatchCallbackMessage
     requests: Request<Req>[];
     handler: BatchCompleteHandler<Res>;
     constructor(system: System, remote: Address, requests: Request<Req>[], handler: BatchCompleteHandler<Res>);
-    receive: Case<BatchCallbackMessage<Res>>[];
+    receive(): Case<BatchCallbackMessage<Res>>[];
     run(): void;
 }
 /**

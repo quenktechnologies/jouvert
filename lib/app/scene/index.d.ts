@@ -36,6 +36,6 @@ export declare abstract class AppScene<T, M> extends Immutable<AppSceneMessage<M
     resume: Resume<T>;
     system: System;
     constructor(resume: Resume<T>, system: System);
-    receive: Case<AppSceneMessage<M>>[];
+    receive(): Case<AppSceneMessage<M>>[];
     beforeSuspended(_: Suspend): AppScene<T, M>;
 }

@@ -252,7 +252,9 @@ export abstract class AbstractActiveForm<T extends Object, M>
      */
     fieldsModifed: string[] = [];
 
-    receive = <Case<ActiveFormMessage<M>>[]>[
+    receive() {
+
+      return <Case<ActiveFormMessage<M>>[]>[
 
         ...this.getAdditionalMessages(),
 
@@ -267,6 +269,8 @@ export abstract class AbstractActiveForm<T extends Object, M>
         new FieldInputEventCase(this)
 
     ];
+
+    }
 
     set(name: FieldName, value: FieldValue): AbstractActiveForm<T, M> {
 

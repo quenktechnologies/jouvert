@@ -61,11 +61,15 @@ export abstract class AppScene<T, M>
 
     }
 
-    receive = <Case<AppSceneMessage<M>>[]>[
+    receive() : Case<AppSceneMessage<M>>[]{
 
-        new SuspendCase(this)
+        return <Case<AppSceneMessage<M>>[]>[
 
-    ];
+            new SuspendCase(this)
+
+        ];
+
+    }
 
     beforeSuspended(_: Suspend): AppScene<T, M> {
 

@@ -20,13 +20,16 @@ var actor_1 = require("../../../../lib/actor");
  */
 var GenericImmutable = /** @class */ (function (_super) {
     __extends(GenericImmutable, _super);
-    function GenericImmutable(system, receive, runFunc) {
+    function GenericImmutable(system, cases, runFunc) {
         var _this = _super.call(this, system) || this;
         _this.system = system;
-        _this.receive = receive;
+        _this.cases = cases;
         _this.runFunc = runFunc;
         return _this;
     }
+    GenericImmutable.prototype.receive = function () {
+        return this.cases;
+    };
     GenericImmutable.prototype.run = function () {
         this.runFunc(this);
     };

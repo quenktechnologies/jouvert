@@ -157,9 +157,11 @@ var SuspendTimer = /** @class */ (function (_super) {
             _this.onFinish();
             _this.exit();
         };
-        _this.receive = [new case_1.Case(CancelTimer, _this.onCancelTimer)];
         return _this;
     }
+    SuspendTimer.prototype.receive = function () {
+        return [new case_1.Case(CancelTimer, this.onCancelTimer)];
+    };
     SuspendTimer.prototype.run = function () {
         var _this = this;
         this.timer = setTimeout(function () {
@@ -199,7 +201,11 @@ var Supervisor = /** @class */ (function (_super) {
         _this.info = info;
         _this.system = system;
         _this.actor = '?';
-        _this.receive = [
+        return _this;
+    }
+    Supervisor.prototype.receive = function () {
+        var _this = this;
+        return [
             new case_1.Case(SuspendActor, function () {
                 _this.tell(_this.actor, new Suspend(_this.self()));
             }),
@@ -211,8 +217,7 @@ var Supervisor = /** @class */ (function (_super) {
             }),
             new case_1.Default(function (m) { _this.tell(_this.display, m); })
         ];
-        return _this;
-    }
+    };
     Supervisor.prototype.run = function () {
         var _a = this.info, request = _a.request, spec = _a.spec;
         var r = new Resume(this.self(), request);
@@ -314,12 +319,14 @@ var Director = /** @class */ (function (_super) {
         _this.onActorSuspended = function (_) {
             _this.tell(_this.current[2], new CancelTimer());
         };
-        _this.receive = [
-            new case_1.Case(RouteChanged, _this.onRouteChanged),
-            new case_1.Case(ActorSuspended, _this.onActorSuspended)
-        ];
         return _this;
     }
+    Director.prototype.receive = function () {
+        return [
+            new case_1.Case(RouteChanged, this.onRouteChanged),
+            new case_1.Case(ActorSuspended, this.onActorSuspended)
+        ];
+    };
     Director.prototype.run = function () {
         var _this = this;
         record_1.forEach(this.routes, function (spec, route) {
@@ -481,15 +488,17 @@ var AbstractActiveForm = /** @class */ (function (_super) {
          * modified via this class's APIs.
          */
         _this.fieldsModifed = [];
-        _this.receive = __spreadArrays(_this.getAdditionalMessages(), [
-            new AbortCase(_this),
-            new SaveCase(_this),
-            new FailedCase(_this),
-            new SaveOkCase(_this),
-            new FieldInputEventCase(_this)
-        ]);
         return _this;
     }
+    AbstractActiveForm.prototype.receive = function () {
+        return __spreadArrays(this.getAdditionalMessages(), [
+            new AbortCase(this),
+            new SaveCase(this),
+            new FailedCase(this),
+            new SaveOkCase(this),
+            new FieldInputEventCase(this)
+        ]);
+    };
     AbstractActiveForm.prototype.set = function (name, value) {
         if (!array_1.contains(this.fieldsModifed, name))
             this.fieldsModifed.push(name);
@@ -850,7 +859,11 @@ var SendCallback = /** @class */ (function (_super) {
         _this.remote = remote;
         _this.request = request;
         _this.handler = handler;
-        _this.receive = [
+        return _this;
+    }
+    SendCallback.prototype.receive = function () {
+        var _this = this;
+        return [
             new case_1.Case(_1.TransportErr, function (e) {
                 _this.handler.onError(e);
             }),
@@ -866,8 +879,7 @@ var SendCallback = /** @class */ (function (_super) {
                 }
             })
         ];
-        return _this;
-    }
+    };
     SendCallback.prototype.run = function () {
         this.tell(this.remote, new _1.Send(this.self(), this.request));
     };
@@ -886,7 +898,11 @@ var ParSendCallback = /** @class */ (function (_super) {
         _this.remote = remote;
         _this.requests = requests;
         _this.handler = handler;
-        _this.receive = [
+        return _this;
+    }
+    ParSendCallback.prototype.receive = function () {
+        var _this = this;
+        return [
             new case_1.Case(_1.TransportErr, function (e) {
                 _this.handler.onError(e);
             }),
@@ -906,8 +922,7 @@ var ParSendCallback = /** @class */ (function (_super) {
                 }
             })
         ];
-        return _this;
-    }
+    };
     ParSendCallback.prototype.run = function () {
         this.tell(this.remote, new _1.ParSend(this.self(), this.requests));
     };
@@ -1075,14 +1090,15 @@ var Remote = /** @class */ (function (_super) {
             });
             future_1.sequential(rs).fork(onErr, onSucc);
         };
-        _this.receive = [
-            new case_1.Case(Send, _this.onUnit),
-            new case_1.Case(ParSend, _this.onParallel),
-            new case_1.Case(SeqSend, _this.onSequential)
-        ];
         return _this;
     }
-    Remote.prototype.run = function () { };
+    Remote.prototype.receive = function () {
+        return [
+            new case_1.Case(Send, this.onUnit),
+            new case_1.Case(ParSend, this.onParallel),
+            new case_1.Case(SeqSend, this.onSequential)
+        ];
+    };
     return Remote;
 }(actor_1.Immutable));
 exports.Remote = Remote;
@@ -4792,8 +4808,8 @@ var AbstractResident = /** @class */ (function () {
         this.self = function () { return addr; };
         return this.run();
     };
-    AbstractResident.prototype.stop = function () {
-    };
+    AbstractResident.prototype.run = function () { };
+    AbstractResident.prototype.stop = function () { };
     return AbstractResident;
 }());
 exports.AbstractResident = AbstractResident;
@@ -4811,7 +4827,7 @@ var Immutable = /** @class */ (function (_super) {
     }
     Immutable.prototype.init = function (c) {
         c.flags = c.flags | flags_1.FLAG_IMMUTABLE | flags_1.FLAG_BUFFERED;
-        c.receivers.push(receiveFun(this.receive));
+        c.receivers.push(receiveFun(this.receive()));
         return c;
     };
     /**
@@ -4819,6 +4835,13 @@ var Immutable = /** @class */ (function (_super) {
      */
     Immutable.prototype.select = function (_) {
         return this;
+    };
+    /**
+     * receive provides a static list of Case classes that the actor will
+     * always use to process messages.
+     */
+    Immutable.prototype.receive = function () {
+        return [];
     };
     return Immutable;
 }(AbstractResident));
@@ -4834,7 +4857,7 @@ var Temp = /** @class */ (function (_super) {
     }
     Temp.prototype.init = function (c) {
         c.flags = c.flags | flags_1.FLAG_TEMPORARY | flags_1.FLAG_BUFFERED;
-        c.receivers.push(receiveFun(this.receive));
+        c.receivers.push(receiveFun(this.receive()));
         return c;
     };
     return Temp;
@@ -10085,9 +10108,11 @@ var Controller = /** @class */ (function (_super) {
         var _this = _super.call(this, system) || this;
         _this.cases = cases;
         _this.system = system;
-        _this.receive = _this.cases(_this);
         return _this;
     }
+    Controller.prototype.receive = function () {
+        return this.cases(this);
+    };
     Controller.template = function (id, cases) {
         return { id: id, create: function (s) { return new Controller(cases, s); } };
     };
@@ -10362,13 +10387,16 @@ var actor_1 = require("../../../../lib/actor");
  */
 var GenericImmutable = /** @class */ (function (_super) {
     __extends(GenericImmutable, _super);
-    function GenericImmutable(system, receive, runFunc) {
+    function GenericImmutable(system, cases, runFunc) {
         var _this = _super.call(this, system) || this;
         _this.system = system;
-        _this.receive = receive;
+        _this.cases = cases;
         _this.runFunc = runFunc;
         return _this;
     }
+    GenericImmutable.prototype.receive = function () {
+        return this.cases;
+    };
     GenericImmutable.prototype.run = function () {
         this.runFunc(this);
     };
@@ -10995,12 +11023,15 @@ var remote_1 = require("../../../../lib/app/remote");
 var app_1 = require("../../app/fixtures/app");
 var TestRemote = /** @class */ (function (_super) {
     __extends(TestRemote, _super);
-    function TestRemote(system, receive) {
+    function TestRemote(system, cases) {
         var _this = _super.call(this, system) || this;
         _this.system = system;
-        _this.receive = receive;
+        _this.cases = cases;
         return _this;
     }
+    TestRemote.prototype.receive = function () {
+        return this.cases;
+    };
     TestRemote.prototype.run = function () { };
     return TestRemote;
 }(resident_1.Immutable));

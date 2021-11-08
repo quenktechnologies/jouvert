@@ -134,7 +134,7 @@ export declare class SuspendTimer extends Immutable<SuspendTimerMessage> {
     constructor(director: Address, timeout: Milliseconds, system: App, onExpire: () => void, onFinish: () => void);
     timer: NodeJS.Timeout | number;
     onCancelTimer: (_: CancelTimer) => void;
-    receive: Case<unknown>[];
+    receive(): Case<unknown>[];
     run(): void;
 }
 /**
@@ -160,7 +160,7 @@ export declare class Supervisor<R> extends Immutable<SupervisorMessage> {
     system: App;
     constructor(director: Address, display: Address, info: RouteChanged<R>, system: App);
     actor: string;
-    receive: Case<SupervisorMessage>[];
+    receive(): Case<SupervisorMessage>[];
     run(): void;
 }
 /**
@@ -210,6 +210,6 @@ export declare class Director<T> extends Immutable<DirectorMessage<T>> {
     config: Conf;
     onRouteChanged: (msg: RouteChanged<T>) => void;
     onActorSuspended: (_: ActorSuspended) => void;
-    receive: Case<DirectorMessage<T>>[];
+    receive(): Case<DirectorMessage<T>>[];
     run(): void;
 }

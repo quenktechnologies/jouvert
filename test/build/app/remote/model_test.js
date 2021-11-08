@@ -53,12 +53,15 @@ var remote_1 = require("../../../../lib/app/remote");
 var app_1 = require("../../app/fixtures/app");
 var TestRemote = /** @class */ (function (_super) {
     __extends(TestRemote, _super);
-    function TestRemote(system, receive) {
+    function TestRemote(system, cases) {
         var _this = _super.call(this, system) || this;
         _this.system = system;
-        _this.receive = receive;
+        _this.cases = cases;
         return _this;
     }
+    TestRemote.prototype.receive = function () {
+        return this.cases;
+    };
     TestRemote.prototype.run = function () { };
     return TestRemote;
 }(resident_1.Immutable));

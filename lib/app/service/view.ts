@@ -144,7 +144,9 @@ export class ViewService extends Immutable<ViewServiceMessage> {
 
     stack: Show[] = [];
 
-    receive = <Case<ViewServiceMessage>[]>[
+    receive() {
+
+      return <Case<ViewServiceMessage>[]>[
 
         new Case(Show, (m: Show) => this.show(m)),
 
@@ -155,6 +157,8 @@ export class ViewService extends Immutable<ViewServiceMessage> {
         new Case(Close, () => this.close())
 
     ];
+
+    }
 
     show(m: Show) {
 

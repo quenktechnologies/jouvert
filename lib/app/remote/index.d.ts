@@ -85,6 +85,5 @@ export declare class Remote<Req, Res> extends Immutable<Request<Req>> {
     onUnit: ({ client, request }: Send<Req>) => void;
     onParallel: ({ client, requests }: ParSend<Req>) => void;
     onSequential: ({ client, requests }: SeqSend<Req>) => void;
-    receive: Case<Request<Req>>[];
-    run(): void;
+    receive(): Case<Request<Req>>[];
 }

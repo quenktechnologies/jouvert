@@ -52,7 +52,6 @@ export declare abstract class Dialog<M> extends Immutable<M> {
     display: Address;
     target: DialogEventTarget;
     constructor(system: JApp, display: Address, target?: DialogEventTarget);
-    receive: never[];
     /**
      * name of the dialog.
      */

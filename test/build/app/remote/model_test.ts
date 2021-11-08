@@ -39,11 +39,17 @@ import { ErrorBody } from '../../../../lib/app/remote/callback';
 
 class TestRemote extends Immutable<Type> {
 
-    constructor(public system: TestApp, public receive: Case<Type>[]) {
+    constructor(public system: TestApp, public cases: Case<Type>[]) {
 
         super(system);
 
     }
+
+  receive() {
+
+    return this.cases;
+
+  }
 
     run() { }
 

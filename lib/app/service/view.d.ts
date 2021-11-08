@@ -100,7 +100,7 @@ export declare class ViewService extends Immutable<ViewServiceMessage> {
     system: System;
     constructor(delegate: ViewDelegate, system: System);
     stack: Show[];
-    receive: Case<ViewServiceMessage>[];
+    receive(): Case<ViewServiceMessage>[];
     show(m: Show): void;
     push(m: Push): void;
     pop(m: Pop): void;

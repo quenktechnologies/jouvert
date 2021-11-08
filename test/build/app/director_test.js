@@ -67,9 +67,11 @@ var Controller = /** @class */ (function (_super) {
         var _this = _super.call(this, system) || this;
         _this.cases = cases;
         _this.system = system;
-        _this.receive = _this.cases(_this);
         return _this;
     }
+    Controller.prototype.receive = function () {
+        return this.cases(this);
+    };
     Controller.template = function (id, cases) {
         return { id: id, create: function (s) { return new Controller(cases, s); } };
     };

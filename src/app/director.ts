@@ -184,7 +184,11 @@ export class SuspendTimer extends Immutable<SuspendTimerMessage> {
 
     };
 
-    receive = [new Case(CancelTimer, this.onCancelTimer)];
+    receive() {
+
+        return [new Case(CancelTimer, this.onCancelTimer)];
+
+    }
 
     run() {
 
@@ -225,29 +229,33 @@ export class Supervisor<R> extends Immutable<SupervisorMessage> {
 
     actor = '?';
 
-    receive: Case<SupervisorMessage>[] = <Case<SupervisorMessage>[]>[
+    receive(): Case<SupervisorMessage>[] {
 
-        new Case(SuspendActor, () => {
+        return <Case<SupervisorMessage>[]>[
 
-            this.tell(this.actor, new Suspend(this.self()));
+            new Case(SuspendActor, () => {
 
-        }),
+                this.tell(this.actor, new Suspend(this.self()));
 
-        new Case(Reload, () => {
+            }),
 
-            this.tell(this.director, this.info);
+            new Case(Reload, () => {
 
-        }),
+                this.tell(this.director, this.info);
 
-        new Case(Suspended, () => {
+            }),
 
-            this.tell(this.director, new ActorSuspended());
+            new Case(Suspended, () => {
 
-        }),
+                this.tell(this.director, new ActorSuspended());
 
-        new Default(m => { this.tell(this.display, m); })
+            }),
 
-    ];
+            new Default(m => { this.tell(this.display, m); })
+
+        ];
+
+    }
 
     run() {
 
@@ -382,13 +390,17 @@ export class Director<T> extends Immutable<DirectorMessage<T>> {
 
     };
 
-    receive = <Case<DirectorMessage<T>>[]>[
+    receive() {
+
+      return <Case<DirectorMessage<T>>[]>[
 
         new Case(RouteChanged, this.onRouteChanged),
 
         new Case(ActorSuspended, this.onActorSuspended)
 
     ];
+
+    }
 
     run() {
 

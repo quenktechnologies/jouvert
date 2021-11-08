@@ -15,7 +15,7 @@ import { Response } from '@quenk/jhr/lib/response';
 import { Case } from '@quenk/potoo/lib/actor/resident/case';
 import { Temp } from '@quenk/potoo/lib/actor/resident';
 import { Address } from '@quenk/potoo/lib/actor/address';
-import {System} from '@quenk/potoo/lib/actor/system';
+import { System } from '@quenk/potoo/lib/actor/system';
 
 import {
     Send,
@@ -223,33 +223,37 @@ export class SendCallback<Req, Res>
         public request: Request<Req>,
         public handler: CompleteHandler<Res>) { super(system); }
 
-    receive = <Case<SendCallbackMessage<Res>>[]>[
+    receive() {
 
-        new Case(TransportErr, (e: TransportErr) => {
+        return <Case<SendCallbackMessage<Res>>[]>[
 
-            this.handler.onError(e);
+            new Case(TransportErr, (e: TransportErr) => {
 
-        }),
+                this.handler.onError(e);
 
-        new Case(typeMatch, (r: Response<Res>) => {
+            }),
 
-            if (r.code > 499) {
+            new Case(typeMatch, (r: Response<Res>) => {
 
-                this.handler.onServerError(r);
+                if (r.code > 499) {
 
-            } else if (r.code > 399) {
+                    this.handler.onServerError(r);
 
-                this.handler.onClientError(r);
+                } else if (r.code > 399) {
 
-            } else {
+                    this.handler.onClientError(r);
 
-                this.handler.onComplete(r);
+                } else {
 
-            }
+                    this.handler.onComplete(r);
 
-        })
+                }
 
-    ]
+            })
+
+        ];
+
+    }
 
     run() {
 
@@ -273,41 +277,45 @@ export class ParSendCallback<Req, Res>
         public requests: Request<Req>[],
         public handler: BatchCompleteHandler<Res>) { super(system); }
 
-    receive = <Case<BatchCallbackMessage<Res>>[]>[
+    receive() {
 
-        new Case(TransportErr, (e: TransportErr) => {
+        return <Case<BatchCallbackMessage<Res>>[]>[
 
-            this.handler.onError(e);
+            new Case(TransportErr, (e: TransportErr) => {
 
-        }),
+                this.handler.onError(e);
 
-        new Case(BatchResponse, (r: BatchResponse<Res>) => {
+            }),
 
-            let failed = r.value.filter(r => r.code > 299);
+            new Case(BatchResponse, (r: BatchResponse<Res>) => {
 
-            if (failed.length > 0) {
+                let failed = r.value.filter(r => r.code > 299);
 
-                let res = failed[0];
+                if (failed.length > 0) {
 
-                if (res.code > 499) {
+                    let res = failed[0];
 
-                    this.handler.onServerError(res);
+                    if (res.code > 499) {
+
+                        this.handler.onServerError(res);
+
+                    } else {
+
+                        this.handler.onClientError(res);
+
+                    }
 
                 } else {
 
-                    this.handler.onClientError(res);
+                    this.handler.onBatchComplete(r);
 
                 }
 
-            } else {
+            })
 
-                this.handler.onBatchComplete(r);
+        ]
 
-            }
-
-        })
-
-    ]
+    }
 
     run() {
 

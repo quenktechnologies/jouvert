@@ -72,8 +72,6 @@ export abstract class Dialog<M> extends Immutable<M> {
         public display: Address,
         public target: DialogEventTarget = '?') { super(system); }
 
-    receive = [];
-
     /**
      * name of the dialog.
      */

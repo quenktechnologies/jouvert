@@ -57,7 +57,11 @@ class Controller extends Immutable<Messages> {
 
     }
 
-    receive = this.cases(this);
+    receive() {
+
+      return this.cases(this);
+
+    }
 
     static template(id: string, cases: (c: Controller) => Case<Messages>[]) {
 

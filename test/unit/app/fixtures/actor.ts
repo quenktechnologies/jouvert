@@ -16,8 +16,14 @@ export class GenericImmutable extends Immutable<Type> {
 
     constructor(
         public system: TestApp,
-        public receive: Case<Type>[],
+        public cases: Case<Type>[],
         public runFunc: GenericImmutableRunFunc) { super(system); }
+
+  receive() {
+
+    return this.cases;
+
+  }
 
     run() {
 

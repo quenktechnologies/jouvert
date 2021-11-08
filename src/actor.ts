@@ -1,13 +1,13 @@
 import { Err } from '@quenk/noni/lib/control/error';
 import { Api } from '@quenk/potoo/lib/actor/resident/api';
 import { Case } from '@quenk/potoo/lib/actor/resident/case';
-import { Mutable , Immutable } from '@quenk/potoo/lib/actor/resident';
+import { Mutable, Immutable } from '@quenk/potoo/lib/actor/resident';
 import { Templates, Template } from '@quenk/potoo/lib/actor/template';
 import { AddressMap, Address } from '@quenk/potoo/lib/actor/address';
 
 import { App } from './app';
 
-export { Api, Mutable, Immutable}
+export { Api, Mutable, Immutable }
 
 /**
  * Proxy provides an actor API implementation that delegates

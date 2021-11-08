@@ -157,27 +157,29 @@ export class Remote<Req, Res> extends Immutable<Request<Req>> {
         let onSucc = (res: HTTPResponse<Res>[]) =>
             this.tell(client, new BatchResponse(res));
 
-        let rs :Future<HTTPResponse<Res>>[] = 
-        requests
-        .map((r: HTTPRequest<Req>) =>
-            agent
-          .send(r)
-          .catch(e => raise(new TransportErr(client, e))));
+        let rs: Future<HTTPResponse<Res>>[] =
+            requests
+                .map((r: HTTPRequest<Req>) =>
+                    agent
+                        .send(r)
+                        .catch(e => raise(new TransportErr(client, e))));
 
         sequential(rs).fork(onErr, onSucc);
 
     }
 
-    receive: Case<Request<Req>>[] = <Case<Request<Req>>[]>[
+    receive(): Case<Request<Req>>[] {
 
-        new Case(Send, this.onUnit),
+        return <Case<Request<Req>>[]>[
 
-        new Case(ParSend, this.onParallel),
+            new Case(Send, this.onUnit),
 
-        new Case(SeqSend, this.onSequential)
+            new Case(ParSend, this.onParallel),
 
-    ];
+            new Case(SeqSend, this.onSequential)
 
-    run() { }
+        ];
+
+    }
 
 }

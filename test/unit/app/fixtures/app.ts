@@ -6,7 +6,7 @@ export class TestApp extends JApp {
 
     spawn(temp: Template): Address {
 
-        return this.vm.spawn(<Template><object>temp);
+        return this.vm.spawn(this.vm,<Template><object>temp);
 
     }
 

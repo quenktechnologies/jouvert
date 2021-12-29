@@ -8,7 +8,7 @@
 import { Request } from '@quenk/jhr/lib/request';
 import { Response } from '@quenk/jhr/lib/response';
 import { Case } from '@quenk/potoo/lib/actor/resident/case';
-import { Temp } from '@quenk/potoo/lib/actor/resident';
+import { Callback } from '@quenk/potoo/lib/actor/resident/immutable/callback';
 import { Address } from '@quenk/potoo/lib/actor/address';
 import { System } from '@quenk/potoo/lib/actor/system';
 import { Send, ParSend, SeqSend, BatchResponse, TransportErr } from './';
@@ -114,7 +114,7 @@ export declare class CompositeBatchCompleteHandler<B> implements BatchCompleteHa
  * SendCallback sends a Send to a Remote's address, processing the response
  * with the provided handler.
  */
-export declare class SendCallback<Req, Res> extends Temp<SendCallbackMessage<Res>> {
+export declare class SendCallback<Req, Res> extends Callback<SendCallbackMessage<Res>> {
     system: System;
     remote: Address;
     request: Request<Req>;
@@ -127,7 +127,7 @@ export declare class SendCallback<Req, Res> extends Temp<SendCallbackMessage<Res
  * ParSendCallback sends a ParSend request to a remote, processing the result
  * with the provided handler.
  */
-export declare class ParSendCallback<Req, Res> extends Temp<BatchCallbackMessage<Res>> {
+export declare class ParSendCallback<Req, Res> extends Callback<BatchCallbackMessage<Res>> {
     system: System;
     remote: Address;
     requests: Request<Req>[];

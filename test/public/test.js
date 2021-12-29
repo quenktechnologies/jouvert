@@ -2,9 +2,10 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Proxy = exports.Immutable = exports.Mutable = void 0;
-var resident_1 = require("@quenk/potoo/lib/actor/resident");
-Object.defineProperty(exports, "Mutable", { enumerable: true, get: function () { return resident_1.Mutable; } });
-Object.defineProperty(exports, "Immutable", { enumerable: true, get: function () { return resident_1.Immutable; } });
+var mutable_1 = require("@quenk/potoo/lib/actor/resident/mutable");
+Object.defineProperty(exports, "Mutable", { enumerable: true, get: function () { return mutable_1.Mutable; } });
+var immutable_1 = require("@quenk/potoo/lib/actor/resident/immutable");
+Object.defineProperty(exports, "Immutable", { enumerable: true, get: function () { return immutable_1.Immutable; } });
 /**
  * Proxy provides an actor API implementation that delegates
  * all its operations to a target actor.
@@ -27,6 +28,7 @@ var Proxy = /** @class */ (function () {
         return this;
     };
     Proxy.prototype.select = function (c) {
+        //XXX: This is not typesafe and should be removed.
         this.instance.select(c);
         return this;
     };
@@ -45,7 +47,7 @@ var Proxy = /** @class */ (function () {
 }());
 exports.Proxy = Proxy;
 
-},{"@quenk/potoo/lib/actor/resident":34}],2:[function(require,module,exports){
+},{"@quenk/potoo/lib/actor/resident/immutable":36,"@quenk/potoo/lib/actor/resident/mutable":38}],2:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -348,7 +350,7 @@ var defaultConfig = function (c) {
     return record_1.merge({ timeout: exports.DEFAULT_TIMEOUT }, c);
 };
 
-},{"../actor":1,"@quenk/noni/lib/control/monad/future":18,"@quenk/noni/lib/data/record":25,"@quenk/noni/lib/data/type":28,"@quenk/potoo/lib/actor/resident/case":33}],3:[function(require,module,exports){
+},{"../actor":1,"@quenk/noni/lib/control/monad/future":18,"@quenk/noni/lib/data/record":25,"@quenk/noni/lib/data/type":28,"@quenk/potoo/lib/actor/resident/case":34}],3:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -530,7 +532,7 @@ var AbstractActiveForm = /** @class */ (function (_super) {
 }(actor_1.Immutable));
 exports.AbstractActiveForm = AbstractActiveForm;
 
-},{"../":5,"../../../actor":1,"@quenk/noni/lib/data/array":21,"@quenk/noni/lib/data/record":25,"@quenk/noni/lib/data/type":28,"@quenk/potoo/lib/actor/resident/case":33}],4:[function(require,module,exports){
+},{"../":5,"../../../actor":1,"@quenk/noni/lib/data/array":21,"@quenk/noni/lib/data/record":25,"@quenk/noni/lib/data/type":28,"@quenk/potoo/lib/actor/resident/case":34}],4:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -724,24 +726,21 @@ var JApp = /** @class */ (function () {
         this.conf = conf;
         this.vm = vm_1.PVM.create(this, this.conf);
     }
-    JApp.prototype.exec = function (i, s) {
-        return this.vm.exec(i, s);
-    };
-    JApp.prototype.execNow = function (i, s) {
-        return this.vm.execNow(i, s);
+    JApp.prototype.getPlatform = function () {
+        return this.vm;
     };
     JApp.prototype.tell = function (addr, msg) {
         this.vm.tell(addr, msg);
         return this;
     };
     JApp.prototype.spawn = function (t) {
-        return this.vm.spawn(t);
+        return this.vm.spawn(this.vm, t);
     };
     return JApp;
 }());
 exports.JApp = JApp;
 
-},{"@quenk/potoo/lib/actor/system/vm":38}],7:[function(require,module,exports){
+},{"@quenk/potoo/lib/actor/system/vm":42}],7:[function(require,module,exports){
 "use strict";
 /**
  * This module provides actors for sending requests to a [[Remote]] and
@@ -768,7 +767,7 @@ exports.SeqSendCallback = exports.ParSendCallback = exports.SendCallback = expor
 /** imports */
 var type_1 = require("@quenk/noni/lib/data/type");
 var case_1 = require("@quenk/potoo/lib/actor/resident/case");
-var resident_1 = require("@quenk/potoo/lib/actor/resident");
+var callback_1 = require("@quenk/potoo/lib/actor/resident/immutable/callback");
 var _1 = require("./");
 Object.defineProperty(exports, "Send", { enumerable: true, get: function () { return _1.Send; } });
 Object.defineProperty(exports, "ParSend", { enumerable: true, get: function () { return _1.ParSend; } });
@@ -884,7 +883,7 @@ var SendCallback = /** @class */ (function (_super) {
         this.tell(this.remote, new _1.Send(this.self(), this.request));
     };
     return SendCallback;
-}(resident_1.Temp));
+}(callback_1.Callback));
 exports.SendCallback = SendCallback;
 /**
  * ParSendCallback sends a ParSend request to a remote, processing the result
@@ -927,7 +926,7 @@ var ParSendCallback = /** @class */ (function (_super) {
         this.tell(this.remote, new _1.ParSend(this.self(), this.requests));
     };
     return ParSendCallback;
-}(resident_1.Temp));
+}(callback_1.Callback));
 exports.ParSendCallback = ParSendCallback;
 /**
  * SeqSendCallback sends a SeqSend request to a remote, processing the
@@ -945,7 +944,7 @@ var SeqSendCallback = /** @class */ (function (_super) {
 }(ParSendCallback));
 exports.SeqSendCallback = SeqSendCallback;
 
-},{"./":8,"@quenk/noni/lib/data/type":28,"@quenk/potoo/lib/actor/resident":34,"@quenk/potoo/lib/actor/resident/case":33}],8:[function(require,module,exports){
+},{"./":8,"@quenk/noni/lib/data/type":28,"@quenk/potoo/lib/actor/resident/case":34,"@quenk/potoo/lib/actor/resident/immutable/callback":35}],8:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -1103,7 +1102,7 @@ var Remote = /** @class */ (function (_super) {
 }(actor_1.Immutable));
 exports.Remote = Remote;
 
-},{"../../actor":1,"@quenk/noni/lib/control/monad/future":18,"@quenk/potoo/lib/actor/resident/case":33}],9:[function(require,module,exports){
+},{"../../actor":1,"@quenk/noni/lib/control/monad/future":18,"@quenk/potoo/lib/actor/resident/case":34}],9:[function(require,module,exports){
 "use strict";
 /**
  * Provides a base data model implementation based on the remote and callback
@@ -1419,7 +1418,7 @@ var RemoteObserver = /** @class */ (function (_super) {
 }(actor_1.Mutable));
 exports.RemoteObserver = RemoteObserver;
 
-},{"../":8,"../../../actor":1,"@quenk/jhr/lib/response":14,"@quenk/noni/lib/control/match":17,"@quenk/potoo/lib/actor/resident/case":33}],11:[function(require,module,exports){
+},{"../":8,"../../../actor":1,"@quenk/jhr/lib/response":14,"@quenk/noni/lib/control/match":17,"@quenk/potoo/lib/actor/resident/case":34}],11:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.MockAgent = void 0;
@@ -1459,7 +1458,7 @@ class MockAgent {
 }
 exports.MockAgent = MockAgent;
 
-},{"../response":14,"@quenk/noni/lib/control/monad/future":18,"@quenk/test/lib/mock":67}],12:[function(require,module,exports){
+},{"../response":14,"@quenk/noni/lib/control/monad/future":18,"@quenk/test/lib/mock":64}],12:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -2817,7 +2816,7 @@ var throttle = function (f, duration) {
 exports.throttle = throttle;
 
 }).call(this)}).call(this,require('_process'))
-},{"_process":91}],21:[function(require,module,exports){
+},{"_process":88}],21:[function(require,module,exports){
 "use strict";
 var __spreadArray = (this && this.__spreadArray) || function (to, from, pack) {
     if (pack || arguments.length === 2) for (var i = 0, l = from.length, ar; i < l; i++) {
@@ -4554,8 +4553,7 @@ exports.round = round;
 },{}],30:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.randomID = exports.isGroup = exports.isChild = exports.getId = exports.getParent = exports.make = exports.isRestricted = exports.ADDRESS_RESTRICTED = exports.ADDRESS_EMPTY = exports.ADDRESS_SYSTEM = exports.ADDRESS_DISCARD = exports.SEPERATOR = void 0;
-var uuid = require("uuid");
+exports.isGroup = exports.isChild = exports.getId = exports.getParent = exports.make = exports.isRestricted = exports.ADDRESS_RESTRICTED = exports.ADDRESS_EMPTY = exports.ADDRESS_SYSTEM = exports.ADDRESS_DISCARD = exports.SEPERATOR = void 0;
 var array_1 = require("@quenk/noni/lib/data/array");
 var string_1 = require("@quenk/noni/lib/data/string");
 exports.SEPERATOR = '/';
@@ -4630,19 +4628,17 @@ exports.isChild = function (parent, child) {
 exports.isGroup = function (addr) {
     return ((addr[0] === '$') && (addr !== '$'));
 };
-/**
- * randomID generates a random id suitable for use by child actors.
- */
-exports.randomID = function () { return uuid.v4().split('-').join(''); };
 
-},{"@quenk/noni/lib/data/array":21,"@quenk/noni/lib/data/string":27,"uuid":57}],31:[function(require,module,exports){
+},{"@quenk/noni/lib/data/array":21,"@quenk/noni/lib/data/string":27}],31:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.isRouter = exports.isBuffered = exports.isImmutable = exports.FLAG_ROUTER = exports.FLAG_TEMPORARY = exports.FLAG_BUFFERED = exports.FLAG_IMMUTABLE = void 0;
-exports.FLAG_IMMUTABLE = 0x1;
-exports.FLAG_BUFFERED = 0x2;
-exports.FLAG_TEMPORARY = 0x4;
-exports.FLAG_ROUTER = 0x8;
+exports.isResident = exports.isRouter = exports.isBuffered = exports.isImmutable = exports.FLAG_EXIT_AFTER_RUN = exports.FLAG_RESIDENT = exports.FLAG_ROUTER = exports.FLAG_EXIT_AFTER_RECEIVE = exports.FLAG_BUFFERED = exports.FLAG_IMMUTABLE = void 0;
+exports.FLAG_IMMUTABLE = 1;
+exports.FLAG_BUFFERED = 2;
+exports.FLAG_EXIT_AFTER_RECEIVE = 4;
+exports.FLAG_ROUTER = 8;
+exports.FLAG_RESIDENT = 16;
+exports.FLAG_EXIT_AFTER_RUN = 32;
 /**
  * isImmutable flag test.
  */
@@ -4661,6 +4657,10 @@ exports.isBuffered = function (f) {
 exports.isRouter = function (f) {
     return (f & exports.FLAG_ROUTER) === exports.FLAG_ROUTER;
 };
+/**
+ * isResident flag test.
+ */
+exports.isResident = function (f) { return (f & exports.FLAG_RESIDENT) === exports.FLAG_RESIDENT; };
 
 },{}],32:[function(require,module,exports){
 "use strict";
@@ -4683,6 +4683,42 @@ exports.Envelope = Envelope;
 
 },{}],33:[function(require,module,exports){
 "use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.CaseFunction = void 0;
+/**
+ * CaseFunction is a composite object for Case classes.
+ *
+ * It combines mutliple Case classes into one serving effectively as a pattern
+ * matching function.
+ */
+var CaseFunction = /** @class */ (function () {
+    function CaseFunction(cases) {
+        this.cases = cases;
+    }
+    /**
+     * test whether at least one of the underlying Case classes will handle the
+     * Message.
+     */
+    CaseFunction.prototype.test = function (msg) {
+        return this.cases.some(function (kase) { return kase.test(msg); });
+    };
+    /**
+     * apply the first Case class that will handle the provided Message.
+     *
+     * Throws if none of them will.
+     */
+    CaseFunction.prototype.apply = function (msg) {
+        var kase = this.cases.find(function (kase) { return kase.test(msg); });
+        if (!kase)
+            throw new Error("CaseFunction: No Case patterns match!");
+        return kase.apply(msg);
+    };
+    return CaseFunction;
+}());
+exports.CaseFunction = CaseFunction;
+
+},{}],34:[function(require,module,exports){
+"use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
         extendStatics = Object.setPrototypeOf ||
@@ -4697,7 +4733,7 @@ var __extends = (this && this.__extends) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Default = exports.Case = void 0;
+exports.Default = exports.caseOf = exports.Case = void 0;
 var type_1 = require("@quenk/noni/lib/data/type");
 /**
  * Case is provided for situations where it is better to extend
@@ -4723,6 +4759,10 @@ var Case = /** @class */ (function () {
     return Case;
 }());
 exports.Case = Case;
+function caseOf(pattern, handler) {
+    return new Case(pattern, handler);
+}
+exports.caseOf = caseOf;
 /**
  * Default matches any message value.
  */
@@ -4743,7 +4783,7 @@ var Default = /** @class */ (function (_super) {
 }(Case));
 exports.Default = Default;
 
-},{"@quenk/noni/lib/data/type":28}],34:[function(require,module,exports){
+},{"@quenk/noni/lib/data/type":28}],35:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -4759,30 +4799,94 @@ var __extends = (this && this.__extends) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.spawn = exports.ref = exports.Mutable = exports.Temp = exports.Immutable = exports.AbstractResident = void 0;
-var scripts = require("./scripts");
-var events = require("../system/vm/event");
+exports.Callback = void 0;
+var _1 = require("./");
+/**
+ * Callback provides an actor that will successfully process one and only one
+ * message before exiting.
+ *
+ * Unmatched messages are ignored.
+ */
+var Callback = /** @class */ (function (_super) {
+    __extends(Callback, _super);
+    function Callback() {
+        return _super !== null && _super.apply(this, arguments) || this;
+    }
+    return Callback;
+}(_1.Immutable));
+exports.Callback = Callback;
+
+},{"./":36}],36:[function(require,module,exports){
+"use strict";
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+        return extendStatics(d, b);
+    };
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.Immutable = void 0;
+var flags_1 = require("../../flags");
+var function_1 = require("../case/function");
+var __1 = require("../");
+/**
+ * Immutable actors do not change their receiver behaviour after receiving
+ * a message. The same receiver is applied to each and every message.
+ */
+var Immutable = /** @class */ (function (_super) {
+    __extends(Immutable, _super);
+    function Immutable() {
+        return _super !== null && _super.apply(this, arguments) || this;
+    }
+    Object.defineProperty(Immutable.prototype, "$receiver", {
+        get: function () {
+            return new function_1.CaseFunction(this.receive());
+        },
+        enumerable: false,
+        configurable: true
+    });
+    Immutable.prototype.init = function (c) {
+        c.flags = c.flags | flags_1.FLAG_IMMUTABLE | flags_1.FLAG_BUFFERED;
+        return c;
+    };
+    /**
+     * receive provides the list of Case classes that the actor will be used
+     * to process incomming messages.
+     */
+    Immutable.prototype.receive = function () {
+        return [];
+    };
+    return Immutable;
+}(__1.AbstractResident));
+exports.Immutable = Immutable;
+
+},{"../":37,"../../flags":31,"../case/function":33}],37:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.ref = exports.AbstractResident = void 0;
 var record_1 = require("@quenk/noni/lib/data/record");
 var type_1 = require("@quenk/noni/lib/data/type");
-var info_1 = require("../system/vm/script/info");
-var address_1 = require("../address");
-var template_1 = require("../template");
-var flags_1 = require("../flags");
 /**
- * AbstractResident implementation.
+ * AbstractResident is a base implementation of a Resident actor.
  */
 var AbstractResident = /** @class */ (function () {
     function AbstractResident(system) {
         this.system = system;
-        this.self = function () { return address_1.ADDRESS_DISCARD; };
+        this.self = getSelf(this);
     }
     AbstractResident.prototype.notify = function () {
-        this.system.exec(this, new scripts.Notify());
+        this.system.getPlatform().exec(this, 'notify');
     };
-    AbstractResident.prototype.accept = function (_) {
-    };
+    AbstractResident.prototype.accept = function (_) { };
     AbstractResident.prototype.spawn = function (t) {
-        return exports.spawn(this.system, this, t);
+        return this.system.getPlatform().spawn(this, t);
     };
     AbstractResident.prototype.spawnGroup = function (group, tmpls) {
         var _this = this;
@@ -4790,19 +4894,20 @@ var AbstractResident = /** @class */ (function () {
             record_1.merge(t, { group: group }) : { group: group, create: t }); });
     };
     AbstractResident.prototype.tell = function (ref, m) {
-        this.system.exec(this, new scripts.Tell(ref, m));
+        this.exec('tell', [ref, m]);
         return this;
     };
     AbstractResident.prototype.raise = function (e) {
-        this.system.exec(this, new scripts.Raise(e.message));
+        this.system.getPlatform().raise(this, e);
         return this;
     };
     AbstractResident.prototype.kill = function (addr) {
-        this.system.exec(this, new scripts.Kill(addr));
+        var _this = this;
+        this.system.getPlatform().kill(this, addr).fork(function (e) { return _this.raise(e); });
         return this;
     };
     AbstractResident.prototype.exit = function () {
-        this.system.exec(this, new scripts.Kill(this.self()));
+        this.kill(this.self());
     };
     AbstractResident.prototype.start = function (addr) {
         this.self = function () { return addr; };
@@ -4810,83 +4915,16 @@ var AbstractResident = /** @class */ (function () {
     };
     AbstractResident.prototype.run = function () { };
     AbstractResident.prototype.stop = function () { };
+    /**
+     * exec calls a VM function by name on behalf of this actor.
+     */
+    AbstractResident.prototype.exec = function (fname, args) {
+        var vm = this.system.getPlatform();
+        vm.exec(this, fname, args);
+    };
     return AbstractResident;
 }());
 exports.AbstractResident = AbstractResident;
-/**
- * Immutable actors do not change their behaviour after receiving
- * a message.
- *
- * Once the receive property is provided, all messages will be
- * filtered by it.
- */
-var Immutable = /** @class */ (function (_super) {
-    __extends(Immutable, _super);
-    function Immutable() {
-        return _super !== null && _super.apply(this, arguments) || this;
-    }
-    Immutable.prototype.init = function (c) {
-        c.flags = c.flags | flags_1.FLAG_IMMUTABLE | flags_1.FLAG_BUFFERED;
-        c.receivers.push(receiveFun(this.receive()));
-        return c;
-    };
-    /**
-     * select noop.
-     */
-    Immutable.prototype.select = function (_) {
-        return this;
-    };
-    /**
-     * receive provides a static list of Case classes that the actor will
-     * always use to process messages.
-     */
-    Immutable.prototype.receive = function () {
-        return [];
-    };
-    return Immutable;
-}(AbstractResident));
-exports.Immutable = Immutable;
-/**
- * Temp automatically removes itself from the system after a succesfull match
- * of any of its cases.
- */
-var Temp = /** @class */ (function (_super) {
-    __extends(Temp, _super);
-    function Temp() {
-        return _super !== null && _super.apply(this, arguments) || this;
-    }
-    Temp.prototype.init = function (c) {
-        c.flags = c.flags | flags_1.FLAG_TEMPORARY | flags_1.FLAG_BUFFERED;
-        c.receivers.push(receiveFun(this.receive()));
-        return c;
-    };
-    return Temp;
-}(Immutable));
-exports.Temp = Temp;
-/**
- * Mutable actors can change their behaviour after message processing.
- */
-var Mutable = /** @class */ (function (_super) {
-    __extends(Mutable, _super);
-    function Mutable() {
-        var _this = _super !== null && _super.apply(this, arguments) || this;
-        _this.receive = [];
-        return _this;
-    }
-    Mutable.prototype.init = function (c) {
-        c.flags = c.flags | flags_1.FLAG_BUFFERED;
-        return c;
-    };
-    /**
-     * select allows for selectively receiving messages based on Case classes.
-     */
-    Mutable.prototype.select = function (cases) {
-        this.system.exec(this, new scripts.Receive(receiveFun(cases)));
-        return this;
-    };
-    return Mutable;
-}(AbstractResident));
-exports.Mutable = Mutable;
 /**
  * ref produces a function for sending messages to an actor address.
  */
@@ -4895,241 +4933,220 @@ exports.ref = function (res, addr) {
         return res.tell(addr, m);
     };
 };
-/**
- * spawn an actor using the Spawn script.
- */
-exports.spawn = function (sys, i, t) {
-    var tmpl = template_1.normalize(type_1.isObject(t) ? t : { create: t });
-    return sys
-        .execNow(i, new scripts.Spawn(tmpl))
-        .orJust(function () { return address_1.ADDRESS_DISCARD; })
-        .get();
-};
-var receiveFun = function (cases) {
-    return new info_1.NewForeignFunInfo('receive', 1, function (r, m) {
-        if (cases.some(function (c) {
-            var ok = c.test(m);
-            if (ok) {
-                var ft = c.apply(m);
-                if (ft != null)
-                    r.runTask(ft);
-            }
-            return ok;
-        })) {
-            r.vm.trigger(r.context.address, events.EVENT_MESSAGE_READ, m);
-        }
-        else {
-            r.vm.trigger(r.context.address, events.EVENT_MESSAGE_DROPPED, m);
-        }
-        return 0;
-    });
+var getSelf = function (actor) {
+    var _self = '?';
+    return function () {
+        if (_self === '?')
+            _self = actor
+                .system
+                .getPlatform()
+                .identify(actor)
+                .orJust(function () { return '?'; }).get();
+        return _self;
+    };
 };
 
-},{"../address":30,"../flags":31,"../system/vm/event":37,"../system/vm/script/info":52,"../template":55,"./scripts":35,"@quenk/noni/lib/data/record":25,"@quenk/noni/lib/data/type":28}],35:[function(require,module,exports){
+},{"@quenk/noni/lib/data/record":25,"@quenk/noni/lib/data/type":28}],38:[function(require,module,exports){
 "use strict";
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+        return extendStatics(d, b);
+    };
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Kill = exports.Raise = exports.Notify = exports.Receive = exports.Tell = exports.Self = exports.Spawn = void 0;
-var op = require("../system/vm/runtime/op");
-var type_1 = require("@quenk/noni/lib/data/type");
-var info_1 = require("../system/vm/script/info");
-var es_1 = require("../system/vm/runtime/heap/object/es");
-//XXX: The following is declared here because we need the children section to
-//be recursive. In the future we may support lazily getting properties by 
-//using functions or some other mechanism.
-var templateType = new info_1.NewTypeInfo('Template', 0, []);
-var childrenInfo = new info_1.NewArrayTypeInfo('Children', templateType);
-templateType.properties[0] = { name: 'children', type: childrenInfo };
+exports.Mutable = void 0;
+var flags_1 = require("../../flags");
+var __1 = require("../");
+var function_1 = require("../case/function");
 /**
- * Spawn spawns a single child actor from a template.
+ * Mutable actors can change their behaviour after message processing.
  */
-var Spawn = /** @class */ (function () {
-    function Spawn(template) {
-        var _this = this;
-        this.template = template;
-        this.name = '<spawn>';
-        this.constants = [[], []];
-        this.immediate = true;
-        this.info = [
-            templateType,
-            new info_1.NewForeignFunInfo('getTemp', 0, function (r) { return r.heap.addObject(new es_1.ESObject(r.heap, templateType, _this.template)); }),
-            new info_1.NewFunInfo('spawn', 2, [
-                op.STORE | 0,
-                op.STORE | 1,
-                op.LOAD | 1,
-                op.LOAD | 0,
-                op.ALLOC,
-                op.STORE | 2,
-                op.LOAD | 2,
-                op.RUN,
-                op.LOAD | 0,
-                op.GETPROP | 0,
-                op.DUP,
-                op.IFZJMP | 32,
-                op.STORE | 3,
-                op.LOAD | 3,
-                op.ARLENGTH,
-                op.STORE | 4,
-                op.PUSHUI32 | 0,
-                op.STORE | 5,
-                op.LOAD | 4,
-                op.LOAD | 5,
-                op.CEQ,
-                op.IFNZJMP | 34,
-                op.PUSHUI32 | 0,
-                op.LOAD | 5,
-                op.LOAD | 3,
-                op.ARELM,
-                op.LOAD | 2,
-                op.LDN | 2,
-                op.CALL,
-                op.LOAD | 5,
-                op.PUSHUI32 | 1,
-                op.ADDUI32,
-                op.STORE | 5,
-                op.JMP | 18,
-                op.LOAD | 2 //34: Load the address of the first spawned.
-            ])
-        ];
-        this.code = [
-            op.LDN | 1,
-            op.CALL,
-            op.SELF,
-            op.LDN | 2,
-            op.CALL // 4: Call spawn, with parent and template.
-        ];
+var Mutable = /** @class */ (function (_super) {
+    __extends(Mutable, _super);
+    function Mutable() {
+        var _this = _super !== null && _super.apply(this, arguments) || this;
+        _this.$receivers = [];
+        return _this;
     }
-    return Spawn;
-}());
-exports.Spawn = Spawn;
-/**
- * Self provides the address of the current instance.
- */
-var Self = /** @class */ (function () {
-    function Self() {
-        this.constants = [[], []];
-        this.name = '<self>';
-        this.immediate = true;
-        this.info = [];
-        this.code = [
-            op.SELF
-        ];
-    }
-    return Self;
-}());
-exports.Self = Self;
-/**
- * Tell used to deliver messages to other actors.
- */
-var Tell = /** @class */ (function () {
-    function Tell(to, msg) {
-        var _this = this;
-        this.to = to;
-        this.msg = msg;
-        this.constants = [[], []];
-        this.name = '<tell>';
-        this.info = [
-            new info_1.NewForeignFunInfo('getAddress', 0, function () { return _this.to; }),
-            new info_1.NewForeignFunInfo('getMessage', 0, function (r) { return type_1.isObject(_this.msg) ?
-                r.heap.addObject(new es_1.ESObject(r.heap, info_1.objectType, _this.msg)) :
-                _this.msg; })
-        ];
-        this.code = [
-            op.LDN | 0,
-            op.CALL,
-            op.LDN | 1,
-            op.CALL,
-            op.SEND
-        ];
-    }
-    return Tell;
-}());
-exports.Tell = Tell;
-/**
- * Receive schedules a receiver for the actor.
- */
-var Receive = /** @class */ (function () {
-    function Receive(f) {
-        this.f = f;
-        this.constants = [[], []];
-        this.name = 'receive';
-        this.info = [
-            this.f
-        ];
-        this.code = [
-            op.LDN | 0,
-            op.RECV
-        ];
-    }
-    return Receive;
-}());
-exports.Receive = Receive;
-/**
- * Notify attempts to consume the next available message in the mailbox.
- */
-var Notify = /** @class */ (function () {
-    function Notify() {
-        this.constants = [[], []];
-        this.name = '<notify>';
-        this.info = [];
-        this.code = [
-            op.MAILCOUNT,
-            op.IFZJMP | 6,
-            op.RECVCOUNT,
-            op.IFZJMP | 6,
-            op.MAILDQ,
-            op.READ,
-            op.NOP //End
-        ];
-    }
-    return Notify;
-}());
-exports.Notify = Notify;
-/**
- * Raise an exception triggering the systems error handling mechanism.
- * TODO: implement
- */
-var Raise = /** @class */ (function () {
-    function Raise(msg) {
-        var _this = this;
-        this.msg = msg;
-        this.name = '<raise>';
-        this.constants = [[], []];
-        this.info = [
-            new info_1.NewForeignFunInfo('getMessage', 0, function () { return _this.msg; })
-        ];
-        this.code = [
-            op.LDN | 0,
-            op.CALL,
-            op.RAISE
-        ];
-    }
-    return Raise;
-}());
-exports.Raise = Raise;
-/**
- * Kill stops an actor within the executing actor's process tree (inclusive).
- * TODO: implement.
- */
-var Kill = /** @class */ (function () {
-    function Kill(addr) {
-        var _this = this;
-        this.addr = addr;
-        this.name = '<kill>';
-        this.constants = [[], []];
-        this.info = [
-            new info_1.NewForeignFunInfo('getAddress', 0, function () { return _this.addr; })
-        ];
-        this.code = [
-            op.LDN | 0,
-            op.CALL,
-            op.STOP
-        ];
-    }
-    return Kill;
-}());
-exports.Kill = Kill;
+    Mutable.prototype.init = function (c) {
+        c.flags = c.flags | flags_1.FLAG_BUFFERED;
+        return c;
+    };
+    /**
+     * select the next message in the mailbox using the provided case classes.
+     *
+     * If the message cannot be handled by any of them, it will be dropped.
+     */
+    Mutable.prototype.select = function (cases) {
+        this.$receivers.push(new function_1.CaseFunction(cases));
+        this.notify();
+        return this;
+    };
+    return Mutable;
+}(__1.AbstractResident));
+exports.Mutable = Mutable;
 
-},{"../system/vm/runtime/heap/object/es":43,"../system/vm/runtime/op":47,"../system/vm/script/info":52,"@quenk/noni/lib/data/type":28}],36:[function(require,module,exports){
+},{"../":37,"../../flags":31,"../case/function":33}],39:[function(require,module,exports){
+"use strict";
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+        return extendStatics(d, b);
+    };
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
+var __spreadArrays = (this && this.__spreadArrays) || function () {
+    for (var s = 0, i = 0, il = arguments.length; i < il; i++) s += arguments[i].length;
+    for (var r = Array(s), k = 0, i = 0; i < il; i++)
+        for (var a = arguments[i], j = 0, jl = a.length; j < jl; j++, k++)
+            r[k] = a[j];
+    return r;
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.TaskActorScript = exports.MutableActorScript = exports.CallbackActorScript = exports.ImmutableActorScript = void 0;
+var op = require("../system/vm/runtime/op");
+var events = require("../system/vm/event");
+var errors = require("../system/vm/runtime/error");
+var array_1 = require("@quenk/noni/lib/data/array");
+var info_1 = require("../system/vm/script/info");
+var scripts_1 = require("../system/vm/scripts");
+var receiveIdx = scripts_1.commonFunctions.length + 1;
+var residentCommonFunctions = __spreadArrays(scripts_1.commonFunctions, [
+    new info_1.NewFunInfo('notify', 0, [
+        op.MAILCOUNT,
+        op.IFZJMP | 5,
+        op.MAILDQ,
+        op.LDN | receiveIdx,
+        op.CALL | 1,
+        op.NOP // End
+    ])
+]);
+/**
+ * ImmutableActorScript used by Immutable actor instances.
+ */
+var ImmutableActorScript = /** @class */ (function (_super) {
+    __extends(ImmutableActorScript, _super);
+    function ImmutableActorScript(actor) {
+        var _this = _super.call(this) || this;
+        _this.actor = actor;
+        _this.info = __spreadArrays(residentCommonFunctions, [
+            new info_1.NewForeignFunInfo('receive', 1, function (thr, msg) {
+                return immutableExec(_this.actor, thr, msg);
+            })
+        ]);
+        _this.code = [];
+        return _this;
+    }
+    return ImmutableActorScript;
+}(scripts_1.BaseScript));
+exports.ImmutableActorScript = ImmutableActorScript;
+/**
+ * CallbackActorScript used by Callback actor instances.
+ */
+var CallbackActorScript = /** @class */ (function (_super) {
+    __extends(CallbackActorScript, _super);
+    function CallbackActorScript(actor) {
+        var _this = _super.call(this) || this;
+        _this.actor = actor;
+        _this.info = __spreadArrays(residentCommonFunctions, [
+            new info_1.NewForeignFunInfo('receive', 1, function (thr, msg) {
+                var result = immutableExec(_this.actor, thr, msg);
+                _this.actor.exit();
+                return result;
+            })
+        ]);
+        _this.code = [];
+        return _this;
+    }
+    return CallbackActorScript;
+}(scripts_1.BaseScript));
+exports.CallbackActorScript = CallbackActorScript;
+/**
+ * MutableActorScript used by Mutable actor instances.
+ */
+var MutableActorScript = /** @class */ (function (_super) {
+    __extends(MutableActorScript, _super);
+    function MutableActorScript(actor) {
+        var _this = _super.call(this) || this;
+        _this.actor = actor;
+        _this.info = __spreadArrays(residentCommonFunctions, [
+            new info_1.NewForeignFunInfo('receive', 1, function (thr, msg) {
+                var actor = _this.actor;
+                var vm = actor.system.getPlatform();
+                if (array_1.empty(actor.$receivers)) {
+                    thr.raise(new errors.NoReceiverErr(thr.context.address));
+                    return 0;
+                }
+                if (actor.$receivers[0].test(msg)) {
+                    var receiver = actor.$receivers.shift();
+                    var future = receiver.apply(msg);
+                    if (future)
+                        thr.wait(future);
+                    vm.trigger(thr.context.address, events.EVENT_MESSAGE_READ, msg);
+                    return 1;
+                }
+                else {
+                    vm.trigger(thr.context.address, events.EVENT_MESSAGE_DROPPED, msg);
+                    return 0;
+                }
+            }),
+            new info_1.NewFunInfo('notify', 0, [
+                op.MAILCOUNT,
+                op.IFZJMP | 4,
+                op.MAILDQ,
+                op.CALL | receiveIdx,
+                op.NOP // End
+            ]),
+        ]);
+        _this.code = [];
+        return _this;
+    }
+    return MutableActorScript;
+}(scripts_1.BaseScript));
+exports.MutableActorScript = MutableActorScript;
+/**
+ * TaskActorScript used by the Task actor.
+ */
+var TaskActorScript = /** @class */ (function (_super) {
+    __extends(TaskActorScript, _super);
+    function TaskActorScript() {
+        var _this = _super !== null && _super.apply(this, arguments) || this;
+        _this.info = scripts_1.commonFunctions;
+        return _this;
+    }
+    return TaskActorScript;
+}(scripts_1.BaseScript));
+exports.TaskActorScript = TaskActorScript;
+var immutableExec = function (actor, thr, msg) {
+    var vm = actor.system.getPlatform();
+    if (actor.$receiver.test(msg)) {
+        var future = actor.$receiver.apply(msg);
+        if (future)
+            thr.wait(future);
+        vm.trigger(thr.context.address, events.EVENT_MESSAGE_READ, msg);
+        return 1;
+    }
+    else {
+        vm.trigger(thr.context.address, events.EVENT_MESSAGE_DROPPED, msg);
+        return 0;
+    }
+};
+
+},{"../system/vm/event":41,"../system/vm/runtime/error":45,"../system/vm/runtime/op":50,"../system/vm/script/info":54,"../system/vm/scripts":56,"@quenk/noni/lib/data/array":21}],40:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.defaults = void 0;
@@ -5146,7 +5163,7 @@ exports.defaults = function () { return ({
     accept: function () { }
 }); };
 
-},{"./log":39}],37:[function(require,module,exports){
+},{"./log":43}],41:[function(require,module,exports){
 "use strict";
 var _a;
 Object.defineProperty(exports, "__esModule", { value: true });
@@ -5205,8 +5222,35 @@ exports.events = (_a = {},
 exports.getLevel = function (e) { return exports.events.hasOwnProperty(e) ?
     exports.events[e].level : log_1.LOG_LEVEL_DEBUG; };
 
-},{"./log":39}],38:[function(require,module,exports){
+},{"./log":43}],42:[function(require,module,exports){
 "use strict";
+var __generator = (this && this.__generator) || function (thisArg, body) {
+    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
+    return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
+    function verb(n) { return function (v) { return step([n, v]); }; }
+    function step(op) {
+        if (f) throw new TypeError("Generator is already executing.");
+        while (_) try {
+            if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
+            if (y = 0, t) op = [op[0] & 2, t.value];
+            switch (op[0]) {
+                case 0: case 1: t = op; break;
+                case 4: _.label++; return { value: op[1], done: false };
+                case 5: _.label++; y = op[1]; op = [0]; continue;
+                case 7: op = _.ops.pop(); _.trys.pop(); continue;
+                default:
+                    if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) { _ = 0; continue; }
+                    if (op[0] === 3 && (!t || (op[1] > t[0] && op[1] < t[3]))) { _.label = op[1]; break; }
+                    if (op[0] === 6 && _.label < t[1]) { _.label = t[1]; t = op; break; }
+                    if (t && _.label < t[2]) { _.label = t[2]; _.ops.push(op); break; }
+                    if (t[2]) _.ops.pop();
+                    _.trys.pop(); continue;
+            }
+            op = body.call(thisArg, _);
+        } catch (e) { op = [6, e]; y = 0; } finally { f = t = 0; }
+        if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
+    }
+};
 var __spreadArrays = (this && this.__spreadArrays) || function () {
     for (var s = 0, i = 0, il = arguments.length; i < il; i++) s += arguments[i].length;
     for (var r = Array(s), k = 0, i = 0; i < il; i++)
@@ -5217,32 +5261,36 @@ var __spreadArrays = (this && this.__spreadArrays) || function () {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.PVM = exports.MAX_WORK_LOAD = void 0;
 var template = require("../../template");
-var scripts = require("../../resident/scripts");
 var errors = require("./runtime/error");
 var events = require("./event");
 var future_1 = require("@quenk/noni/lib/control/monad/future");
 var maybe_1 = require("@quenk/noni/lib/data/maybe");
+var type_1 = require("@quenk/noni/lib/data/type");
 var either_1 = require("@quenk/noni/lib/data/either");
 var array_1 = require("@quenk/noni/lib/data/array");
 var record_1 = require("@quenk/noni/lib/data/record");
-var array_2 = require("@quenk/noni/lib/data/array");
-var type_1 = require("@quenk/noni/lib/data/type");
-var resident_1 = require("../../resident");
 var address_1 = require("../../address");
-var template_1 = require("../../template");
 var flags_1 = require("../../flags");
 var message_1 = require("../../message");
+var runner_1 = require("./thread/shared/runner");
+var shared_1 = require("./thread/shared");
 var state_1 = require("./state");
 var context_1 = require("./runtime/context");
-var thread_1 = require("./runtime/thread");
-var heap_1 = require("./runtime/heap");
-var conf_1 = require("./conf");
 var op_1 = require("./runtime/op");
+var conf_1 = require("./conf");
 var log_1 = require("./log");
+var ledger_1 = require("./runtime/heap/ledger");
+var factory_1 = require("./scripts/factory");
 var event_1 = require("./event");
+var ID_RANDOM = "#?POTOORAND?#" + Date.now();
 exports.MAX_WORK_LOAD = 25;
 /**
- * PVM is the Potoo Virtual Machine.
+ * PVM (Potoo Virtual Machine) is a JavaScript implemented virtual machine that
+ * functions as a message delivery system between target actors.
+ *
+ * Actors known to the VM are considered to be part of a system and may or may
+ * not reside on the same process/worker/thread depending on the underlying
+ * platform and individual actor implementations.
  */
 var PVM = /** @class */ (function () {
     function PVM(system, conf) {
@@ -5250,33 +5298,37 @@ var PVM = /** @class */ (function () {
         if (conf === void 0) { conf = conf_1.defaults(); }
         this.system = system;
         this.conf = conf;
+        this._actorIdCounter = -1;
+        /**
+         * heap memory shared between actor Threads.
+         */
+        this.heap = new ledger_1.DefaultHeapLedger();
+        /**
+         * threadRunner shared between vm threads.
+         */
+        this.threadRunner = new runner_1.SharedThreadRunner(this);
         /**
          * state contains information about all the actors in the system, routers
          * and groups.
          */
         this.state = {
-            runtimes: {
-                $: new thread_1.Thread(this, new heap_1.Heap(), (context_1.newContext(this, '$', { create: function () { return _this; } })))
+            threads: {
+                $: new shared_1.SharedThread(this, factory_1.ScriptFactory.getScript(this), this.threadRunner, context_1.newContext(this._actorIdCounter++, this, '$', {
+                    create: function () { return _this; },
+                    trap: function () { return template.ACTION_RAISE; }
+                }))
             },
             routers: {},
-            groups: {}
+            groups: {},
+            pendingMessages: {}
         };
-        /**
-         * runQ is the queue of pending Scripts to be executed.
-         */
-        this.runQ = [];
-        /**
-         * waitQ is the queue of pending Scripts for Runtimes that are awaiting
-         * the completion of an async task.
-         */
-        this.waitQ = [];
-        /**
-         * blocked is a
-         */
-        this.blocked = [];
-        this.running = false;
     }
+    /**
+     * Create a new PVM instance using the provided System implementation and
+     * configuration object.
+     */
     PVM.create = function (s, conf) {
+        if (conf === void 0) { conf = {}; }
         return new PVM(s, record_1.rmerge(conf_1.defaults(), conf));
     };
     PVM.prototype.init = function (c) {
@@ -5285,77 +5337,83 @@ var PVM = /** @class */ (function () {
     PVM.prototype.accept = function (m) {
         return this.conf.accept(m);
     };
-    PVM.prototype.start = function () {
-    };
-    PVM.prototype.notify = function () {
-    };
+    PVM.prototype.start = function () { };
+    PVM.prototype.notify = function () { };
     PVM.prototype.stop = function () {
-        return this.kill(address_1.ADDRESS_SYSTEM, address_1.ADDRESS_SYSTEM);
+        return this.kill(this, address_1.ADDRESS_SYSTEM);
     };
-    PVM.prototype.allocate = function (parent, t) {
+    PVM.prototype.identify = function (inst) {
+        return state_1.getAddress(this.state, inst);
+    };
+    PVM.prototype.spawn = function (parent, tmpl) {
+        var mparentAddr = this.identify(parent);
+        if (mparentAddr.isNothing()) {
+            this.raise(this, new errors.UnknownInstanceErr(parent));
+            return '?';
+        }
+        return this._spawn(mparentAddr.get(), normalize(tmpl));
+    };
+    PVM.prototype._spawn = function (parent, tmpl) {
         var _this = this;
-        var temp = template_1.normalize(t);
-        if (address_1.isRestricted(temp.id))
-            return either_1.left(new errors.InvalidIdErr(temp.id));
-        var addr = address_1.make(parent, temp.id);
-        if (this.getRuntime(addr).isJust())
+        var eresult = this.allocate(parent, tmpl);
+        if (eresult.isLeft()) {
+            this.raise(this.state.threads[parent].context.actor, eresult.takeLeft());
+            return '?';
+        }
+        var result = eresult.takeRight();
+        this.runActor(result);
+        if (Array.isArray(tmpl.children))
+            // TODO: Make this call stack friendly some day.
+            tmpl.children.forEach(function (tmp) { return _this._spawn(result, tmp); });
+        return result;
+    };
+    PVM.prototype.allocate = function (parent, tmpl) {
+        var _this = this;
+        if (tmpl.id === ID_RANDOM) {
+            var rtime = state_1.get(this.state, parent).get();
+            var prefix = rtime.context.actor.constructor.name.toLowerCase();
+            tmpl.id = "actor::" + (this._actorIdCounter + 1) + "~" + prefix;
+        }
+        if (address_1.isRestricted(tmpl.id))
+            return either_1.left(new errors.InvalidIdErr(tmpl.id));
+        var addr = address_1.make(parent, tmpl.id);
+        if (this.getThread(addr).isJust())
             return either_1.left(new errors.DuplicateAddressErr(addr));
-        var args = Array.isArray(t.args) ? t.args : [];
-        var act = t.create.apply(t, __spreadArrays([this.system, t], args));
-        var thr = new thread_1.Thread(this, new heap_1.Heap(), act.init(context_1.newContext(act, addr, t)));
-        this.putRuntime(addr, thr);
+        var args = Array.isArray(tmpl.args) ? tmpl.args : [];
+        var act = tmpl.create.apply(tmpl, __spreadArrays([this.system, tmpl], args));
+        // TODO: Have thread types depending on the actor type instead.
+        var thr = new shared_1.SharedThread(this, factory_1.ScriptFactory.getScript(act), this.threadRunner, act.init(context_1.newContext(this._actorIdCounter++, act, addr, tmpl)));
+        this.putThread(addr, thr);
         this.trigger(addr, events.EVENT_ACTOR_CREATED);
         if (flags_1.isRouter(thr.context.flags))
             this.putRoute(addr, addr);
-        if (temp.group) {
-            var groups = (typeof temp.group === 'string') ?
-                [temp.group] : temp.group;
+        if (tmpl.group) {
+            var groups = (typeof tmpl.group === 'string') ?
+                [tmpl.group] : tmpl.group;
             groups.forEach(function (g) { return _this.putMember(g, addr); });
         }
         return either_1.right(addr);
     };
     PVM.prototype.runActor = function (target) {
-        var mrtime = this.getRuntime(target);
-        if (mrtime.isNothing())
+        var mthread = this.getThread(target);
+        if (mthread.isNothing())
             return future_1.raise(new errors.UnknownAddressErr(target));
-        var rtime = mrtime.get();
+        var rtime = mthread.get();
         var ft = rtime.context.actor.start(target);
+        // Assumes the actor returned a Future
+        if (ft)
+            rtime.wait(ft);
+        // Actors with this flag need to be brought down immediately.
+        // TODO: Move this to the actors own run method after #47
+        if (rtime.context.flags & flags_1.FLAG_EXIT_AFTER_RUN)
+            rtime.wait(this.kill(rtime.context.actor, target));
         this.trigger(rtime.context.address, events.EVENT_ACTOR_STARTED);
-        return ((ft != null) ? ft : future_1.pure(undefined));
     };
-    PVM.prototype.runTask = function (addr, ft) {
-        var _this = this;
-        this.blocked = array_1.dedupe(this.blocked.concat(addr));
-        //XXX: Fork is used here instead of finally because the raise() method
-        // may trigger side-effects. For example the actor being stopped or 
-        // restarted.
-        ft
-            .fork(function (e) {
-            _this.blocked = array_2.remove(_this.blocked, addr);
-            _this.raise(addr, e);
-        }, function () {
-            _this.blocked = array_2.remove(_this.blocked, addr);
-            //TODO: This is done to keep any waiting scripts going after
-            //the task completes. The side-effect of this needs to be
-            //observed a bit more but scripts of blocked actors other
-            //than addr should not be affected. In future it may suffice
-            //to run only scripts for addr.
-            _this.run();
-        });
-    };
-    PVM.prototype.sendMessage = function (to, from, m) {
+    PVM.prototype.sendMessage = function (to, from, msg) {
         var mRouter = this.getRouter(to);
         var mctx = mRouter.isJust() ?
             mRouter :
-            this.getRuntime(to).map(function (r) { return r.context; });
-        //TODO: We dont want to pass HeapObjects to actors?
-        //Its annoying for ES actors but may be necessary for vm actors.
-        //There are various things that could be done here. If we make all 
-        //PTValues an interface then we could just promote. Alternatively we
-        //could introduce a Foreign PTValue to represent foreign values.
-        //Much more thought is needed but for now we don't want HeapObjects
-        //passed to ES actors.
-        var msg = type_1.isObject(m) ? m.promote() : m;
+            this.getThread(to).map(function (r) { return r.context; });
         //routers receive enveloped messages.
         var actualMessage = mRouter.isJust() ?
             new message_1.Envelope(to, from, msg) : msg;
@@ -5366,6 +5424,7 @@ var PVM = /** @class */ (function () {
                 ctx.actor.notify();
             }
             else {
+                // TODO: Support async.
                 ctx.actor.accept(actualMessage);
             }
             this.trigger(from, events.EVENT_SEND_OK, to, msg);
@@ -5376,7 +5435,7 @@ var PVM = /** @class */ (function () {
             return false;
         }
     };
-    PVM.prototype.getRuntime = function (addr) {
+    PVM.prototype.getThread = function (addr) {
         return state_1.get(this.state, addr);
     };
     PVM.prototype.getRouter = function (addr) {
@@ -5388,7 +5447,7 @@ var PVM = /** @class */ (function () {
     PVM.prototype.getChildren = function (addr) {
         return maybe_1.fromNullable(state_1.getChildren(this.state, addr));
     };
-    PVM.prototype.putRuntime = function (addr, r) {
+    PVM.prototype.putThread = function (addr, r) {
         this.state = state_1.put(this.state, addr, r);
         return this;
     };
@@ -5413,17 +5472,17 @@ var PVM = /** @class */ (function () {
         state_1.removeRoute(this.state, target);
         return this;
     };
-    PVM.prototype.raise = function (addr, err) {
+    PVM.prototype.raise = function (src, err) {
         var _this = this;
+        var maddr = this.identify(src);
+        // For now, ignore requests from unknown instances.
+        if (maddr.isNothing())
+            return;
+        var addr = maddr.get();
         //TODO: pause the runtime.
         var next = addr;
         var _loop_1 = function () {
-            var mrtime = this_1.getRuntime(next);
-            if (next === address_1.ADDRESS_SYSTEM) {
-                if (err instanceof Error)
-                    throw err;
-                throw new Error(err.message);
-            }
+            var mrtime = this_1.getThread(next);
             //TODO: This risks swallowing errors.
             if (mrtime.isNothing())
                 return { value: void 0 };
@@ -5433,20 +5492,32 @@ var PVM = /** @class */ (function () {
             switch (trap(err)) {
                 case template.ACTION_IGNORE: return "break-loop";
                 case template.ACTION_RESTART:
-                    this_1.runTask(next, this_1.kill(next, next)
-                        .chain(function () {
-                        var eRes = _this.allocate(address_1.getParent(next), rtime.context.template);
-                        return eRes.isLeft() ?
-                            future_1.raise(new Error(eRes.takeLeft().message)) :
+                    var maddr_1 = state_1.get(this_1.state, next);
+                    if (maddr_1.isJust())
+                        this_1.kill(maddr_1.get().context.actor, next)
+                            .chain(function () {
+                            var eRes = _this.allocate(address_1.getParent(next), rtime.context.template);
+                            if (eRes.isLeft())
+                                return future_1.raise(new Error(eRes.takeLeft().message));
                             _this.runActor(eRes.takeRight());
-                    }));
+                            return future_1.voidPure;
+                        }).fork(function (e) { return _this.raise(_this, e); });
                     return "break-loop";
                 case template.ACTION_STOP:
-                    this_1.runTask(next, this_1.kill(next, next));
+                    var smaddr = state_1.get(this_1.state, next);
+                    if (smaddr.isJust())
+                        this_1.kill(smaddr.get().context.actor, next)
+                            .fork(function (e) { return _this.raise(_this, e); });
                     return "break-loop";
                 default:
-                    //escalate
-                    next = address_1.getParent(next);
+                    if (next === address_1.ADDRESS_SYSTEM) {
+                        if (err instanceof Error)
+                            throw err;
+                        throw new Error(err.message);
+                    }
+                    else {
+                        next = address_1.getParent(next);
+                    }
                     break;
             }
         };
@@ -5491,138 +5562,114 @@ var PVM = /** @class */ (function () {
             this.conf.on[evt].apply(null, __spreadArrays([addr, evt], args));
     };
     PVM.prototype.logOp = function (r, f, op, oper) {
-        if (this.conf.log.level >= log_1.LOG_LEVEL_DEBUG)
-            this.conf.log.logger.debug.apply(null, __spreadArrays([
-                "[" + r.context.address + "]",
-                "(" + f.script.name + ")"
-            ], op_1.toLog(op, r, f, oper)));
+        this.conf.log.logger.debug.apply(null, __spreadArrays([
+            "[" + r.context.address + "]",
+            "(" + f.script.name + ")"
+        ], op_1.toLog(op, r, f, oper)));
     };
     PVM.prototype.kill = function (parent, target) {
-        var _this = this;
-        var addrs = address_1.isGroup(target) ?
-            this.getGroup(target).orJust(function () { return []; }).get() : [target];
-        return scheduleFutures(addrs.map(function (addr) {
-            if ((!address_1.isChild(parent, target)) && (target !== parent))
-                return future_1.raise(new Error("IllegalStopErr: Actor " + parent + " " +
-                    ("cannot kill non-child " + addr + "!")));
-            var mrun = _this.getRuntime(addr);
-            if (mrun.isNothing())
-                return future_1.pure(undefined);
-            var run = mrun.get();
-            var mchilds = _this.getChildren(target);
-            var childs = mchilds.isJust() ? mchilds.get() : {};
-            var cwork = record_1.mapTo(record_1.map(childs, function (r, k) {
-                return r
-                    .die()
-                    .chain(function () {
-                    _this.remove(k);
-                    return future_1.pure(undefined);
-                });
-            }), function (f) { return f; });
-            return scheduleFutures(cwork)
-                .chain(function () {
-                return addr === address_1.ADDRESS_SYSTEM ?
-                    future_1.pure(undefined) :
-                    run.die();
-            })
-                .chain(function () {
-                _this.trigger(run.context.address, events.EVENT_ACTOR_STOPPED);
-                if (addr !== address_1.ADDRESS_SYSTEM)
-                    _this.remove(addr);
-                return future_1.pure(undefined);
+        var that = this;
+        return future_1.doFuture(function () {
+            var mparentAddr, parentAddr, addrs;
+            return __generator(this, function (_a) {
+                mparentAddr = that.identify(parent);
+                // For now, ignore unknown kill requests.
+                if (mparentAddr.isNothing())
+                    return [2 /*return*/, future_1.pure(undefined)];
+                parentAddr = mparentAddr.get();
+                addrs = address_1.isGroup(target) ?
+                    that.getGroup(target).orJust(function () { return []; }).get() : [target];
+                return [2 /*return*/, runBatch(addrs.map(function (addr) { return future_1.doFuture(function () {
+                        var err, mthread, thread, mchilds, childs, killChild;
+                        return __generator(this, function (_a) {
+                            switch (_a.label) {
+                                case 0:
+                                    if ((!address_1.isChild(parentAddr, target)) && (target !== parentAddr)) {
+                                        err = new Error("IllegalStopErr: Actor \"" + parentAddr + "\" " +
+                                            ("cannot kill non-child \"" + addr + "\"!"));
+                                        that.raise(parent, err);
+                                        return [2 /*return*/, future_1.raise(err)];
+                                    }
+                                    mthread = that.getThread(addr);
+                                    if (mthread.isNothing())
+                                        return [2 /*return*/, future_1.pure(undefined)];
+                                    thread = mthread.get();
+                                    mchilds = that.getChildren(target);
+                                    childs = mchilds.isJust() ? mchilds.get() : {};
+                                    killChild = function (child, addr) {
+                                        return future_1.doFuture(function () {
+                                            return __generator(this, function (_a) {
+                                                switch (_a.label) {
+                                                    case 0: return [4 /*yield*/, child.die()];
+                                                    case 1:
+                                                        _a.sent();
+                                                        that.remove(addr);
+                                                        that.trigger(addr, events.EVENT_ACTOR_STOPPED);
+                                                        return [2 /*return*/, future_1.voidPure];
+                                                }
+                                            });
+                                        });
+                                    };
+                                    return [4 /*yield*/, runBatch(record_1.mapTo(record_1.map(childs, killChild), function (f) { return f; }))];
+                                case 1:
+                                    _a.sent();
+                                    if (!(addr !== address_1.ADDRESS_SYSTEM)) return [3 /*break*/, 3];
+                                    return [4 /*yield*/, killChild(thread, addr)];
+                                case 2:
+                                    _a.sent();
+                                    _a.label = 3;
+                                case 3: return [2 /*return*/, future_1.voidPure];
+                            }
+                        });
+                    }); }))];
             });
-        }));
-    };
-    /**
-     * spawn an actor.
-     *
-     * This actor will be a direct child of the root.
-     */
-    PVM.prototype.spawn = function (t) {
-        return resident_1.spawn(this.system, this, t);
+        });
     };
     /**
      * tell allows the vm to send a message to another actor via opcodes.
      *
      * If you want to immediately deliver a message, use [[sendMessage]] instead.
      */
-    PVM.prototype.tell = function (ref, m) {
-        this.system.exec(this, new scripts.Tell(ref, m));
+    PVM.prototype.tell = function (ref, msg) {
+        this.exec(this, 'tell', [ref, msg]);
         return this;
     };
-    PVM.prototype.execNow = function (i, s) {
-        var mslot = getSlot(this.state, i);
-        if (mslot.isNothing()) {
-            this.trigger(address_1.ADDRESS_SYSTEM, events.EVENT_EXEC_INSTANCE_STALE);
-            return maybe_1.nothing();
-        }
-        else {
-            var _a = mslot.get(), rtime = _a[1];
-            return new thread_1.Thread(this, rtime.heap, rtime.context).exec(s);
-        }
-    };
-    PVM.prototype.exec = function (i, s) {
-        var mslot = getSlot(this.state, i);
-        if (mslot.isNothing()) {
-            this.trigger(address_1.ADDRESS_SYSTEM, events.EVENT_EXEC_INSTANCE_STALE);
-        }
-        else {
-            var _a = mslot.get(), addr = _a[0], rtime = _a[1];
-            this.runQ.push([addr, s, rtime]);
-            this.run();
-        }
-    };
-    PVM.prototype.run = function () {
-        var _this = this;
-        if (this.running === true)
-            return;
-        this.running = true;
-        doRun: while (this.running) {
-            while (!array_1.empty(this.runQ)) {
-                var next = this.runQ.shift();
-                var addr = next[0], script = next[1], rtime = next[2];
-                var mctime = this.getRuntime(addr);
-                //is the runtime still here?
-                if (mctime.isNothing()) {
-                    this.trigger(addr, events.EVENT_EXEC_ACTOR_GONE);
-                    //is it the same instance?
-                }
-                else if (mctime.get() !== rtime) {
-                    this.trigger(addr, events.EVENT_EXEC_ACTOR_CHANGED);
-                    // is the runtime awaiting an async task?
-                }
-                else if (array_1.contains(this.blocked, addr)) {
-                    this.waitQ.push(next);
-                }
-                else {
-                    rtime.exec(script);
-                }
-            }
-            var _a = array_1.partition(this.waitQ, function (s) {
-                return !array_1.contains(_this.blocked, s[0]);
-            }), unblocked = _a[0], blocked = _a[1];
-            this.waitQ = blocked;
-            if (unblocked.length > 0) {
-                this.runQ = this.runQ.concat(unblocked);
-                continue doRun;
-            }
-            this.running = false;
-        }
+    PVM.prototype.exec = function (actor, funName, args) {
+        if (args === void 0) { args = []; }
+        var mAddress = this.identify(actor);
+        if (mAddress.isNothing())
+            return this.raise(this, new errors.UnknownInstanceErr(actor));
+        var thread = (this.state.threads[mAddress.get()]);
+        thread.exec(funName, args);
     };
     return PVM;
 }());
 exports.PVM = PVM;
-var getSlot = function (s, actor) {
-    return record_1.reduce(s.runtimes, maybe_1.nothing(), function (p, c, k) {
-        return c.context.actor === actor ? maybe_1.fromNullable([k, c]) : p;
+var runBatch = function (work) {
+    return future_1.doFuture(function () {
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0: return [4 /*yield*/, future_1.batch(array_1.distribute(work, exports.MAX_WORK_LOAD))];
+                case 1:
+                    _a.sent();
+                    return [2 /*return*/, future_1.voidPure];
+            }
+        });
     });
 };
-var scheduleFutures = function (work) {
-    return future_1.batch(array_1.distribute(work, exports.MAX_WORK_LOAD))
-        .chain(function () { return future_1.pure(undefined); });
+var normalize = function (spawnable) {
+    var tmpl = (type_1.isFunction(spawnable) ?
+        { create: spawnable } :
+        spawnable);
+    tmpl.id = tmpl.id ? tmpl.id : ID_RANDOM;
+    return record_1.merge(tmpl, {
+        children: record_1.isRecord(tmpl.children) ?
+            record_1.mapTo(tmpl.children, function (c, k) { return record_1.merge(c, { id: k }); }) :
+            tmpl.children ? tmpl.children : []
+    });
 };
 
-},{"../../address":30,"../../flags":31,"../../message":32,"../../resident":34,"../../resident/scripts":35,"../../template":55,"./conf":36,"./event":37,"./log":39,"./runtime/context":40,"./runtime/error":41,"./runtime/heap":42,"./runtime/op":47,"./runtime/thread":50,"./state":53,"@quenk/noni/lib/control/monad/future":18,"@quenk/noni/lib/data/array":21,"@quenk/noni/lib/data/either":22,"@quenk/noni/lib/data/maybe":24,"@quenk/noni/lib/data/record":25,"@quenk/noni/lib/data/type":28}],39:[function(require,module,exports){
+},{"../../address":30,"../../flags":31,"../../message":32,"../../template":62,"./conf":40,"./event":41,"./log":43,"./runtime/context":44,"./runtime/error":45,"./runtime/heap/ledger":46,"./runtime/op":50,"./scripts/factory":55,"./state":57,"./thread/shared":59,"./thread/shared/runner":60,"@quenk/noni/lib/control/monad/future":18,"@quenk/noni/lib/data/array":21,"@quenk/noni/lib/data/either":22,"@quenk/noni/lib/data/maybe":24,"@quenk/noni/lib/data/record":25,"@quenk/noni/lib/data/type":28}],43:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.LOG_LEVEL_ERROR = exports.LOG_LEVEL_WARN = exports.LOG_LEVEL_NOTICE = exports.LOG_LEVEL_INFO = exports.LOG_LEVEL_DEBUG = void 0;
@@ -5632,14 +5679,15 @@ exports.LOG_LEVEL_NOTICE = 5;
 exports.LOG_LEVEL_WARN = 4;
 exports.LOG_LEVEL_ERROR = 3;
 
-},{}],40:[function(require,module,exports){
+},{}],44:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.newContext = void 0;
 /**
  * newContext
  */
-exports.newContext = function (actor, address, template) { return ({
+exports.newContext = function (aid, actor, address, template) { return ({
+    aid: aid,
     mailbox: [],
     actor: actor,
     receivers: [],
@@ -5648,7 +5696,7 @@ exports.newContext = function (actor, address, template) { return ({
     template: template
 }); };
 
-},{}],41:[function(require,module,exports){
+},{}],45:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -5664,7 +5712,7 @@ var __extends = (this && this.__extends) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.InvalidFunctionErr = exports.InvalidConstructorErr = exports.MissingInfoErr = exports.InvalidPropertyIndex = exports.StackEmptyErr = exports.IntegerOverflowErr = exports.MissingSymbolErr = exports.UnknownAddressErr = exports.EmptyMailboxErr = exports.NoMailboxErr = exports.NoReceiveErr = exports.IllegalStopErr = exports.UnexpectedDataType = exports.NullPointerErr = exports.JumpOutOfBoundsErr = exports.NullFunctionPointerErr = exports.NullTemplatePointerErr = exports.DuplicateAddressErr = exports.UnknownParentAddressErr = exports.InvalidIdErr = exports.Error = void 0;
+exports.UnknownFunErr = exports.UnknownInstanceErr = exports.InvalidFunctionErr = exports.InvalidConstructorErr = exports.MissingInfoErr = exports.InvalidPropertyIndex = exports.StackEmptyErr = exports.IntegerOverflowErr = exports.MissingSymbolErr = exports.UnknownAddressErr = exports.EmptyMailboxErr = exports.NoMailboxErr = exports.NoReceiverErr = exports.IllegalStopErr = exports.UnexpectedDataType = exports.NullPointerErr = exports.JumpOutOfBoundsErr = exports.NullFunctionPointerErr = exports.NullTemplatePointerErr = exports.DuplicateAddressErr = exports.UnknownParentAddressErr = exports.InvalidIdErr = exports.Error = void 0;
 var address_1 = require("../../../address");
 var frame_1 = require("./stack/frame");
 /**
@@ -5776,7 +5824,8 @@ exports.NullPointerErr = NullPointerErr;
 var UnexpectedDataType = /** @class */ (function (_super) {
     __extends(UnexpectedDataType, _super);
     function UnexpectedDataType(expected, got) {
-        var _this = _super.call(this, "Expected: " + expected + ", Received: " + got) || this;
+        var _this = _super.call(this, "Expected: " + expected.toString(16) + ", " +
+            ("Received: " + got.toString(16))) || this;
         _this.expected = expected;
         _this.got = got;
         return _this;
@@ -5799,18 +5848,18 @@ var IllegalStopErr = /** @class */ (function (_super) {
 }(Error));
 exports.IllegalStopErr = IllegalStopErr;
 /**
- * NoReceiveErr
+ * NoReceiverErr
  */
-var NoReceiveErr = /** @class */ (function (_super) {
-    __extends(NoReceiveErr, _super);
-    function NoReceiveErr(actor) {
-        var _this = _super.call(this, "Actor " + actor + " tried to read without a handler!") || this;
+var NoReceiverErr = /** @class */ (function (_super) {
+    __extends(NoReceiverErr, _super);
+    function NoReceiverErr(actor) {
+        var _this = _super.call(this, "Actor " + actor + " tried to read a message without a receiver!") || this;
         _this.actor = actor;
         return _this;
     }
-    return NoReceiveErr;
+    return NoReceiverErr;
 }(Error));
-exports.NoReceiveErr = NoReceiveErr;
+exports.NoReceiverErr = NoReceiverErr;
 /**
  * NoMailboxErr
  */
@@ -5936,206 +5985,133 @@ var InvalidFunctionErr = /** @class */ (function (_super) {
     return InvalidFunctionErr;
 }(Error));
 exports.InvalidFunctionErr = InvalidFunctionErr;
-
-},{"../../../address":30,"./stack/frame":49}],42:[function(require,module,exports){
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.Heap = void 0;
-var maybe_1 = require("@quenk/noni/lib/data/maybe");
-var type_1 = require("@quenk/noni/lib/data/type");
-var frame_1 = require("../stack/frame");
 /**
- * Heap stores objects in use by the script.
+ * UnknownInstanceErr
  */
-var Heap = /** @class */ (function () {
-    function Heap(objects, strings) {
-        if (objects === void 0) { objects = []; }
-        if (strings === void 0) { strings = []; }
-        this.objects = objects;
-        this.strings = strings;
+var UnknownInstanceErr = /** @class */ (function (_super) {
+    __extends(UnknownInstanceErr, _super);
+    function UnknownInstanceErr(instance) {
+        var _this = _super.call(this, 'The instance provided with constructor ' +
+            (instance ? instance.constructor.name || instance : instance) +
+            '" is not in the system!') || this;
+        _this.instance = instance;
+        return _this;
     }
-    /**
-     * addObject to the heap
-     */
-    Heap.prototype.addObject = function (h) {
-        //TODO: what if heap size is > 24bits?
-        return (this.objects.push(h) - 1) | frame_1.DATA_TYPE_HEAP_OBJECT;
-    };
-    /**
-     * addString to the heap.
-     */
-    Heap.prototype.addString = function (value) {
-        var idx = this.strings.indexOf(value);
-        if (idx === -1) {
-            this.strings.push(value);
-            idx = this.strings.length - 1;
-        }
-        return idx | frame_1.DATA_TYPE_HEAP_STRING;
-    };
-    /**
-     * getObject an object from the heap.
-     */
-    Heap.prototype.getObject = function (r) {
-        return maybe_1.fromNullable(this.objects[r & frame_1.DATA_MASK_VALUE24]);
-    };
-    /**
-     * getString from the strings pool.
-     *
-     * If no string exists at the reference and empty string is provided.
-     */
-    Heap.prototype.getString = function (r) {
-        var value = this.strings[r & frame_1.DATA_MASK_VALUE24];
-        return (value != null) ? value : '';
-    };
-    /**
-     * getAddress of an PTValue that may be on the heap.
-     *
-     * For objects that are not on the heap a null reference is returned.
-     * Strings are automatically added while numbers and booleans simply return
-     * themselves.
-     */
-    Heap.prototype.getAddress = function (v) {
-        if (type_1.isString(v)) {
-            return this.addString(v);
-        }
-        else if (type_1.isObject(v)) {
-            var idx = this.objects.indexOf(v);
-            return idx !== -1 ? frame_1.DATA_TYPE_HEAP_OBJECT | idx : 0;
-        }
-        else if (type_1.isNumber(v)) {
-            return v;
-        }
-        else {
-            return 0;
-        }
-    };
-    /**
-     * exists tests whether an object exists in the heap.
-     */
-    Heap.prototype.exists = function (o) {
-        return this.objects.some(function (eo) { return o === eo; });
-    };
-    /**
-     * release all objects and strings in the heap.
-     */
-    Heap.prototype.release = function () {
-        this.objects = [];
-        this.strings = [];
-    };
-    return Heap;
-}());
-exports.Heap = Heap;
+    return UnknownInstanceErr;
+}(Error));
+exports.UnknownInstanceErr = UnknownInstanceErr;
+/**
+ * UnknownFuncErr
+ */
+var UnknownFunErr = /** @class */ (function (_super) {
+    __extends(UnknownFunErr, _super);
+    function UnknownFunErr(name) {
+        var _this = _super.call(this, "The function '" + name + "' does not exist and cannot be executed!") || this;
+        _this.name = name;
+        return _this;
+    }
+    return UnknownFunErr;
+}(Error));
+exports.UnknownFunErr = UnknownFunErr;
 
-},{"../stack/frame":49,"@quenk/noni/lib/data/maybe":24,"@quenk/noni/lib/data/type":28}],43:[function(require,module,exports){
+},{"../../../address":30,"./stack/frame":52}],46:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ESArray = exports.ESObject = void 0;
-var types = require("../../../type");
+exports.DefaultHeapLedger = void 0;
 var maybe_1 = require("@quenk/noni/lib/data/maybe");
 var record_1 = require("@quenk/noni/lib/data/record");
 var type_1 = require("@quenk/noni/lib/data/type");
-var type_2 = require("../../../type");
+var info_1 = require("../../script/info");
+var frame_1 = require("../stack/frame");
 /**
- * ESObject is a HeapObject for ECMAScript objects.
+ * HeapLedger keeps track of objects created on the heap and their ownership.
  */
-var ESObject = /** @class */ (function () {
-    function ESObject(heap, cons, value) {
-        this.heap = heap;
-        this.cons = cons;
-        this.value = value;
+var DefaultHeapLedger = /** @class */ (function () {
+    function DefaultHeapLedger(objects, owners) {
+        if (objects === void 0) { objects = {}; }
+        if (owners === void 0) { owners = {}; }
+        this.objects = objects;
+        this.owners = owners;
+        this.counter = 0;
     }
-    ESObject.prototype.set = function (idx, value) {
-        var key = this.cons.properties[idx];
-        if (key != null)
-            this.value[key.name] = value;
+    DefaultHeapLedger.prototype._addItem = function (frame, value, flag) {
+        var addr = (this.counter++) | flag;
+        this.objects[addr] = value;
+        this.owners[addr] = frame.name;
+        return addr;
     };
-    ESObject.prototype.get = function (idx) {
-        var prop = this.cons.properties[idx];
-        if (prop == null)
-            return maybe_1.nothing();
-        return marshal(this.heap, prop.type, this.value[prop.name]);
+    DefaultHeapLedger.prototype.addString = function (frame, value) {
+        return this._addItem(frame, value, frame_1.DATA_TYPE_HEAP_STRING);
     };
-    ESObject.prototype.getCount = function () {
-        return record_1.count(this.value);
+    DefaultHeapLedger.prototype.addObject = function (frame, obj) {
+        return this._addItem(frame, obj, frame_1.DATA_TYPE_HEAP_OBJECT);
     };
-    ESObject.prototype.toAddress = function () {
-        return this.heap.getAddress(this);
+    DefaultHeapLedger.prototype.addFun = function (frame, obj) {
+        return this._addItem(frame, obj, frame_1.DATA_TYPE_HEAP_FUN);
     };
-    ESObject.prototype.promote = function () {
-        return this.value;
+    DefaultHeapLedger.prototype.getString = function (ref) {
+        var value = this.objects[ref];
+        return (value != null) ? value : '';
     };
-    return ESObject;
+    DefaultHeapLedger.prototype.getObject = function (ref) {
+        return maybe_1.fromNullable(this.objects[ref]);
+    };
+    DefaultHeapLedger.prototype.getFrameRefs = function (frame) {
+        return record_1.mapTo(record_1.filter(this.owners, function (owner) { return owner === frame.name; }), function (_, k) { return Number(k); });
+    };
+    DefaultHeapLedger.prototype.getThreadRefs = function (thread) {
+        return record_1.mapTo(record_1.filter(this.owners, function (owner) {
+            return threadId(owner) === thread.context.aid;
+        }), function (_, k) { return Number(k); });
+    };
+    DefaultHeapLedger.prototype.intern = function (frame, value) {
+        var maddr = record_1.pickKey(this.objects, function (val) { return val === value; });
+        if (maddr.isJust())
+            return Number(maddr.get());
+        if (type_1.isNumber(value))
+            return value;
+        else if (type_1.isString(value))
+            return this.addString(frame, value);
+        else if (type_1.isObject(value))
+            return ((value instanceof info_1.NewFunInfo) ||
+                (value instanceof info_1.NewForeignFunInfo)) ?
+                this.addFun(frame, value) : this.addObject(frame, value);
+        else
+            return 0;
+    };
+    DefaultHeapLedger.prototype.move = function (ref, newOwner) {
+        this.owners[ref] = newOwner;
+    };
+    DefaultHeapLedger.prototype.frameExit = function (frame) {
+        var _this = this;
+        if (frame.parent.isJust() && isHeapAddress(frame.thread.rp))
+            this.move(frame.thread.rp, frame.parent.get().name);
+        this.getFrameRefs(frame).forEach(function (ref) {
+            if (ref !== frame.thread.rp) {
+                delete _this.objects[ref];
+                delete _this.owners[ref];
+            }
+        });
+    };
+    DefaultHeapLedger.prototype.threadExit = function (thread) {
+        var _this = this;
+        this.getThreadRefs(thread).forEach(function (ref) {
+            delete _this.objects[ref];
+            delete _this.owners[ref];
+        });
+    };
+    return DefaultHeapLedger;
 }());
-exports.ESObject = ESObject;
-/**
- * ESArray is a HeapObject for ECMAScript arrays.
- */
-var ESArray = /** @class */ (function () {
-    function ESArray(heap, cons, value) {
-        this.heap = heap;
-        this.cons = cons;
-        this.value = value;
-    }
-    ESArray.prototype.set = function (key, value) {
-        this.value[key] = value;
-    };
-    ESArray.prototype.get = function (idx) {
-        return marshal(this.heap, this.cons.elements, this.value[idx]);
-    };
-    ESArray.prototype.getCount = function () {
-        return this.value.length;
-    };
-    ESArray.prototype.toAddress = function () {
-        return this.heap.getAddress(this);
-    };
-    ESArray.prototype.promote = function () {
-        return this.value.slice();
-    };
-    return ESArray;
-}());
-exports.ESArray = ESArray;
-var marshal = function (heap, typ, val) {
-    if (val == null)
-        return maybe_1.nothing();
-    switch (type_2.getType(typ.descriptor)) {
-        case types.TYPE_UINT8:
-        case types.TYPE_UINT16:
-        case types.TYPE_UINT32:
-        case types.TYPE_INT8:
-        case types.TYPE_INT16:
-        case types.TYPE_INT32:
-            return maybe_1.just(Number(val));
-        case types.TYPE_BOOLEAN:
-            return maybe_1.just(Boolean(val) === true ? 1 : 0);
-        case types.TYPE_STRING:
-            heap.addString(String(val));
-            return maybe_1.just(val);
-        //TODO: This will actually create a new ESArray/ESObject every time as
-        // Heap#exists only checks whether the HeapObject is in the pool not
-        // the underlying objects.
-        //
-        // This could be resolved by having Heap#exists delegate the check to
-        // the actual objects however, I'm considering whether ES objects even
-        // need to be in the heap in the first place?
-        case types.TYPE_ARRAY:
-            var ea = new ESArray(heap, typ, Array.isArray(val) ? val : []);
-            if (!heap.exists(ea))
-                heap.addObject(ea);
-            return maybe_1.just(ea);
-        case types.TYPE_OBJECT:
-            var eo = new ESObject(heap, typ, type_1.isObject(val) ?
-                val : {});
-            if (!heap.exists(eo))
-                heap.addObject(eo);
-            return maybe_1.just(eo);
-        default:
-            return maybe_1.nothing();
-            break;
-    }
+exports.DefaultHeapLedger = DefaultHeapLedger;
+var isHeapAddress = function (ref) {
+    var kind = ref & frame_1.DATA_MASK_TYPE;
+    return (kind === frame_1.DATA_TYPE_HEAP_STRING) || (kind === frame_1.DATA_TYPE_HEAP_OBJECT);
 };
+var threadId = function (name) { return Number((name.split('@')[1]).split('#')[0]); };
 
-},{"../../../type":54,"@quenk/noni/lib/data/maybe":24,"@quenk/noni/lib/data/record":25,"@quenk/noni/lib/data/type":28}],44:[function(require,module,exports){
+},{"../../script/info":54,"../stack/frame":52,"@quenk/noni/lib/data/maybe":24,"@quenk/noni/lib/data/record":25,"@quenk/noni/lib/data/type":28}],47:[function(require,module,exports){
 "use strict";
+//TODO: Relocate some of these types.
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.MAX_INSTRUCTION = exports.OPERAND_RANGE_END = exports.OPERAND_RANGE_START = exports.OPCODE_RANGE_END = exports.OPCODE_RANGE_START = exports.OPERAND_MASK = exports.OPCODE_MASK = void 0;
 exports.OPCODE_MASK = 0xff000000;
@@ -6146,16 +6122,14 @@ exports.OPERAND_RANGE_START = 0x0;
 exports.OPERAND_RANGE_END = 0xffffff;
 exports.MAX_INSTRUCTION = 0xffffffff;
 
-},{}],45:[function(require,module,exports){
+},{}],48:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.stop = exports.read = exports.maildq = exports.mailcount = exports.recvcount = exports.recv = exports.send = exports.run = exports.self = exports.alloc = void 0;
-var error = require("../error");
-var flags_1 = require("../../../../flags");
+exports.stop = exports.maildq = exports.mailcount = exports.recvcount = exports.recv = exports.send = exports.self = exports.alloc = void 0;
 /**
- * alloc a Runtime for a new actor.
+ * alloc a VMThread for a new actor.
  *
- * The Runtime is stored in the vm's state table. If the generated address
+ * The VMThread is stored in the vm's state table. If the generated address
  * already exists or is invalid an error will be raised.
  *
  * Stack:
@@ -6174,7 +6148,7 @@ exports.alloc = function (r, f, _) {
         r.raise(eresult.takeLeft());
     }
     else {
-        f.push(f.heap.addString(eresult.takeRight()));
+        f.push(r.vm.heap.addString(f, eresult.takeRight()));
     }
 };
 /**
@@ -6183,20 +6157,6 @@ exports.alloc = function (r, f, _) {
  */
 exports.self = function (_, f, __) {
     f.pushSelf();
-};
-/**
- * run triggers the run code for an actor.
- *
- * TODO: Candidate for syscall.
- * Stack:
- * <address> ->
- */
-exports.run = function (r, f, _) {
-    var eTarget = f.popString();
-    if (eTarget.isLeft())
-        return r.raise(eTarget.takeLeft());
-    var target = eTarget.takeRight();
-    r.vm.runTask(target, r.vm.runActor(target));
 };
 /**
  * send a message to another actor.
@@ -6264,28 +6224,6 @@ exports.maildq = function (_, f, __) {
     f.pushMessage();
 };
 /**
- * read a message from the top of the stack.
- *
- * A receiver function is applied from the actors pending receiver list.
- * <message> -> <uint32>
- */
-exports.read = function (r, f, __) {
-    var func = flags_1.isImmutable(r.context.flags) ?
-        r.context.receivers[0] : r.context.receivers.shift();
-    if (func == null)
-        return r.raise(new error.NoReceiveErr(r.context.address));
-    if (func.foreign === true) {
-        var emsg = f.popValue();
-        if (emsg.isLeft())
-            return r.raise(emsg.takeLeft());
-        var msg = emsg.takeRight();
-        r.invokeForeign(f, func, [msg]);
-    }
-    else {
-        r.invokeVM(f, func);
-    }
-};
-/**
  * stop an actor in the system.
  *
  * The actor will be removed.
@@ -6298,10 +6236,10 @@ exports.stop = function (r, f, _) {
     var eaddr = f.popString();
     if (eaddr.isLeft())
         return r.raise(eaddr.takeLeft());
-    r.kill(eaddr.takeRight());
+    r.wait(r.vm.kill(r.context.actor, eaddr.takeRight()));
 };
 
-},{"../../../../flags":31,"../error":41}],46:[function(require,module,exports){
+},{}],49:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ifneqjmp = exports.ifeqjmp = exports.ifnzjmp = exports.ifzjmp = exports.jmp = exports.raise = exports.call = exports.addui32 = exports.ceq = exports.load = exports.store = exports.dup = exports.ldn = exports.lds = exports.pushui32 = exports.pushui16 = exports.pushui8 = exports.nop = void 0;
@@ -6527,11 +6465,11 @@ exports.ifneqjmp = function (r, f, oper) {
         f.seek(oper);
 };
 
-},{"../error":41,"../stack/frame":49,"@quenk/noni/lib/data/array":21}],47:[function(require,module,exports){
+},{"../error":45,"../stack/frame":52,"@quenk/noni/lib/data/array":21}],50:[function(require,module,exports){
 "use strict";
 var _a;
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.toLog = exports.toName = exports.handlers = exports.opcodes = exports.ARELM = exports.ARLENGTH = exports.GETPROP = exports.STOP = exports.READ = exports.SELF = exports.MAILDQ = exports.MAILCOUNT = exports.RECVCOUNT = exports.RECV = exports.SEND = exports.RUN = exports.ALLOC = exports.IFNEQJMP = exports.IFEQJMP = exports.IFNZJMP = exports.IFZJMP = exports.JMP = exports.RAISE = exports.CALL = exports.ADDUI32 = exports.CEQ = exports.LOAD = exports.STORE = exports.DUP = exports.LDN = exports.LDS = exports.PUSHUI32 = exports.PUSHUI16 = exports.PUSHUI8 = exports.NOP = exports.OP_CODE_RANGE_STEP = exports.OP_CODE_RANGE_HIGH = exports.OP_CODE_RANGE_LOW = void 0;
+exports.toLog = exports.toName = exports.handlers = exports.opcodes = exports.ARELM = exports.ARLENGTH = exports.GETPROP = exports.STOP = exports.SELF = exports.MAILDQ = exports.MAILCOUNT = exports.RECVCOUNT = exports.RECV = exports.SEND = exports.ALLOC = exports.IFNEQJMP = exports.IFEQJMP = exports.IFNZJMP = exports.IFZJMP = exports.JMP = exports.RAISE = exports.CALL = exports.ADDUI32 = exports.CEQ = exports.LOAD = exports.STORE = exports.DUP = exports.LDN = exports.LDS = exports.PUSHUI32 = exports.PUSHUI16 = exports.PUSHUI8 = exports.NOP = exports.OP_CODE_RANGE_STEP = exports.OP_CODE_RANGE_HIGH = exports.OP_CODE_RANGE_LOW = void 0;
 var base = require("./base");
 var actor = require("./actor");
 var obj = require("./object");
@@ -6560,14 +6498,12 @@ exports.IFNZJMP = exports.OP_CODE_RANGE_STEP * 80;
 exports.IFEQJMP = exports.OP_CODE_RANGE_STEP * 81;
 exports.IFNEQJMP = exports.OP_CODE_RANGE_STEP * 82;
 exports.ALLOC = exports.OP_CODE_RANGE_STEP * 92;
-exports.RUN = exports.OP_CODE_RANGE_STEP * 93;
 exports.SEND = exports.OP_CODE_RANGE_STEP * 94;
 exports.RECV = exports.OP_CODE_RANGE_STEP * 95;
 exports.RECVCOUNT = exports.OP_CODE_RANGE_STEP * 96;
 exports.MAILCOUNT = exports.OP_CODE_RANGE_STEP * 97;
 exports.MAILDQ = exports.OP_CODE_RANGE_STEP * 98;
 exports.SELF = exports.OP_CODE_RANGE_STEP * 99;
-exports.READ = exports.OP_CODE_RANGE_STEP * 100;
 exports.STOP = exports.OP_CODE_RANGE_STEP * 101;
 exports.GETPROP = exports.OP_CODE_RANGE_STEP * 110;
 exports.ARLENGTH = exports.OP_CODE_RANGE_STEP * 111;
@@ -6679,11 +6615,6 @@ exports.opcodes = (_a = {},
         handler: actor.alloc,
         log: function (_, __, ___) { return ['alloc']; }
     },
-    _a[exports.RUN] = {
-        name: 'run',
-        handler: actor.run,
-        log: function (_, __, ___) { return ['run']; }
-    },
     _a[exports.SEND] = {
         name: 'send',
         handler: actor.send,
@@ -6715,11 +6646,6 @@ exports.opcodes = (_a = {},
         name: 'self',
         handler: actor.self,
         log: function (_, __, ___) { return ['self']; }
-    },
-    _a[exports.READ] = {
-        name: 'read',
-        handler: actor.read,
-        log: function (_, __, ___) { return ['read']; }
     },
     _a[exports.STOP] = {
         name: 'stop',
@@ -6762,7 +6688,7 @@ exports.toLog = function (op, r, f, oper) {
     return exports.opcodes.hasOwnProperty(op) ? exports.opcodes[op].log(r, f, oper) : [];
 };
 
-},{"../stack/frame":49,"./actor":45,"./base":46,"./object":48,"@quenk/noni/lib/data/record":25}],48:[function(require,module,exports){
+},{"../stack/frame":52,"./actor":48,"./base":49,"./object":51,"@quenk/noni/lib/data/record":25}],51:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.arelm = exports.arlength = exports.getprop = void 0;
@@ -6779,7 +6705,7 @@ exports.getprop = function (r, f, idx) {
     var obj = eobj.takeRight();
     var mval = obj.get(idx);
     if (mval.isJust()) {
-        f.push(r.heap.getAddress(mval.get()));
+        f.push(r.vm.heap.intern(f, mval.get()));
     }
     else {
         //TODO: This is a null reference!
@@ -6819,17 +6745,17 @@ exports.arelm = function (r, f, _) {
     var arr = earr.takeRight();
     var melm = arr.get(f.pop());
     if (melm.isJust()) {
-        f.push(r.heap.getAddress(melm.get()));
+        f.push(r.vm.heap.intern(f, melm.get()));
     }
     else {
         f.push(0);
     }
 };
 
-},{}],49:[function(require,module,exports){
+},{}],52:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.StackFrame = exports.BYTE_CONSTANT_INFO = exports.BYTE_CONSTANT_STR = exports.BYTE_CONSTANT_NUM = exports.DATA_TYPE_SELF = exports.DATA_TYPE_MAILBOX = exports.DATA_TYPE_LOCAL = exports.DATA_TYPE_HEAP_STRING = exports.DATA_TYPE_HEAP_OBJECT = exports.DATA_TYPE_INFO = exports.DATA_TYPE_STRING = exports.DATA_MAX_SAFE_UINT32 = exports.DATA_MAX_SIZE = exports.DATA_MASK_VALUE32 = exports.DATA_MASK_VALUE24 = exports.DATA_MASK_VALUE16 = exports.DATA_MASK_VALUE8 = exports.DATA_MASK_TYPE = exports.DATA_RANGE_TYPE_STEP = exports.DATA_RANGE_TYPE_LOW = exports.DATA_RANGE_TYPE_HIGH = void 0;
+exports.StackFrame = exports.BYTE_CONSTANT_INFO = exports.BYTE_CONSTANT_STR = exports.BYTE_CONSTANT_NUM = exports.DATA_TYPE_SELF = exports.DATA_TYPE_MAILBOX = exports.DATA_TYPE_LOCAL = exports.DATA_TYPE_HEAP_FUN = exports.DATA_TYPE_HEAP_FOREIGN = exports.DATA_TYPE_HEAP_OBJECT = exports.DATA_TYPE_HEAP_STRING = exports.DATA_TYPE_INFO = exports.DATA_TYPE_STRING = exports.DATA_MAX_SAFE_UINT32 = exports.DATA_MAX_SIZE = exports.DATA_MASK_VALUE32 = exports.DATA_MASK_VALUE24 = exports.DATA_MASK_VALUE16 = exports.DATA_MASK_VALUE8 = exports.DATA_MASK_TYPE = exports.DATA_RANGE_TYPE_STEP = exports.DATA_RANGE_TYPE_LOW = exports.DATA_RANGE_TYPE_HIGH = void 0;
 var indexes = require("../../script");
 var error = require("../error");
 var either_1 = require("@quenk/noni/lib/data/either");
@@ -6850,11 +6776,13 @@ exports.DATA_MAX_SAFE_UINT32 = 0x7fffffff;
 //They are not meant to be used to check the actual type of the underlying value.
 exports.DATA_TYPE_STRING = exports.DATA_RANGE_TYPE_STEP * 3;
 exports.DATA_TYPE_INFO = exports.DATA_RANGE_TYPE_STEP * 4;
-exports.DATA_TYPE_HEAP_OBJECT = exports.DATA_RANGE_TYPE_STEP * 6;
-exports.DATA_TYPE_HEAP_STRING = exports.DATA_RANGE_TYPE_STEP * 7;
-exports.DATA_TYPE_LOCAL = exports.DATA_RANGE_TYPE_STEP * 8;
-exports.DATA_TYPE_MAILBOX = exports.DATA_RANGE_TYPE_STEP * 9;
-exports.DATA_TYPE_SELF = exports.DATA_RANGE_TYPE_STEP * 10;
+exports.DATA_TYPE_HEAP_STRING = exports.DATA_RANGE_TYPE_STEP * 6;
+exports.DATA_TYPE_HEAP_OBJECT = exports.DATA_RANGE_TYPE_STEP * 7;
+exports.DATA_TYPE_HEAP_FOREIGN = exports.DATA_RANGE_TYPE_STEP * 8;
+exports.DATA_TYPE_HEAP_FUN = exports.DATA_RANGE_TYPE_STEP * 9;
+exports.DATA_TYPE_LOCAL = exports.DATA_RANGE_TYPE_STEP * 10;
+exports.DATA_TYPE_MAILBOX = exports.DATA_RANGE_TYPE_STEP * 11;
+exports.DATA_TYPE_SELF = exports.DATA_RANGE_TYPE_STEP * 12;
 exports.BYTE_CONSTANT_NUM = 0x10000;
 exports.BYTE_CONSTANT_STR = 0x20000;
 exports.BYTE_CONSTANT_INFO = 0x30000;
@@ -6862,15 +6790,16 @@ exports.BYTE_CONSTANT_INFO = 0x30000;
  * StackFrame (Frame implementation).
  */
 var StackFrame = /** @class */ (function () {
-    function StackFrame(name, script, context, heap, code, data, locals, ip) {
+    function StackFrame(name, script, thread, parent, code, data, locals, ip) {
+        if (parent === void 0) { parent = maybe_1.nothing(); }
         if (code === void 0) { code = []; }
         if (data === void 0) { data = []; }
         if (locals === void 0) { locals = []; }
         if (ip === void 0) { ip = 0; }
         this.name = name;
         this.script = script;
-        this.context = context;
-        this.heap = heap;
+        this.thread = thread;
+        this.parent = parent;
         this.code = code;
         this.data = data;
         this.locals = locals;
@@ -6909,7 +6838,7 @@ var StackFrame = /** @class */ (function () {
         return maybe_1.fromNullable(this.data.length - (n + 1));
     };
     StackFrame.prototype.resolve = function (data) {
-        var context = this.context;
+        var context = this.thread.context;
         var typ = data & exports.DATA_MASK_TYPE;
         var value = data & exports.DATA_MASK_VALUE24;
         switch (typ) {
@@ -6917,9 +6846,15 @@ var StackFrame = /** @class */ (function () {
             case exports.DATA_TYPE_HEAP_STRING:
                 this.push(data);
                 return this.popString();
+            case exports.DATA_TYPE_HEAP_FUN:
+                this.push(data);
+                return this.popFunction();
             case exports.DATA_TYPE_HEAP_OBJECT:
                 this.push(data);
                 return this.popObject();
+            case exports.DATA_TYPE_HEAP_FOREIGN:
+                this.push(data);
+                return this.popForeign();
             case exports.DATA_TYPE_INFO:
                 this.push(data);
                 return this.popName();
@@ -6964,10 +6899,10 @@ var StackFrame = /** @class */ (function () {
             return either_1.right(s);
         }
         else if (typ === exports.DATA_TYPE_HEAP_STRING) {
-            return either_1.right(this.heap.getString(idx));
+            return either_1.right(this.thread.vm.heap.getString(data));
         }
         else if (typ === exports.DATA_TYPE_SELF) {
-            return either_1.right(this.context.address);
+            return either_1.right(this.thread.context.address);
         }
         else {
             return wrongType(exports.DATA_TYPE_STRING, typ);
@@ -6988,26 +6923,47 @@ var StackFrame = /** @class */ (function () {
         }
     };
     StackFrame.prototype.popFunction = function () {
-        return this
-            .popName()
-            .chain(function (nfo) {
-            if ((nfo.descriptor & type_1.BYTE_TYPE) !== type_1.TYPE_FUN)
-                return notAFunction(nfo.name);
-            return either_1.right(nfo);
-        });
+        var data = this.pop();
+        var typ = data & exports.DATA_MASK_TYPE;
+        if (typ === exports.DATA_TYPE_HEAP_FUN) {
+            var mFun = this.thread.vm.heap.getObject(data);
+            return mFun.isJust() ? either_1.right(mFun.get()) : nullFunPtr(data);
+        }
+        else {
+            this.push(data);
+            return this
+                .popName()
+                .chain(function (nfo) {
+                if ((nfo.descriptor & type_1.BYTE_TYPE) !== type_1.TYPE_FUN)
+                    return notAFunction(nfo.name);
+                return either_1.right(nfo);
+            });
+        }
     };
     StackFrame.prototype.popObject = function () {
         var data = this.pop();
         var typ = data & exports.DATA_MASK_TYPE;
-        var idx = data & exports.DATA_MASK_VALUE24;
         if (typ === exports.DATA_TYPE_HEAP_OBJECT) {
-            var mho = this.heap.getObject(idx);
+            var mho = this.thread.vm.heap.getObject(data);
             if (mho.isNothing())
                 return nullErr(data);
             return either_1.right(mho.get());
         }
         else {
             return wrongType(exports.DATA_TYPE_HEAP_OBJECT, typ);
+        }
+    };
+    StackFrame.prototype.popForeign = function () {
+        var data = this.pop();
+        var typ = data & exports.DATA_MASK_TYPE;
+        if (typ === exports.DATA_TYPE_HEAP_FOREIGN) {
+            var mho = this.thread.vm.heap.getObject(data);
+            if (mho.isNothing())
+                return nullErr(data);
+            return either_1.right(mho.get());
+        }
+        else {
+            return wrongType(exports.DATA_TYPE_HEAP_FOREIGN, typ);
         }
     };
     StackFrame.prototype.duplicate = function () {
@@ -7039,126 +6995,14 @@ var wrongType = function (expect, got) {
 var notAFunction = function (name) {
     return either_1.left(new error.InvalidFunctionErr(name));
 };
+var nullFunPtr = function (addr) {
+    return either_1.left(new error.NullFunctionPointerErr(addr));
+};
 var missingSymbol = function (data) {
     return either_1.left(new error.MissingSymbolErr(data));
 };
 
-},{"../../script":51,"../../type":54,"../error":41,"@quenk/noni/lib/data/either":22,"@quenk/noni/lib/data/maybe":24}],50:[function(require,module,exports){
-"use strict";
-var __spreadArrays = (this && this.__spreadArrays) || function () {
-    for (var s = 0, i = 0, il = arguments.length; i < il; i++) s += arguments[i].length;
-    for (var r = Array(s), k = 0, i = 0; i < il; i++)
-        for (var a = arguments[i], j = 0, jl = a.length; j < jl; j++, k++)
-            r[k] = a[j];
-    return r;
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.Thread = void 0;
-var array_1 = require("@quenk/noni/lib/data/array");
-var maybe_1 = require("@quenk/noni/lib/data/maybe");
-var future_1 = require("@quenk/noni/lib/control/monad/future");
-var frame_1 = require("./stack/frame");
-var op_1 = require("./op");
-var _1 = require("./");
-/**
- * Thread is the Runtime implementation for exactly one actor.
- */
-var Thread = /** @class */ (function () {
-    function Thread(vm, heap, context, fstack, rstack, sp) {
-        if (fstack === void 0) { fstack = []; }
-        if (rstack === void 0) { rstack = []; }
-        if (sp === void 0) { sp = 0; }
-        this.vm = vm;
-        this.heap = heap;
-        this.context = context;
-        this.fstack = fstack;
-        this.rstack = rstack;
-        this.sp = sp;
-    }
-    Thread.prototype.raise = function (e) {
-        this.vm.raise(this.context.address, e);
-    };
-    Thread.prototype.invokeVM = function (p, f) {
-        var frm = new frame_1.StackFrame(f.name, p.script, this.context, this.heap, f.code.slice());
-        for (var i = 0; i < f.argc; i++)
-            frm.push(p.pop());
-        this.fstack.push(frm);
-        this.sp = this.fstack.length - 1;
-    };
-    Thread.prototype.invokeForeign = function (p, f, args) {
-        //TODO: Support async functions.   
-        var val = f.exec.apply(null, __spreadArrays([this], args));
-        p.push(this.heap.getAddress(val));
-    };
-    Thread.prototype.die = function () {
-        var _this = this;
-        return future_1.pure(undefined)
-            .chain(function () {
-            var ret = _this.context.actor.stop();
-            return (ret != null) ?
-                ret :
-                future_1.pure(undefined);
-        })
-            .chain(function () {
-            //TODO: should be removed when heap is shared.
-            _this.heap.release();
-            return future_1.pure(undefined);
-        });
-    };
-    Thread.prototype.kill = function (target) {
-        this.vm.runTask(this.context.address, this.vm.kill(this.context.address, target));
-    };
-    Thread.prototype.exec = function (s) {
-        this.fstack.push(new frame_1.StackFrame('main', s, this.context, this.heap, s.code.slice()));
-        return this.run();
-    };
-    Thread.prototype.runTask = function (ft) {
-        return this.vm.runTask(this.context.address, ft);
-    };
-    Thread.prototype.run = function () {
-        var ret = maybe_1.nothing();
-        while (!array_1.empty(this.fstack)) {
-            var sp = this.sp;
-            var frame = this.fstack[sp];
-            if (!array_1.empty(this.rstack))
-                frame.data.push(this.rstack.pop());
-            while (!frame.isFinished()) {
-                //execute frame instructions
-                //TODO: Push return values unto next fstack
-                var pos = frame.getPosition();
-                var next = (frame.code[pos] >>> 0);
-                var opcode = next & _1.OPCODE_MASK;
-                var operand = next & _1.OPERAND_MASK;
-                this.vm.logOp(this, frame, opcode, operand);
-                // TODO: Error if the opcode is invalid, out of range etc.
-                op_1.handlers[opcode](this, frame, operand);
-                if (pos === frame.getPosition())
-                    frame.advance();
-                //pause execution to allow another frame to compute.
-                if (sp !== this.sp)
-                    break;
-            }
-            if (sp === this.sp) {
-                //frame complete, pop it, advance the sp and push the return
-                //value onto the rstack.
-                this.fstack.pop();
-                this.sp--;
-                this.rstack.push(frame.data.pop());
-                if (array_1.empty(this.fstack)) {
-                    //provide the TOS value from the rstack to the caller.
-                    ret = frame.resolve(array_1.tail(this.rstack)).toMaybe();
-                }
-            }
-        }
-        this.heap.release();
-        this.sp = 0;
-        return ret;
-    };
-    return Thread;
-}());
-exports.Thread = Thread;
-
-},{"./":44,"./op":47,"./stack/frame":49,"@quenk/noni/lib/control/monad/future":18,"@quenk/noni/lib/data/array":21,"@quenk/noni/lib/data/maybe":24}],51:[function(require,module,exports){
+},{"../../script":53,"../../type":61,"../error":45,"@quenk/noni/lib/data/either":22,"@quenk/noni/lib/data/maybe":24}],53:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getInfo = exports.PScript = exports.CONSTANTS_INDEX_STRING = exports.CONSTANTS_INDEX_NUMBER = void 0;
@@ -7191,205 +7035,263 @@ exports.getInfo = function (s, idx) {
     return either_1.right(s.info[idx]);
 };
 
-},{"../runtime/error":41,"@quenk/noni/lib/data/either":22}],52:[function(require,module,exports){
+},{"../runtime/error":45,"@quenk/noni/lib/data/either":22}],54:[function(require,module,exports){
 "use strict";
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+        return extendStatics(d, b);
+    };
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.funType = exports.objectType = exports.arrayType = exports.stringType = exports.booleanType = exports.uint32Type = exports.uint16Type = exports.uint8Type = exports.int32Type = exports.int16Type = exports.int8Type = exports.voidType = exports.NewPropInfo = exports.NewArrayTypeInfo = exports.NewTypeInfo = exports.NewForeignFunInfo = exports.NewFunInfo = exports.NewArrayInfo = exports.NewObjectInfo = exports.NewStringInfo = exports.NewBooleanInfo = exports.Int32Info = exports.NewInt16Info = exports.NewInt8Info = exports.NewUInt32Info = exports.NewUInt16Info = exports.NewUInt8Info = exports.VoidInfo = void 0;
+exports.funType = exports.objectType = exports.arrayType = exports.stringType = exports.booleanType = exports.uint32Type = exports.uint16Type = exports.uint8Type = exports.int32Type = exports.int16Type = exports.int8Type = exports.voidType = exports.NewPropInfo = exports.NewArrayTypeInfo = exports.NewTypeInfo = exports.NewForeignFunInfo = exports.NewFunInfo = exports.NewArrayInfo = exports.NewObjectInfo = exports.NewStringInfo = exports.NewBooleanInfo = exports.NewInt32Info = exports.NewInt16Info = exports.NewInt8Info = exports.NewUInt32Info = exports.NewUInt16Info = exports.NewUInt8Info = exports.VoidInfo = exports.NewInfo = void 0;
 var types = require("../type");
+/**
+ * NewInfo
+ */
+var NewInfo = /** @class */ (function () {
+    function NewInfo(name) {
+        this.name = name;
+    }
+    return NewInfo;
+}());
+exports.NewInfo = NewInfo;
 /**
  * VoidInfo
  */
-var VoidInfo = /** @class */ (function () {
-    function VoidInfo(name) {
-        this.name = name;
-        this.type = exports.voidType;
-        this.descriptor = types.TYPE_VOID;
+var VoidInfo = /** @class */ (function (_super) {
+    __extends(VoidInfo, _super);
+    function VoidInfo() {
+        var _this = _super !== null && _super.apply(this, arguments) || this;
+        _this.type = exports.voidType;
+        _this.descriptor = types.TYPE_VOID;
+        return _this;
     }
     return VoidInfo;
-}());
+}(NewInfo));
 exports.VoidInfo = VoidInfo;
 /**
  * NewUInt8Info
  */
-var NewUInt8Info = /** @class */ (function () {
-    function NewUInt8Info(name) {
-        this.name = name;
-        this.type = exports.uint8Type;
-        this.descriptor = types.TYPE_UINT8;
+var NewUInt8Info = /** @class */ (function (_super) {
+    __extends(NewUInt8Info, _super);
+    function NewUInt8Info() {
+        var _this = _super !== null && _super.apply(this, arguments) || this;
+        _this.type = exports.uint8Type;
+        _this.descriptor = types.TYPE_UINT8;
+        return _this;
     }
     return NewUInt8Info;
-}());
+}(NewInfo));
 exports.NewUInt8Info = NewUInt8Info;
 /**
  * NewUInt16Info
  */
-var NewUInt16Info = /** @class */ (function () {
-    function NewUInt16Info(name) {
-        this.name = name;
-        this.type = exports.uint16Type;
-        this.descriptor = types.TYPE_UINT16;
+var NewUInt16Info = /** @class */ (function (_super) {
+    __extends(NewUInt16Info, _super);
+    function NewUInt16Info() {
+        var _this = _super !== null && _super.apply(this, arguments) || this;
+        _this.type = exports.uint16Type;
+        _this.descriptor = types.TYPE_UINT16;
+        return _this;
     }
     return NewUInt16Info;
-}());
+}(NewInfo));
 exports.NewUInt16Info = NewUInt16Info;
 /**
  * NewUInt32Info
  */
-var NewUInt32Info = /** @class */ (function () {
-    function NewUInt32Info(name) {
-        this.name = name;
-        this.type = exports.uint32Type;
-        this.descriptor = types.TYPE_UINT32;
+var NewUInt32Info = /** @class */ (function (_super) {
+    __extends(NewUInt32Info, _super);
+    function NewUInt32Info() {
+        var _this = _super !== null && _super.apply(this, arguments) || this;
+        _this.type = exports.uint32Type;
+        _this.descriptor = types.TYPE_UINT32;
+        return _this;
     }
     return NewUInt32Info;
-}());
+}(NewInfo));
 exports.NewUInt32Info = NewUInt32Info;
 /**
  * NewInt8Info
  */
-var NewInt8Info = /** @class */ (function () {
-    function NewInt8Info(name) {
-        this.name = name;
-        this.type = exports.int8Type;
-        this.descriptor = types.TYPE_INT8;
+var NewInt8Info = /** @class */ (function (_super) {
+    __extends(NewInt8Info, _super);
+    function NewInt8Info() {
+        var _this = _super !== null && _super.apply(this, arguments) || this;
+        _this.type = exports.int8Type;
+        _this.descriptor = types.TYPE_INT8;
+        return _this;
     }
     return NewInt8Info;
-}());
+}(NewInfo));
 exports.NewInt8Info = NewInt8Info;
 /**
  * NewInt16Info
  */
-var NewInt16Info = /** @class */ (function () {
-    function NewInt16Info(name) {
-        this.name = name;
-        this.type = exports.int16Type;
-        this.descriptor = types.TYPE_INT16;
+var NewInt16Info = /** @class */ (function (_super) {
+    __extends(NewInt16Info, _super);
+    function NewInt16Info() {
+        var _this = _super !== null && _super.apply(this, arguments) || this;
+        _this.type = exports.int16Type;
+        _this.descriptor = types.TYPE_INT16;
+        return _this;
     }
     return NewInt16Info;
-}());
+}(NewInfo));
 exports.NewInt16Info = NewInt16Info;
 /**
  * NewInt32Info
  */
-var Int32Info = /** @class */ (function () {
-    function Int32Info(name) {
-        this.name = name;
-        this.type = exports.int32Type;
-        this.descriptor = types.TYPE_INT32;
+var NewInt32Info = /** @class */ (function (_super) {
+    __extends(NewInt32Info, _super);
+    function NewInt32Info() {
+        var _this = _super !== null && _super.apply(this, arguments) || this;
+        _this.type = exports.int32Type;
+        _this.descriptor = types.TYPE_INT32;
+        return _this;
     }
-    return Int32Info;
-}());
-exports.Int32Info = Int32Info;
+    return NewInt32Info;
+}(NewInfo));
+exports.NewInt32Info = NewInt32Info;
 /**
  * NewBooleanInfo
  */
-var NewBooleanInfo = /** @class */ (function () {
-    function NewBooleanInfo(name) {
-        this.name = name;
-        this.type = exports.booleanType;
-        this.descriptor = types.TYPE_BOOLEAN;
+var NewBooleanInfo = /** @class */ (function (_super) {
+    __extends(NewBooleanInfo, _super);
+    function NewBooleanInfo() {
+        var _this = _super !== null && _super.apply(this, arguments) || this;
+        _this.type = exports.booleanType;
+        _this.descriptor = types.TYPE_BOOLEAN;
+        return _this;
     }
     return NewBooleanInfo;
-}());
+}(NewInfo));
 exports.NewBooleanInfo = NewBooleanInfo;
 /**
  * NewStringInfo
  */
-var NewStringInfo = /** @class */ (function () {
-    function NewStringInfo(name) {
-        this.name = name;
-        this.type = exports.stringType;
-        this.descriptor = types.TYPE_STRING;
+var NewStringInfo = /** @class */ (function (_super) {
+    __extends(NewStringInfo, _super);
+    function NewStringInfo() {
+        var _this = _super !== null && _super.apply(this, arguments) || this;
+        _this.type = exports.stringType;
+        _this.descriptor = types.TYPE_STRING;
+        return _this;
     }
     return NewStringInfo;
-}());
+}(NewInfo));
 exports.NewStringInfo = NewStringInfo;
 /**
  * NewObjectInfo
  */
-var NewObjectInfo = /** @class */ (function () {
-    function NewObjectInfo(name) {
-        this.name = name;
-        this.type = exports.objectType;
-        this.descriptor = types.TYPE_OBJECT;
+var NewObjectInfo = /** @class */ (function (_super) {
+    __extends(NewObjectInfo, _super);
+    function NewObjectInfo() {
+        var _this = _super !== null && _super.apply(this, arguments) || this;
+        _this.type = exports.objectType;
+        _this.descriptor = types.TYPE_OBJECT;
+        return _this;
     }
     return NewObjectInfo;
-}());
+}(NewInfo));
 exports.NewObjectInfo = NewObjectInfo;
 /**
  * NewArrayInfo
  */
-var NewArrayInfo = /** @class */ (function () {
+var NewArrayInfo = /** @class */ (function (_super) {
+    __extends(NewArrayInfo, _super);
     function NewArrayInfo(name, type) {
-        this.name = name;
-        this.type = type;
-        this.descriptor = types.TYPE_ARRAY;
+        var _this = _super.call(this, name) || this;
+        _this.name = name;
+        _this.type = type;
+        _this.descriptor = types.TYPE_ARRAY;
+        return _this;
     }
     return NewArrayInfo;
-}());
+}(NewInfo));
 exports.NewArrayInfo = NewArrayInfo;
 /**
  * NewFunInfo
  */
-var NewFunInfo = /** @class */ (function () {
+var NewFunInfo = /** @class */ (function (_super) {
+    __extends(NewFunInfo, _super);
     function NewFunInfo(name, argc, code) {
-        this.name = name;
-        this.argc = argc;
-        this.code = code;
-        this.type = exports.funType;
-        this.descriptor = types.TYPE_FUN;
-        this.foreign = false;
+        var _this = _super.call(this, name) || this;
+        _this.name = name;
+        _this.argc = argc;
+        _this.code = code;
+        _this.type = exports.funType;
+        _this.descriptor = types.TYPE_FUN;
+        _this.foreign = false;
+        return _this;
     }
     return NewFunInfo;
-}());
+}(NewInfo));
 exports.NewFunInfo = NewFunInfo;
 /**
  * NewForeignFunInfo
  */
-var NewForeignFunInfo = /** @class */ (function () {
+var NewForeignFunInfo = /** @class */ (function (_super) {
+    __extends(NewForeignFunInfo, _super);
     function NewForeignFunInfo(name, argc, exec) {
-        this.name = name;
-        this.argc = argc;
-        this.exec = exec;
-        this.type = exports.funType;
-        this.descriptor = types.TYPE_FUN;
-        this.foreign = true;
-        this.code = [];
+        var _this = _super.call(this, name) || this;
+        _this.name = name;
+        _this.argc = argc;
+        _this.exec = exec;
+        _this.type = exports.funType;
+        _this.descriptor = types.TYPE_FUN;
+        _this.foreign = true;
+        _this.code = [];
+        return _this;
     }
     return NewForeignFunInfo;
-}());
+}(NewInfo));
 exports.NewForeignFunInfo = NewForeignFunInfo;
 /**
  * NewTypeInfo
  */
-var NewTypeInfo = /** @class */ (function () {
+var NewTypeInfo = /** @class */ (function (_super) {
+    __extends(NewTypeInfo, _super);
     function NewTypeInfo(name, argc, properties, descriptor) {
         if (descriptor === void 0) { descriptor = types.TYPE_OBJECT; }
-        this.name = name;
-        this.argc = argc;
-        this.properties = properties;
-        this.descriptor = descriptor;
-        this.type = exports.funType;
-        this.code = [];
+        var _this = _super.call(this, name) || this;
+        _this.name = name;
+        _this.argc = argc;
+        _this.properties = properties;
+        _this.descriptor = descriptor;
+        _this.type = exports.funType;
+        _this.code = [];
+        return _this;
     }
     return NewTypeInfo;
-}());
+}(NewInfo));
 exports.NewTypeInfo = NewTypeInfo;
 /**
  * NewArrayTypeInfo
  */
-var NewArrayTypeInfo = /** @class */ (function () {
+var NewArrayTypeInfo = /** @class */ (function (_super) {
+    __extends(NewArrayTypeInfo, _super);
     function NewArrayTypeInfo(name, elements) {
-        this.name = name;
-        this.elements = elements;
-        this.type = exports.funType;
-        this.argc = 0;
-        this.properties = [];
-        this.code = [];
-        this.descriptor = types.TYPE_ARRAY;
+        var _this = _super.call(this, name) || this;
+        _this.name = name;
+        _this.elements = elements;
+        _this.type = exports.funType;
+        _this.argc = 0;
+        _this.properties = [];
+        _this.code = [];
+        _this.descriptor = types.TYPE_ARRAY;
+        return _this;
     }
     return NewArrayTypeInfo;
-}());
+}(NewInfo));
 exports.NewArrayTypeInfo = NewArrayTypeInfo;
 /**
  * NewPropInfo
@@ -7451,10 +7353,127 @@ exports.objectType = new NewTypeInfo('object', 0, [], types.TYPE_OBJECT);
  */
 exports.funType = new NewTypeInfo('function', 0, [], types.TYPE_FUN);
 
-},{"../type":54}],53:[function(require,module,exports){
+},{"../type":61}],55:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.removeMember = exports.putMember = exports.getGroup = exports.removeGroup = exports.removeRoute = exports.putRoute = exports.getRouter = exports.getParent = exports.getChildren = exports.getAddress = exports.remove = exports.put = exports.get = exports.exists = void 0;
+exports.ScriptFactory = void 0;
+var scripts_1 = require("../../../resident/scripts");
+var callback_1 = require("../../../resident/immutable/callback");
+var immutable_1 = require("../../../resident/immutable");
+var mutable_1 = require("../../../resident/mutable");
+var scripts_2 = require("../scripts");
+var __1 = require("..");
+/**
+ * ScriptFactory is a factory class for creating Script instances based on the
+ * actor provided.
+ */
+var ScriptFactory = /** @class */ (function () {
+    function ScriptFactory() {
+    }
+    /**
+     * getScript appropriate for the actor instance.
+     */
+    ScriptFactory.getScript = function (actor) {
+        var script = new scripts_2.NoScript();
+        if (actor instanceof callback_1.Callback) {
+            script = new scripts_1.CallbackActorScript(actor);
+        }
+        else if (actor instanceof immutable_1.Immutable) {
+            script = new scripts_1.ImmutableActorScript(actor);
+        }
+        else if (actor instanceof mutable_1.Mutable) {
+            script = new scripts_1.MutableActorScript(actor);
+        }
+        else if (actor instanceof __1.PVM) {
+            script = new scripts_2.VMActorScript();
+        }
+        return script;
+    };
+    return ScriptFactory;
+}());
+exports.ScriptFactory = ScriptFactory;
+
+},{"..":42,"../../../resident/immutable":36,"../../../resident/immutable/callback":35,"../../../resident/mutable":38,"../../../resident/scripts":39,"../scripts":56}],56:[function(require,module,exports){
+"use strict";
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+        return extendStatics(d, b);
+    };
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
+var __spreadArrays = (this && this.__spreadArrays) || function () {
+    for (var s = 0, i = 0, il = arguments.length; i < il; i++) s += arguments[i].length;
+    for (var r = Array(s), k = 0, i = 0; i < il; i++)
+        for (var a = arguments[i], j = 0, jl = a.length; j < jl; j++, k++)
+            r[k] = a[j];
+    return r;
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.VMActorScript = exports.NoScript = exports.BaseScript = exports.commonFunctions = void 0;
+var op = require("../runtime/op");
+var info_1 = require("../script/info");
+/**
+ * commonFunctions used by both the VM script and the resident ones.
+ */
+exports.commonFunctions = [
+    // $0: Message 1: Address
+    new info_1.NewFunInfo('tell', 2, [op.SEND])
+];
+/**
+ * BaseScript providing sane defaults for all our Script instances.
+ */
+var BaseScript = /** @class */ (function () {
+    function BaseScript() {
+        this.constants = [[], []];
+        this.name = '<main>';
+        this.info = [];
+        this.code = [];
+    }
+    return BaseScript;
+}());
+exports.BaseScript = BaseScript;
+/**
+ * NoScript is used for actors that do not execute any code.
+ */
+var NoScript = /** @class */ (function (_super) {
+    __extends(NoScript, _super);
+    function NoScript() {
+        return _super !== null && _super.apply(this, arguments) || this;
+    }
+    return NoScript;
+}(BaseScript));
+exports.NoScript = NoScript;
+/**
+ * VMActorScript is the script used by the VM for its own actor (the $ actor).
+ *
+ * This script provides VM functions for:
+ * 1. Sending messages
+ * 2. Retrieving messages.
+ * 3. Killing other actors.
+ * 4. Racing exceptions.
+ */
+var VMActorScript = /** @class */ (function (_super) {
+    __extends(VMActorScript, _super);
+    function VMActorScript() {
+        var _this = _super !== null && _super.apply(this, arguments) || this;
+        _this.info = __spreadArrays(exports.commonFunctions);
+        return _this;
+    }
+    return VMActorScript;
+}(BaseScript));
+exports.VMActorScript = VMActorScript;
+
+},{"../runtime/op":50,"../script/info":54}],57:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.destroyMessageBuffer = exports.createMessageBuffer = exports.removeMember = exports.putMember = exports.getGroup = exports.removeGroup = exports.removeRoute = exports.putRoute = exports.getRouter = exports.getParent = exports.getChildren = exports.getAddress = exports.remove = exports.put = exports.get = exports.exists = void 0;
 var maybe_1 = require("@quenk/noni/lib/data/maybe");
 var record_1 = require("@quenk/noni/lib/data/record");
 var string_1 = require("@quenk/noni/lib/data/string");
@@ -7462,30 +7481,30 @@ var address_1 = require("../../address");
 /**
  * exists tests whether an address exists in the State.
  */
-exports.exists = function (s, addr) { return record_1.hasKey(s.runtimes, addr); };
+exports.exists = function (s, addr) { return record_1.hasKey(s.threads, addr); };
 /**
- * get a Runtime from the State using an address.
+ * get a Thread from the State using an address.
  */
-exports.get = function (s, addr) { return maybe_1.fromNullable(s.runtimes[addr]); };
+exports.get = function (s, addr) { return maybe_1.fromNullable(s.threads[addr]); };
 /**
- * put a new Runtime in the State.
+ * put a new Thread in the State.
  */
 exports.put = function (s, addr, r) {
-    s.runtimes[addr] = r;
+    s.threads[addr] = r;
     return s;
 };
 /**
  * remove an actor entry.
  */
 exports.remove = function (s, addr) {
-    delete s.runtimes[addr];
+    delete s.threads[addr];
     return s;
 };
 /**
  * getAddress attempts to retrieve the address of an Actor instance.
  */
 exports.getAddress = function (s, actor) {
-    return record_1.reduce(s.runtimes, maybe_1.nothing(), function (p, c, k) {
+    return record_1.reduce(s.threads, maybe_1.nothing(), function (p, c, k) {
         return c.context.actor === actor ? maybe_1.fromString(k) : p;
     });
 };
@@ -7494,8 +7513,8 @@ exports.getAddress = function (s, actor) {
  */
 exports.getChildren = function (s, addr) {
     return (addr === address_1.ADDRESS_SYSTEM) ?
-        record_1.exclude(s.runtimes, address_1.ADDRESS_SYSTEM) :
-        record_1.partition(s.runtimes, function (_, key) {
+        record_1.exclude(s.threads, address_1.ADDRESS_SYSTEM) :
+        record_1.partition(s.threads, function (_, key) {
             return (string_1.startsWith(key, addr) && key !== addr);
         })[0];
 };
@@ -7503,7 +7522,7 @@ exports.getChildren = function (s, addr) {
  * getParent context using an Address.
  */
 exports.getParent = function (s, addr) {
-    return maybe_1.fromNullable(s.runtimes[address_1.getParent(addr)]);
+    return maybe_1.fromNullable(s.threads[address_1.getParent(addr)]);
 };
 /**
  * getRouter will attempt to provide the
@@ -7514,7 +7533,7 @@ exports.getParent = function (s, addr) {
  */
 exports.getRouter = function (s, addr) {
     return record_1.reduce(s.routers, maybe_1.nothing(), function (p, k) {
-        return string_1.startsWith(addr, k) ? maybe_1.fromNullable(s.runtimes[k]) : p;
+        return string_1.startsWith(addr, k) ? maybe_1.fromNullable(s.threads[k]) : p;
     });
 };
 /**
@@ -7567,8 +7586,308 @@ exports.removeMember = function (s, group, member) {
         s.groups[group] = s.groups[group].filter(function (m) { return m != member; });
     return s;
 };
+/**
+ * createMessageBuffer creates a temporary message buffer for the actor address.
+ */
+exports.createMessageBuffer = function (s, addr) {
+    s.pendingMessages[addr] = [];
+    return s;
+};
+/**
+ * destroyMessageBuffer removes the message buffer (if any) for the provided
+ * address.
+ */
+exports.destroyMessageBuffer = function (s, addr) {
+    delete s.pendingMessages[addr];
+    return s;
+};
 
-},{"../../address":30,"@quenk/noni/lib/data/maybe":24,"@quenk/noni/lib/data/record":25,"@quenk/noni/lib/data/string":27}],54:[function(require,module,exports){
+},{"../../address":30,"@quenk/noni/lib/data/maybe":24,"@quenk/noni/lib/data/record":25,"@quenk/noni/lib/data/string":27}],58:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.THREAD_STATE_INVALID = exports.THREAD_STATE_ERROR = exports.THREAD_STATE_WAIT = exports.THREAD_STATE_RUN = exports.THREAD_STATE_IDLE = void 0;
+exports.THREAD_STATE_IDLE = 0;
+exports.THREAD_STATE_RUN = 1;
+exports.THREAD_STATE_WAIT = 2;
+exports.THREAD_STATE_ERROR = 3;
+exports.THREAD_STATE_INVALID = 4;
+
+},{}],59:[function(require,module,exports){
+"use strict";
+var __generator = (this && this.__generator) || function (thisArg, body) {
+    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
+    return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
+    function verb(n) { return function (v) { return step([n, v]); }; }
+    function step(op) {
+        if (f) throw new TypeError("Generator is already executing.");
+        while (_) try {
+            if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
+            if (y = 0, t) op = [op[0] & 2, t.value];
+            switch (op[0]) {
+                case 0: case 1: t = op; break;
+                case 4: _.label++; return { value: op[1], done: false };
+                case 5: _.label++; y = op[1]; op = [0]; continue;
+                case 7: op = _.ops.pop(); _.trys.pop(); continue;
+                default:
+                    if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) { _ = 0; continue; }
+                    if (op[0] === 3 && (!t || (op[1] > t[0] && op[1] < t[3]))) { _.label = op[1]; break; }
+                    if (op[0] === 6 && _.label < t[1]) { _.label = t[1]; t = op; break; }
+                    if (t && _.label < t[2]) { _.label = t[2]; _.ops.push(op); break; }
+                    if (t[2]) _.ops.pop();
+                    _.trys.pop(); continue;
+            }
+            op = body.call(thisArg, _);
+        } catch (e) { op = [6, e]; y = 0; } finally { f = t = 0; }
+        if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
+    }
+};
+var __spreadArrays = (this && this.__spreadArrays) || function () {
+    for (var s = 0, i = 0, il = arguments.length; i < il; i++) s += arguments[i].length;
+    for (var r = Array(s), k = 0, i = 0; i < il; i++)
+        for (var a = arguments[i], j = 0, jl = a.length; j < jl; j++, k++)
+            r[k] = a[j];
+    return r;
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.SharedThread = void 0;
+var errors = require("../../runtime/error");
+var op = require("../../runtime/op");
+var future_1 = require("@quenk/noni/lib/control/monad/future");
+var array_1 = require("@quenk/noni/lib/data/array");
+var maybe_1 = require("@quenk/noni/lib/data/maybe");
+var frame_1 = require("../../runtime/stack/frame");
+var type_1 = require("../../type");
+var __1 = require("../");
+var runner_1 = require("./runner");
+/**
+ * SharedThread is used by actors that run in a shared runtime i.e. the single
+ * threaded JS event loop.
+ *
+ * Actual code execution takes place in a SharedThreadRunner which queues up
+ * ExecutionFrame on behalf every SharedThread in the system.
+ */
+var SharedThread = /** @class */ (function () {
+    function SharedThread(vm, script, runner, context) {
+        this.vm = vm;
+        this.script = script;
+        this.runner = runner;
+        this.context = context;
+        this.fstack = [];
+        this.fsp = 0;
+        this.rp = 0;
+        this.state = __1.THREAD_STATE_IDLE;
+    }
+    /**
+     * makeFrameName produces a suitable name for a Frame given its function
+     * name.
+     */
+    SharedThread.prototype.makeFrameName = function (funName) {
+        return array_1.empty(this.fstack) ?
+            this.context.template.id + "@" + this.context.aid + "#" + funName :
+            array_1.tail(this.fstack).name + "/" + funName;
+    };
+    SharedThread.prototype.invokeVM = function (p, f) {
+        var frm = new frame_1.StackFrame(this.makeFrameName(f.name), p.script, this, maybe_1.just(p), f.code.slice());
+        for (var i = 0; i < f.argc; i++)
+            frm.push(p.pop());
+        this.fstack.push(frm);
+        this.fsp = this.fstack.length - 1;
+        this.runner.run();
+    };
+    SharedThread.prototype.invokeForeign = function (frame, fun, args) {
+        //TODO: Support async functions.   
+        var val = fun.exec.apply(null, __spreadArrays([this], args));
+        frame.push(this.vm.heap.intern(frame, val));
+        this.runner.run();
+    };
+    SharedThread.prototype.wait = function (task) {
+        var _this = this;
+        this.state = __1.THREAD_STATE_WAIT;
+        var onError = function (e) {
+            _this.state = __1.THREAD_STATE_ERROR;
+            _this.raise(e);
+        };
+        var onSuccess = function () {
+            _this.state = __1.THREAD_STATE_IDLE;
+            _this.runner.run(); // Continue execution.
+        };
+        task.fork(onError, onSuccess);
+    };
+    SharedThread.prototype.raise = function (e) {
+        this.state = __1.THREAD_STATE_ERROR;
+        this.vm.raise(this.context.actor, e);
+    };
+    SharedThread.prototype.die = function () {
+        var that = this;
+        this.state = __1.THREAD_STATE_INVALID;
+        this.runner.dequeue(this);
+        return future_1.doFuture(function () {
+            var ret;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        ret = that.context.actor.stop();
+                        if (!ret) return [3 /*break*/, 2];
+                        return [4 /*yield*/, ret];
+                    case 1:
+                        _a.sent();
+                        _a.label = 2;
+                    case 2:
+                        that.vm.heap.threadExit(that);
+                        return [2 /*return*/, future_1.pure(undefined)];
+                }
+            });
+        });
+    };
+    SharedThread.prototype.restore = function (eframe) {
+        this.fstack = eframe.fstack;
+        this.fsp = eframe.fsp;
+        this.rp = eframe.rp;
+        this.state = __1.THREAD_STATE_RUN;
+    };
+    SharedThread.prototype.processNextFrame = function (rp) {
+        this.vm.heap.frameExit(this.fstack.pop());
+        this.fsp--;
+        this.rp = rp;
+        this.state = __1.THREAD_STATE_IDLE;
+    };
+    SharedThread.prototype.exec = function (name, args) {
+        var _this = this;
+        if (args === void 0) { args = []; }
+        var script = this.script;
+        var fun = script.info.find(function (info) {
+            return (info.name === name) && info.descriptor === type_1.TYPE_FUN;
+        });
+        if (!fun)
+            return this.raise(new errors.UnknownFunErr(name));
+        var frame = new frame_1.StackFrame(this.makeFrameName(fun.name), script, this, maybe_1.nothing(), fun.foreign ?
+            [op.LDN | this.script.info.indexOf(fun), op.CALL] :
+            fun.code.slice());
+        frame.data = args.map(function (arg) { return _this.vm.heap.intern(frame, arg); });
+        this.runner.enqueue(new runner_1.ExecutionFrame(this, [frame]));
+        this.runner.run();
+    };
+    return SharedThread;
+}());
+exports.SharedThread = SharedThread;
+
+},{"../":58,"../../runtime/error":45,"../../runtime/op":50,"../../runtime/stack/frame":52,"../../type":61,"./runner":60,"@quenk/noni/lib/control/monad/future":18,"@quenk/noni/lib/data/array":21,"@quenk/noni/lib/data/maybe":24}],60:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.SharedThreadRunner = exports.ExecutionFrame = void 0;
+var array_1 = require("@quenk/noni/lib/data/array");
+var op_1 = require("../../runtime/op");
+var runtime_1 = require("../../runtime");
+var __1 = require("../");
+/**
+ * ExecutionFrame stores the state of the fstack for a VMThread.
+ *
+ * This is used to both trigger execution of an fstack as well as restore
+ * execution in the shared environment. When a VMThread needs to perform an
+ * async task for example, it's current state is saved an a new ExecutionFrame
+ * is pushed to the runner to continue where it left off.
+ */
+var ExecutionFrame = /** @class */ (function () {
+    function ExecutionFrame(thread, fstack, fsp, rp) {
+        if (fstack === void 0) { fstack = []; }
+        if (fsp === void 0) { fsp = 0; }
+        if (rp === void 0) { rp = 0; }
+        this.thread = thread;
+        this.fstack = fstack;
+        this.fsp = fsp;
+        this.rp = rp;
+    }
+    return ExecutionFrame;
+}());
+exports.ExecutionFrame = ExecutionFrame;
+/**
+ * SharedThreadRunner allows multiple Threads to execute their code sequentially
+ * in a single JS event loop.
+ *
+ * In prior versions of the VM, threads executed their code in their own run
+ * methods making it possible to have situations where actor state is being
+ * mutated before a previous frame is complete.
+ *
+ * This was less of a problem due to the simplistic use of the VM to date and
+ * the queuing done by the VM itself however it did introduce some heap
+ * management related bugs due to the immediate execution of spawn scripts.
+ *
+ * By moving actual execution here and sharing an instance of this class between
+ * threads we make it easier to keep execution sequential an reflect the reality
+ * of a shared event loop.
+ */
+var SharedThreadRunner = /** @class */ (function () {
+    function SharedThreadRunner(vm, eframes) {
+        if (eframes === void 0) { eframes = []; }
+        this.vm = vm;
+        this.eframes = eframes;
+        this._running = false;
+    }
+    /**
+     * enqueue an ExecutionFrame for future execution.
+     */
+    SharedThreadRunner.prototype.enqueue = function (frame) {
+        this.eframes.push(frame);
+        return this;
+    };
+    /**
+     * dequeue all ExecutionFrames for the provide thread effectively ending its
+     * execution.
+     */
+    SharedThreadRunner.prototype.dequeue = function (thread) {
+        this.eframes = this.eframes.filter(function (frame) { return frame.thread !== thread; });
+    };
+    SharedThreadRunner.prototype.run = function () {
+        if (this._running)
+            return;
+        this._running = true;
+        var eframe;
+        while (eframe = this.eframes.find(function (frame) {
+            return frame.thread.state === __1.THREAD_STATE_IDLE;
+        })) {
+            var thread = eframe.thread;
+            thread.restore(eframe);
+            while (!array_1.empty(thread.fstack)) {
+                var sp = thread.fsp;
+                var frame = thread.fstack[sp];
+                if (thread.rp != 0)
+                    frame.data.push(thread.rp);
+                while (!frame.isFinished() &&
+                    (thread.state === __1.THREAD_STATE_RUN)) {
+                    //execute frame instructions
+                    var pos = frame.getPosition();
+                    var next = (frame.code[pos] >>> 0);
+                    var opcode = next & runtime_1.OPCODE_MASK;
+                    var operand = next & runtime_1.OPERAND_MASK;
+                    this.vm.logOp(thread, frame, opcode, operand);
+                    // TODO: Error if the opcode is invalid, out of range etc.
+                    op_1.handlers[opcode](thread, frame, operand);
+                    if (pos === frame.getPosition())
+                        frame.advance();
+                    // frame pointer changed another frame has been pushed
+                    // and needs to be executed.
+                    if (sp !== thread.fsp)
+                        break;
+                }
+                if (thread.state === __1.THREAD_STATE_WAIT)
+                    // Thread is waiting on an async task to complete break out
+                    // and handle other threads.
+                    break;
+                if (sp === thread.fsp)
+                    thread.processNextFrame(frame.data.pop() || 0);
+            }
+            if (array_1.empty(thread.fstack))
+                // The thread's frame stack is empty, meaning all execution is 
+                // complete. Remove the eframe from the queue.
+                this.eframes = array_1.remove(this.eframes, eframe);
+        }
+        this._running = false;
+    };
+    return SharedThreadRunner;
+}());
+exports.SharedThreadRunner = SharedThreadRunner;
+
+},{"../":58,"../../runtime":47,"../../runtime/op":50,"@quenk/noni/lib/data/array":21}],61:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getType = exports.TYPE_CONS = exports.TYPE_FUN = exports.TYPE_ARRAY = exports.TYPE_OBJECT = exports.TYPE_STRING = exports.TYPE_BOOLEAN = exports.TYPE_INT32 = exports.TYPE_INT16 = exports.TYPE_INT8 = exports.TYPE_UINT32 = exports.TYPE_UINT16 = exports.TYPE_UINT8 = exports.TYPE_VOID = exports.BYTE_INDEX = exports.BYTE_TYPE = exports.TYPE_STEP = void 0;
@@ -7597,698 +7916,16 @@ exports.getType = function (d) {
     return d & exports.BYTE_TYPE;
 };
 
-},{}],55:[function(require,module,exports){
+},{}],62:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.normalize = exports.ACTION_STOP = exports.ACTION_RESTART = exports.ACTION_IGNORE = exports.ACTION_RAISE = void 0;
-var record_1 = require("@quenk/noni/lib/data/record");
-var address_1 = require("./address");
+exports.ACTION_STOP = exports.ACTION_RESTART = exports.ACTION_IGNORE = exports.ACTION_RAISE = void 0;
 exports.ACTION_RAISE = -0x1;
 exports.ACTION_IGNORE = 0x0;
 exports.ACTION_RESTART = 0x1;
 exports.ACTION_STOP = 0x2;
-/**
- * normalize a Template so that its is easier to work with.
- */
-exports.normalize = function (t) { return record_1.merge(t, {
-    id: t.id ? t.id : address_1.randomID(),
-    children: record_1.isRecord(t.children) ?
-        record_1.mapTo(t.children, function (c, k) { return record_1.merge(c, { id: k }); }) : t.children
-}); };
 
-},{"./address":30,"@quenk/noni/lib/data/record":25}],56:[function(require,module,exports){
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.default = void 0;
-
-/**
- * Convert array of 16 byte values to UUID string format of the form:
- * XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
- */
-var byteToHex = [];
-
-for (var i = 0; i < 256; ++i) {
-  byteToHex[i] = (i + 0x100).toString(16).substr(1);
-}
-
-function bytesToUuid(buf, offset) {
-  var i = offset || 0;
-  var bth = byteToHex; // join used to fix memory issue caused by concatenation: https://bugs.chromium.org/p/v8/issues/detail?id=3175#c4
-
-  return [bth[buf[i++]], bth[buf[i++]], bth[buf[i++]], bth[buf[i++]], '-', bth[buf[i++]], bth[buf[i++]], '-', bth[buf[i++]], bth[buf[i++]], '-', bth[buf[i++]], bth[buf[i++]], '-', bth[buf[i++]], bth[buf[i++]], bth[buf[i++]], bth[buf[i++]], bth[buf[i++]], bth[buf[i++]]].join('');
-}
-
-var _default = bytesToUuid;
-exports.default = _default;
-module.exports = exports.default;
-},{}],57:[function(require,module,exports){
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-Object.defineProperty(exports, "v1", {
-  enumerable: true,
-  get: function () {
-    return _v.default;
-  }
-});
-Object.defineProperty(exports, "v3", {
-  enumerable: true,
-  get: function () {
-    return _v2.default;
-  }
-});
-Object.defineProperty(exports, "v4", {
-  enumerable: true,
-  get: function () {
-    return _v3.default;
-  }
-});
-Object.defineProperty(exports, "v5", {
-  enumerable: true,
-  get: function () {
-    return _v4.default;
-  }
-});
-
-var _v = _interopRequireDefault(require("./v1.js"));
-
-var _v2 = _interopRequireDefault(require("./v3.js"));
-
-var _v3 = _interopRequireDefault(require("./v4.js"));
-
-var _v4 = _interopRequireDefault(require("./v5.js"));
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-},{"./v1.js":61,"./v3.js":62,"./v4.js":64,"./v5.js":65}],58:[function(require,module,exports){
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.default = void 0;
-
-/*
- * Browser-compatible JavaScript MD5
- *
- * Modification of JavaScript MD5
- * https://github.com/blueimp/JavaScript-MD5
- *
- * Copyright 2011, Sebastian Tschan
- * https://blueimp.net
- *
- * Licensed under the MIT license:
- * https://opensource.org/licenses/MIT
- *
- * Based on
- * A JavaScript implementation of the RSA Data Security, Inc. MD5 Message
- * Digest Algorithm, as defined in RFC 1321.
- * Version 2.2 Copyright (C) Paul Johnston 1999 - 2009
- * Other contributors: Greg Holt, Andrew Kepert, Ydnar, Lostinet
- * Distributed under the BSD License
- * See http://pajhome.org.uk/crypt/md5 for more info.
- */
-function md5(bytes) {
-  if (typeof bytes == 'string') {
-    var msg = unescape(encodeURIComponent(bytes)); // UTF8 escape
-
-    bytes = new Array(msg.length);
-
-    for (var i = 0; i < msg.length; i++) bytes[i] = msg.charCodeAt(i);
-  }
-
-  return md5ToHexEncodedArray(wordsToMd5(bytesToWords(bytes), bytes.length * 8));
-}
-/*
- * Convert an array of little-endian words to an array of bytes
- */
-
-
-function md5ToHexEncodedArray(input) {
-  var i;
-  var x;
-  var output = [];
-  var length32 = input.length * 32;
-  var hexTab = '0123456789abcdef';
-  var hex;
-
-  for (i = 0; i < length32; i += 8) {
-    x = input[i >> 5] >>> i % 32 & 0xff;
-    hex = parseInt(hexTab.charAt(x >>> 4 & 0x0f) + hexTab.charAt(x & 0x0f), 16);
-    output.push(hex);
-  }
-
-  return output;
-}
-/*
- * Calculate the MD5 of an array of little-endian words, and a bit length.
- */
-
-
-function wordsToMd5(x, len) {
-  /* append padding */
-  x[len >> 5] |= 0x80 << len % 32;
-  x[(len + 64 >>> 9 << 4) + 14] = len;
-  var i;
-  var olda;
-  var oldb;
-  var oldc;
-  var oldd;
-  var a = 1732584193;
-  var b = -271733879;
-  var c = -1732584194;
-  var d = 271733878;
-
-  for (i = 0; i < x.length; i += 16) {
-    olda = a;
-    oldb = b;
-    oldc = c;
-    oldd = d;
-    a = md5ff(a, b, c, d, x[i], 7, -680876936);
-    d = md5ff(d, a, b, c, x[i + 1], 12, -389564586);
-    c = md5ff(c, d, a, b, x[i + 2], 17, 606105819);
-    b = md5ff(b, c, d, a, x[i + 3], 22, -1044525330);
-    a = md5ff(a, b, c, d, x[i + 4], 7, -176418897);
-    d = md5ff(d, a, b, c, x[i + 5], 12, 1200080426);
-    c = md5ff(c, d, a, b, x[i + 6], 17, -1473231341);
-    b = md5ff(b, c, d, a, x[i + 7], 22, -45705983);
-    a = md5ff(a, b, c, d, x[i + 8], 7, 1770035416);
-    d = md5ff(d, a, b, c, x[i + 9], 12, -1958414417);
-    c = md5ff(c, d, a, b, x[i + 10], 17, -42063);
-    b = md5ff(b, c, d, a, x[i + 11], 22, -1990404162);
-    a = md5ff(a, b, c, d, x[i + 12], 7, 1804603682);
-    d = md5ff(d, a, b, c, x[i + 13], 12, -40341101);
-    c = md5ff(c, d, a, b, x[i + 14], 17, -1502002290);
-    b = md5ff(b, c, d, a, x[i + 15], 22, 1236535329);
-    a = md5gg(a, b, c, d, x[i + 1], 5, -165796510);
-    d = md5gg(d, a, b, c, x[i + 6], 9, -1069501632);
-    c = md5gg(c, d, a, b, x[i + 11], 14, 643717713);
-    b = md5gg(b, c, d, a, x[i], 20, -373897302);
-    a = md5gg(a, b, c, d, x[i + 5], 5, -701558691);
-    d = md5gg(d, a, b, c, x[i + 10], 9, 38016083);
-    c = md5gg(c, d, a, b, x[i + 15], 14, -660478335);
-    b = md5gg(b, c, d, a, x[i + 4], 20, -405537848);
-    a = md5gg(a, b, c, d, x[i + 9], 5, 568446438);
-    d = md5gg(d, a, b, c, x[i + 14], 9, -1019803690);
-    c = md5gg(c, d, a, b, x[i + 3], 14, -187363961);
-    b = md5gg(b, c, d, a, x[i + 8], 20, 1163531501);
-    a = md5gg(a, b, c, d, x[i + 13], 5, -1444681467);
-    d = md5gg(d, a, b, c, x[i + 2], 9, -51403784);
-    c = md5gg(c, d, a, b, x[i + 7], 14, 1735328473);
-    b = md5gg(b, c, d, a, x[i + 12], 20, -1926607734);
-    a = md5hh(a, b, c, d, x[i + 5], 4, -378558);
-    d = md5hh(d, a, b, c, x[i + 8], 11, -2022574463);
-    c = md5hh(c, d, a, b, x[i + 11], 16, 1839030562);
-    b = md5hh(b, c, d, a, x[i + 14], 23, -35309556);
-    a = md5hh(a, b, c, d, x[i + 1], 4, -1530992060);
-    d = md5hh(d, a, b, c, x[i + 4], 11, 1272893353);
-    c = md5hh(c, d, a, b, x[i + 7], 16, -155497632);
-    b = md5hh(b, c, d, a, x[i + 10], 23, -1094730640);
-    a = md5hh(a, b, c, d, x[i + 13], 4, 681279174);
-    d = md5hh(d, a, b, c, x[i], 11, -358537222);
-    c = md5hh(c, d, a, b, x[i + 3], 16, -722521979);
-    b = md5hh(b, c, d, a, x[i + 6], 23, 76029189);
-    a = md5hh(a, b, c, d, x[i + 9], 4, -640364487);
-    d = md5hh(d, a, b, c, x[i + 12], 11, -421815835);
-    c = md5hh(c, d, a, b, x[i + 15], 16, 530742520);
-    b = md5hh(b, c, d, a, x[i + 2], 23, -995338651);
-    a = md5ii(a, b, c, d, x[i], 6, -198630844);
-    d = md5ii(d, a, b, c, x[i + 7], 10, 1126891415);
-    c = md5ii(c, d, a, b, x[i + 14], 15, -1416354905);
-    b = md5ii(b, c, d, a, x[i + 5], 21, -57434055);
-    a = md5ii(a, b, c, d, x[i + 12], 6, 1700485571);
-    d = md5ii(d, a, b, c, x[i + 3], 10, -1894986606);
-    c = md5ii(c, d, a, b, x[i + 10], 15, -1051523);
-    b = md5ii(b, c, d, a, x[i + 1], 21, -2054922799);
-    a = md5ii(a, b, c, d, x[i + 8], 6, 1873313359);
-    d = md5ii(d, a, b, c, x[i + 15], 10, -30611744);
-    c = md5ii(c, d, a, b, x[i + 6], 15, -1560198380);
-    b = md5ii(b, c, d, a, x[i + 13], 21, 1309151649);
-    a = md5ii(a, b, c, d, x[i + 4], 6, -145523070);
-    d = md5ii(d, a, b, c, x[i + 11], 10, -1120210379);
-    c = md5ii(c, d, a, b, x[i + 2], 15, 718787259);
-    b = md5ii(b, c, d, a, x[i + 9], 21, -343485551);
-    a = safeAdd(a, olda);
-    b = safeAdd(b, oldb);
-    c = safeAdd(c, oldc);
-    d = safeAdd(d, oldd);
-  }
-
-  return [a, b, c, d];
-}
-/*
- * Convert an array bytes to an array of little-endian words
- * Characters >255 have their high-byte silently ignored.
- */
-
-
-function bytesToWords(input) {
-  var i;
-  var output = [];
-  output[(input.length >> 2) - 1] = undefined;
-
-  for (i = 0; i < output.length; i += 1) {
-    output[i] = 0;
-  }
-
-  var length8 = input.length * 8;
-
-  for (i = 0; i < length8; i += 8) {
-    output[i >> 5] |= (input[i / 8] & 0xff) << i % 32;
-  }
-
-  return output;
-}
-/*
- * Add integers, wrapping at 2^32. This uses 16-bit operations internally
- * to work around bugs in some JS interpreters.
- */
-
-
-function safeAdd(x, y) {
-  var lsw = (x & 0xffff) + (y & 0xffff);
-  var msw = (x >> 16) + (y >> 16) + (lsw >> 16);
-  return msw << 16 | lsw & 0xffff;
-}
-/*
- * Bitwise rotate a 32-bit number to the left.
- */
-
-
-function bitRotateLeft(num, cnt) {
-  return num << cnt | num >>> 32 - cnt;
-}
-/*
- * These functions implement the four basic operations the algorithm uses.
- */
-
-
-function md5cmn(q, a, b, x, s, t) {
-  return safeAdd(bitRotateLeft(safeAdd(safeAdd(a, q), safeAdd(x, t)), s), b);
-}
-
-function md5ff(a, b, c, d, x, s, t) {
-  return md5cmn(b & c | ~b & d, a, b, x, s, t);
-}
-
-function md5gg(a, b, c, d, x, s, t) {
-  return md5cmn(b & d | c & ~d, a, b, x, s, t);
-}
-
-function md5hh(a, b, c, d, x, s, t) {
-  return md5cmn(b ^ c ^ d, a, b, x, s, t);
-}
-
-function md5ii(a, b, c, d, x, s, t) {
-  return md5cmn(c ^ (b | ~d), a, b, x, s, t);
-}
-
-var _default = md5;
-exports.default = _default;
-module.exports = exports.default;
-},{}],59:[function(require,module,exports){
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.default = rng;
-// Unique ID creation requires a high quality random # generator. In the browser we therefore
-// require the crypto API and do not support built-in fallback to lower quality random number
-// generators (like Math.random()).
-// getRandomValues needs to be invoked in a context where "this" is a Crypto implementation. Also,
-// find the complete implementation of crypto (msCrypto) on IE11.
-var getRandomValues = typeof crypto != 'undefined' && crypto.getRandomValues && crypto.getRandomValues.bind(crypto) || typeof msCrypto != 'undefined' && typeof msCrypto.getRandomValues == 'function' && msCrypto.getRandomValues.bind(msCrypto);
-var rnds8 = new Uint8Array(16); // eslint-disable-line no-undef
-
-function rng() {
-  if (!getRandomValues) {
-    throw new Error('crypto.getRandomValues() not supported. See https://github.com/uuidjs/uuid#getrandomvalues-not-supported');
-  }
-
-  return getRandomValues(rnds8);
-}
-
-module.exports = exports.default;
-},{}],60:[function(require,module,exports){
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.default = void 0;
-
-// Adapted from Chris Veness' SHA1 code at
-// http://www.movable-type.co.uk/scripts/sha1.html
-function f(s, x, y, z) {
-  switch (s) {
-    case 0:
-      return x & y ^ ~x & z;
-
-    case 1:
-      return x ^ y ^ z;
-
-    case 2:
-      return x & y ^ x & z ^ y & z;
-
-    case 3:
-      return x ^ y ^ z;
-  }
-}
-
-function ROTL(x, n) {
-  return x << n | x >>> 32 - n;
-}
-
-function sha1(bytes) {
-  var K = [0x5a827999, 0x6ed9eba1, 0x8f1bbcdc, 0xca62c1d6];
-  var H = [0x67452301, 0xefcdab89, 0x98badcfe, 0x10325476, 0xc3d2e1f0];
-
-  if (typeof bytes == 'string') {
-    var msg = unescape(encodeURIComponent(bytes)); // UTF8 escape
-
-    bytes = new Array(msg.length);
-
-    for (var i = 0; i < msg.length; i++) bytes[i] = msg.charCodeAt(i);
-  }
-
-  bytes.push(0x80);
-  var l = bytes.length / 4 + 2;
-  var N = Math.ceil(l / 16);
-  var M = new Array(N);
-
-  for (var i = 0; i < N; i++) {
-    M[i] = new Array(16);
-
-    for (var j = 0; j < 16; j++) {
-      M[i][j] = bytes[i * 64 + j * 4] << 24 | bytes[i * 64 + j * 4 + 1] << 16 | bytes[i * 64 + j * 4 + 2] << 8 | bytes[i * 64 + j * 4 + 3];
-    }
-  }
-
-  M[N - 1][14] = (bytes.length - 1) * 8 / Math.pow(2, 32);
-  M[N - 1][14] = Math.floor(M[N - 1][14]);
-  M[N - 1][15] = (bytes.length - 1) * 8 & 0xffffffff;
-
-  for (var i = 0; i < N; i++) {
-    var W = new Array(80);
-
-    for (var t = 0; t < 16; t++) W[t] = M[i][t];
-
-    for (var t = 16; t < 80; t++) {
-      W[t] = ROTL(W[t - 3] ^ W[t - 8] ^ W[t - 14] ^ W[t - 16], 1);
-    }
-
-    var a = H[0];
-    var b = H[1];
-    var c = H[2];
-    var d = H[3];
-    var e = H[4];
-
-    for (var t = 0; t < 80; t++) {
-      var s = Math.floor(t / 20);
-      var T = ROTL(a, 5) + f(s, b, c, d) + e + K[s] + W[t] >>> 0;
-      e = d;
-      d = c;
-      c = ROTL(b, 30) >>> 0;
-      b = a;
-      a = T;
-    }
-
-    H[0] = H[0] + a >>> 0;
-    H[1] = H[1] + b >>> 0;
-    H[2] = H[2] + c >>> 0;
-    H[3] = H[3] + d >>> 0;
-    H[4] = H[4] + e >>> 0;
-  }
-
-  return [H[0] >> 24 & 0xff, H[0] >> 16 & 0xff, H[0] >> 8 & 0xff, H[0] & 0xff, H[1] >> 24 & 0xff, H[1] >> 16 & 0xff, H[1] >> 8 & 0xff, H[1] & 0xff, H[2] >> 24 & 0xff, H[2] >> 16 & 0xff, H[2] >> 8 & 0xff, H[2] & 0xff, H[3] >> 24 & 0xff, H[3] >> 16 & 0xff, H[3] >> 8 & 0xff, H[3] & 0xff, H[4] >> 24 & 0xff, H[4] >> 16 & 0xff, H[4] >> 8 & 0xff, H[4] & 0xff];
-}
-
-var _default = sha1;
-exports.default = _default;
-module.exports = exports.default;
-},{}],61:[function(require,module,exports){
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.default = void 0;
-
-var _rng = _interopRequireDefault(require("./rng.js"));
-
-var _bytesToUuid = _interopRequireDefault(require("./bytesToUuid.js"));
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-// **`v1()` - Generate time-based UUID**
-//
-// Inspired by https://github.com/LiosK/UUID.js
-// and http://docs.python.org/library/uuid.html
-var _nodeId;
-
-var _clockseq; // Previous uuid creation time
-
-
-var _lastMSecs = 0;
-var _lastNSecs = 0; // See https://github.com/uuidjs/uuid for API details
-
-function v1(options, buf, offset) {
-  var i = buf && offset || 0;
-  var b = buf || [];
-  options = options || {};
-  var node = options.node || _nodeId;
-  var clockseq = options.clockseq !== undefined ? options.clockseq : _clockseq; // node and clockseq need to be initialized to random values if they're not
-  // specified.  We do this lazily to minimize issues related to insufficient
-  // system entropy.  See #189
-
-  if (node == null || clockseq == null) {
-    var seedBytes = options.random || (options.rng || _rng.default)();
-
-    if (node == null) {
-      // Per 4.5, create and 48-bit node id, (47 random bits + multicast bit = 1)
-      node = _nodeId = [seedBytes[0] | 0x01, seedBytes[1], seedBytes[2], seedBytes[3], seedBytes[4], seedBytes[5]];
-    }
-
-    if (clockseq == null) {
-      // Per 4.2.2, randomize (14 bit) clockseq
-      clockseq = _clockseq = (seedBytes[6] << 8 | seedBytes[7]) & 0x3fff;
-    }
-  } // UUID timestamps are 100 nano-second units since the Gregorian epoch,
-  // (1582-10-15 00:00).  JSNumbers aren't precise enough for this, so
-  // time is handled internally as 'msecs' (integer milliseconds) and 'nsecs'
-  // (100-nanoseconds offset from msecs) since unix epoch, 1970-01-01 00:00.
-
-
-  var msecs = options.msecs !== undefined ? options.msecs : new Date().getTime(); // Per 4.2.1.2, use count of uuid's generated during the current clock
-  // cycle to simulate higher resolution clock
-
-  var nsecs = options.nsecs !== undefined ? options.nsecs : _lastNSecs + 1; // Time since last uuid creation (in msecs)
-
-  var dt = msecs - _lastMSecs + (nsecs - _lastNSecs) / 10000; // Per 4.2.1.2, Bump clockseq on clock regression
-
-  if (dt < 0 && options.clockseq === undefined) {
-    clockseq = clockseq + 1 & 0x3fff;
-  } // Reset nsecs if clock regresses (new clockseq) or we've moved onto a new
-  // time interval
-
-
-  if ((dt < 0 || msecs > _lastMSecs) && options.nsecs === undefined) {
-    nsecs = 0;
-  } // Per 4.2.1.2 Throw error if too many uuids are requested
-
-
-  if (nsecs >= 10000) {
-    throw new Error("uuid.v1(): Can't create more than 10M uuids/sec");
-  }
-
-  _lastMSecs = msecs;
-  _lastNSecs = nsecs;
-  _clockseq = clockseq; // Per 4.1.4 - Convert from unix epoch to Gregorian epoch
-
-  msecs += 12219292800000; // `time_low`
-
-  var tl = ((msecs & 0xfffffff) * 10000 + nsecs) % 0x100000000;
-  b[i++] = tl >>> 24 & 0xff;
-  b[i++] = tl >>> 16 & 0xff;
-  b[i++] = tl >>> 8 & 0xff;
-  b[i++] = tl & 0xff; // `time_mid`
-
-  var tmh = msecs / 0x100000000 * 10000 & 0xfffffff;
-  b[i++] = tmh >>> 8 & 0xff;
-  b[i++] = tmh & 0xff; // `time_high_and_version`
-
-  b[i++] = tmh >>> 24 & 0xf | 0x10; // include version
-
-  b[i++] = tmh >>> 16 & 0xff; // `clock_seq_hi_and_reserved` (Per 4.2.2 - include variant)
-
-  b[i++] = clockseq >>> 8 | 0x80; // `clock_seq_low`
-
-  b[i++] = clockseq & 0xff; // `node`
-
-  for (var n = 0; n < 6; ++n) {
-    b[i + n] = node[n];
-  }
-
-  return buf ? buf : (0, _bytesToUuid.default)(b);
-}
-
-var _default = v1;
-exports.default = _default;
-module.exports = exports.default;
-},{"./bytesToUuid.js":56,"./rng.js":59}],62:[function(require,module,exports){
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.default = void 0;
-
-var _v = _interopRequireDefault(require("./v35.js"));
-
-var _md = _interopRequireDefault(require("./md5.js"));
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-const v3 = (0, _v.default)('v3', 0x30, _md.default);
-var _default = v3;
-exports.default = _default;
-module.exports = exports.default;
-},{"./md5.js":58,"./v35.js":63}],63:[function(require,module,exports){
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.default = _default;
-exports.URL = exports.DNS = void 0;
-
-var _bytesToUuid = _interopRequireDefault(require("./bytesToUuid.js"));
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-function uuidToBytes(uuid) {
-  // Note: We assume we're being passed a valid uuid string
-  var bytes = [];
-  uuid.replace(/[a-fA-F0-9]{2}/g, function (hex) {
-    bytes.push(parseInt(hex, 16));
-  });
-  return bytes;
-}
-
-function stringToBytes(str) {
-  str = unescape(encodeURIComponent(str)); // UTF8 escape
-
-  var bytes = new Array(str.length);
-
-  for (var i = 0; i < str.length; i++) {
-    bytes[i] = str.charCodeAt(i);
-  }
-
-  return bytes;
-}
-
-const DNS = '6ba7b810-9dad-11d1-80b4-00c04fd430c8';
-exports.DNS = DNS;
-const URL = '6ba7b811-9dad-11d1-80b4-00c04fd430c8';
-exports.URL = URL;
-
-function _default(name, version, hashfunc) {
-  var generateUUID = function (value, namespace, buf, offset) {
-    var off = buf && offset || 0;
-    if (typeof value == 'string') value = stringToBytes(value);
-    if (typeof namespace == 'string') namespace = uuidToBytes(namespace);
-    if (!Array.isArray(value)) throw TypeError('value must be an array of bytes');
-    if (!Array.isArray(namespace) || namespace.length !== 16) throw TypeError('namespace must be uuid string or an Array of 16 byte values'); // Per 4.3
-
-    var bytes = hashfunc(namespace.concat(value));
-    bytes[6] = bytes[6] & 0x0f | version;
-    bytes[8] = bytes[8] & 0x3f | 0x80;
-
-    if (buf) {
-      for (var idx = 0; idx < 16; ++idx) {
-        buf[off + idx] = bytes[idx];
-      }
-    }
-
-    return buf || (0, _bytesToUuid.default)(bytes);
-  }; // Function#name is not settable on some platforms (#270)
-
-
-  try {
-    generateUUID.name = name;
-  } catch (err) {} // For CommonJS default export support
-
-
-  generateUUID.DNS = DNS;
-  generateUUID.URL = URL;
-  return generateUUID;
-}
-},{"./bytesToUuid.js":56}],64:[function(require,module,exports){
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.default = void 0;
-
-var _rng = _interopRequireDefault(require("./rng.js"));
-
-var _bytesToUuid = _interopRequireDefault(require("./bytesToUuid.js"));
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-function v4(options, buf, offset) {
-  var i = buf && offset || 0;
-
-  if (typeof options == 'string') {
-    buf = options === 'binary' ? new Array(16) : null;
-    options = null;
-  }
-
-  options = options || {};
-
-  var rnds = options.random || (options.rng || _rng.default)(); // Per 4.4, set bits for version and `clock_seq_hi_and_reserved`
-
-
-  rnds[6] = rnds[6] & 0x0f | 0x40;
-  rnds[8] = rnds[8] & 0x3f | 0x80; // Copy bytes to buffer, if provided
-
-  if (buf) {
-    for (var ii = 0; ii < 16; ++ii) {
-      buf[i + ii] = rnds[ii];
-    }
-  }
-
-  return buf || (0, _bytesToUuid.default)(rnds);
-}
-
-var _default = v4;
-exports.default = _default;
-module.exports = exports.default;
-},{"./bytesToUuid.js":56,"./rng.js":59}],65:[function(require,module,exports){
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.default = void 0;
-
-var _v = _interopRequireDefault(require("./v35.js"));
-
-var _sha = _interopRequireDefault(require("./sha1.js"));
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-const v5 = (0, _v.default)('v5', 0x50, _sha.default);
-var _default = v5;
-exports.default = _default;
-module.exports = exports.default;
-},{"./sha1.js":60,"./v35.js":63}],66:[function(require,module,exports){
+},{}],63:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -8484,7 +8121,7 @@ var assert = function (value, name) {
 };
 exports.assert = assert;
 
-},{"deep-equal":71,"json-stringify-safe":83}],67:[function(require,module,exports){
+},{"deep-equal":68,"json-stringify-safe":80}],64:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Invocation = exports.Mock = void 0;
@@ -8504,7 +8141,7 @@ var Invocation = /** @class */ (function () {
 }());
 exports.Invocation = Invocation;
 
-},{"./object":68}],68:[function(require,module,exports){
+},{"./object":65}],65:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.MockObject = exports.ReturnCallback = exports.ReturnValue = void 0;
@@ -8651,7 +8288,7 @@ var MockObject = /** @class */ (function () {
 }());
 exports.MockObject = MockObject;
 
-},{"./":67,"deep-equal":71}],69:[function(require,module,exports){
+},{"./":64,"deep-equal":68}],66:[function(require,module,exports){
 'use strict';
 
 var GetIntrinsic = require('get-intrinsic');
@@ -8668,7 +8305,7 @@ module.exports = function callBoundIntrinsic(name, allowMissing) {
 	return intrinsic;
 };
 
-},{"./":70,"get-intrinsic":75}],70:[function(require,module,exports){
+},{"./":67,"get-intrinsic":72}],67:[function(require,module,exports){
 'use strict';
 
 var bind = require('function-bind');
@@ -8717,7 +8354,7 @@ if ($defineProperty) {
 	module.exports.apply = applyBind;
 }
 
-},{"function-bind":74,"get-intrinsic":75}],71:[function(require,module,exports){
+},{"function-bind":71,"get-intrinsic":72}],68:[function(require,module,exports){
 var objectKeys = require('object-keys');
 var isArguments = require('is-arguments');
 var is = require('object-is');
@@ -8831,7 +8468,7 @@ function objEquiv(a, b, opts) {
 
 module.exports = deepEqual;
 
-},{"is-arguments":80,"is-date-object":81,"is-regex":82,"object-is":85,"object-keys":89,"regexp.prototype.flags":93}],72:[function(require,module,exports){
+},{"is-arguments":77,"is-date-object":78,"is-regex":79,"object-is":82,"object-keys":86,"regexp.prototype.flags":90}],69:[function(require,module,exports){
 'use strict';
 
 var keys = require('object-keys');
@@ -8891,7 +8528,7 @@ defineProperties.supportsDescriptors = !!supportsDescriptors;
 
 module.exports = defineProperties;
 
-},{"object-keys":89}],73:[function(require,module,exports){
+},{"object-keys":86}],70:[function(require,module,exports){
 'use strict';
 
 /* eslint no-invalid-this: 1 */
@@ -8945,14 +8582,14 @@ module.exports = function bind(that) {
     return bound;
 };
 
-},{}],74:[function(require,module,exports){
+},{}],71:[function(require,module,exports){
 'use strict';
 
 var implementation = require('./implementation');
 
 module.exports = Function.prototype.bind || implementation;
 
-},{"./implementation":73}],75:[function(require,module,exports){
+},{"./implementation":70}],72:[function(require,module,exports){
 'use strict';
 
 var undefined;
@@ -9284,7 +8921,7 @@ module.exports = function GetIntrinsic(name, allowMissing) {
 	return value;
 };
 
-},{"function-bind":74,"has":79,"has-symbols":76}],76:[function(require,module,exports){
+},{"function-bind":71,"has":76,"has-symbols":73}],73:[function(require,module,exports){
 'use strict';
 
 var origSymbol = typeof Symbol !== 'undefined' && Symbol;
@@ -9299,7 +8936,7 @@ module.exports = function hasNativeSymbols() {
 	return hasSymbolSham();
 };
 
-},{"./shams":77}],77:[function(require,module,exports){
+},{"./shams":74}],74:[function(require,module,exports){
 'use strict';
 
 /* eslint complexity: [2, 18], max-statements: [2, 33] */
@@ -9343,7 +8980,7 @@ module.exports = function hasSymbols() {
 	return true;
 };
 
-},{}],78:[function(require,module,exports){
+},{}],75:[function(require,module,exports){
 'use strict';
 
 var hasSymbols = require('has-symbols/shams');
@@ -9352,14 +8989,14 @@ module.exports = function hasToStringTagShams() {
 	return hasSymbols() && !!Symbol.toStringTag;
 };
 
-},{"has-symbols/shams":77}],79:[function(require,module,exports){
+},{"has-symbols/shams":74}],76:[function(require,module,exports){
 'use strict';
 
 var bind = require('function-bind');
 
 module.exports = bind.call(Function.call, Object.prototype.hasOwnProperty);
 
-},{"function-bind":74}],80:[function(require,module,exports){
+},{"function-bind":71}],77:[function(require,module,exports){
 'use strict';
 
 var hasToStringTag = require('has-tostringtag/shams')();
@@ -9394,7 +9031,7 @@ isStandardArguments.isLegacyArguments = isLegacyArguments; // for tests
 
 module.exports = supportsStandardArguments ? isStandardArguments : isLegacyArguments;
 
-},{"call-bind/callBound":69,"has-tostringtag/shams":78}],81:[function(require,module,exports){
+},{"call-bind/callBound":66,"has-tostringtag/shams":75}],78:[function(require,module,exports){
 'use strict';
 
 var getDay = Date.prototype.getDay;
@@ -9418,7 +9055,7 @@ module.exports = function isDateObject(value) {
 	return hasToStringTag ? tryDateObject(value) : toStr.call(value) === dateClass;
 };
 
-},{"has-tostringtag/shams":78}],82:[function(require,module,exports){
+},{"has-tostringtag/shams":75}],79:[function(require,module,exports){
 'use strict';
 
 var callBound = require('call-bind/callBound');
@@ -9478,7 +9115,7 @@ module.exports = hasToStringTag
 		return $toString(value) === regexClass;
 	};
 
-},{"call-bind/callBound":69,"has-tostringtag/shams":78}],83:[function(require,module,exports){
+},{"call-bind/callBound":66,"has-tostringtag/shams":75}],80:[function(require,module,exports){
 exports = module.exports = stringify
 exports.getSerialize = serializer
 
@@ -9507,7 +9144,7 @@ function serializer(replacer, cycleReplacer) {
   }
 }
 
-},{}],84:[function(require,module,exports){
+},{}],81:[function(require,module,exports){
 'use strict';
 
 var numberIsNaN = function (value) {
@@ -9528,7 +9165,7 @@ module.exports = function is(a, b) {
 };
 
 
-},{}],85:[function(require,module,exports){
+},{}],82:[function(require,module,exports){
 'use strict';
 
 var define = require('define-properties');
@@ -9548,7 +9185,7 @@ define(polyfill, {
 
 module.exports = polyfill;
 
-},{"./implementation":84,"./polyfill":86,"./shim":87,"call-bind":70,"define-properties":72}],86:[function(require,module,exports){
+},{"./implementation":81,"./polyfill":83,"./shim":84,"call-bind":67,"define-properties":69}],83:[function(require,module,exports){
 'use strict';
 
 var implementation = require('./implementation');
@@ -9557,7 +9194,7 @@ module.exports = function getPolyfill() {
 	return typeof Object.is === 'function' ? Object.is : implementation;
 };
 
-},{"./implementation":84}],87:[function(require,module,exports){
+},{"./implementation":81}],84:[function(require,module,exports){
 'use strict';
 
 var getPolyfill = require('./polyfill');
@@ -9573,7 +9210,7 @@ module.exports = function shimObjectIs() {
 	return polyfill;
 };
 
-},{"./polyfill":86,"define-properties":72}],88:[function(require,module,exports){
+},{"./polyfill":83,"define-properties":69}],85:[function(require,module,exports){
 'use strict';
 
 var keysShim;
@@ -9697,7 +9334,7 @@ if (!Object.keys) {
 }
 module.exports = keysShim;
 
-},{"./isArguments":90}],89:[function(require,module,exports){
+},{"./isArguments":87}],86:[function(require,module,exports){
 'use strict';
 
 var slice = Array.prototype.slice;
@@ -9731,7 +9368,7 @@ keysShim.shim = function shimObjectKeys() {
 
 module.exports = keysShim;
 
-},{"./implementation":88,"./isArguments":90}],90:[function(require,module,exports){
+},{"./implementation":85,"./isArguments":87}],87:[function(require,module,exports){
 'use strict';
 
 var toStr = Object.prototype.toString;
@@ -9750,7 +9387,7 @@ module.exports = function isArguments(value) {
 	return isArgs;
 };
 
-},{}],91:[function(require,module,exports){
+},{}],88:[function(require,module,exports){
 // shim for using process in browser
 var process = module.exports = {};
 
@@ -9936,7 +9573,7 @@ process.chdir = function (dir) {
 };
 process.umask = function() { return 0; };
 
-},{}],92:[function(require,module,exports){
+},{}],89:[function(require,module,exports){
 'use strict';
 
 var $Object = Object;
@@ -9968,7 +9605,7 @@ module.exports = function flags() {
 	return result;
 };
 
-},{}],93:[function(require,module,exports){
+},{}],90:[function(require,module,exports){
 'use strict';
 
 var define = require('define-properties');
@@ -9988,7 +9625,7 @@ define(flagsBound, {
 
 module.exports = flagsBound;
 
-},{"./implementation":92,"./polyfill":94,"./shim":95,"call-bind":70,"define-properties":72}],94:[function(require,module,exports){
+},{"./implementation":89,"./polyfill":91,"./shim":92,"call-bind":67,"define-properties":69}],91:[function(require,module,exports){
 'use strict';
 
 var implementation = require('./implementation');
@@ -10010,7 +9647,7 @@ module.exports = function getPolyfill() {
 	return implementation;
 };
 
-},{"./implementation":92,"define-properties":72}],95:[function(require,module,exports){
+},{"./implementation":89,"define-properties":69}],92:[function(require,module,exports){
 'use strict';
 
 var supportsDescriptors = require('define-properties').supportsDescriptors;
@@ -10038,7 +9675,7 @@ module.exports = function shimFlags() {
 	return polyfill;
 };
 
-},{"./polyfill":94,"define-properties":72}],96:[function(require,module,exports){
+},{"./polyfill":91,"define-properties":69}],93:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -10181,7 +9818,7 @@ describe('director', function () {
                         case 3:
                             _a.sent();
                             return [2 /*return*/, future_1.attempt(function () {
-                                    var runtime = app.vm.state.runtimes['director'];
+                                    var runtime = app.vm.state.threads['director'];
                                     var dir = runtime.context.actor;
                                     assert_1.assert(dir.routes['/foo']).not.undefined();
                                     assert_1.assert(dir.routes['/bar']).not.undefined();
@@ -10216,7 +9853,7 @@ describe('director', function () {
                         case 3:
                             _a.sent();
                             return [2 /*return*/, future_1.attempt(function () {
-                                    var runtime = app.vm.state.runtimes['director'];
+                                    var runtime = app.vm.state.threads['director'];
                                     var dir = runtime.context.actor;
                                     assert_1.assert(dir.routes['/foo']).undefined();
                                     assert_1.assert(dir.routes['/bar']).not.undefined();
@@ -10290,8 +9927,8 @@ describe('director', function () {
                         case 3:
                             _a.sent();
                             return [2 /*return*/, future_1.attempt(function () {
-                                    var runtimes = app.vm.state.runtimes;
-                                    var matches = record_1.reduce(runtimes, 0, function (p, _, k) {
+                                    var threads = app.vm.state.threads;
+                                    var matches = record_1.reduce(threads, 0, function (p, _, k) {
                                         return string_1.startsWith(String(k), 'director/') ? p + 1 : p;
                                     });
                                     assert_1.assert(spawned).true();
@@ -10364,7 +10001,7 @@ describe('director', function () {
     });
 });
 
-},{"../../../lib/actor":1,"../../../lib/app/director":2,"../app/fixtures/app":98,"@quenk/noni/lib/control/monad/future":18,"@quenk/noni/lib/data/record":25,"@quenk/noni/lib/data/string":27,"@quenk/potoo/lib/actor/resident/case":33,"@quenk/test/lib/assert":66,"@quenk/test/lib/mock":67}],97:[function(require,module,exports){
+},{"../../../lib/actor":1,"../../../lib/app/director":2,"../app/fixtures/app":95,"@quenk/noni/lib/control/monad/future":18,"@quenk/noni/lib/data/record":25,"@quenk/noni/lib/data/string":27,"@quenk/potoo/lib/actor/resident/case":34,"@quenk/test/lib/assert":63,"@quenk/test/lib/mock":64}],94:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -10404,7 +10041,7 @@ var GenericImmutable = /** @class */ (function (_super) {
 }(actor_1.Immutable));
 exports.GenericImmutable = GenericImmutable;
 
-},{"../../../../lib/actor":1}],98:[function(require,module,exports){
+},{"../../../../lib/actor":1}],95:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -10428,13 +10065,13 @@ var TestApp = /** @class */ (function (_super) {
         return _super !== null && _super.apply(this, arguments) || this;
     }
     TestApp.prototype.spawn = function (temp) {
-        return this.vm.spawn(temp);
+        return this.vm.spawn(this.vm, temp);
     };
     return TestApp;
 }(app_1.JApp));
 exports.TestApp = TestApp;
 
-},{"../../../../lib/app":6}],99:[function(require,module,exports){
+},{"../../../../lib/app":6}],96:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -10559,7 +10196,7 @@ describe('active', function () {
                                 _a.sent();
                                 return [2 /*return*/, future_1.attempt(function () {
                                         assert_1.assert(aborted).true();
-                                        assert_1.assert(s.vm.state.runtimes['parent/form'])
+                                        assert_1.assert(s.vm.state.threads['parent/form'])
                                             .undefined();
                                     })];
                         }
@@ -10586,7 +10223,7 @@ describe('active', function () {
                             case 1:
                                 _a.sent();
                                 return [2 /*return*/, future_1.attempt(function () {
-                                        var runtime = s.vm.state.runtimes['parent/form'];
+                                        var runtime = s.vm.state.threads['parent/form'];
                                         var form = runtime.context.actor;
                                         assert_1.assert(form.__MOCK__.wasCalled('save')).true();
                                     })];
@@ -10619,7 +10256,7 @@ describe('active', function () {
                                 _a.sent();
                                 return [2 /*return*/, future_1.attempt(function () {
                                         assert_1.assert(saved).true();
-                                        assert_1.assert(s.vm.state.runtimes['parent/form'])
+                                        assert_1.assert(s.vm.state.threads['parent/form'])
                                             .undefined();
                                     })];
                         }
@@ -10646,7 +10283,7 @@ describe('active', function () {
                             case 1:
                                 _a.sent();
                                 return [2 /*return*/, future_1.attempt(function () {
-                                        var runtime = s.vm.state.runtimes['parent/form'];
+                                        var runtime = s.vm.state.threads['parent/form'];
                                         var form = runtime.context.actor;
                                         assert_1.assert(form.__MOCK__.wasCalled('onSaveFailed')).true();
                                     })];
@@ -10674,7 +10311,7 @@ describe('active', function () {
                             case 1:
                                 _a.sent();
                                 return [2 /*return*/, future_1.attempt(function () {
-                                        var runtime = s.vm.state.runtimes['parent/form'];
+                                        var runtime = s.vm.state.threads['parent/form'];
                                         var form = runtime.context.actor;
                                         assert_1.assert(form.__MOCK__.wasCalled('set')).true();
                                         assert_1.assert(form.data).equate({ name: 'asp' });
@@ -10761,7 +10398,7 @@ describe('active', function () {
     });
 });
 
-},{"../../../../lib/app/form/active":3,"../../../../lib/app/form/active/validate/strategy":4,"../../app/fixtures/app":98,"../fixtures/actor":97,"@quenk/noni/lib/control/monad/future":18,"@quenk/noni/lib/data/either":22,"@quenk/potoo/lib/actor/resident/case":33,"@quenk/test/lib/assert":66,"@quenk/test/lib/mock":67}],100:[function(require,module,exports){
+},{"../../../../lib/app/form/active":3,"../../../../lib/app/form/active/validate/strategy":4,"../../app/fixtures/app":95,"../fixtures/actor":94,"@quenk/noni/lib/control/monad/future":18,"@quenk/noni/lib/data/either":22,"@quenk/potoo/lib/actor/resident/case":34,"@quenk/test/lib/assert":63,"@quenk/test/lib/mock":64}],97:[function(require,module,exports){
 "use strict";
 var __generator = (this && this.__generator) || function (thisArg, body) {
     var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
@@ -10967,7 +10604,7 @@ describe('remote', function () {
     });
 });
 
-},{"../../../../lib/app/remote":8,"../../app/fixtures/actor":97,"../../app/fixtures/app":98,"@quenk/jhr/lib/agent/mock":11,"@quenk/jhr/lib/request":12,"@quenk/jhr/lib/response":14,"@quenk/noni/lib/control/monad/future":18,"@quenk/potoo/lib/actor/resident/case":33,"@quenk/test/lib/assert":66}],101:[function(require,module,exports){
+},{"../../../../lib/app/remote":8,"../../app/fixtures/actor":94,"../../app/fixtures/app":95,"@quenk/jhr/lib/agent/mock":11,"@quenk/jhr/lib/request":12,"@quenk/jhr/lib/response":14,"@quenk/noni/lib/control/monad/future":18,"@quenk/potoo/lib/actor/resident/case":34,"@quenk/test/lib/assert":63}],98:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -11015,7 +10652,7 @@ var mock_1 = require("@quenk/test/lib/mock");
 var record_1 = require("@quenk/noni/lib/data/record");
 var future_1 = require("@quenk/noni/lib/control/monad/future");
 var case_1 = require("@quenk/potoo/lib/actor/resident/case");
-var resident_1 = require("@quenk/potoo/lib/actor/resident");
+var immutable_1 = require("@quenk/potoo/lib/actor/resident/immutable");
 var response_1 = require("@quenk/jhr/lib/response");
 var request_1 = require("@quenk/jhr/lib/request");
 var model_1 = require("../../../../lib/app/remote/model");
@@ -11034,7 +10671,7 @@ var TestRemote = /** @class */ (function (_super) {
     };
     TestRemote.prototype.run = function () { };
     return TestRemote;
-}(resident_1.Immutable));
+}(immutable_1.Immutable));
 var MockHandler = /** @class */ (function () {
     function MockHandler() {
         this.MOCK = new mock_1.Mock();
@@ -11343,7 +10980,7 @@ describe('model', function () {
     });
 });
 
-},{"../../../../lib/app/remote":8,"../../../../lib/app/remote/model":9,"../../app/fixtures/app":98,"@quenk/jhr/lib/request":12,"@quenk/jhr/lib/response":14,"@quenk/noni/lib/control/monad/future":18,"@quenk/noni/lib/data/record":25,"@quenk/potoo/lib/actor/resident":34,"@quenk/potoo/lib/actor/resident/case":33,"@quenk/test/lib/assert":66,"@quenk/test/lib/mock":67}],102:[function(require,module,exports){
+},{"../../../../lib/app/remote":8,"../../../../lib/app/remote/model":9,"../../app/fixtures/app":95,"@quenk/jhr/lib/request":12,"@quenk/jhr/lib/response":14,"@quenk/noni/lib/control/monad/future":18,"@quenk/noni/lib/data/record":25,"@quenk/potoo/lib/actor/resident/case":34,"@quenk/potoo/lib/actor/resident/immutable":36,"@quenk/test/lib/assert":63,"@quenk/test/lib/mock":64}],99:[function(require,module,exports){
 "use strict";
 var __generator = (this && this.__generator) || function (thisArg, body) {
     var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
@@ -11686,11 +11323,11 @@ describe('observable', function () {
     });
 });
 
-},{"../../../../lib/app/remote/observer":10,"../../app/fixtures/actor":97,"../../app/fixtures/app":98,"@quenk/jhr/lib/agent/mock":11,"@quenk/jhr/lib/request":12,"@quenk/jhr/lib/response":14,"@quenk/noni/lib/control/monad/future":18,"@quenk/potoo/lib/actor/resident/case":33,"@quenk/test/lib/assert":66,"@quenk/test/lib/mock":67}],103:[function(require,module,exports){
+},{"../../../../lib/app/remote/observer":10,"../../app/fixtures/actor":94,"../../app/fixtures/app":95,"@quenk/jhr/lib/agent/mock":11,"@quenk/jhr/lib/request":12,"@quenk/jhr/lib/response":14,"@quenk/noni/lib/control/monad/future":18,"@quenk/potoo/lib/actor/resident/case":34,"@quenk/test/lib/assert":63,"@quenk/test/lib/mock":64}],100:[function(require,module,exports){
 require("./app/form/active_test.js");
 require("./app/director_test.js");
 require("./app/remote/index_test.js");
 require("./app/remote/model_test.js");
 require("./app/remote/observer_test.js");
 
-},{"./app/director_test.js":96,"./app/form/active_test.js":99,"./app/remote/index_test.js":100,"./app/remote/model_test.js":101,"./app/remote/observer_test.js":102}]},{},[103]);
+},{"./app/director_test.js":93,"./app/form/active_test.js":96,"./app/remote/index_test.js":97,"./app/remote/model_test.js":98,"./app/remote/observer_test.js":99}]},{},[100]);

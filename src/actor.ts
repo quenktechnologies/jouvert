@@ -1,7 +1,8 @@
 import { Err } from '@quenk/noni/lib/control/error';
 import { Api } from '@quenk/potoo/lib/actor/resident/api';
 import { Case } from '@quenk/potoo/lib/actor/resident/case';
-import { Mutable, Immutable } from '@quenk/potoo/lib/actor/resident';
+import { Mutable } from '@quenk/potoo/lib/actor/resident/mutable';
+import { Immutable } from '@quenk/potoo/lib/actor/resident/immutable';
 import { Templates, Template } from '@quenk/potoo/lib/actor/template';
 import { AddressMap, Address } from '@quenk/potoo/lib/actor/address';
 
@@ -44,7 +45,8 @@ export class Proxy<A extends App> implements Api {
 
     select<T>(c: Case<T>[]): Proxy<A> {
 
-        this.instance.select(c);
+      //XXX: This is not typesafe and should be removed.
+        (<Mutable>this.instance).select(c);
         return this;
 
     }

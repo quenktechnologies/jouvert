@@ -12,7 +12,7 @@ import {
 } from '@quenk/noni/lib/control/monad/future';
 
 import { Case } from '@quenk/potoo/lib/actor/resident/case';
-import { Immutable } from '@quenk/potoo/lib/actor/resident';
+import { Immutable } from '@quenk/potoo/lib/actor/resident/immutable';
 
 import {
     Response,

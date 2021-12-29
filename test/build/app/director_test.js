@@ -140,7 +140,7 @@ describe('director', function () {
                         case 3:
                             _a.sent();
                             return [2 /*return*/, future_1.attempt(function () {
-                                    var runtime = app.vm.state.runtimes['director'];
+                                    var runtime = app.vm.state.threads['director'];
                                     var dir = runtime.context.actor;
                                     assert_1.assert(dir.routes['/foo']).not.undefined();
                                     assert_1.assert(dir.routes['/bar']).not.undefined();
@@ -175,7 +175,7 @@ describe('director', function () {
                         case 3:
                             _a.sent();
                             return [2 /*return*/, future_1.attempt(function () {
-                                    var runtime = app.vm.state.runtimes['director'];
+                                    var runtime = app.vm.state.threads['director'];
                                     var dir = runtime.context.actor;
                                     assert_1.assert(dir.routes['/foo']).undefined();
                                     assert_1.assert(dir.routes['/bar']).not.undefined();
@@ -249,8 +249,8 @@ describe('director', function () {
                         case 3:
                             _a.sent();
                             return [2 /*return*/, future_1.attempt(function () {
-                                    var runtimes = app.vm.state.runtimes;
-                                    var matches = record_1.reduce(runtimes, 0, function (p, _, k) {
+                                    var threads = app.vm.state.threads;
+                                    var matches = record_1.reduce(threads, 0, function (p, _, k) {
                                         return string_1.startsWith(String(k), 'director/') ? p + 1 : p;
                                     });
                                     assert_1.assert(spawned).true();

@@ -45,7 +45,7 @@ var mock_1 = require("@quenk/test/lib/mock");
 var record_1 = require("@quenk/noni/lib/data/record");
 var future_1 = require("@quenk/noni/lib/control/monad/future");
 var case_1 = require("@quenk/potoo/lib/actor/resident/case");
-var resident_1 = require("@quenk/potoo/lib/actor/resident");
+var immutable_1 = require("@quenk/potoo/lib/actor/resident/immutable");
 var response_1 = require("@quenk/jhr/lib/response");
 var request_1 = require("@quenk/jhr/lib/request");
 var model_1 = require("../../../../lib/app/remote/model");
@@ -64,7 +64,7 @@ var TestRemote = /** @class */ (function (_super) {
     };
     TestRemote.prototype.run = function () { };
     return TestRemote;
-}(resident_1.Immutable));
+}(immutable_1.Immutable));
 var MockHandler = /** @class */ (function () {
     function MockHandler() {
         this.MOCK = new mock_1.Mock();

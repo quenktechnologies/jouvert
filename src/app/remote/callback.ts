@@ -13,7 +13,7 @@ import { Request } from '@quenk/jhr/lib/request';
 import { Response } from '@quenk/jhr/lib/response';
 
 import { Case } from '@quenk/potoo/lib/actor/resident/case';
-import { Temp } from '@quenk/potoo/lib/actor/resident';
+import { Callback } from '@quenk/potoo/lib/actor/resident/immutable/callback';
 import { Address } from '@quenk/potoo/lib/actor/address';
 import { System } from '@quenk/potoo/lib/actor/system';
 
@@ -215,7 +215,7 @@ export class CompositeBatchCompleteHandler<B>
  */
 export class SendCallback<Req, Res>
     extends
-    Temp<SendCallbackMessage<Res>> {
+    Callback<SendCallbackMessage<Res>> {
 
     constructor(
         public system: System,
@@ -269,7 +269,7 @@ export class SendCallback<Req, Res>
  */
 export class ParSendCallback<Req, Res>
     extends
-    Temp<BatchCallbackMessage<Res>> {
+    Callback<BatchCallbackMessage<Res>> {
 
     constructor(
         public system: System,

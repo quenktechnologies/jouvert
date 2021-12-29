@@ -149,7 +149,7 @@ describe('active', () => {
 
                         assert(aborted).true();
 
-                        assert(s.vm.state.runtimes['parent/form'])
+                        assert(s.vm.state.threads['parent/form'])
                             .undefined();
 
                     });
@@ -179,7 +179,7 @@ describe('active', () => {
 
                     return attempt(() => {
 
-                        let runtime = s.vm.state.runtimes['parent/form'];
+                        let runtime = s.vm.state.threads['parent/form'];
                         let form = <Form>runtime.context.actor;
 
                         assert(form.__MOCK__.wasCalled('save')).true();
@@ -218,7 +218,7 @@ describe('active', () => {
 
                         assert(saved).true();
 
-                        assert(s.vm.state.runtimes['parent/form'])
+                        assert(s.vm.state.threads['parent/form'])
                             .undefined();
 
                     });
@@ -248,7 +248,7 @@ describe('active', () => {
 
                     return attempt(() => {
 
-                        let runtime = s.vm.state.runtimes['parent/form'];
+                        let runtime = s.vm.state.threads['parent/form'];
                         let form = <Form>runtime.context.actor;
 
                         assert(form.__MOCK__.wasCalled('onSaveFailed')).true();
@@ -280,7 +280,7 @@ describe('active', () => {
 
                     return attempt(() => {
 
-                        let runtime = s.vm.state.runtimes['parent/form'];
+                        let runtime = s.vm.state.threads['parent/form'];
                         let form = <Form>runtime.context.actor;
 
                         assert(form.__MOCK__.wasCalled('set')).true();

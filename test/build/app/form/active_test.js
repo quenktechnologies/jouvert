@@ -122,7 +122,7 @@ describe('active', function () {
                                 _a.sent();
                                 return [2 /*return*/, future_1.attempt(function () {
                                         assert_1.assert(aborted).true();
-                                        assert_1.assert(s.vm.state.runtimes['parent/form'])
+                                        assert_1.assert(s.vm.state.threads['parent/form'])
                                             .undefined();
                                     })];
                         }
@@ -149,7 +149,7 @@ describe('active', function () {
                             case 1:
                                 _a.sent();
                                 return [2 /*return*/, future_1.attempt(function () {
-                                        var runtime = s.vm.state.runtimes['parent/form'];
+                                        var runtime = s.vm.state.threads['parent/form'];
                                         var form = runtime.context.actor;
                                         assert_1.assert(form.__MOCK__.wasCalled('save')).true();
                                     })];
@@ -182,7 +182,7 @@ describe('active', function () {
                                 _a.sent();
                                 return [2 /*return*/, future_1.attempt(function () {
                                         assert_1.assert(saved).true();
-                                        assert_1.assert(s.vm.state.runtimes['parent/form'])
+                                        assert_1.assert(s.vm.state.threads['parent/form'])
                                             .undefined();
                                     })];
                         }
@@ -209,7 +209,7 @@ describe('active', function () {
                             case 1:
                                 _a.sent();
                                 return [2 /*return*/, future_1.attempt(function () {
-                                        var runtime = s.vm.state.runtimes['parent/form'];
+                                        var runtime = s.vm.state.threads['parent/form'];
                                         var form = runtime.context.actor;
                                         assert_1.assert(form.__MOCK__.wasCalled('onSaveFailed')).true();
                                     })];
@@ -237,7 +237,7 @@ describe('active', function () {
                             case 1:
                                 _a.sent();
                                 return [2 /*return*/, future_1.attempt(function () {
-                                        var runtime = s.vm.state.runtimes['parent/form'];
+                                        var runtime = s.vm.state.threads['parent/form'];
                                         var form = runtime.context.actor;
                                         assert_1.assert(form.__MOCK__.wasCalled('set')).true();
                                         assert_1.assert(form.data).equate({ name: 'asp' });

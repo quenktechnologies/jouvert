@@ -7,6 +7,8 @@ import { System } from '@quenk/potoo/lib/actor/system';
 import { Address } from '@quenk/potoo/lib/actor/address';
 import { Case } from '@quenk/potoo/lib/actor/resident/case';
 
+import {Layout} from '@quenk/wml-widgets/lib/layout';
+
 /**
  * ViewName is used to identify views.
  */
@@ -40,8 +42,8 @@ export interface ViewDelegate {
 }
 
 /**
- * HTMLElementViewDelegate is ViewDelegate implementation that uses a 
- * HTMLElement as the entry point for the view.
+ * HTMLElementViewDelegate is a ViewDelegate implementation that uses a
+ * HTMLElement to display the view.
  */
 export class HTMLElementViewDelegate implements ViewDelegate {
 
@@ -60,6 +62,29 @@ export class HTMLElementViewDelegate implements ViewDelegate {
 
         while (node.firstChild != null)
             node.removeChild(node.firstChild);
+
+    }
+
+}
+
+/**
+ * WMLLayoutViewDelegate is a ViewDelegate implementation that uses a WML layout
+ * instance to display the view.
+ */
+export class WMLLayoutViewDelegate implements ViewDelegate {
+
+    constructor(public layout: Layout) { }
+
+    set(view: View) {
+
+        this.unset();
+      this.layout.setContent((<HTMLElement>view.render()));
+
+    }
+
+    unset() {
+
+      this.layout.removeContent();
 
     }
 

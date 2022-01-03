@@ -3,6 +3,7 @@ import { Immutable } from '@quenk/potoo/lib/actor/resident/immutable';
 import { System } from '@quenk/potoo/lib/actor/system';
 import { Address } from '@quenk/potoo/lib/actor/address';
 import { Case } from '@quenk/potoo/lib/actor/resident/case';
+import { Layout } from '@quenk/wml-widgets/lib/layout';
 /**
  * ViewName is used to identify views.
  */
@@ -26,12 +27,22 @@ export interface ViewDelegate {
     unset(): void;
 }
 /**
- * HTMLElementViewDelegate is ViewDelegate implementation that uses a
- * HTMLElement as the entry point for the view.
+ * HTMLElementViewDelegate is a ViewDelegate implementation that uses a
+ * HTMLElement to display the view.
  */
 export declare class HTMLElementViewDelegate implements ViewDelegate {
     node: HTMLElement;
     constructor(node: HTMLElement);
+    set(view: View): void;
+    unset(): void;
+}
+/**
+ * WMLLayoutViewDelegate is a ViewDelegate implementation that uses a WML layout
+ * instance to display the view.
+ */
+export declare class WMLLayoutViewDelegate implements ViewDelegate {
+    layout: Layout;
+    constructor(layout: Layout);
     set(view: View): void;
     unset(): void;
 }

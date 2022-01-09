@@ -21,10 +21,10 @@ import {
     Reload,
     Suspend,
     Suspended
-} from '../../../lib/app/director';
-import { Immutable } from '../../../lib/actor';
-import { App } from '../../../lib/app';
-import { TestApp } from '../app/fixtures/app';
+} from '../../../../lib/app/service/director';
+import { Immutable } from '../../../../lib/actor';
+import { App } from '../../../../lib/app';
+import { TestApp } from '../../app/fixtures/app';
 
 type Messages
     = Resume<string>
@@ -59,7 +59,7 @@ class Controller extends Immutable<Messages> {
 
     receive() {
 
-      return this.cases(this);
+        return this.cases(this);
 
     }
 

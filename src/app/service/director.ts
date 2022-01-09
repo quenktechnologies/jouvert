@@ -12,8 +12,8 @@ import { Case, Default } from '@quenk/potoo/lib/actor/resident/case';
 import { Address } from '@quenk/potoo/lib/actor/address';
 import { Template } from '@quenk/potoo/lib/actor/template';
 
-import { Api, Immutable } from '../actor';
-import { App } from './';
+import { Api, Immutable } from '../../actor';
+import { App } from '../';
 
 export const DEFAULT_TIMEOUT = 1000;
 

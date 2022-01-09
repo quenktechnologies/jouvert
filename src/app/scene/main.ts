@@ -1,7 +1,12 @@
 import { Case } from '@quenk/potoo/lib/actor/resident/case';
 import { System } from '@quenk/potoo/lib/actor/system';
 
-import { Resume, Suspend, SuspendCase, SuspendListener } from '../director';
+import { 
+  Resume,
+  Suspend,
+  SuspendCase,
+  SuspendListener 
+} from '../service/director';
 import { BaseAppScene } from './';
 
 /**
@@ -34,7 +39,7 @@ export abstract class MainScene<T, M>
     implements
     SuspendListener {
 
-    constructor(public system:System, public resume: Resume<T>) {
+    constructor(public system: System, public resume: Resume<T>) {
 
         super(system);
 

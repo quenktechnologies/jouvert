@@ -1,11 +1,11 @@
 {
   "name": "@quenk/jouvert",
-  "version": "0.11.3",
+  "version": "0.11.4",
   "description": "Actor oriented client side toolkit.",
   "author": [
     "Quenk Technologies Limited <info@quenk.com> (https://quenk.com)"
   ],
-  "main":     "lib/app/index.js",
+  "main": "lib/app/index.js",
   "files": [
     "lib"
   ],

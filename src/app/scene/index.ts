@@ -1,80 +1,27 @@
-import { Case } from '@quenk/potoo/lib/actor/resident/case';
-import { System } from '@quenk/potoo/lib/actor/system';
-
-import { Immutable, Api } from '../../actor';
-import { Resume, Suspend, Suspended } from '../director';
-
 /**
- * AppSceneMessage is the type of messages an AppScene handles.
- */
-export type AppSceneMessage<M>
-    = Suspend
-    | M
-    ;
-
-/**
- * SuspendListener is an interface for actors interested in triggering some
- * action when the Director's Suspend message is received.
- */
-export interface SuspendListener extends Api {
-
-    /**
-     * beforeSuspend handler.
-     */
-    beforeSuspended(s: Suspend): SuspendListener
-
-}
-
-/**
- * SuspendCase invokes the [[SuspendListener.beforeSuspend]] callback.
- */
-export class SuspendCase<T, M> extends Case<Suspend> {
-
-    constructor(public listener: AppScene<T, M>) {
-
-        super(Suspend, (s: Suspend) => {
-
-            listener
-                .beforeSuspended(s)
-                .tell(listener.resume.director, new Suspended(listener.self()));
-
-        });
-    }
-}
-
-/**
- * AppScene is an actor used to provide a main activity of an application.
+ * In a Jouvert application, scenes are actors that produce the primary content
+ * to display to the user.
  *
- * These are typically the actors that react to [[Director]] messages (Resume
- * and Suspend). This class however is designed to be spawned directly by the
- * Director so it is killed when it loses control.
+ * The content produced by all the scene actors in an application essentially 
+ * provide the application's UI. The actors themselves serve as the controllers 
+ * of the application's logic.
  *
- * Spawn them directly in the Director's route configuation.
+ * This toolkit provides 3 main types of scene actors:
+ *
+ * 1. [[MainScene]]   - These are actors that provide the main views in an 
+ *                      application such as a dashboard or a user profile.
+ *                      These typically coordinate the other types of scenes to 
+ *                      provide the appropriate UI at the right time.
+ *
+ * 2. [[FormScene]]   - These are specialised to support the content of one or 
+ *                      more HTML forms and have methods for setting and 
+ *                      validating values.
+ *
+ * 3. [[DialogScene]] - These scenes are controllers intended for modal dialog
+ *                      content.
+ *
+ * In a typical Jouvert application, these actors send their content via a
+ * [[Show]] message to a display which is usually the address of a 
+ * [[ViewService]] instance. Scene actors are meant to be spawned on demand and
+ * usually send this message as part of their run() method.
  */
-export abstract class AppScene<T, M>
-    extends
-    Immutable<AppSceneMessage<M>> {
-
-    constructor(public resume: Resume<T>, public system: System,) {
-
-        super(system);
-
-    }
-
-    receive() : Case<AppSceneMessage<M>>[]{
-
-        return <Case<AppSceneMessage<M>>[]>[
-
-            new SuspendCase(this)
-
-        ];
-
-    }
-
-    beforeSuspended(_: Suspend): AppScene<T, M> {
-
-        return this;
-
-    }
-
-}

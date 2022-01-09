@@ -1,13 +1,13 @@
 import { Either } from '@quenk/noni/lib/data/either';
 import { Object } from '@quenk/noni/lib/data/jsonx';
 
-import { FieldName, FieldValue, FieldError, FormErrors } from '../..';
+import { FieldName, FieldValue, FieldError, FormErrors } from '../';
+import { InputEvent, } from '../';
 import {
-    FieldInputEvent,
-    ActiveForm,
-    FieldFeedback,
-    FormFeedback
-} from '../';
+    ValidatorFormScene,
+    FieldStateListener,
+    FormStateListener
+} from './';
 
 /**
  * FieldValidator is an interface used to validate at the field level.
@@ -34,16 +34,16 @@ export interface FormValidator<T extends Object> extends FieldValidator {
 }
 
 /**
- * ValidateStrategy handles the actual validation of FieldEvents.
+ * ValidationStrategy handles the actual validation of FieldEvents.
  *
  * This should also apply the relevant callbacks as desired.
  */
-export interface ValidateStrategy {
+export interface ValidationStrategy {
 
     /**
-     * validate a FieldInputEvent.
+     * validate a InputEvent.
      */
-    validate(e: FieldInputEvent): void
+    validate(e: InputEvent): void
 
 }
 
@@ -62,7 +62,7 @@ export interface FieldValidator {
 
 /**
  * FormValidator extends FieldValidator to allow validation of all the values
- * in an ActiveForm.
+ * in an ValidatorFormScene.
  */
 export interface FormValidator<T extends Object> extends FieldValidator {
 
@@ -74,15 +74,15 @@ export interface FormValidator<T extends Object> extends FieldValidator {
 }
 
 /**
- * NoStrategy simply sets the captured values on the ActiveForm.
+ * NoStrategy simply sets the captured values on the ValidatorFormScene.
  *
  * This is useful if all validation is done on the server side.
  */
-export class NoStrategy<T extends Object> implements ValidateStrategy {
+export class NoStrategy<T extends Object> implements ValidationStrategy {
 
-    constructor(public form: ActiveForm<T>) { }
+    constructor(public form: ValidatorFormScene<T>) { }
 
-    validate({ name, value }: FieldInputEvent) {
+    validate({ name, value }: InputEvent) {
 
         this.form.set(name, value);
 
@@ -94,13 +94,13 @@ export class NoStrategy<T extends Object> implements ValidateStrategy {
  * OneForOneStrategy validates event input and triggers the respect
  * onField(In)?Valid callback.
  */
-export class OneForOneStrategy<T extends Object> implements ValidateStrategy {
+export class OneForOneStrategy<T extends Object> implements ValidationStrategy {
 
     constructor(
-        public form: FieldFeedback<T>,
+        public form: FieldStateListener<T>,
         public validator: FieldValidator) { }
 
-    validate({ name, value }: FieldInputEvent) {
+    validate({ name, value }: InputEvent) {
 
         let { form, validator } = this;
         let eResult = validator.validate(name, value);
@@ -123,15 +123,15 @@ export class OneForOneStrategy<T extends Object> implements ValidateStrategy {
 }
 
 /**
- * AllForOneStrategy validtes FieldInputEvent input and invokes the 
+ * AllForOneStrategy validtes InputEvent input and invokes the 
  * respective callbacks.
  *
  * Callbacks for the entire form are also invoked.
  */
-export class AllForOneStrategy<T extends Object> implements ValidateStrategy {
+export class AllForOneStrategy<T extends Object> implements ValidationStrategy {
 
     constructor(
-        public form: FormFeedback<T>,
+        public form: FormStateListener<T>,
         public validator: FormValidator<T>) { }
 
     getValues() {
@@ -140,7 +140,7 @@ export class AllForOneStrategy<T extends Object> implements ValidateStrategy {
 
     }
 
-    validate({ name, value }: FieldInputEvent) {
+    validate({ name, value }: InputEvent) {
 
         let { form, validator } = this;
         let eResult = validator.validate(name, value);
@@ -171,11 +171,10 @@ export class AllForOneStrategy<T extends Object> implements ValidateStrategy {
 }
 
 /**
- * AllForOneModifiedStrategy is simillar to AllForOneStrategy
- * but only considers the values that have been modified when validating
- * the entire form.
+ * ModifiedAllForOneStrategy is similar to AllForOneStrategy but only considers 
+ * the values that have been modified when validating the entire form.
  */
-export class AllForOneModifiedStrategy<T extends Object>
+export class ModifiedAllForOneStrategy<T extends Object>
     extends
     AllForOneStrategy<T> {
 

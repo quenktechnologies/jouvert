@@ -10,25 +10,27 @@ import {
 import { Either, right, left } from '@quenk/noni/lib/data/either';
 import { Case } from '@quenk/potoo/lib/actor/resident/case';
 
-import { FormErrors } from '../../../../lib/app/form';
+import { FormErrors } from '../../../../../lib/app/scene/form';
 import {
-    ValidateStrategy,
+    ValidationStrategy,
     NoStrategy,
     OneForOneStrategy,
     AllForOneStrategy
-} from '../../../../lib/app/form/active/validate/strategy';
+} from '../../../../../lib/app/scene/form/validator/strategy';
 import {
-    AbstractActiveForm,
+    AbstractValidatedFormScene,
+} from '../../../../../lib/app/form/scene/validator';
+import {
     FormAborted,
     Abort,
     Save,
     FormSaved,
     SaveOk,
     SaveFailed
-} from '../../../../lib/app/form/active';
-import { App } from '../../../../lib/app';
-import { TestApp } from '../../app/fixtures/app';
-import { GenericImmutable } from '../fixtures/actor';
+} from '../../../../../lib/app/scene/form';
+import { App } from '../../../../../lib/app';
+import { TestApp } from '../../../app/fixtures/app';
+import { GenericImmutable } from '../../fixtures/actor';
 
 interface Data {
 
@@ -36,13 +38,13 @@ interface Data {
 
 }
 
-class Form extends AbstractActiveForm<Data, void> {
+class Form extends AbstractValidatedFormScene<Data, void> {
 
     __MOCK__ = new Mock();
 
     data: Data = {};
 
-    validateStrategy: ValidateStrategy = new NoStrategy(this);
+    validationStrategy: VaildationStrategy = new NoStrategy(this);
 
     set(name: string, value: Value): Form {
 
@@ -115,7 +117,7 @@ const form = (addr: string) => ({
 
 describe('active', () => {
 
-    describe('AbstractActiveForm', () => {
+    describe('AbstractValidatedFormScene', () => {
 
         describe('receive', () => {
 

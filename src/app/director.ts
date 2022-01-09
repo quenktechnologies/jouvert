@@ -1,12 +1,18 @@
 import { Milliseconds } from '@quenk/noni/lib/control/time';
 import { exclude, merge, forEach } from '@quenk/noni/lib/data/record';
 import { isFunction, isObject } from '@quenk/noni/lib/data/type';
-import { Future, fromCallback } from '@quenk/noni/lib/control/monad/future';
+import {
+    Future,
+    fromCallback,
+    doFuture,
+    wrap,
+    voidPure
+} from '@quenk/noni/lib/control/monad/future';
 import { Case, Default } from '@quenk/potoo/lib/actor/resident/case';
 import { Address } from '@quenk/potoo/lib/actor/address';
 import { Template } from '@quenk/potoo/lib/actor/template';
 
-import { Immutable } from '../actor';
+import { Api, Immutable } from '../actor';
 import { App } from './';
 
 export const DEFAULT_TIMEOUT = 1000;
@@ -83,6 +89,21 @@ export interface RoutingTable<A> {
 }
 
 /**
+ * SuspendListener is an interface for actors interested in the [[Director]]'s
+ * [[Suspend]] message.
+ *
+ * Implementing actors include the SuspendCase in their match patterns.
+ */
+export interface SuspendListener extends Api {
+
+    /**
+     * beforeSuspend handler.
+     */
+    beforeSuspended(s: Suspend): void | Future<void>
+
+}
+
+/**
  * RoutingLogic is any object that allows the Director to add routes to its
  * table.
  *
@@ -109,6 +130,28 @@ export interface Conf {
      */
     timeout?: Milliseconds
 
+}
+
+/**
+ * SuspendCase invokes [[SuspendListener.beforeSuspend]] upon receiving a 
+ * [[Suspend]] message then informs the Director that the actor has been 
+ * suspended.
+ */
+export class SuspendCase extends Case<Suspend> {
+
+    constructor(public listener: SuspendListener, public director: Address) {
+
+        super(Suspend, (s: Suspend) => doFuture<void>(function*() {
+
+            yield wrap(listener.beforeSuspended(s));
+
+            listener.tell(director, new Suspended(listener.self()));
+
+            return voidPure;
+
+        }));
+
+    }
 }
 
 /**
@@ -392,13 +435,13 @@ export class Director<T> extends Immutable<DirectorMessage<T>> {
 
     receive() {
 
-      return <Case<DirectorMessage<T>>[]>[
+        return <Case<DirectorMessage<T>>[]>[
 
-        new Case(RouteChanged, this.onRouteChanged),
+            new Case(RouteChanged, this.onRouteChanged),
 
-        new Case(ActorSuspended, this.onActorSuspended)
+            new Case(ActorSuspended, this.onActorSuspended)
 
-    ];
+        ];
 
     }
 

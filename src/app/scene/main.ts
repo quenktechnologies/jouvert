@@ -64,11 +64,11 @@ export abstract class MainScene<T, M>
 
             new SuspendCase(this, this.resume.director),
 
-            new Case(Show, (msg: Show) => this.tell(this.display, msg)),
+            new Case(Show, (msg: Show) => void this.tell(this.display, msg) ),
 
-            new Case(Push, (msg: Push) => this.tell(this.display, msg)),
+            new Case(Push, (msg: Push) => void this.tell(this.display, msg)),
 
-            new Case(Pop, (msg: Pop) => this.tell(this.display, msg)),
+            new Case(Pop, (msg: Pop) => void this.tell(this.display, msg)),
 
         ];
 

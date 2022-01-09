@@ -5,7 +5,7 @@ import { System } from '@quenk/potoo/lib/actor/system';
 import { Address } from '@quenk/potoo/lib/actor/address';
 import { Message } from '@quenk/potoo/lib/actor/message';
 
-export {Template}
+export { Template }
 
 /**
  * App is an alias for the potoo System interface.
@@ -31,7 +31,9 @@ export interface App extends System { }
  */
 export abstract class Jouvert implements App {
 
-    constructor(public conf: Partial<Conf> = {}) { }
+    constructor(
+      public conf: Partial<Conf> = { accept: m => this.onMessage(m) }
+    ) { }
 
     vm: PVM = PVM.create(this, this.conf);
 
@@ -40,6 +42,12 @@ export abstract class Jouvert implements App {
         return this.vm;
 
     }
+
+    /**
+     * onMessage handler used to intercept messages sent to the vm via the
+     * accept configuration property.
+     */
+    onMessage(_: Message) { }
 
     /**
      * tell sends a message to the specified address using the root actor.

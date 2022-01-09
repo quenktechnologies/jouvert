@@ -33,6 +33,11 @@ export declare abstract class Jouvert implements App {
     vm: PVM;
     getPlatform(): PVM;
     /**
+     * onMessage handler used to intercept messages sent to the vm via the
+     * accept configuration property.
+     */
+    onMessage(_: Message): void;
+    /**
      * tell sends a message to the specified address using the root actor.
      */
     tell(addr: Address, msg: Message): Jouvert;

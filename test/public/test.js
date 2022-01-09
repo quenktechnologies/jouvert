@@ -47,7 +47,591 @@ var Proxy = /** @class */ (function () {
 }());
 exports.Proxy = Proxy;
 
-},{"@quenk/potoo/lib/actor/resident/immutable":36,"@quenk/potoo/lib/actor/resident/mutable":38}],2:[function(require,module,exports){
+},{"@quenk/potoo/lib/actor/resident/immutable":33,"@quenk/potoo/lib/actor/resident/mutable":35}],2:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.Jouvert = void 0;
+var vm_1 = require("@quenk/potoo/lib/actor/system/vm");
+/**
+ * Jouvert is meant to be the main class of any jouvert application.
+ *
+ * This class serves as the container for the actor system from which all
+ * actors will be descended from (indirectly via the embedded vm). By making the
+ * wrapper for the actor system our main class, we combine the overview of the
+ * entire application with control over the actor system allowing everything
+ * to be managed in one place and via one interface.
+ *
+ * Additional helpful methods and properties can be declared here if desired
+ * and made available to all actors of the system. State should not be shared
+ * between actors however, static constant values should not do much harm.
+ *
+ * "System" level operations in an application such as network requests,
+ * application cleanup, caching, could also be handle in the Jouvert instance
+ * and exposed to actors via message passing if desired.
+ */
+var Jouvert = /** @class */ (function () {
+    function Jouvert(conf) {
+        if (conf === void 0) { conf = {}; }
+        this.conf = conf;
+        this.vm = vm_1.PVM.create(this, this.conf);
+    }
+    Jouvert.prototype.getPlatform = function () {
+        return this.vm;
+    };
+    /**
+     * tell sends a message to the specified address using the root actor.
+     */
+    Jouvert.prototype.tell = function (addr, msg) {
+        this.vm.tell(addr, msg);
+        return this;
+    };
+    /**
+     * spawn a new actor from template using the root actor as parent.
+     */
+    Jouvert.prototype.spawn = function (t) {
+        return this.vm.spawn(this.vm, t);
+    };
+    return Jouvert;
+}());
+exports.Jouvert = Jouvert;
+
+},{"@quenk/potoo/lib/actor/system/vm":39}],3:[function(require,module,exports){
+"use strict";
+/**
+ * This module provides actors for sending requests to a [[Remote]] and
+ * executing some action depending on the result. Callbacks should be spawned
+ * each time a parent actor wants to make a request, once a response is
+ * received, they exit. The response from the request can be handled
+ * by specifying a handler object to the callback's constructor.
+ */
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+        return extendStatics(d, b);
+    };
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.SeqSendCallback = exports.ParSendCallback = exports.SendCallback = exports.CompositeBatchCompleteHandler = exports.CompositeCompleteHandler = exports.AbstractBatchCompleteHandler = exports.AbstractCompleteHandler = exports.SeqSend = exports.ParSend = exports.Send = void 0;
+/** imports */
+var type_1 = require("@quenk/noni/lib/data/type");
+var case_1 = require("@quenk/potoo/lib/actor/resident/case");
+var callback_1 = require("@quenk/potoo/lib/actor/resident/immutable/callback");
+var _1 = require("./");
+Object.defineProperty(exports, "Send", { enumerable: true, get: function () { return _1.Send; } });
+Object.defineProperty(exports, "ParSend", { enumerable: true, get: function () { return _1.ParSend; } });
+Object.defineProperty(exports, "SeqSend", { enumerable: true, get: function () { return _1.SeqSend; } });
+var typeMatch = { code: Number, options: Object, body: type_1.Any, headers: Object };
+/**
+ * AbstractCompleteHandler can be extended to partially implement a
+ * [[CompleteHandler]].
+ */
+var AbstractCompleteHandler = /** @class */ (function () {
+    function AbstractCompleteHandler() {
+    }
+    AbstractCompleteHandler.prototype.onError = function (_) { };
+    AbstractCompleteHandler.prototype.onClientError = function (_) { };
+    AbstractCompleteHandler.prototype.onServerError = function (_) { };
+    AbstractCompleteHandler.prototype.onComplete = function (_) { };
+    return AbstractCompleteHandler;
+}());
+exports.AbstractCompleteHandler = AbstractCompleteHandler;
+/**
+ * AbstractBatchCompleteHandler can be extended to partially implement a
+ * [[BatchCompleteHandler]].
+ */
+var AbstractBatchCompleteHandler = /** @class */ (function (_super) {
+    __extends(AbstractBatchCompleteHandler, _super);
+    function AbstractBatchCompleteHandler() {
+        return _super !== null && _super.apply(this, arguments) || this;
+    }
+    AbstractBatchCompleteHandler.prototype.onBatchComplete = function (_) { };
+    return AbstractBatchCompleteHandler;
+}(AbstractCompleteHandler));
+exports.AbstractBatchCompleteHandler = AbstractBatchCompleteHandler;
+/**
+ * CompositeCompleteHandler allows multiple [[CompleteHandler]]s to be used as
+ * one.
+ */
+var CompositeCompleteHandler = /** @class */ (function () {
+    function CompositeCompleteHandler(handlers) {
+        this.handlers = handlers;
+    }
+    CompositeCompleteHandler.prototype.onError = function (e) {
+        this.handlers.forEach(function (h) { return h.onError(e); });
+    };
+    CompositeCompleteHandler.prototype.onClientError = function (r) {
+        this.handlers.forEach(function (h) { return h.onClientError(r); });
+    };
+    CompositeCompleteHandler.prototype.onServerError = function (r) {
+        this.handlers.forEach(function (h) { return h.onServerError(r); });
+    };
+    CompositeCompleteHandler.prototype.onComplete = function (r) {
+        this.handlers.forEach(function (h) { return h.onComplete(r); });
+    };
+    return CompositeCompleteHandler;
+}());
+exports.CompositeCompleteHandler = CompositeCompleteHandler;
+/**
+ * CompositeBatchCompleteHandler allows multiple [[BatchCompleteHandler]]s to
+ * be used as one.
+ */
+var CompositeBatchCompleteHandler = /** @class */ (function () {
+    function CompositeBatchCompleteHandler(handlers) {
+        this.handlers = handlers;
+    }
+    CompositeBatchCompleteHandler.prototype.onError = function (e) {
+        this.handlers.forEach(function (h) { return h.onError(e); });
+    };
+    CompositeBatchCompleteHandler.prototype.onClientError = function (r) {
+        this.handlers.forEach(function (h) { return h.onClientError(r); });
+    };
+    CompositeBatchCompleteHandler.prototype.onServerError = function (r) {
+        this.handlers.forEach(function (h) { return h.onServerError(r); });
+    };
+    CompositeBatchCompleteHandler.prototype.onBatchComplete = function (r) {
+        this.handlers.forEach(function (h) { return h.onBatchComplete(r); });
+    };
+    return CompositeBatchCompleteHandler;
+}());
+exports.CompositeBatchCompleteHandler = CompositeBatchCompleteHandler;
+/**
+ * SendCallback sends a Send to a Remote's address, processing the response
+ * with the provided handler.
+ */
+var SendCallback = /** @class */ (function (_super) {
+    __extends(SendCallback, _super);
+    function SendCallback(system, remote, request, handler) {
+        var _this = _super.call(this, system) || this;
+        _this.system = system;
+        _this.remote = remote;
+        _this.request = request;
+        _this.handler = handler;
+        return _this;
+    }
+    SendCallback.prototype.receive = function () {
+        var _this = this;
+        return [
+            new case_1.Case(_1.TransportErr, function (e) {
+                _this.handler.onError(e);
+            }),
+            new case_1.Case(typeMatch, function (r) {
+                if (r.code > 499) {
+                    _this.handler.onServerError(r);
+                }
+                else if (r.code > 399) {
+                    _this.handler.onClientError(r);
+                }
+                else {
+                    _this.handler.onComplete(r);
+                }
+            })
+        ];
+    };
+    SendCallback.prototype.run = function () {
+        this.tell(this.remote, new _1.Send(this.self(), this.request));
+    };
+    return SendCallback;
+}(callback_1.Callback));
+exports.SendCallback = SendCallback;
+/**
+ * ParSendCallback sends a ParSend request to a remote, processing the result
+ * with the provided handler.
+ */
+var ParSendCallback = /** @class */ (function (_super) {
+    __extends(ParSendCallback, _super);
+    function ParSendCallback(system, remote, requests, handler) {
+        var _this = _super.call(this, system) || this;
+        _this.system = system;
+        _this.remote = remote;
+        _this.requests = requests;
+        _this.handler = handler;
+        return _this;
+    }
+    ParSendCallback.prototype.receive = function () {
+        var _this = this;
+        return [
+            new case_1.Case(_1.TransportErr, function (e) {
+                _this.handler.onError(e);
+            }),
+            new case_1.Case(_1.BatchResponse, function (r) {
+                var failed = r.value.filter(function (r) { return r.code > 299; });
+                if (failed.length > 0) {
+                    var res = failed[0];
+                    if (res.code > 499) {
+                        _this.handler.onServerError(res);
+                    }
+                    else {
+                        _this.handler.onClientError(res);
+                    }
+                }
+                else {
+                    _this.handler.onBatchComplete(r);
+                }
+            })
+        ];
+    };
+    ParSendCallback.prototype.run = function () {
+        this.tell(this.remote, new _1.ParSend(this.self(), this.requests));
+    };
+    return ParSendCallback;
+}(callback_1.Callback));
+exports.ParSendCallback = ParSendCallback;
+/**
+ * SeqSendCallback sends a SeqSend request to a remote, processing the
+ * response using the provided handler.
+ */
+var SeqSendCallback = /** @class */ (function (_super) {
+    __extends(SeqSendCallback, _super);
+    function SeqSendCallback() {
+        return _super !== null && _super.apply(this, arguments) || this;
+    }
+    SeqSendCallback.prototype.run = function () {
+        this.tell(this.remote, new _1.SeqSend(this.self(), this.requests));
+    };
+    return SeqSendCallback;
+}(ParSendCallback));
+exports.SeqSendCallback = SeqSendCallback;
+
+},{"./":4,"@quenk/noni/lib/data/type":25,"@quenk/potoo/lib/actor/resident/case":31,"@quenk/potoo/lib/actor/resident/immutable/callback":32}],4:[function(require,module,exports){
+"use strict";
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+        return extendStatics(d, b);
+    };
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.Remote = exports.BatchResponse = exports.TransportErr = exports.ParSend = exports.SeqSend = exports.Send = void 0;
+var future_1 = require("@quenk/noni/lib/control/monad/future");
+var case_1 = require("@quenk/potoo/lib/actor/resident/case");
+var actor_1 = require("../../actor");
+/**
+ * Send a single request to the remote host, forwarding the response to the
+ * specified address.
+ */
+var Send = /** @class */ (function () {
+    function Send(client, request) {
+        this.client = client;
+        this.request = request;
+    }
+    return Send;
+}());
+exports.Send = Send;
+/**
+ * ParSend sends a batch of requests to the remote host in sequentially,
+ * forwarding the combined responses to the specified address.
+ */
+var SeqSend = /** @class */ (function () {
+    function SeqSend(client, requests) {
+        this.client = client;
+        this.requests = requests;
+    }
+    return SeqSend;
+}());
+exports.SeqSend = SeqSend;
+/**
+ * ParSend sends a batch of requests to the remote host in parallel, forwarding
+ * the combined responses to the specified address.
+ */
+var ParSend = /** @class */ (function () {
+    function ParSend(client, requests) {
+        this.client = client;
+        this.requests = requests;
+    }
+    return ParSend;
+}());
+exports.ParSend = ParSend;
+/**
+ * TransportErr is a wrapper around errors that occur before the request
+ * reaches the remote end.
+ *
+ * Indicates we were unable to initiate the request for some reason, for example,
+ * the network is down or a Same-Origin policy violation.
+ */
+var TransportErr = /** @class */ (function () {
+    function TransportErr(client, error) {
+        this.client = client;
+        this.error = error;
+    }
+    Object.defineProperty(TransportErr.prototype, "message", {
+        get: function () {
+            return this.error.message;
+        },
+        enumerable: false,
+        configurable: true
+    });
+    return TransportErr;
+}());
+exports.TransportErr = TransportErr;
+/**
+ * BatchResponse is a combined list of responses for batch requests.
+ */
+var BatchResponse = /** @class */ (function () {
+    function BatchResponse(value) {
+        this.value = value;
+    }
+    return BatchResponse;
+}());
+exports.BatchResponse = BatchResponse;
+/**
+ * Remote represents an HTTP server the app has access to.
+ *
+ * This actor is an abstraction over the `@quenk/jhr` so that requests
+ * can be sent via message passing. However, this abstraction is more
+ * concerned with application level logic than the details of the HTTP
+ * protocols.
+ */
+var Remote = /** @class */ (function (_super) {
+    __extends(Remote, _super);
+    function Remote(agent, system) {
+        var _this = _super.call(this, system) || this;
+        _this.agent = agent;
+        _this.system = system;
+        _this.onUnit = function (_a) {
+            var client = _a.client, request = _a.request;
+            var onErr = function (e) {
+                return _this.tell(client, new TransportErr(client, e));
+            };
+            var onSucc = function (res) {
+                return _this.tell(client, res);
+            };
+            _this
+                .agent
+                .send(request)
+                .fork(onErr, onSucc);
+        };
+        _this.onParallel = function (_a) {
+            var client = _a.client, requests = _a.requests;
+            var agent = _this.agent;
+            var onErr = function (e) { return _this.tell(client, e); };
+            var onSucc = function (res) {
+                return _this.tell(client, new BatchResponse(res));
+            };
+            var rs = requests
+                .map(function (r) {
+                return agent
+                    .send(r)
+                    .catch(function (e) { return future_1.raise(new TransportErr(client, e)); });
+            });
+            future_1.parallel(rs).fork(onErr, onSucc);
+        };
+        _this.onSequential = function (_a) {
+            var client = _a.client, requests = _a.requests;
+            var agent = _this.agent;
+            var onErr = function (e) { return _this.tell(client, e); };
+            var onSucc = function (res) {
+                return _this.tell(client, new BatchResponse(res));
+            };
+            var rs = requests
+                .map(function (r) {
+                return agent
+                    .send(r)
+                    .catch(function (e) { return future_1.raise(new TransportErr(client, e)); });
+            });
+            future_1.sequential(rs).fork(onErr, onSucc);
+        };
+        return _this;
+    }
+    Remote.prototype.receive = function () {
+        return [
+            new case_1.Case(Send, this.onUnit),
+            new case_1.Case(ParSend, this.onParallel),
+            new case_1.Case(SeqSend, this.onSequential)
+        ];
+    };
+    return Remote;
+}(actor_1.Immutable));
+exports.Remote = Remote;
+
+},{"../../actor":1,"@quenk/noni/lib/control/monad/future":15,"@quenk/potoo/lib/actor/resident/case":31}],5:[function(require,module,exports){
+"use strict";
+/**
+ * Provides a base data model implementation based on the remote and callback
+ * apis. NOTE: Responses received by this API are expected to be in the result
+ * format specified.
+ */
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+        return extendStatics(d, b);
+    };
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.RemoteModel = exports.NotFoundHandler = exports.FutureHandler = void 0;
+/** imports */
+var future_1 = require("@quenk/noni/lib/control/monad/future");
+var maybe_1 = require("@quenk/noni/lib/data/maybe");
+var string_1 = require("@quenk/noni/lib/data/string");
+var request_1 = require("@quenk/jhr/lib/request");
+var callback_1 = require("../callback");
+var DefaultCompleteHandler = /** @class */ (function (_super) {
+    __extends(DefaultCompleteHandler, _super);
+    function DefaultCompleteHandler() {
+        return _super !== null && _super.apply(this, arguments) || this;
+    }
+    return DefaultCompleteHandler;
+}(callback_1.AbstractCompleteHandler));
+/**
+ * FutureHandler is used to proxy the events of a request's lifecycle to a noni
+ * [[Future]].
+ *
+ * The [[CompleteHandler]] provided also receives the events as they happen
+ * however work is assumed to be handled in the Future.
+ */
+var FutureHandler = /** @class */ (function () {
+    function FutureHandler(handler, onFailure, onSuccess) {
+        this.handler = handler;
+        this.onFailure = onFailure;
+        this.onSuccess = onSuccess;
+    }
+    FutureHandler.prototype.onError = function (e) {
+        this.handler.onError(e);
+        this.onFailure(e.error instanceof Error ?
+            e.error :
+            new Error(e.error.message));
+    };
+    FutureHandler.prototype.onClientError = function (r) {
+        this.handler.onClientError(r);
+        var e = new Error('ClientError');
+        e.code = r.code;
+        this.onFailure(e);
+    };
+    FutureHandler.prototype.onServerError = function (r) {
+        this.handler.onServerError(r);
+        var e = new Error('ServerError');
+        e.code = r.code;
+        this.onFailure(e);
+    };
+    FutureHandler.prototype.onComplete = function (r) {
+        this.handler.onComplete(r);
+        this.onSuccess(r);
+    };
+    return FutureHandler;
+}());
+exports.FutureHandler = FutureHandler;
+/**
+ * NotFoundHandler does not treat a 404 as an error.
+ *
+ * The onNotFound handler is used instead.
+ */
+var NotFoundHandler = /** @class */ (function (_super) {
+    __extends(NotFoundHandler, _super);
+    function NotFoundHandler(handler, onFailure, onNotFound, onSuccess) {
+        var _this = _super.call(this, handler, onFailure, onSuccess) || this;
+        _this.handler = handler;
+        _this.onFailure = onFailure;
+        _this.onNotFound = onNotFound;
+        _this.onSuccess = onSuccess;
+        return _this;
+    }
+    NotFoundHandler.prototype.onClientError = function (r) {
+        if (r.code === 404)
+            this.onNotFound();
+        else
+            _super.prototype.onClientError.call(this, r);
+    };
+    return NotFoundHandler;
+}(FutureHandler));
+exports.NotFoundHandler = NotFoundHandler;
+/**
+ * RemoteModel provides a Model implementation that relies on the [[Remote]]
+ * actor.
+ *
+ * A handler can be provided to observe the result of requests if more data
+ * is needed than the Model api provides.
+ */
+var RemoteModel = /** @class */ (function () {
+    function RemoteModel(remote, path, spawn, handler) {
+        if (handler === void 0) { handler = new DefaultCompleteHandler(); }
+        this.remote = remote;
+        this.path = path;
+        this.spawn = spawn;
+        this.handler = handler;
+    }
+    /**
+     * create a new entry for the data type.
+     */
+    RemoteModel.prototype.create = function (data) {
+        var _this = this;
+        return future_1.fromCallback(function (cb) {
+            _this.spawn(function (s) { return new callback_1.SendCallback(s, _this.remote, new request_1.Post(_this.path, data), new FutureHandler(_this.handler, cb, function (r) {
+                cb(null, r.body.data.id);
+            })); });
+        });
+    };
+    /**
+     * search for entries that match the provided query.
+     */
+    RemoteModel.prototype.search = function (qry) {
+        var _this = this;
+        return future_1.fromCallback(function (cb) {
+            _this.spawn(function (s) { return new callback_1.SendCallback(s, _this.remote, new request_1.Get(_this.path, qry), new FutureHandler(_this.handler, cb, function (r) {
+                cb(null, (r.code === 204) ?
+                    [] : r.body.data);
+            })); });
+        });
+    };
+    /**
+     * update a single entry using its id.
+     */
+    RemoteModel.prototype.update = function (id, changes) {
+        var _this = this;
+        return future_1.fromCallback(function (cb) {
+            _this.spawn(function (s) { return new callback_1.SendCallback(s, _this.remote, new request_1.Patch(string_1.interpolate(_this.path, { id: id }), changes), new FutureHandler(_this.handler, cb, function (r) {
+                cb(null, (r.code === 200) ? true : false);
+            })); });
+        });
+    };
+    /**
+     * get a single entry by its id.
+     */
+    RemoteModel.prototype.get = function (id) {
+        var _this = this;
+        return future_1.fromCallback(function (cb) {
+            _this.spawn(function (s) { return new callback_1.SendCallback(s, _this.remote, new request_1.Get(string_1.interpolate(_this.path, { id: id }), {}), new NotFoundHandler(_this.handler, cb, function () {
+                cb(null, maybe_1.nothing());
+            }, function (r) {
+                cb(null, maybe_1.fromNullable(r.body.data));
+            })); });
+        });
+    };
+    /**
+     * remove a single entry by its id.
+     */
+    RemoteModel.prototype.remove = function (id) {
+        var _this = this;
+        return future_1.fromCallback(function (cb) {
+            _this.spawn(function (s) { return new callback_1.SendCallback(s, _this.remote, new request_1.Delete(string_1.interpolate(_this.path, { id: id }), {}), new FutureHandler(_this.handler, cb, function (r) {
+                cb(null, (r.code === 200) ? true : false);
+            })); });
+        });
+    };
+    return RemoteModel;
+}());
+exports.RemoteModel = RemoteModel;
+
+},{"../callback":3,"@quenk/jhr/lib/request":9,"@quenk/noni/lib/control/monad/future":15,"@quenk/noni/lib/data/maybe":21,"@quenk/noni/lib/data/string":24}],6:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -70,13 +654,208 @@ var __spreadArrays = (this && this.__spreadArrays) || function () {
     return r;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Director = exports.ActorSuspended = exports.RouteChanged = exports.Supervisor = exports.SuspendActor = exports.SuspendTimer = exports.CancelTimer = exports.Suspended = exports.Suspend = exports.Reload = exports.Resume = exports.DEFAULT_TIMEOUT = void 0;
+exports.RemoteObserver = exports.BatchResponse = exports.SeqSend = exports.ParSend = exports.Send = exports.TransportErr = void 0;
+var match_1 = require("@quenk/noni/lib/control/match");
+var response_1 = require("@quenk/jhr/lib/response");
+var case_1 = require("@quenk/potoo/lib/actor/resident/case");
+var actor_1 = require("../../../actor");
+var __1 = require("../");
+Object.defineProperty(exports, "TransportErr", { enumerable: true, get: function () { return __1.TransportErr; } });
+Object.defineProperty(exports, "Send", { enumerable: true, get: function () { return __1.Send; } });
+Object.defineProperty(exports, "ParSend", { enumerable: true, get: function () { return __1.ParSend; } });
+Object.defineProperty(exports, "SeqSend", { enumerable: true, get: function () { return __1.SeqSend; } });
+Object.defineProperty(exports, "BatchResponse", { enumerable: true, get: function () { return __1.BatchResponse; } });
+/**
+ * RemoteObserver is a bridge to a [[Remote]] (the Remote is spawned internally)
+ * that allows requests and responses to be observed.
+ *
+ * Observation is done via the passed StageListener. This actor exists primarly
+ * for the manipulation of UI indicators when requests are made in the
+ * foreground of an application.
+ */
+var RemoteObserver = /** @class */ (function (_super) {
+    __extends(RemoteObserver, _super);
+    function RemoteObserver(agent, listener, system) {
+        var _this = _super.call(this, system) || this;
+        _this.agent = agent;
+        _this.listener = listener;
+        _this.system = system;
+        _this.remote = '?';
+        _this.onWake = function (req) {
+            _this.send(req);
+            _this.select(_this.pending(req, []));
+        };
+        _this.onRequest = function (current, buffer) {
+            return function (msg) {
+                _this.select(_this.pending(current, __spreadArrays(buffer, [msg])));
+            };
+        };
+        _this.onError = function (current) { return function (err) {
+            _this.listener.onError(err);
+            _this.listener.onFinish();
+            _this.tell(current.client, new __1.TransportErr(current.client, err.error));
+        }; };
+        _this.onResponse = function (current, buffer) {
+            return function (r) {
+                var res = r;
+                if (r instanceof __1.BatchResponse) {
+                    var failed = r.value.filter(function (r) { return r.code > 299; });
+                    if (failed.length > 0)
+                        res = failed[0];
+                }
+                else {
+                    res = r;
+                }
+                if (res.code > 499) {
+                    _this.listener.onServerError(res);
+                }
+                else if (res.code > 399) {
+                    _this.listener.onClientError(res);
+                }
+                else {
+                    _this.listener.onComplete(res);
+                }
+                _this.listener.onFinish();
+                _this.tell(current.client, res);
+                if (buffer.length > 0) {
+                    var next = buffer[0];
+                    _this.send(next);
+                    _this.select(_this.pending(next, buffer.slice()));
+                }
+                else {
+                    _this.select(_this.idle());
+                }
+            };
+        };
+        return _this;
+    }
+    RemoteObserver.prototype.idle = function () {
+        return [
+            new case_1.Case(__1.Send, this.onWake),
+            new case_1.Case(__1.ParSend, this.onWake),
+            new case_1.Case(__1.SeqSend, this.onWake),
+        ];
+    };
+    RemoteObserver.prototype.pending = function (current, buffer) {
+        var onReq = this.onRequest(current, buffer);
+        var onRes = this.onResponse(current, buffer);
+        return [
+            new case_1.Case(__1.Send, onReq),
+            new case_1.Case(__1.ParSend, onReq),
+            new case_1.Case(__1.SeqSend, onReq),
+            new case_1.Case(__1.TransportErr, this.onError(current)),
+            new case_1.Case(response_1.GenericResponse, onRes),
+            new case_1.Case(__1.BatchResponse, onRes),
+        ];
+    };
+    RemoteObserver.prototype.send = function (req) {
+        var self = this.self();
+        this.listener.onStart(req);
+        var msg = match_1.match(req)
+            .caseOf(__1.Send, function (msg) {
+            return new __1.Send(self, msg.request);
+        })
+            .caseOf(__1.ParSend, function (msg) {
+            return new __1.ParSend(self, msg.requests);
+        })
+            .caseOf(__1.SeqSend, function (msg) {
+            return new __1.SeqSend(self, msg.requests);
+        })
+            .end();
+        this.tell(this.remote, msg);
+    };
+    RemoteObserver.prototype.run = function () {
+        var _this = this;
+        this.remote = this.spawn(function (s) { return new __1.Remote(_this.agent, s); });
+        this.select(this.idle());
+    };
+    return RemoteObserver;
+}(actor_1.Mutable));
+exports.RemoteObserver = RemoteObserver;
+
+},{"../":4,"../../../actor":1,"@quenk/jhr/lib/response":11,"@quenk/noni/lib/control/match":14,"@quenk/potoo/lib/actor/resident/case":31}],7:[function(require,module,exports){
+"use strict";
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+        return extendStatics(d, b);
+    };
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
+var __generator = (this && this.__generator) || function (thisArg, body) {
+    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
+    return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
+    function verb(n) { return function (v) { return step([n, v]); }; }
+    function step(op) {
+        if (f) throw new TypeError("Generator is already executing.");
+        while (_) try {
+            if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
+            if (y = 0, t) op = [op[0] & 2, t.value];
+            switch (op[0]) {
+                case 0: case 1: t = op; break;
+                case 4: _.label++; return { value: op[1], done: false };
+                case 5: _.label++; y = op[1]; op = [0]; continue;
+                case 7: op = _.ops.pop(); _.trys.pop(); continue;
+                default:
+                    if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) { _ = 0; continue; }
+                    if (op[0] === 3 && (!t || (op[1] > t[0] && op[1] < t[3]))) { _.label = op[1]; break; }
+                    if (op[0] === 6 && _.label < t[1]) { _.label = t[1]; t = op; break; }
+                    if (t && _.label < t[2]) { _.label = t[2]; _.ops.push(op); break; }
+                    if (t[2]) _.ops.pop();
+                    _.trys.pop(); continue;
+            }
+            op = body.call(thisArg, _);
+        } catch (e) { op = [6, e]; y = 0; } finally { f = t = 0; }
+        if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
+    }
+};
+var __spreadArrays = (this && this.__spreadArrays) || function () {
+    for (var s = 0, i = 0, il = arguments.length; i < il; i++) s += arguments[i].length;
+    for (var r = Array(s), k = 0, i = 0; i < il; i++)
+        for (var a = arguments[i], j = 0, jl = a.length; j < jl; j++, k++)
+            r[k] = a[j];
+    return r;
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.Director = exports.ActorSuspended = exports.RouteChanged = exports.Supervisor = exports.SuspendActor = exports.SuspendTimer = exports.CancelTimer = exports.Suspended = exports.Suspend = exports.Reload = exports.Resume = exports.SuspendCase = exports.DEFAULT_TIMEOUT = void 0;
 var record_1 = require("@quenk/noni/lib/data/record");
 var type_1 = require("@quenk/noni/lib/data/type");
 var future_1 = require("@quenk/noni/lib/control/monad/future");
 var case_1 = require("@quenk/potoo/lib/actor/resident/case");
-var actor_1 = require("../actor");
+var actor_1 = require("../../actor");
 exports.DEFAULT_TIMEOUT = 1000;
+/**
+ * SuspendCase invokes [[SuspendListener.beforeSuspend]] upon receiving a
+ * [[Suspend]] message then informs the Director that the actor has been
+ * suspended.
+ */
+var SuspendCase = /** @class */ (function (_super) {
+    __extends(SuspendCase, _super);
+    function SuspendCase(listener, director) {
+        var _this = _super.call(this, Suspend, function (s) { return future_1.doFuture(function () {
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0: return [4 /*yield*/, future_1.wrap(listener.beforeSuspended(s))];
+                    case 1:
+                        _a.sent();
+                        listener.tell(director, new Suspended(listener.self()));
+                        return [2 /*return*/, future_1.voidPure];
+                }
+            });
+        }); }) || this;
+        _this.listener = listener;
+        _this.director = director;
+        return _this;
+    }
+    return SuspendCase;
+}(case_1.Case));
+exports.SuspendCase = SuspendCase;
 /**
  * Resume hints to the receiving actor that is now the current actor and can
  * stream messages.
@@ -350,1075 +1129,7 @@ var defaultConfig = function (c) {
     return record_1.merge({ timeout: exports.DEFAULT_TIMEOUT }, c);
 };
 
-},{"../actor":1,"@quenk/noni/lib/control/monad/future":18,"@quenk/noni/lib/data/record":25,"@quenk/noni/lib/data/type":28,"@quenk/potoo/lib/actor/resident/case":34}],3:[function(require,module,exports){
-"use strict";
-var __extends = (this && this.__extends) || (function () {
-    var extendStatics = function (d, b) {
-        extendStatics = Object.setPrototypeOf ||
-            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
-        return extendStatics(d, b);
-    };
-    return function (d, b) {
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
-var __spreadArrays = (this && this.__spreadArrays) || function () {
-    for (var s = 0, i = 0, il = arguments.length; i < il; i++) s += arguments[i].length;
-    for (var r = Array(s), k = 0, i = 0; i < il; i++)
-        for (var a = arguments[i], j = 0, jl = a.length; j < jl; j++, k++)
-            r[k] = a[j];
-    return r;
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.AbstractActiveForm = exports.SaveOkCase = exports.FailedCase = exports.SaveCase = exports.AbortCase = exports.FieldInputEventCase = exports.FormSaved = exports.FormAborted = exports.SaveOk = exports.SaveFailed = exports.Save = exports.Abort = void 0;
-var type_1 = require("@quenk/noni/lib/data/type");
-var record_1 = require("@quenk/noni/lib/data/record");
-var array_1 = require("@quenk/noni/lib/data/array");
-var case_1 = require("@quenk/potoo/lib/actor/resident/case");
-var actor_1 = require("../../../actor");
-var __1 = require("../");
-Object.defineProperty(exports, "Abort", { enumerable: true, get: function () { return __1.Abort; } });
-Object.defineProperty(exports, "Save", { enumerable: true, get: function () { return __1.Save; } });
-Object.defineProperty(exports, "SaveFailed", { enumerable: true, get: function () { return __1.SaveFailed; } });
-Object.defineProperty(exports, "SaveOk", { enumerable: true, get: function () { return __1.SaveOk; } });
-Object.defineProperty(exports, "FormAborted", { enumerable: true, get: function () { return __1.FormAborted; } });
-Object.defineProperty(exports, "FormSaved", { enumerable: true, get: function () { return __1.FormSaved; } });
-/**
- * FieldInputEventCase defers input to the ValidateStategy.
- */
-var FieldInputEventCase = /** @class */ (function (_super) {
-    __extends(FieldInputEventCase, _super);
-    function FieldInputEventCase(form) {
-        var _this = _super.call(this, { name: String, value: type_1.Any }, function (e) {
-            return form.validateStrategy.validate(e);
-        }) || this;
-        _this.form = form;
-        return _this;
-    }
-    return FieldInputEventCase;
-}(case_1.Case));
-exports.FieldInputEventCase = FieldInputEventCase;
-/**
- * AbortCase informs the ActiveForm's owner, then terminates the ActiveForm.
- */
-var AbortCase = /** @class */ (function (_super) {
-    __extends(AbortCase, _super);
-    function AbortCase(form) {
-        var _this = _super.call(this, __1.Abort, function (_) {
-            form.tell(form.owner, new __1.FormAborted(form.self()));
-            form.exit();
-        }) || this;
-        _this.form = form;
-        return _this;
-    }
-    return AbortCase;
-}(case_1.Case));
-exports.AbortCase = AbortCase;
-/**
- * SaveCase invokes the [[ActiveForm.save]].
- */
-var SaveCase = /** @class */ (function (_super) {
-    __extends(SaveCase, _super);
-    function SaveCase(form) {
-        var _this = _super.call(this, __1.Save, function (_) {
-            form.save();
-        }) || this;
-        _this.form = form;
-        return _this;
-    }
-    return SaveCase;
-}(case_1.Case));
-exports.SaveCase = SaveCase;
-/**
- * FailedCase invokes [[ActiveForm.onFailed]].
- */
-var FailedCase = /** @class */ (function (_super) {
-    __extends(FailedCase, _super);
-    function FailedCase(form) {
-        var _this = _super.call(this, __1.SaveFailed, function (f) { return form.onSaveFailed(f); }) || this;
-        _this.form = form;
-        return _this;
-    }
-    return FailedCase;
-}(case_1.Case));
-exports.FailedCase = FailedCase;
-/**
- * SaveOkCase informs the ActiveForm's owner and exits.
- */
-var SaveOkCase = /** @class */ (function (_super) {
-    __extends(SaveOkCase, _super);
-    function SaveOkCase(form) {
-        var _this = _super.call(this, __1.SaveOk, function (_) {
-            form.tell(form.owner, new __1.FormSaved(form.self()));
-            form.exit();
-        }) || this;
-        _this.form = form;
-        return _this;
-    }
-    return SaveOkCase;
-}(case_1.Case));
-exports.SaveOkCase = SaveOkCase;
-/**
- * AbstractActiveForm implements the FormFeedback interface.
- *
- * Child classes provide a ValidateStrategy and a save() implementation to
- * provide the logic of saving data. This actor listens for ActiveFormMessage
- * messages including anything that looks like a FieldInputEvent.
- *
- * These messages can be used to update the values captured or the [[set]]
- * method can be used directly (bypasses validation).
- *
- * @param owner   The address of the class that owns this actor.
- * @param system  The potoo System this actor belongs to.
- * @param value   Value of the AbstractActiveForm tracked by the APIs of this
- *                class. This should not be modified directly or outside this
- *                class.
- */
-var AbstractActiveForm = /** @class */ (function (_super) {
-    __extends(AbstractActiveForm, _super);
-    function AbstractActiveForm(system, owner, value) {
-        if (value === void 0) { value = {}; }
-        var _this = _super.call(this, system) || this;
-        _this.system = system;
-        _this.owner = owner;
-        _this.value = value;
-        /**
-         * fieldsModified tracks the names of those fields whose values have been
-         * modified via this class's APIs.
-         */
-        _this.fieldsModifed = [];
-        return _this;
-    }
-    AbstractActiveForm.prototype.receive = function () {
-        return __spreadArrays(this.getAdditionalMessages(), [
-            new AbortCase(this),
-            new SaveCase(this),
-            new FailedCase(this),
-            new SaveOkCase(this),
-            new FieldInputEventCase(this)
-        ]);
-    };
-    AbstractActiveForm.prototype.set = function (name, value) {
-        if (!array_1.contains(this.fieldsModifed, name))
-            this.fieldsModifed.push(name);
-        this.value[name] = value;
-        return this;
-    };
-    AbstractActiveForm.prototype.getValues = function () {
-        return record_1.clone(this.value);
-    };
-    AbstractActiveForm.prototype.getModifiedValues = function () {
-        var _this = this;
-        return record_1.filter(this.value, function (_, k) {
-            return array_1.contains(_this.fieldsModifed, k);
-        });
-    };
-    AbstractActiveForm.prototype.onSaveFailed = function (_) { };
-    AbstractActiveForm.prototype.onFieldInvalid = function () { };
-    AbstractActiveForm.prototype.onFieldValid = function () { };
-    AbstractActiveForm.prototype.onFormInvalid = function () { };
-    AbstractActiveForm.prototype.onFormValid = function () { };
-    /**
-     * getAdditionalMessages can be overriden to allow other messages to
-     * be handled by child classes.
-     */
-    AbstractActiveForm.prototype.getAdditionalMessages = function () {
-        return [];
-    };
-    return AbstractActiveForm;
-}(actor_1.Immutable));
-exports.AbstractActiveForm = AbstractActiveForm;
-
-},{"../":5,"../../../actor":1,"@quenk/noni/lib/data/array":21,"@quenk/noni/lib/data/record":25,"@quenk/noni/lib/data/type":28,"@quenk/potoo/lib/actor/resident/case":34}],4:[function(require,module,exports){
-"use strict";
-var __extends = (this && this.__extends) || (function () {
-    var extendStatics = function (d, b) {
-        extendStatics = Object.setPrototypeOf ||
-            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
-        return extendStatics(d, b);
-    };
-    return function (d, b) {
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.AllForOneModifiedStrategy = exports.AllForOneStrategy = exports.OneForOneStrategy = exports.NoStrategy = void 0;
-/**
- * NoStrategy simply sets the captured values on the ActiveForm.
- *
- * This is useful if all validation is done on the server side.
- */
-var NoStrategy = /** @class */ (function () {
-    function NoStrategy(form) {
-        this.form = form;
-    }
-    NoStrategy.prototype.validate = function (_a) {
-        var name = _a.name, value = _a.value;
-        this.form.set(name, value);
-    };
-    return NoStrategy;
-}());
-exports.NoStrategy = NoStrategy;
-/**
- * OneForOneStrategy validates event input and triggers the respect
- * onField(In)?Valid callback.
- */
-var OneForOneStrategy = /** @class */ (function () {
-    function OneForOneStrategy(form, validator) {
-        this.form = form;
-        this.validator = validator;
-    }
-    OneForOneStrategy.prototype.validate = function (_a) {
-        var name = _a.name, value = _a.value;
-        var _b = this, form = _b.form, validator = _b.validator;
-        var eResult = validator.validate(name, value);
-        if (eResult.isLeft()) {
-            form.onFieldInvalid(name, value, eResult.takeLeft());
-        }
-        else {
-            var value_1 = eResult.takeRight();
-            form.set(name, value_1);
-            form.onFieldValid(name, value_1);
-        }
-    };
-    return OneForOneStrategy;
-}());
-exports.OneForOneStrategy = OneForOneStrategy;
-/**
- * AllForOneStrategy validtes FieldInputEvent input and invokes the
- * respective callbacks.
- *
- * Callbacks for the entire form are also invoked.
- */
-var AllForOneStrategy = /** @class */ (function () {
-    function AllForOneStrategy(form, validator) {
-        this.form = form;
-        this.validator = validator;
-    }
-    AllForOneStrategy.prototype.getValues = function () {
-        return this.form.getValues();
-    };
-    AllForOneStrategy.prototype.validate = function (_a) {
-        var name = _a.name, value = _a.value;
-        var _b = this, form = _b.form, validator = _b.validator;
-        var eResult = validator.validate(name, value);
-        if (eResult.isLeft()) {
-            form.onFieldInvalid(name, value, eResult.takeLeft());
-            form.onFormInvalid();
-        }
-        else {
-            var value_2 = eResult.takeRight();
-            form.set(name, value_2);
-            form.onFieldValid(name, value_2);
-            var eAllResult = validator.validateAll(this.getValues());
-            if (eAllResult.isRight())
-                form.onFormValid();
-            else
-                form.onFormInvalid();
-        }
-    };
-    return AllForOneStrategy;
-}());
-exports.AllForOneStrategy = AllForOneStrategy;
-/**
- * AllForOneModifiedStrategy is simillar to AllForOneStrategy
- * but only considers the values that have been modified when validating
- * the entire form.
- */
-var AllForOneModifiedStrategy = /** @class */ (function (_super) {
-    __extends(AllForOneModifiedStrategy, _super);
-    function AllForOneModifiedStrategy() {
-        return _super !== null && _super.apply(this, arguments) || this;
-    }
-    AllForOneModifiedStrategy.prototype.getValues = function () {
-        return this.form.getModifiedValues();
-    };
-    return AllForOneModifiedStrategy;
-}(AllForOneStrategy));
-exports.AllForOneModifiedStrategy = AllForOneModifiedStrategy;
-
-},{}],5:[function(require,module,exports){
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.FormSaved = exports.FormAborted = exports.SaveFailed = exports.SaveOk = exports.Save = exports.Abort = void 0;
-/**
- * Abort causes an ActiveForm to cease operations and return control to the
- * actor that owns it.
- */
-var Abort = /** @class */ (function () {
-    function Abort() {
-    }
-    return Abort;
-}());
-exports.Abort = Abort;
-/**
- * Save causes an ActiveForm to trigger saving of the data collected thus far.
- */
-var Save = /** @class */ (function () {
-    function Save() {
-    }
-    return Save;
-}());
-exports.Save = Save;
-/**
- * SaveOk signals to an ActiveForm that its "save" operation was successful.
- */
-var SaveOk = /** @class */ (function () {
-    function SaveOk() {
-    }
-    return SaveOk;
-}());
-exports.SaveOk = SaveOk;
-/**
- * SaveFailed signals to an ActiveForm that its "save" operation has failed.
- */
-var SaveFailed = /** @class */ (function () {
-    function SaveFailed(errors) {
-        if (errors === void 0) { errors = {}; }
-        this.errors = errors;
-    }
-    return SaveFailed;
-}());
-exports.SaveFailed = SaveFailed;
-/**
- * FormAborted is sent by an ActiveForm to its owner when the form has been
- * aborted.
- */
-var FormAborted = /** @class */ (function () {
-    function FormAborted(form) {
-        this.form = form;
-    }
-    return FormAborted;
-}());
-exports.FormAborted = FormAborted;
-/**
- * FormSaved is sent by an ActiveForm to its owner when it has been successfully
- * saved its data.
- */
-var FormSaved = /** @class */ (function () {
-    function FormSaved(form) {
-        this.form = form;
-    }
-    return FormSaved;
-}());
-exports.FormSaved = FormSaved;
-
-},{}],6:[function(require,module,exports){
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.JApp = void 0;
-var vm_1 = require("@quenk/potoo/lib/actor/system/vm");
-/**
- * JApp provides a default implementation of an App.
- *
- * This class takes care of the methods and properties required by potoo.
- * Implementers should spawn child actors in the run method.
- */
-var JApp = /** @class */ (function () {
-    function JApp(conf) {
-        if (conf === void 0) { conf = {}; }
-        this.conf = conf;
-        this.vm = vm_1.PVM.create(this, this.conf);
-    }
-    JApp.prototype.getPlatform = function () {
-        return this.vm;
-    };
-    JApp.prototype.tell = function (addr, msg) {
-        this.vm.tell(addr, msg);
-        return this;
-    };
-    JApp.prototype.spawn = function (t) {
-        return this.vm.spawn(this.vm, t);
-    };
-    return JApp;
-}());
-exports.JApp = JApp;
-
-},{"@quenk/potoo/lib/actor/system/vm":42}],7:[function(require,module,exports){
-"use strict";
-/**
- * This module provides actors for sending requests to a [[Remote]] and
- * executing some action depending on the result. Callbacks should be spawned
- * each time a parent actor wants to make a request, once a response is
- * received, they exit. The response from the request can be handled
- * by specifying a handler object to the callback's constructor.
- */
-var __extends = (this && this.__extends) || (function () {
-    var extendStatics = function (d, b) {
-        extendStatics = Object.setPrototypeOf ||
-            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
-        return extendStatics(d, b);
-    };
-    return function (d, b) {
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.SeqSendCallback = exports.ParSendCallback = exports.SendCallback = exports.CompositeBatchCompleteHandler = exports.CompositeCompleteHandler = exports.AbstractBatchCompleteHandler = exports.AbstractCompleteHandler = exports.SeqSend = exports.ParSend = exports.Send = void 0;
-/** imports */
-var type_1 = require("@quenk/noni/lib/data/type");
-var case_1 = require("@quenk/potoo/lib/actor/resident/case");
-var callback_1 = require("@quenk/potoo/lib/actor/resident/immutable/callback");
-var _1 = require("./");
-Object.defineProperty(exports, "Send", { enumerable: true, get: function () { return _1.Send; } });
-Object.defineProperty(exports, "ParSend", { enumerable: true, get: function () { return _1.ParSend; } });
-Object.defineProperty(exports, "SeqSend", { enumerable: true, get: function () { return _1.SeqSend; } });
-var typeMatch = { code: Number, options: Object, body: type_1.Any, headers: Object };
-/**
- * AbstractCompleteHandler can be extended to partially implement a
- * [[CompleteHandler]].
- */
-var AbstractCompleteHandler = /** @class */ (function () {
-    function AbstractCompleteHandler() {
-    }
-    AbstractCompleteHandler.prototype.onError = function (_) { };
-    AbstractCompleteHandler.prototype.onClientError = function (_) { };
-    AbstractCompleteHandler.prototype.onServerError = function (_) { };
-    AbstractCompleteHandler.prototype.onComplete = function (_) { };
-    return AbstractCompleteHandler;
-}());
-exports.AbstractCompleteHandler = AbstractCompleteHandler;
-/**
- * AbstractBatchCompleteHandler can be extended to partially implement a
- * [[BatchCompleteHandler]].
- */
-var AbstractBatchCompleteHandler = /** @class */ (function (_super) {
-    __extends(AbstractBatchCompleteHandler, _super);
-    function AbstractBatchCompleteHandler() {
-        return _super !== null && _super.apply(this, arguments) || this;
-    }
-    AbstractBatchCompleteHandler.prototype.onBatchComplete = function (_) { };
-    return AbstractBatchCompleteHandler;
-}(AbstractCompleteHandler));
-exports.AbstractBatchCompleteHandler = AbstractBatchCompleteHandler;
-/**
- * CompositeCompleteHandler allows multiple [[CompleteHandler]]s to be used as
- * one.
- */
-var CompositeCompleteHandler = /** @class */ (function () {
-    function CompositeCompleteHandler(handlers) {
-        this.handlers = handlers;
-    }
-    CompositeCompleteHandler.prototype.onError = function (e) {
-        this.handlers.forEach(function (h) { return h.onError(e); });
-    };
-    CompositeCompleteHandler.prototype.onClientError = function (r) {
-        this.handlers.forEach(function (h) { return h.onClientError(r); });
-    };
-    CompositeCompleteHandler.prototype.onServerError = function (r) {
-        this.handlers.forEach(function (h) { return h.onServerError(r); });
-    };
-    CompositeCompleteHandler.prototype.onComplete = function (r) {
-        this.handlers.forEach(function (h) { return h.onComplete(r); });
-    };
-    return CompositeCompleteHandler;
-}());
-exports.CompositeCompleteHandler = CompositeCompleteHandler;
-/**
- * CompositeBatchCompleteHandler allows multiple [[BatchCompleteHandler]]s to
- * be used as one.
- */
-var CompositeBatchCompleteHandler = /** @class */ (function () {
-    function CompositeBatchCompleteHandler(handlers) {
-        this.handlers = handlers;
-    }
-    CompositeBatchCompleteHandler.prototype.onError = function (e) {
-        this.handlers.forEach(function (h) { return h.onError(e); });
-    };
-    CompositeBatchCompleteHandler.prototype.onClientError = function (r) {
-        this.handlers.forEach(function (h) { return h.onClientError(r); });
-    };
-    CompositeBatchCompleteHandler.prototype.onServerError = function (r) {
-        this.handlers.forEach(function (h) { return h.onServerError(r); });
-    };
-    CompositeBatchCompleteHandler.prototype.onBatchComplete = function (r) {
-        this.handlers.forEach(function (h) { return h.onBatchComplete(r); });
-    };
-    return CompositeBatchCompleteHandler;
-}());
-exports.CompositeBatchCompleteHandler = CompositeBatchCompleteHandler;
-/**
- * SendCallback sends a Send to a Remote's address, processing the response
- * with the provided handler.
- */
-var SendCallback = /** @class */ (function (_super) {
-    __extends(SendCallback, _super);
-    function SendCallback(system, remote, request, handler) {
-        var _this = _super.call(this, system) || this;
-        _this.system = system;
-        _this.remote = remote;
-        _this.request = request;
-        _this.handler = handler;
-        return _this;
-    }
-    SendCallback.prototype.receive = function () {
-        var _this = this;
-        return [
-            new case_1.Case(_1.TransportErr, function (e) {
-                _this.handler.onError(e);
-            }),
-            new case_1.Case(typeMatch, function (r) {
-                if (r.code > 499) {
-                    _this.handler.onServerError(r);
-                }
-                else if (r.code > 399) {
-                    _this.handler.onClientError(r);
-                }
-                else {
-                    _this.handler.onComplete(r);
-                }
-            })
-        ];
-    };
-    SendCallback.prototype.run = function () {
-        this.tell(this.remote, new _1.Send(this.self(), this.request));
-    };
-    return SendCallback;
-}(callback_1.Callback));
-exports.SendCallback = SendCallback;
-/**
- * ParSendCallback sends a ParSend request to a remote, processing the result
- * with the provided handler.
- */
-var ParSendCallback = /** @class */ (function (_super) {
-    __extends(ParSendCallback, _super);
-    function ParSendCallback(system, remote, requests, handler) {
-        var _this = _super.call(this, system) || this;
-        _this.system = system;
-        _this.remote = remote;
-        _this.requests = requests;
-        _this.handler = handler;
-        return _this;
-    }
-    ParSendCallback.prototype.receive = function () {
-        var _this = this;
-        return [
-            new case_1.Case(_1.TransportErr, function (e) {
-                _this.handler.onError(e);
-            }),
-            new case_1.Case(_1.BatchResponse, function (r) {
-                var failed = r.value.filter(function (r) { return r.code > 299; });
-                if (failed.length > 0) {
-                    var res = failed[0];
-                    if (res.code > 499) {
-                        _this.handler.onServerError(res);
-                    }
-                    else {
-                        _this.handler.onClientError(res);
-                    }
-                }
-                else {
-                    _this.handler.onBatchComplete(r);
-                }
-            })
-        ];
-    };
-    ParSendCallback.prototype.run = function () {
-        this.tell(this.remote, new _1.ParSend(this.self(), this.requests));
-    };
-    return ParSendCallback;
-}(callback_1.Callback));
-exports.ParSendCallback = ParSendCallback;
-/**
- * SeqSendCallback sends a SeqSend request to a remote, processing the
- * response using the provided handler.
- */
-var SeqSendCallback = /** @class */ (function (_super) {
-    __extends(SeqSendCallback, _super);
-    function SeqSendCallback() {
-        return _super !== null && _super.apply(this, arguments) || this;
-    }
-    SeqSendCallback.prototype.run = function () {
-        this.tell(this.remote, new _1.SeqSend(this.self(), this.requests));
-    };
-    return SeqSendCallback;
-}(ParSendCallback));
-exports.SeqSendCallback = SeqSendCallback;
-
-},{"./":8,"@quenk/noni/lib/data/type":28,"@quenk/potoo/lib/actor/resident/case":34,"@quenk/potoo/lib/actor/resident/immutable/callback":35}],8:[function(require,module,exports){
-"use strict";
-var __extends = (this && this.__extends) || (function () {
-    var extendStatics = function (d, b) {
-        extendStatics = Object.setPrototypeOf ||
-            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
-        return extendStatics(d, b);
-    };
-    return function (d, b) {
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.Remote = exports.BatchResponse = exports.TransportErr = exports.ParSend = exports.SeqSend = exports.Send = void 0;
-var future_1 = require("@quenk/noni/lib/control/monad/future");
-var case_1 = require("@quenk/potoo/lib/actor/resident/case");
-var actor_1 = require("../../actor");
-/**
- * Send a single request to the remote host, forwarding the response to the
- * specified address.
- */
-var Send = /** @class */ (function () {
-    function Send(client, request) {
-        this.client = client;
-        this.request = request;
-    }
-    return Send;
-}());
-exports.Send = Send;
-/**
- * ParSend sends a batch of requests to the remote host in sequentially,
- * forwarding the combined responses to the specified address.
- */
-var SeqSend = /** @class */ (function () {
-    function SeqSend(client, requests) {
-        this.client = client;
-        this.requests = requests;
-    }
-    return SeqSend;
-}());
-exports.SeqSend = SeqSend;
-/**
- * ParSend sends a batch of requests to the remote host in parallel, forwarding
- * the combined responses to the specified address.
- */
-var ParSend = /** @class */ (function () {
-    function ParSend(client, requests) {
-        this.client = client;
-        this.requests = requests;
-    }
-    return ParSend;
-}());
-exports.ParSend = ParSend;
-/**
- * TransportErr is a wrapper around errors that occur before the request
- * reaches the remote end.
- *
- * Indicates we were unable to initiate the request for some reason, for example,
- * the network is down or a Same-Origin policy violation.
- */
-var TransportErr = /** @class */ (function () {
-    function TransportErr(client, error) {
-        this.client = client;
-        this.error = error;
-    }
-    Object.defineProperty(TransportErr.prototype, "message", {
-        get: function () {
-            return this.error.message;
-        },
-        enumerable: false,
-        configurable: true
-    });
-    return TransportErr;
-}());
-exports.TransportErr = TransportErr;
-/**
- * BatchResponse is a combined list of responses for batch requests.
- */
-var BatchResponse = /** @class */ (function () {
-    function BatchResponse(value) {
-        this.value = value;
-    }
-    return BatchResponse;
-}());
-exports.BatchResponse = BatchResponse;
-/**
- * Remote represents an HTTP server the app has access to.
- *
- * This actor is an abstraction over the `@quenk/jhr` so that requests
- * can be sent via message passing. However, this abstraction is more
- * concerned with application level logic than the details of the HTTP
- * protocols.
- */
-var Remote = /** @class */ (function (_super) {
-    __extends(Remote, _super);
-    function Remote(agent, system) {
-        var _this = _super.call(this, system) || this;
-        _this.agent = agent;
-        _this.system = system;
-        _this.onUnit = function (_a) {
-            var client = _a.client, request = _a.request;
-            var onErr = function (e) {
-                return _this.tell(client, new TransportErr(client, e));
-            };
-            var onSucc = function (res) {
-                return _this.tell(client, res);
-            };
-            _this
-                .agent
-                .send(request)
-                .fork(onErr, onSucc);
-        };
-        _this.onParallel = function (_a) {
-            var client = _a.client, requests = _a.requests;
-            var agent = _this.agent;
-            var onErr = function (e) { return _this.tell(client, e); };
-            var onSucc = function (res) {
-                return _this.tell(client, new BatchResponse(res));
-            };
-            var rs = requests
-                .map(function (r) {
-                return agent
-                    .send(r)
-                    .catch(function (e) { return future_1.raise(new TransportErr(client, e)); });
-            });
-            future_1.parallel(rs).fork(onErr, onSucc);
-        };
-        _this.onSequential = function (_a) {
-            var client = _a.client, requests = _a.requests;
-            var agent = _this.agent;
-            var onErr = function (e) { return _this.tell(client, e); };
-            var onSucc = function (res) {
-                return _this.tell(client, new BatchResponse(res));
-            };
-            var rs = requests
-                .map(function (r) {
-                return agent
-                    .send(r)
-                    .catch(function (e) { return future_1.raise(new TransportErr(client, e)); });
-            });
-            future_1.sequential(rs).fork(onErr, onSucc);
-        };
-        return _this;
-    }
-    Remote.prototype.receive = function () {
-        return [
-            new case_1.Case(Send, this.onUnit),
-            new case_1.Case(ParSend, this.onParallel),
-            new case_1.Case(SeqSend, this.onSequential)
-        ];
-    };
-    return Remote;
-}(actor_1.Immutable));
-exports.Remote = Remote;
-
-},{"../../actor":1,"@quenk/noni/lib/control/monad/future":18,"@quenk/potoo/lib/actor/resident/case":34}],9:[function(require,module,exports){
-"use strict";
-/**
- * Provides a base data model implementation based on the remote and callback
- * apis. NOTE: Responses received by this API are expected to be in the result
- * format specified.
- */
-var __extends = (this && this.__extends) || (function () {
-    var extendStatics = function (d, b) {
-        extendStatics = Object.setPrototypeOf ||
-            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
-        return extendStatics(d, b);
-    };
-    return function (d, b) {
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.RemoteModel = exports.NotFoundHandler = exports.FutureHandler = void 0;
-/** imports */
-var future_1 = require("@quenk/noni/lib/control/monad/future");
-var maybe_1 = require("@quenk/noni/lib/data/maybe");
-var string_1 = require("@quenk/noni/lib/data/string");
-var request_1 = require("@quenk/jhr/lib/request");
-var callback_1 = require("../callback");
-var DefaultCompleteHandler = /** @class */ (function (_super) {
-    __extends(DefaultCompleteHandler, _super);
-    function DefaultCompleteHandler() {
-        return _super !== null && _super.apply(this, arguments) || this;
-    }
-    return DefaultCompleteHandler;
-}(callback_1.AbstractCompleteHandler));
-/**
- * FutureHandler is used to proxy the events of a request's lifecycle to a noni
- * [[Future]].
- *
- * The [[CompleteHandler]] provided also receives the events as they happen
- * however work is assumed to be handled in the Future.
- */
-var FutureHandler = /** @class */ (function () {
-    function FutureHandler(handler, onFailure, onSuccess) {
-        this.handler = handler;
-        this.onFailure = onFailure;
-        this.onSuccess = onSuccess;
-    }
-    FutureHandler.prototype.onError = function (e) {
-        this.handler.onError(e);
-        this.onFailure(e.error instanceof Error ?
-            e.error :
-            new Error(e.error.message));
-    };
-    FutureHandler.prototype.onClientError = function (r) {
-        this.handler.onClientError(r);
-        var e = new Error('ClientError');
-        e.code = r.code;
-        this.onFailure(e);
-    };
-    FutureHandler.prototype.onServerError = function (r) {
-        this.handler.onServerError(r);
-        var e = new Error('ServerError');
-        e.code = r.code;
-        this.onFailure(e);
-    };
-    FutureHandler.prototype.onComplete = function (r) {
-        this.handler.onComplete(r);
-        this.onSuccess(r);
-    };
-    return FutureHandler;
-}());
-exports.FutureHandler = FutureHandler;
-/**
- * NotFoundHandler does not treat a 404 as an error.
- *
- * The onNotFound handler is used instead.
- */
-var NotFoundHandler = /** @class */ (function (_super) {
-    __extends(NotFoundHandler, _super);
-    function NotFoundHandler(handler, onFailure, onNotFound, onSuccess) {
-        var _this = _super.call(this, handler, onFailure, onSuccess) || this;
-        _this.handler = handler;
-        _this.onFailure = onFailure;
-        _this.onNotFound = onNotFound;
-        _this.onSuccess = onSuccess;
-        return _this;
-    }
-    NotFoundHandler.prototype.onClientError = function (r) {
-        if (r.code === 404)
-            this.onNotFound();
-        else
-            _super.prototype.onClientError.call(this, r);
-    };
-    return NotFoundHandler;
-}(FutureHandler));
-exports.NotFoundHandler = NotFoundHandler;
-/**
- * RemoteModel provides a Model implementation that relies on the [[Remote]]
- * actor.
- *
- * A handler can be provided to observe the result of requests if more data
- * is needed than the Model api provides.
- */
-var RemoteModel = /** @class */ (function () {
-    function RemoteModel(remote, path, spawn, handler) {
-        if (handler === void 0) { handler = new DefaultCompleteHandler(); }
-        this.remote = remote;
-        this.path = path;
-        this.spawn = spawn;
-        this.handler = handler;
-    }
-    /**
-     * create a new entry for the data type.
-     */
-    RemoteModel.prototype.create = function (data) {
-        var _this = this;
-        return future_1.fromCallback(function (cb) {
-            _this.spawn(function (s) { return new callback_1.SendCallback(s, _this.remote, new request_1.Post(_this.path, data), new FutureHandler(_this.handler, cb, function (r) {
-                cb(null, r.body.data.id);
-            })); });
-        });
-    };
-    /**
-     * search for entries that match the provided query.
-     */
-    RemoteModel.prototype.search = function (qry) {
-        var _this = this;
-        return future_1.fromCallback(function (cb) {
-            _this.spawn(function (s) { return new callback_1.SendCallback(s, _this.remote, new request_1.Get(_this.path, qry), new FutureHandler(_this.handler, cb, function (r) {
-                cb(null, (r.code === 204) ?
-                    [] : r.body.data);
-            })); });
-        });
-    };
-    /**
-     * update a single entry using its id.
-     */
-    RemoteModel.prototype.update = function (id, changes) {
-        var _this = this;
-        return future_1.fromCallback(function (cb) {
-            _this.spawn(function (s) { return new callback_1.SendCallback(s, _this.remote, new request_1.Patch(string_1.interpolate(_this.path, { id: id }), changes), new FutureHandler(_this.handler, cb, function (r) {
-                cb(null, (r.code === 200) ? true : false);
-            })); });
-        });
-    };
-    /**
-     * get a single entry by its id.
-     */
-    RemoteModel.prototype.get = function (id) {
-        var _this = this;
-        return future_1.fromCallback(function (cb) {
-            _this.spawn(function (s) { return new callback_1.SendCallback(s, _this.remote, new request_1.Get(string_1.interpolate(_this.path, { id: id }), {}), new NotFoundHandler(_this.handler, cb, function () {
-                cb(null, maybe_1.nothing());
-            }, function (r) {
-                cb(null, maybe_1.fromNullable(r.body.data));
-            })); });
-        });
-    };
-    /**
-     * remove a single entry by its id.
-     */
-    RemoteModel.prototype.remove = function (id) {
-        var _this = this;
-        return future_1.fromCallback(function (cb) {
-            _this.spawn(function (s) { return new callback_1.SendCallback(s, _this.remote, new request_1.Delete(string_1.interpolate(_this.path, { id: id }), {}), new FutureHandler(_this.handler, cb, function (r) {
-                cb(null, (r.code === 200) ? true : false);
-            })); });
-        });
-    };
-    return RemoteModel;
-}());
-exports.RemoteModel = RemoteModel;
-
-},{"../callback":7,"@quenk/jhr/lib/request":12,"@quenk/noni/lib/control/monad/future":18,"@quenk/noni/lib/data/maybe":24,"@quenk/noni/lib/data/string":27}],10:[function(require,module,exports){
-"use strict";
-var __extends = (this && this.__extends) || (function () {
-    var extendStatics = function (d, b) {
-        extendStatics = Object.setPrototypeOf ||
-            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
-        return extendStatics(d, b);
-    };
-    return function (d, b) {
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
-var __spreadArrays = (this && this.__spreadArrays) || function () {
-    for (var s = 0, i = 0, il = arguments.length; i < il; i++) s += arguments[i].length;
-    for (var r = Array(s), k = 0, i = 0; i < il; i++)
-        for (var a = arguments[i], j = 0, jl = a.length; j < jl; j++, k++)
-            r[k] = a[j];
-    return r;
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.RemoteObserver = exports.BatchResponse = exports.SeqSend = exports.ParSend = exports.Send = exports.TransportErr = void 0;
-var match_1 = require("@quenk/noni/lib/control/match");
-var response_1 = require("@quenk/jhr/lib/response");
-var case_1 = require("@quenk/potoo/lib/actor/resident/case");
-var actor_1 = require("../../../actor");
-var __1 = require("../");
-Object.defineProperty(exports, "TransportErr", { enumerable: true, get: function () { return __1.TransportErr; } });
-Object.defineProperty(exports, "Send", { enumerable: true, get: function () { return __1.Send; } });
-Object.defineProperty(exports, "ParSend", { enumerable: true, get: function () { return __1.ParSend; } });
-Object.defineProperty(exports, "SeqSend", { enumerable: true, get: function () { return __1.SeqSend; } });
-Object.defineProperty(exports, "BatchResponse", { enumerable: true, get: function () { return __1.BatchResponse; } });
-/**
- * RemoteObserver is a bridge to a [[Remote]] (the Remote is spawned internally)
- * that allows requests and responses to be observed.
- *
- * Observation is done via the passed StageListener. This actor exists primarly
- * for the manipulation of UI indicators when requests are made in the
- * foreground of an application.
- */
-var RemoteObserver = /** @class */ (function (_super) {
-    __extends(RemoteObserver, _super);
-    function RemoteObserver(agent, listener, system) {
-        var _this = _super.call(this, system) || this;
-        _this.agent = agent;
-        _this.listener = listener;
-        _this.system = system;
-        _this.remote = '?';
-        _this.onWake = function (req) {
-            _this.send(req);
-            _this.select(_this.pending(req, []));
-        };
-        _this.onRequest = function (current, buffer) {
-            return function (msg) {
-                _this.select(_this.pending(current, __spreadArrays(buffer, [msg])));
-            };
-        };
-        _this.onError = function (current) { return function (err) {
-            _this.listener.onError(err);
-            _this.listener.onFinish();
-            _this.tell(current.client, new __1.TransportErr(current.client, err.error));
-        }; };
-        _this.onResponse = function (current, buffer) {
-            return function (r) {
-                var res = r;
-                if (r instanceof __1.BatchResponse) {
-                    var failed = r.value.filter(function (r) { return r.code > 299; });
-                    if (failed.length > 0)
-                        res = failed[0];
-                }
-                else {
-                    res = r;
-                }
-                if (res.code > 499) {
-                    _this.listener.onServerError(res);
-                }
-                else if (res.code > 399) {
-                    _this.listener.onClientError(res);
-                }
-                else {
-                    _this.listener.onComplete(res);
-                }
-                _this.listener.onFinish();
-                _this.tell(current.client, res);
-                if (buffer.length > 0) {
-                    var next = buffer[0];
-                    _this.send(next);
-                    _this.select(_this.pending(next, buffer.slice()));
-                }
-                else {
-                    _this.select(_this.idle());
-                }
-            };
-        };
-        return _this;
-    }
-    RemoteObserver.prototype.idle = function () {
-        return [
-            new case_1.Case(__1.Send, this.onWake),
-            new case_1.Case(__1.ParSend, this.onWake),
-            new case_1.Case(__1.SeqSend, this.onWake),
-        ];
-    };
-    RemoteObserver.prototype.pending = function (current, buffer) {
-        var onReq = this.onRequest(current, buffer);
-        var onRes = this.onResponse(current, buffer);
-        return [
-            new case_1.Case(__1.Send, onReq),
-            new case_1.Case(__1.ParSend, onReq),
-            new case_1.Case(__1.SeqSend, onReq),
-            new case_1.Case(__1.TransportErr, this.onError(current)),
-            new case_1.Case(response_1.GenericResponse, onRes),
-            new case_1.Case(__1.BatchResponse, onRes),
-        ];
-    };
-    RemoteObserver.prototype.send = function (req) {
-        var self = this.self();
-        this.listener.onStart(req);
-        var msg = match_1.match(req)
-            .caseOf(__1.Send, function (msg) {
-            return new __1.Send(self, msg.request);
-        })
-            .caseOf(__1.ParSend, function (msg) {
-            return new __1.ParSend(self, msg.requests);
-        })
-            .caseOf(__1.SeqSend, function (msg) {
-            return new __1.SeqSend(self, msg.requests);
-        })
-            .end();
-        this.tell(this.remote, msg);
-    };
-    RemoteObserver.prototype.run = function () {
-        var _this = this;
-        this.remote = this.spawn(function (s) { return new __1.Remote(_this.agent, s); });
-        this.select(this.idle());
-    };
-    return RemoteObserver;
-}(actor_1.Mutable));
-exports.RemoteObserver = RemoteObserver;
-
-},{"../":8,"../../../actor":1,"@quenk/jhr/lib/response":14,"@quenk/noni/lib/control/match":17,"@quenk/potoo/lib/actor/resident/case":34}],11:[function(require,module,exports){
+},{"../../actor":1,"@quenk/noni/lib/control/monad/future":15,"@quenk/noni/lib/data/record":22,"@quenk/noni/lib/data/type":25,"@quenk/potoo/lib/actor/resident/case":31}],8:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.MockAgent = void 0;
@@ -1458,7 +1169,7 @@ class MockAgent {
 }
 exports.MockAgent = MockAgent;
 
-},{"../response":14,"@quenk/noni/lib/control/monad/future":18,"@quenk/test/lib/mock":64}],12:[function(require,module,exports){
+},{"../response":11,"@quenk/noni/lib/control/monad/future":15,"@quenk/test/lib/mock":61}],9:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -1563,7 +1274,7 @@ var Delete = /** @class */ (function (_super) {
 }(Post));
 exports.Delete = Delete;
 
-},{"./method":13}],13:[function(require,module,exports){
+},{"./method":10}],10:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Method = void 0;
@@ -1580,7 +1291,7 @@ var Method;
     Method["Patch"] = "PATCH";
 })(Method = exports.Method || (exports.Method = {}));
 
-},{}],14:[function(require,module,exports){
+},{}],11:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -1842,7 +1553,7 @@ var createResponse = function (code, body, headers, options) {
 };
 exports.createResponse = createResponse;
 
-},{"./status":15}],15:[function(require,module,exports){
+},{"./status":12}],12:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.NOT_IMPLEMENTED = exports.INTERNAL_SERVER_ERROR = exports.UNAVAILABLE_FOR_LEGAL_RREASONS = exports.REQUEST_HEADER_FIELDS_TOO_LARGE = exports.TOO_MANY_REQUESTS = exports.PRECONDITION_REQUIRED = exports.UPGRADE_REQUIRED = exports.FAILED_DEPENDENCY = exports.LOCKED = exports.UNPROCESSABLE_ENTITY = exports.TEAPOT = exports.EXPECTATION_FAILED = exports.REQUESTED_RANGE_NOT_SATISFIABLE = exports.UNSUPPORTED_MEDIA_TYPE = exports.REQUEST_URI_TOO_LONG = exports.REQUEST_ENTITY_TOO_LARGE = exports.PRECONDITION_FAILED = exports.LENGTH_REQUIRED = exports.GONE = exports.CONFLICT = exports.REQUEST_TIMEOUT = exports.PROXY_AUTH_REQUIRED = exports.NOT_ACCEPTABLE = exports.METHOD_NOT_ALLOWED = exports.NOT_FOUND = exports.FORBIDDEN = exports.PAYMENT_REQUIRED = exports.UNAUTHORIZED = exports.BAD_REQUEST = exports.PERMANENT_REDIRECT = exports.TEMPORARY_REDIRECT = exports.USE_PROXY = exports.NOT_MODIFIED = exports.SEE_OTHER = exports.FOUND = exports.MOVED_PERMANENTLY = exports.MULTIPLE_CHOICES = exports.IM_USED = exports.ALREADY_REPORTED = exports.MULTI_STATUS = exports.PARTIAL_CONTENT = exports.RESET_CONTENT = exports.NO_CONTENT = exports.NON_AUTHORITATIV_INFO = exports.ACCEPTED = exports.CREATED = exports.OK = exports.PROCESSING = exports.SWITCHING_PROTOCOLS = exports.CONTINUE = void 0;
@@ -1907,7 +1618,7 @@ exports.LOOP_DETECTED = 508;
 exports.NOT_EXTENDED = 510;
 exports.NETWORK_AUTHENTICATION_REQUIRED = 511;
 
-},{}],16:[function(require,module,exports){
+},{}],13:[function(require,module,exports){
 "use strict";
 /**
  * This module provides functions and types to make dealing with ES errors
@@ -1952,7 +1663,7 @@ var attempt = function (f) {
 };
 exports.attempt = attempt;
 
-},{"../data/either":22}],17:[function(require,module,exports){
+},{"../data/either":19}],14:[function(require,module,exports){
 "use strict";
 /**
  * The match module provides a best effort pattern runtime pattern matching
@@ -2040,7 +1751,7 @@ exports.Matched = Matched;
 var match = function (value) { return new UnMatched(value); };
 exports.match = match;
 
-},{"../data/type":28}],18:[function(require,module,exports){
+},{"../data/type":25}],15:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -2085,7 +1796,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     }
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.doFuture = exports.liftP = exports.fromExcept = exports.toPromise = exports.race = exports.reduce = exports.sequential = exports.parallel = exports.batch = exports.fromCallback = exports.fromAbortable = exports.wait = exports.delay = exports.attempt = exports.raise = exports.run = exports.voidPure = exports.pure = exports.Run = exports.Raise = exports.Trap = exports.Finally = exports.Catch = exports.Call = exports.Bind = exports.Pure = exports.Future = void 0;
+exports.doFuture = exports.liftP = exports.fromExcept = exports.toPromise = exports.race = exports.reduce = exports.sequential = exports.parallel = exports.batch = exports.fromCallback = exports.fromAbortable = exports.wait = exports.delay = exports.attempt = exports.raise = exports.run = exports.wrap = exports.voidPure = exports.pure = exports.Run = exports.Raise = exports.Trap = exports.Finally = exports.Catch = exports.Call = exports.Bind = exports.Pure = exports.Future = void 0;
 var function_1 = require("../../data/function");
 var timer_1 = require("../timer");
 var error_1 = require("../error");
@@ -2415,6 +2126,13 @@ exports.pure = pure;
  */
 exports.voidPure = new Pure(undefined);
 /**
+ * wrap a value in a Future returning the value if the value is itself a Future.
+ */
+var wrap = function (a) {
+    return a instanceof Future ? a : (0, exports.pure)(a);
+};
+exports.wrap = wrap;
+/**
  * run sets up an async task to be executed at a later point.
  */
 var run = function (task) { return new Run(task); };
@@ -2668,7 +2386,7 @@ exports.liftP = liftP;
 var doFuture = function (f) { return (0, _1.doN)(f); };
 exports.doFuture = doFuture;
 
-},{"../../data/array":21,"../../data/function":23,"../error":16,"../timer":20,"./":19}],19:[function(require,module,exports){
+},{"../../data/array":18,"../../data/function":20,"../error":13,"../timer":17,"./":16}],16:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.doMonad = exports.doN = exports.pipeN = exports.pipe = exports.compose = exports.join = void 0;
@@ -2762,7 +2480,7 @@ var doN = function (f) {
 exports.doN = doN;
 exports.doMonad = exports.doN;
 
-},{}],20:[function(require,module,exports){
+},{}],17:[function(require,module,exports){
 (function (process){(function (){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
@@ -2816,7 +2534,7 @@ var throttle = function (f, duration) {
 exports.throttle = throttle;
 
 }).call(this)}).call(this,require('_process'))
-},{"_process":88}],21:[function(require,module,exports){
+},{"_process":85}],18:[function(require,module,exports){
 "use strict";
 var __spreadArray = (this && this.__spreadArray) || function (to, from, pack) {
     if (pack || arguments.length === 2) for (var i = 0, l = from.length, ar; i < l; i++) {
@@ -3002,7 +2720,7 @@ var compact = function (list) {
 };
 exports.compact = compact;
 
-},{"../../math":29,"../record":25}],22:[function(require,module,exports){
+},{"../../math":26,"../record":22}],19:[function(require,module,exports){
 "use strict";
 /**
  * Either represents a value that may be one of two types.
@@ -3204,7 +2922,7 @@ var either = function (f) { return function (g) { return function (e) {
 }; }; };
 exports.either = either;
 
-},{"./maybe":24}],23:[function(require,module,exports){
+},{"./maybe":21}],20:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.noop = exports.curry5 = exports.curry4 = exports.curry3 = exports.curry = exports.id = exports.identity = exports.flip = exports.cons = exports.compose5 = exports.compose4 = exports.compose3 = exports.compose = void 0;
@@ -3276,7 +2994,7 @@ exports.curry5 = curry5;
 var noop = function () { };
 exports.noop = noop;
 
-},{}],24:[function(require,module,exports){
+},{}],21:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.fromNaN = exports.fromNumber = exports.fromBoolean = exports.fromString = exports.fromObject = exports.fromArray = exports.fromNullable = exports.just = exports.nothing = exports.of = exports.Just = exports.Nothing = void 0;
@@ -3520,7 +3238,7 @@ var fromNaN = function (n) {
 };
 exports.fromNaN = fromNaN;
 
-},{}],25:[function(require,module,exports){
+},{}],22:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.pickValue = exports.pickKey = exports.make = exports.rcompact = exports.compact = exports.isBadKey = exports.set = exports.every = exports.some = exports.empty = exports.count = exports.clone = exports.hasKey = exports.values = exports.group = exports.partition = exports.exclude = exports.rmerge5 = exports.rmerge4 = exports.rmerge3 = exports.rmerge = exports.merge5 = exports.merge4 = exports.merge3 = exports.merge = exports.filter = exports.reduce = exports.forEach = exports.mapTo = exports.map = exports.keys = exports.isRecord = exports.assign = exports.badKeys = void 0;
@@ -3892,7 +3610,7 @@ var pickValue = function (rec, test) {
 };
 exports.pickValue = pickValue;
 
-},{"../array":21,"../maybe":24,"../type":28}],26:[function(require,module,exports){
+},{"../array":18,"../maybe":21,"../type":25}],23:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.project = exports.unflatten = exports.flatten = exports.unescapeRecord = exports.escapeRecord = exports.unescape = exports.escape = exports.set = exports.getString = exports.getDefault = exports.get = exports.unsafeGet = exports.tokenize = void 0;
@@ -4172,7 +3890,7 @@ var project = function (spec, rec) {
 };
 exports.project = project;
 
-},{"../maybe":24,"./":25}],27:[function(require,module,exports){
+},{"../maybe":21,"./":22}],24:[function(require,module,exports){
 "use strict";
 /**
  *  Common functions used to manipulate strings.
@@ -4364,7 +4082,7 @@ var alphanumeric = function (str) {
 };
 exports.alphanumeric = alphanumeric;
 
-},{"../record":25,"../record/path":26}],28:[function(require,module,exports){
+},{"../record":22,"../record/path":23}],25:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.toString = exports.show = exports.test = exports.is = exports.isPrim = exports.isFunction = exports.isBoolean = exports.isNumber = exports.isString = exports.isArray = exports.isObject = exports.Any = void 0;
@@ -4504,7 +4222,7 @@ var toString = function (val) {
 };
 exports.toString = toString;
 
-},{}],29:[function(require,module,exports){
+},{}],26:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.round = exports.isMultipleOf = void 0;
@@ -4550,7 +4268,7 @@ var round = function (x, n) {
 };
 exports.round = round;
 
-},{}],30:[function(require,module,exports){
+},{}],27:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.isGroup = exports.isChild = exports.getId = exports.getParent = exports.make = exports.isRestricted = exports.ADDRESS_RESTRICTED = exports.ADDRESS_EMPTY = exports.ADDRESS_SYSTEM = exports.ADDRESS_DISCARD = exports.SEPERATOR = void 0;
@@ -4629,7 +4347,7 @@ exports.isGroup = function (addr) {
     return ((addr[0] === '$') && (addr !== '$'));
 };
 
-},{"@quenk/noni/lib/data/array":21,"@quenk/noni/lib/data/string":27}],31:[function(require,module,exports){
+},{"@quenk/noni/lib/data/array":18,"@quenk/noni/lib/data/string":24}],28:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.isResident = exports.isRouter = exports.isBuffered = exports.isImmutable = exports.FLAG_EXIT_AFTER_RUN = exports.FLAG_RESIDENT = exports.FLAG_ROUTER = exports.FLAG_EXIT_AFTER_RECEIVE = exports.FLAG_BUFFERED = exports.FLAG_IMMUTABLE = void 0;
@@ -4662,7 +4380,7 @@ exports.isRouter = function (f) {
  */
 exports.isResident = function (f) { return (f & exports.FLAG_RESIDENT) === exports.FLAG_RESIDENT; };
 
-},{}],32:[function(require,module,exports){
+},{}],29:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Envelope = void 0;
@@ -4681,7 +4399,7 @@ var Envelope = /** @class */ (function () {
 }());
 exports.Envelope = Envelope;
 
-},{}],33:[function(require,module,exports){
+},{}],30:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CaseFunction = void 0;
@@ -4717,7 +4435,7 @@ var CaseFunction = /** @class */ (function () {
 }());
 exports.CaseFunction = CaseFunction;
 
-},{}],34:[function(require,module,exports){
+},{}],31:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -4783,7 +4501,7 @@ var Default = /** @class */ (function (_super) {
 }(Case));
 exports.Default = Default;
 
-},{"@quenk/noni/lib/data/type":28}],35:[function(require,module,exports){
+},{"@quenk/noni/lib/data/type":25}],32:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -4816,7 +4534,7 @@ var Callback = /** @class */ (function (_super) {
 }(_1.Immutable));
 exports.Callback = Callback;
 
-},{"./":36}],36:[function(require,module,exports){
+},{"./":33}],33:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -4867,7 +4585,7 @@ var Immutable = /** @class */ (function (_super) {
 }(__1.AbstractResident));
 exports.Immutable = Immutable;
 
-},{"../":37,"../../flags":31,"../case/function":33}],37:[function(require,module,exports){
+},{"../":34,"../../flags":28,"../case/function":30}],34:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ref = exports.AbstractResident = void 0;
@@ -4946,7 +4664,7 @@ var getSelf = function (actor) {
     };
 };
 
-},{"@quenk/noni/lib/data/record":25,"@quenk/noni/lib/data/type":28}],38:[function(require,module,exports){
+},{"@quenk/noni/lib/data/record":22,"@quenk/noni/lib/data/type":25}],35:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -4994,7 +4712,7 @@ var Mutable = /** @class */ (function (_super) {
 }(__1.AbstractResident));
 exports.Mutable = Mutable;
 
-},{"../":37,"../../flags":31,"../case/function":33}],39:[function(require,module,exports){
+},{"../":34,"../../flags":28,"../case/function":30}],36:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -5146,7 +4864,7 @@ var immutableExec = function (actor, thr, msg) {
     }
 };
 
-},{"../system/vm/event":41,"../system/vm/runtime/error":45,"../system/vm/runtime/op":50,"../system/vm/script/info":54,"../system/vm/scripts":56,"@quenk/noni/lib/data/array":21}],40:[function(require,module,exports){
+},{"../system/vm/event":38,"../system/vm/runtime/error":42,"../system/vm/runtime/op":47,"../system/vm/script/info":51,"../system/vm/scripts":53,"@quenk/noni/lib/data/array":18}],37:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.defaults = void 0;
@@ -5163,7 +4881,7 @@ exports.defaults = function () { return ({
     accept: function () { }
 }); };
 
-},{"./log":43}],41:[function(require,module,exports){
+},{"./log":40}],38:[function(require,module,exports){
 "use strict";
 var _a;
 Object.defineProperty(exports, "__esModule", { value: true });
@@ -5222,7 +4940,7 @@ exports.events = (_a = {},
 exports.getLevel = function (e) { return exports.events.hasOwnProperty(e) ?
     exports.events[e].level : log_1.LOG_LEVEL_DEBUG; };
 
-},{"./log":43}],42:[function(require,module,exports){
+},{"./log":40}],39:[function(require,module,exports){
 "use strict";
 var __generator = (this && this.__generator) || function (thisArg, body) {
     var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
@@ -5669,7 +5387,7 @@ var normalize = function (spawnable) {
     });
 };
 
-},{"../../address":30,"../../flags":31,"../../message":32,"../../template":62,"./conf":40,"./event":41,"./log":43,"./runtime/context":44,"./runtime/error":45,"./runtime/heap/ledger":46,"./runtime/op":50,"./scripts/factory":55,"./state":57,"./thread/shared":59,"./thread/shared/runner":60,"@quenk/noni/lib/control/monad/future":18,"@quenk/noni/lib/data/array":21,"@quenk/noni/lib/data/either":22,"@quenk/noni/lib/data/maybe":24,"@quenk/noni/lib/data/record":25,"@quenk/noni/lib/data/type":28}],43:[function(require,module,exports){
+},{"../../address":27,"../../flags":28,"../../message":29,"../../template":59,"./conf":37,"./event":38,"./log":40,"./runtime/context":41,"./runtime/error":42,"./runtime/heap/ledger":43,"./runtime/op":47,"./scripts/factory":52,"./state":54,"./thread/shared":56,"./thread/shared/runner":57,"@quenk/noni/lib/control/monad/future":15,"@quenk/noni/lib/data/array":18,"@quenk/noni/lib/data/either":19,"@quenk/noni/lib/data/maybe":21,"@quenk/noni/lib/data/record":22,"@quenk/noni/lib/data/type":25}],40:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.LOG_LEVEL_ERROR = exports.LOG_LEVEL_WARN = exports.LOG_LEVEL_NOTICE = exports.LOG_LEVEL_INFO = exports.LOG_LEVEL_DEBUG = void 0;
@@ -5679,7 +5397,7 @@ exports.LOG_LEVEL_NOTICE = 5;
 exports.LOG_LEVEL_WARN = 4;
 exports.LOG_LEVEL_ERROR = 3;
 
-},{}],44:[function(require,module,exports){
+},{}],41:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.newContext = void 0;
@@ -5696,7 +5414,7 @@ exports.newContext = function (aid, actor, address, template) { return ({
     template: template
 }); };
 
-},{}],45:[function(require,module,exports){
+},{}],42:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -6014,7 +5732,7 @@ var UnknownFunErr = /** @class */ (function (_super) {
 }(Error));
 exports.UnknownFunErr = UnknownFunErr;
 
-},{"../../../address":30,"./stack/frame":52}],46:[function(require,module,exports){
+},{"../../../address":27,"./stack/frame":49}],43:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.DefaultHeapLedger = void 0;
@@ -6109,7 +5827,7 @@ var isHeapAddress = function (ref) {
 };
 var threadId = function (name) { return Number((name.split('@')[1]).split('#')[0]); };
 
-},{"../../script/info":54,"../stack/frame":52,"@quenk/noni/lib/data/maybe":24,"@quenk/noni/lib/data/record":25,"@quenk/noni/lib/data/type":28}],47:[function(require,module,exports){
+},{"../../script/info":51,"../stack/frame":49,"@quenk/noni/lib/data/maybe":21,"@quenk/noni/lib/data/record":22,"@quenk/noni/lib/data/type":25}],44:[function(require,module,exports){
 "use strict";
 //TODO: Relocate some of these types.
 Object.defineProperty(exports, "__esModule", { value: true });
@@ -6122,7 +5840,7 @@ exports.OPERAND_RANGE_START = 0x0;
 exports.OPERAND_RANGE_END = 0xffffff;
 exports.MAX_INSTRUCTION = 0xffffffff;
 
-},{}],48:[function(require,module,exports){
+},{}],45:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.stop = exports.maildq = exports.mailcount = exports.recvcount = exports.recv = exports.send = exports.self = exports.alloc = void 0;
@@ -6239,7 +5957,7 @@ exports.stop = function (r, f, _) {
     r.wait(r.vm.kill(r.context.actor, eaddr.takeRight()));
 };
 
-},{}],49:[function(require,module,exports){
+},{}],46:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ifneqjmp = exports.ifeqjmp = exports.ifnzjmp = exports.ifzjmp = exports.jmp = exports.raise = exports.call = exports.addui32 = exports.ceq = exports.load = exports.store = exports.dup = exports.ldn = exports.lds = exports.pushui32 = exports.pushui16 = exports.pushui8 = exports.nop = void 0;
@@ -6465,7 +6183,7 @@ exports.ifneqjmp = function (r, f, oper) {
         f.seek(oper);
 };
 
-},{"../error":45,"../stack/frame":52,"@quenk/noni/lib/data/array":21}],50:[function(require,module,exports){
+},{"../error":42,"../stack/frame":49,"@quenk/noni/lib/data/array":18}],47:[function(require,module,exports){
 "use strict";
 var _a;
 Object.defineProperty(exports, "__esModule", { value: true });
@@ -6688,7 +6406,7 @@ exports.toLog = function (op, r, f, oper) {
     return exports.opcodes.hasOwnProperty(op) ? exports.opcodes[op].log(r, f, oper) : [];
 };
 
-},{"../stack/frame":52,"./actor":48,"./base":49,"./object":51,"@quenk/noni/lib/data/record":25}],51:[function(require,module,exports){
+},{"../stack/frame":49,"./actor":45,"./base":46,"./object":48,"@quenk/noni/lib/data/record":22}],48:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.arelm = exports.arlength = exports.getprop = void 0;
@@ -6752,7 +6470,7 @@ exports.arelm = function (r, f, _) {
     }
 };
 
-},{}],52:[function(require,module,exports){
+},{}],49:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.StackFrame = exports.BYTE_CONSTANT_INFO = exports.BYTE_CONSTANT_STR = exports.BYTE_CONSTANT_NUM = exports.DATA_TYPE_SELF = exports.DATA_TYPE_MAILBOX = exports.DATA_TYPE_LOCAL = exports.DATA_TYPE_HEAP_FUN = exports.DATA_TYPE_HEAP_FOREIGN = exports.DATA_TYPE_HEAP_OBJECT = exports.DATA_TYPE_HEAP_STRING = exports.DATA_TYPE_INFO = exports.DATA_TYPE_STRING = exports.DATA_MAX_SAFE_UINT32 = exports.DATA_MAX_SIZE = exports.DATA_MASK_VALUE32 = exports.DATA_MASK_VALUE24 = exports.DATA_MASK_VALUE16 = exports.DATA_MASK_VALUE8 = exports.DATA_MASK_TYPE = exports.DATA_RANGE_TYPE_STEP = exports.DATA_RANGE_TYPE_LOW = exports.DATA_RANGE_TYPE_HIGH = void 0;
@@ -7002,7 +6720,7 @@ var missingSymbol = function (data) {
     return either_1.left(new error.MissingSymbolErr(data));
 };
 
-},{"../../script":53,"../../type":61,"../error":45,"@quenk/noni/lib/data/either":22,"@quenk/noni/lib/data/maybe":24}],53:[function(require,module,exports){
+},{"../../script":50,"../../type":58,"../error":42,"@quenk/noni/lib/data/either":19,"@quenk/noni/lib/data/maybe":21}],50:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getInfo = exports.PScript = exports.CONSTANTS_INDEX_STRING = exports.CONSTANTS_INDEX_NUMBER = void 0;
@@ -7035,7 +6753,7 @@ exports.getInfo = function (s, idx) {
     return either_1.right(s.info[idx]);
 };
 
-},{"../runtime/error":45,"@quenk/noni/lib/data/either":22}],54:[function(require,module,exports){
+},{"../runtime/error":42,"@quenk/noni/lib/data/either":19}],51:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -7353,7 +7071,7 @@ exports.objectType = new NewTypeInfo('object', 0, [], types.TYPE_OBJECT);
  */
 exports.funType = new NewTypeInfo('function', 0, [], types.TYPE_FUN);
 
-},{"../type":61}],55:[function(require,module,exports){
+},{"../type":58}],52:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ScriptFactory = void 0;
@@ -7393,7 +7111,7 @@ var ScriptFactory = /** @class */ (function () {
 }());
 exports.ScriptFactory = ScriptFactory;
 
-},{"..":42,"../../../resident/immutable":36,"../../../resident/immutable/callback":35,"../../../resident/mutable":38,"../../../resident/scripts":39,"../scripts":56}],56:[function(require,module,exports){
+},{"..":39,"../../../resident/immutable":33,"../../../resident/immutable/callback":32,"../../../resident/mutable":35,"../../../resident/scripts":36,"../scripts":53}],53:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -7470,7 +7188,7 @@ var VMActorScript = /** @class */ (function (_super) {
 }(BaseScript));
 exports.VMActorScript = VMActorScript;
 
-},{"../runtime/op":50,"../script/info":54}],57:[function(require,module,exports){
+},{"../runtime/op":47,"../script/info":51}],54:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.destroyMessageBuffer = exports.createMessageBuffer = exports.removeMember = exports.putMember = exports.getGroup = exports.removeGroup = exports.removeRoute = exports.putRoute = exports.getRouter = exports.getParent = exports.getChildren = exports.getAddress = exports.remove = exports.put = exports.get = exports.exists = void 0;
@@ -7602,7 +7320,7 @@ exports.destroyMessageBuffer = function (s, addr) {
     return s;
 };
 
-},{"../../address":30,"@quenk/noni/lib/data/maybe":24,"@quenk/noni/lib/data/record":25,"@quenk/noni/lib/data/string":27}],58:[function(require,module,exports){
+},{"../../address":27,"@quenk/noni/lib/data/maybe":21,"@quenk/noni/lib/data/record":22,"@quenk/noni/lib/data/string":24}],55:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.THREAD_STATE_INVALID = exports.THREAD_STATE_ERROR = exports.THREAD_STATE_WAIT = exports.THREAD_STATE_RUN = exports.THREAD_STATE_IDLE = void 0;
@@ -7612,7 +7330,7 @@ exports.THREAD_STATE_WAIT = 2;
 exports.THREAD_STATE_ERROR = 3;
 exports.THREAD_STATE_INVALID = 4;
 
-},{}],59:[function(require,module,exports){
+},{}],56:[function(require,module,exports){
 "use strict";
 var __generator = (this && this.__generator) || function (thisArg, body) {
     var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
@@ -7771,7 +7489,7 @@ var SharedThread = /** @class */ (function () {
 }());
 exports.SharedThread = SharedThread;
 
-},{"../":58,"../../runtime/error":45,"../../runtime/op":50,"../../runtime/stack/frame":52,"../../type":61,"./runner":60,"@quenk/noni/lib/control/monad/future":18,"@quenk/noni/lib/data/array":21,"@quenk/noni/lib/data/maybe":24}],60:[function(require,module,exports){
+},{"../":55,"../../runtime/error":42,"../../runtime/op":47,"../../runtime/stack/frame":49,"../../type":58,"./runner":57,"@quenk/noni/lib/control/monad/future":15,"@quenk/noni/lib/data/array":18,"@quenk/noni/lib/data/maybe":21}],57:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.SharedThreadRunner = exports.ExecutionFrame = void 0;
@@ -7887,7 +7605,7 @@ var SharedThreadRunner = /** @class */ (function () {
 }());
 exports.SharedThreadRunner = SharedThreadRunner;
 
-},{"../":58,"../../runtime":47,"../../runtime/op":50,"@quenk/noni/lib/data/array":21}],61:[function(require,module,exports){
+},{"../":55,"../../runtime":44,"../../runtime/op":47,"@quenk/noni/lib/data/array":18}],58:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getType = exports.TYPE_CONS = exports.TYPE_FUN = exports.TYPE_ARRAY = exports.TYPE_OBJECT = exports.TYPE_STRING = exports.TYPE_BOOLEAN = exports.TYPE_INT32 = exports.TYPE_INT16 = exports.TYPE_INT8 = exports.TYPE_UINT32 = exports.TYPE_UINT16 = exports.TYPE_UINT8 = exports.TYPE_VOID = exports.BYTE_INDEX = exports.BYTE_TYPE = exports.TYPE_STEP = void 0;
@@ -7916,7 +7634,7 @@ exports.getType = function (d) {
     return d & exports.BYTE_TYPE;
 };
 
-},{}],62:[function(require,module,exports){
+},{}],59:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ACTION_STOP = exports.ACTION_RESTART = exports.ACTION_IGNORE = exports.ACTION_RAISE = void 0;
@@ -7925,7 +7643,7 @@ exports.ACTION_IGNORE = 0x0;
 exports.ACTION_RESTART = 0x1;
 exports.ACTION_STOP = 0x2;
 
-},{}],63:[function(require,module,exports){
+},{}],60:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -8121,7 +7839,7 @@ var assert = function (value, name) {
 };
 exports.assert = assert;
 
-},{"deep-equal":68,"json-stringify-safe":80}],64:[function(require,module,exports){
+},{"deep-equal":65,"json-stringify-safe":77}],61:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Invocation = exports.Mock = void 0;
@@ -8141,7 +7859,7 @@ var Invocation = /** @class */ (function () {
 }());
 exports.Invocation = Invocation;
 
-},{"./object":65}],65:[function(require,module,exports){
+},{"./object":62}],62:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.MockObject = exports.ReturnCallback = exports.ReturnValue = void 0;
@@ -8288,7 +8006,7 @@ var MockObject = /** @class */ (function () {
 }());
 exports.MockObject = MockObject;
 
-},{"./":64,"deep-equal":68}],66:[function(require,module,exports){
+},{"./":61,"deep-equal":65}],63:[function(require,module,exports){
 'use strict';
 
 var GetIntrinsic = require('get-intrinsic');
@@ -8305,7 +8023,7 @@ module.exports = function callBoundIntrinsic(name, allowMissing) {
 	return intrinsic;
 };
 
-},{"./":67,"get-intrinsic":72}],67:[function(require,module,exports){
+},{"./":64,"get-intrinsic":69}],64:[function(require,module,exports){
 'use strict';
 
 var bind = require('function-bind');
@@ -8354,7 +8072,7 @@ if ($defineProperty) {
 	module.exports.apply = applyBind;
 }
 
-},{"function-bind":71,"get-intrinsic":72}],68:[function(require,module,exports){
+},{"function-bind":68,"get-intrinsic":69}],65:[function(require,module,exports){
 var objectKeys = require('object-keys');
 var isArguments = require('is-arguments');
 var is = require('object-is');
@@ -8468,7 +8186,7 @@ function objEquiv(a, b, opts) {
 
 module.exports = deepEqual;
 
-},{"is-arguments":77,"is-date-object":78,"is-regex":79,"object-is":82,"object-keys":86,"regexp.prototype.flags":90}],69:[function(require,module,exports){
+},{"is-arguments":74,"is-date-object":75,"is-regex":76,"object-is":79,"object-keys":83,"regexp.prototype.flags":87}],66:[function(require,module,exports){
 'use strict';
 
 var keys = require('object-keys');
@@ -8528,7 +8246,7 @@ defineProperties.supportsDescriptors = !!supportsDescriptors;
 
 module.exports = defineProperties;
 
-},{"object-keys":86}],70:[function(require,module,exports){
+},{"object-keys":83}],67:[function(require,module,exports){
 'use strict';
 
 /* eslint no-invalid-this: 1 */
@@ -8582,14 +8300,14 @@ module.exports = function bind(that) {
     return bound;
 };
 
-},{}],71:[function(require,module,exports){
+},{}],68:[function(require,module,exports){
 'use strict';
 
 var implementation = require('./implementation');
 
 module.exports = Function.prototype.bind || implementation;
 
-},{"./implementation":70}],72:[function(require,module,exports){
+},{"./implementation":67}],69:[function(require,module,exports){
 'use strict';
 
 var undefined;
@@ -8921,7 +8639,7 @@ module.exports = function GetIntrinsic(name, allowMissing) {
 	return value;
 };
 
-},{"function-bind":71,"has":76,"has-symbols":73}],73:[function(require,module,exports){
+},{"function-bind":68,"has":73,"has-symbols":70}],70:[function(require,module,exports){
 'use strict';
 
 var origSymbol = typeof Symbol !== 'undefined' && Symbol;
@@ -8936,7 +8654,7 @@ module.exports = function hasNativeSymbols() {
 	return hasSymbolSham();
 };
 
-},{"./shams":74}],74:[function(require,module,exports){
+},{"./shams":71}],71:[function(require,module,exports){
 'use strict';
 
 /* eslint complexity: [2, 18], max-statements: [2, 33] */
@@ -8980,7 +8698,7 @@ module.exports = function hasSymbols() {
 	return true;
 };
 
-},{}],75:[function(require,module,exports){
+},{}],72:[function(require,module,exports){
 'use strict';
 
 var hasSymbols = require('has-symbols/shams');
@@ -8989,14 +8707,14 @@ module.exports = function hasToStringTagShams() {
 	return hasSymbols() && !!Symbol.toStringTag;
 };
 
-},{"has-symbols/shams":74}],76:[function(require,module,exports){
+},{"has-symbols/shams":71}],73:[function(require,module,exports){
 'use strict';
 
 var bind = require('function-bind');
 
 module.exports = bind.call(Function.call, Object.prototype.hasOwnProperty);
 
-},{"function-bind":71}],77:[function(require,module,exports){
+},{"function-bind":68}],74:[function(require,module,exports){
 'use strict';
 
 var hasToStringTag = require('has-tostringtag/shams')();
@@ -9031,7 +8749,7 @@ isStandardArguments.isLegacyArguments = isLegacyArguments; // for tests
 
 module.exports = supportsStandardArguments ? isStandardArguments : isLegacyArguments;
 
-},{"call-bind/callBound":66,"has-tostringtag/shams":75}],78:[function(require,module,exports){
+},{"call-bind/callBound":63,"has-tostringtag/shams":72}],75:[function(require,module,exports){
 'use strict';
 
 var getDay = Date.prototype.getDay;
@@ -9055,7 +8773,7 @@ module.exports = function isDateObject(value) {
 	return hasToStringTag ? tryDateObject(value) : toStr.call(value) === dateClass;
 };
 
-},{"has-tostringtag/shams":75}],79:[function(require,module,exports){
+},{"has-tostringtag/shams":72}],76:[function(require,module,exports){
 'use strict';
 
 var callBound = require('call-bind/callBound');
@@ -9115,7 +8833,7 @@ module.exports = hasToStringTag
 		return $toString(value) === regexClass;
 	};
 
-},{"call-bind/callBound":66,"has-tostringtag/shams":75}],80:[function(require,module,exports){
+},{"call-bind/callBound":63,"has-tostringtag/shams":72}],77:[function(require,module,exports){
 exports = module.exports = stringify
 exports.getSerialize = serializer
 
@@ -9144,7 +8862,7 @@ function serializer(replacer, cycleReplacer) {
   }
 }
 
-},{}],81:[function(require,module,exports){
+},{}],78:[function(require,module,exports){
 'use strict';
 
 var numberIsNaN = function (value) {
@@ -9165,7 +8883,7 @@ module.exports = function is(a, b) {
 };
 
 
-},{}],82:[function(require,module,exports){
+},{}],79:[function(require,module,exports){
 'use strict';
 
 var define = require('define-properties');
@@ -9185,7 +8903,7 @@ define(polyfill, {
 
 module.exports = polyfill;
 
-},{"./implementation":81,"./polyfill":83,"./shim":84,"call-bind":67,"define-properties":69}],83:[function(require,module,exports){
+},{"./implementation":78,"./polyfill":80,"./shim":81,"call-bind":64,"define-properties":66}],80:[function(require,module,exports){
 'use strict';
 
 var implementation = require('./implementation');
@@ -9194,7 +8912,7 @@ module.exports = function getPolyfill() {
 	return typeof Object.is === 'function' ? Object.is : implementation;
 };
 
-},{"./implementation":81}],84:[function(require,module,exports){
+},{"./implementation":78}],81:[function(require,module,exports){
 'use strict';
 
 var getPolyfill = require('./polyfill');
@@ -9210,7 +8928,7 @@ module.exports = function shimObjectIs() {
 	return polyfill;
 };
 
-},{"./polyfill":83,"define-properties":69}],85:[function(require,module,exports){
+},{"./polyfill":80,"define-properties":66}],82:[function(require,module,exports){
 'use strict';
 
 var keysShim;
@@ -9334,7 +9052,7 @@ if (!Object.keys) {
 }
 module.exports = keysShim;
 
-},{"./isArguments":87}],86:[function(require,module,exports){
+},{"./isArguments":84}],83:[function(require,module,exports){
 'use strict';
 
 var slice = Array.prototype.slice;
@@ -9368,7 +9086,7 @@ keysShim.shim = function shimObjectKeys() {
 
 module.exports = keysShim;
 
-},{"./implementation":85,"./isArguments":87}],87:[function(require,module,exports){
+},{"./implementation":82,"./isArguments":84}],84:[function(require,module,exports){
 'use strict';
 
 var toStr = Object.prototype.toString;
@@ -9387,7 +9105,7 @@ module.exports = function isArguments(value) {
 	return isArgs;
 };
 
-},{}],88:[function(require,module,exports){
+},{}],85:[function(require,module,exports){
 // shim for using process in browser
 var process = module.exports = {};
 
@@ -9573,7 +9291,7 @@ process.chdir = function (dir) {
 };
 process.umask = function() { return 0; };
 
-},{}],89:[function(require,module,exports){
+},{}],86:[function(require,module,exports){
 'use strict';
 
 var $Object = Object;
@@ -9605,7 +9323,7 @@ module.exports = function flags() {
 	return result;
 };
 
-},{}],90:[function(require,module,exports){
+},{}],87:[function(require,module,exports){
 'use strict';
 
 var define = require('define-properties');
@@ -9625,7 +9343,7 @@ define(flagsBound, {
 
 module.exports = flagsBound;
 
-},{"./implementation":89,"./polyfill":91,"./shim":92,"call-bind":67,"define-properties":69}],91:[function(require,module,exports){
+},{"./implementation":86,"./polyfill":88,"./shim":89,"call-bind":64,"define-properties":66}],88:[function(require,module,exports){
 'use strict';
 
 var implementation = require('./implementation');
@@ -9647,7 +9365,7 @@ module.exports = function getPolyfill() {
 	return implementation;
 };
 
-},{"./implementation":89,"define-properties":69}],92:[function(require,module,exports){
+},{"./implementation":86,"define-properties":66}],89:[function(require,module,exports){
 'use strict';
 
 var supportsDescriptors = require('define-properties').supportsDescriptors;
@@ -9675,333 +9393,7 @@ module.exports = function shimFlags() {
 	return polyfill;
 };
 
-},{"./polyfill":91,"define-properties":69}],93:[function(require,module,exports){
-"use strict";
-var __extends = (this && this.__extends) || (function () {
-    var extendStatics = function (d, b) {
-        extendStatics = Object.setPrototypeOf ||
-            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
-        return extendStatics(d, b);
-    };
-    return function (d, b) {
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
-var __generator = (this && this.__generator) || function (thisArg, body) {
-    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
-    return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
-    function verb(n) { return function (v) { return step([n, v]); }; }
-    function step(op) {
-        if (f) throw new TypeError("Generator is already executing.");
-        while (_) try {
-            if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
-            if (y = 0, t) op = [op[0] & 2, t.value];
-            switch (op[0]) {
-                case 0: case 1: t = op; break;
-                case 4: _.label++; return { value: op[1], done: false };
-                case 5: _.label++; y = op[1]; op = [0]; continue;
-                case 7: op = _.ops.pop(); _.trys.pop(); continue;
-                default:
-                    if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) { _ = 0; continue; }
-                    if (op[0] === 3 && (!t || (op[1] > t[0] && op[1] < t[3]))) { _.label = op[1]; break; }
-                    if (op[0] === 6 && _.label < t[1]) { _.label = t[1]; t = op; break; }
-                    if (t && _.label < t[2]) { _.label = t[2]; _.ops.push(op); break; }
-                    if (t[2]) _.ops.pop();
-                    _.trys.pop(); continue;
-            }
-            op = body.call(thisArg, _);
-        } catch (e) { op = [6, e]; y = 0; } finally { f = t = 0; }
-        if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
-    }
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-var mock_1 = require("@quenk/test/lib/mock");
-var assert_1 = require("@quenk/test/lib/assert");
-var string_1 = require("@quenk/noni/lib/data/string");
-var record_1 = require("@quenk/noni/lib/data/record");
-var future_1 = require("@quenk/noni/lib/control/monad/future");
-var case_1 = require("@quenk/potoo/lib/actor/resident/case");
-var director_1 = require("../../../lib/app/director");
-var actor_1 = require("../../../lib/actor");
-var app_1 = require("../app/fixtures/app");
-var Router = /** @class */ (function () {
-    function Router() {
-        this.mock = new mock_1.Mock();
-        this.handlers = {};
-    }
-    Router.prototype.add = function (route, handler) {
-        this.mock.invoke('add', [route, handler], this);
-        this.handlers[route] = handler;
-        return this;
-    };
-    return Router;
-}());
-var Controller = /** @class */ (function (_super) {
-    __extends(Controller, _super);
-    function Controller(cases, system) {
-        var _this = _super.call(this, system) || this;
-        _this.cases = cases;
-        _this.system = system;
-        return _this;
-    }
-    Controller.prototype.receive = function () {
-        return this.cases(this);
-    };
-    Controller.template = function (id, cases) {
-        return { id: id, create: function (s) { return new Controller(cases, s); } };
-    };
-    Controller.prototype.run = function () {
-    };
-    return Controller;
-}(actor_1.Immutable));
-var system = function () { return new app_1.TestApp(); };
-var director = function (routes, router, timeout) {
-    if (timeout === void 0) { timeout = 0; }
-    return ({
-        id: 'director',
-        create: function (s) { return new director_1.Director('display', router, { timeout: timeout }, routes, s); }
-    });
-};
-describe('director', function () {
-    describe('Director', function () {
-        it('should execute routes ', function () { return future_1.toPromise(future_1.doFuture(function () {
-            var app, router, executed;
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0:
-                        app = system();
-                        router = new Router();
-                        executed = false;
-                        app.spawn(director({ '/foo': 'ctl' }, router, 0));
-                        app.spawn(Controller.template('ctl', function () { return [
-                            new case_1.Case(director_1.Resume, function () { executed = true; })
-                        ]; }));
-                        return [4 /*yield*/, router.handlers['/foo']('foo')];
-                    case 1:
-                        _a.sent();
-                        return [4 /*yield*/, future_1.fromCallback(function (cb) { return setTimeout(cb); })];
-                    case 2:
-                        _a.sent();
-                        return [2 /*return*/, future_1.attempt(function () { return assert_1.assert(executed).true(); })];
-                }
-            });
-        })); });
-        it('should send Suspend before change', function () {
-            return future_1.toPromise(future_1.doFuture(function () {
-                var app, router, routes, passed;
-                return __generator(this, function (_a) {
-                    switch (_a.label) {
-                        case 0:
-                            app = system();
-                            router = new Router();
-                            routes = { '/foo': 'foo', '/bar': 'bar' };
-                            passed = false;
-                            app.spawn(director(routes, router, 0));
-                            app.spawn(Controller.template('foo', function (c) { return [
-                                new case_1.Case(director_1.Suspend, function (_a) {
-                                    var director = _a.director;
-                                    passed = true;
-                                    c.tell(director, new director_1.Suspended(c.self()));
-                                })
-                            ]; }));
-                            app.spawn(Controller.template('bar', function () { return []; }));
-                            return [4 /*yield*/, router.handlers['/foo']('/foo')];
-                        case 1:
-                            _a.sent();
-                            return [4 /*yield*/, router.handlers['/bar']('/bar')];
-                        case 2:
-                            _a.sent();
-                            return [4 /*yield*/, future_1.fromCallback(function (cb) { return setTimeout(cb, 100); })];
-                        case 3:
-                            _a.sent();
-                            return [2 /*return*/, future_1.attempt(function () {
-                                    var runtime = app.vm.state.threads['director'];
-                                    var dir = runtime.context.actor;
-                                    assert_1.assert(dir.routes['/foo']).not.undefined();
-                                    assert_1.assert(dir.routes['/bar']).not.undefined();
-                                    assert_1.assert(passed).true();
-                                })];
-                    }
-                });
-            }));
-        });
-        it('should remove unresponsive routes', function () {
-            return future_1.toPromise(future_1.doFuture(function () {
-                var app, router, routes, passed;
-                return __generator(this, function (_a) {
-                    switch (_a.label) {
-                        case 0:
-                            app = system();
-                            router = new Router();
-                            routes = { '/foo': 'foo', '/bar': 'bar' };
-                            passed = false;
-                            app.spawn(director(routes, router, 100));
-                            app.spawn(Controller.template('foo', function () { return []; }));
-                            app.spawn(Controller.template('bar', function () { return [
-                                new case_1.Case(director_1.Resume, function () { passed = true; })
-                            ]; }));
-                            return [4 /*yield*/, router.handlers['/foo']('/foo')];
-                        case 1:
-                            _a.sent();
-                            return [4 /*yield*/, router.handlers['/bar']('/bar')];
-                        case 2:
-                            _a.sent();
-                            return [4 /*yield*/, future_1.fromCallback(function (cb) { return setTimeout(cb, 500); })];
-                        case 3:
-                            _a.sent();
-                            return [2 /*return*/, future_1.attempt(function () {
-                                    var runtime = app.vm.state.threads['director'];
-                                    var dir = runtime.context.actor;
-                                    assert_1.assert(dir.routes['/foo']).undefined();
-                                    assert_1.assert(dir.routes['/bar']).not.undefined();
-                                    assert_1.assert(passed).true();
-                                })];
-                    }
-                });
-            }));
-        });
-        it('should spawn templates ', function () {
-            return future_1.toPromise(future_1.doFuture(function () {
-                var app, router, passed, actualResume, actualTemplate, tmpl;
-                return __generator(this, function (_a) {
-                    switch (_a.label) {
-                        case 0:
-                            app = system();
-                            router = new Router();
-                            passed = false;
-                            tmpl = {
-                                id: 'foo',
-                                create: function (s, t, r) {
-                                    actualResume = r;
-                                    actualTemplate = t;
-                                    return new Controller(function () { return [
-                                        new case_1.Case(director_1.Resume, function () { passed = true; })
-                                    ]; }, s);
-                                }
-                            };
-                            app.spawn(director({ '/foo': tmpl }, router, 0));
-                            return [4 /*yield*/, router.handlers['/foo']('/foo')];
-                        case 1:
-                            _a.sent();
-                            return [4 /*yield*/, future_1.fromCallback(function (cb) { return setTimeout(cb); })];
-                        case 2:
-                            _a.sent();
-                            return [2 /*return*/, future_1.attempt(function () {
-                                    assert_1.assert(passed).true();
-                                    assert_1.assert(actualTemplate.id).equal("foo");
-                                    assert_1.assert(actualResume).instance.of(director_1.Resume);
-                                })];
-                    }
-                });
-            }));
-        });
-        it('should kill spawned templates ', function () {
-            return future_1.toPromise(future_1.doFuture(function () {
-                var app, router, spawned;
-                return __generator(this, function (_a) {
-                    switch (_a.label) {
-                        case 0:
-                            app = system();
-                            router = new Router();
-                            spawned = false;
-                            app.spawn(director({
-                                '/foo': Controller.template('foo', function (c) { return [
-                                    new case_1.Case(director_1.Suspend, function (_a) {
-                                        var director = _a.director;
-                                        spawned = true;
-                                        c.tell(director, new director_1.Suspended(c.self()));
-                                    })
-                                ]; }),
-                                '/bar': Controller.template('bar', function () { return []; }),
-                            }, router, 0));
-                            return [4 /*yield*/, router.handlers['/foo']('/foo')];
-                        case 1:
-                            _a.sent();
-                            return [4 /*yield*/, router.handlers['/bar']('/bar')];
-                        case 2:
-                            _a.sent();
-                            return [4 /*yield*/, future_1.fromCallback(function (cb) { return setTimeout(cb, 100); })];
-                        case 3:
-                            _a.sent();
-                            return [2 /*return*/, future_1.attempt(function () {
-                                    var threads = app.vm.state.threads;
-                                    var matches = record_1.reduce(threads, 0, function (p, _, k) {
-                                        return string_1.startsWith(String(k), 'director/') ? p + 1 : p;
-                                    });
-                                    assert_1.assert(spawned).true();
-                                    assert_1.assert(matches).equal(2);
-                                })];
-                    }
-                });
-            }));
-        });
-        it('should exec functions', function () { return future_1.toPromise(future_1.doFuture(function () {
-            var app, router, spawned;
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0:
-                        app = system();
-                        router = new Router();
-                        spawned = false;
-                        app.spawn(director({
-                            '/foo': function () {
-                                spawned = true;
-                                return 'foo';
-                            }
-                        }, router, 0));
-                        return [4 /*yield*/, router.handlers['/foo']('/foo')];
-                    case 1:
-                        _a.sent();
-                        return [4 /*yield*/, future_1.fromCallback(function (cb) { return setTimeout(cb, 100); })];
-                    case 2:
-                        _a.sent();
-                        return [2 /*return*/, future_1.attempt(function () { assert_1.assert(spawned).true(); })];
-                }
-            });
-        })); });
-        it('should reload actors', function () { return future_1.toPromise(future_1.doFuture(function () {
-            var app, router, called;
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0:
-                        app = system();
-                        router = new Router();
-                        called = 0;
-                        app.spawn(director({
-                            '/foo': Controller.template('foo', function (c) { return [
-                                new case_1.Case(director_1.Resume, function (_a) {
-                                    var director = _a.director;
-                                    if (called === 0) {
-                                        called++;
-                                        c.tell(director, new director_1.Reload(c.self()));
-                                    }
-                                    else {
-                                        called++;
-                                    }
-                                }),
-                                new case_1.Case(director_1.Suspend, function (_a) {
-                                    var director = _a.director;
-                                    c.tell(director, new director_1.Suspended(c.self()));
-                                })
-                            ]; }),
-                        }, router, 0));
-                        return [4 /*yield*/, router.handlers['/foo']('/foo')];
-                    case 1:
-                        _a.sent();
-                        return [4 /*yield*/, future_1.fromCallback(function (cb) { return setTimeout(cb, 100); })];
-                    case 2:
-                        _a.sent();
-                        return [2 /*return*/, future_1.attempt(function () { assert_1.assert(called).equal(2); })];
-                }
-            });
-        })); });
-    });
-});
-
-},{"../../../lib/actor":1,"../../../lib/app/director":2,"../app/fixtures/app":95,"@quenk/noni/lib/control/monad/future":18,"@quenk/noni/lib/data/record":25,"@quenk/noni/lib/data/string":27,"@quenk/potoo/lib/actor/resident/case":34,"@quenk/test/lib/assert":63,"@quenk/test/lib/mock":64}],94:[function(require,module,exports){
+},{"./polyfill":88,"define-properties":66}],90:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -10041,7 +9433,7 @@ var GenericImmutable = /** @class */ (function (_super) {
 }(actor_1.Immutable));
 exports.GenericImmutable = GenericImmutable;
 
-},{"../../../../lib/actor":1}],95:[function(require,module,exports){
+},{"../../../../lib/actor":1}],91:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -10068,337 +9460,10 @@ var TestApp = /** @class */ (function (_super) {
         return this.vm.spawn(this.vm, temp);
     };
     return TestApp;
-}(app_1.JApp));
+}(app_1.Jouvert));
 exports.TestApp = TestApp;
 
-},{"../../../../lib/app":6}],96:[function(require,module,exports){
-"use strict";
-var __extends = (this && this.__extends) || (function () {
-    var extendStatics = function (d, b) {
-        extendStatics = Object.setPrototypeOf ||
-            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
-        return extendStatics(d, b);
-    };
-    return function (d, b) {
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
-var __generator = (this && this.__generator) || function (thisArg, body) {
-    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
-    return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
-    function verb(n) { return function (v) { return step([n, v]); }; }
-    function step(op) {
-        if (f) throw new TypeError("Generator is already executing.");
-        while (_) try {
-            if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
-            if (y = 0, t) op = [op[0] & 2, t.value];
-            switch (op[0]) {
-                case 0: case 1: t = op; break;
-                case 4: _.label++; return { value: op[1], done: false };
-                case 5: _.label++; y = op[1]; op = [0]; continue;
-                case 7: op = _.ops.pop(); _.trys.pop(); continue;
-                default:
-                    if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) { _ = 0; continue; }
-                    if (op[0] === 3 && (!t || (op[1] > t[0] && op[1] < t[3]))) { _.label = op[1]; break; }
-                    if (op[0] === 6 && _.label < t[1]) { _.label = t[1]; t = op; break; }
-                    if (t && _.label < t[2]) { _.label = t[2]; _.ops.push(op); break; }
-                    if (t[2]) _.ops.pop();
-                    _.trys.pop(); continue;
-            }
-            op = body.call(thisArg, _);
-        } catch (e) { op = [6, e]; y = 0; } finally { f = t = 0; }
-        if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
-    }
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-var mock_1 = require("@quenk/test/lib/mock");
-var assert_1 = require("@quenk/test/lib/assert");
-var future_1 = require("@quenk/noni/lib/control/monad/future");
-var either_1 = require("@quenk/noni/lib/data/either");
-var case_1 = require("@quenk/potoo/lib/actor/resident/case");
-var strategy_1 = require("../../../../lib/app/form/active/validate/strategy");
-var active_1 = require("../../../../lib/app/form/active");
-var app_1 = require("../../app/fixtures/app");
-var actor_1 = require("../fixtures/actor");
-var Form = /** @class */ (function (_super) {
-    __extends(Form, _super);
-    function Form() {
-        var _this = _super !== null && _super.apply(this, arguments) || this;
-        _this.__MOCK__ = new mock_1.Mock();
-        _this.data = {};
-        _this.validateStrategy = new strategy_1.NoStrategy(_this);
-        return _this;
-    }
-    Form.prototype.set = function (name, value) {
-        this.data[name] = value;
-        return this.__MOCK__.invoke('set', [name, value], this);
-    };
-    Form.prototype.getValues = function () {
-        return this.__MOCK__.invoke('getValues', [], this.data);
-    };
-    Form.prototype.getModifiedValues = function () {
-        return this.__MOCK__.invoke('getModifiedValues', [], this.data);
-    };
-    Form.prototype.onSaveFailed = function (f) {
-        return this.__MOCK__.invoke('onSaveFailed', [f], undefined);
-    };
-    Form.prototype.onFieldInvalid = function () {
-        return this.__MOCK__.invoke('onFieldInvalid', [], undefined);
-    };
-    Form.prototype.onFieldValid = function () {
-        return this.__MOCK__.invoke('onFieldValid', [], undefined);
-    };
-    Form.prototype.onFormInvalid = function () {
-        return this.__MOCK__.invoke('onFormInvalid', [], undefined);
-    };
-    Form.prototype.onFormValid = function () {
-        return this.__MOCK__.invoke('onFormValid', [], undefined);
-    };
-    Form.prototype.save = function () {
-        return this.__MOCK__.invoke('save', [], undefined);
-    };
-    Form.prototype.run = function () { };
-    return Form;
-}(active_1.AbstractActiveForm));
-var system = function () { return new app_1.TestApp(); };
-var form = function (addr) { return ({
-    id: 'form',
-    create: function (s) { return new Form(s, addr); }
-}); };
-describe('active', function () {
-    describe('AbstractActiveForm', function () {
-        describe('receive', function () {
-            it('should handle Abort message', function () {
-                return future_1.toPromise(future_1.doFuture(function () {
-                    var s, aborted, cases;
-                    return __generator(this, function (_a) {
-                        switch (_a.label) {
-                            case 0:
-                                s = system();
-                                aborted = false;
-                                cases = [
-                                    new case_1.Case(active_1.FormAborted, function () { aborted = true; })
-                                ];
-                                s.spawn({
-                                    id: 'parent',
-                                    create: function (s) {
-                                        return new actor_1.GenericImmutable(s, cases, function (that) {
-                                            var addr = that.spawn(form(that.self()));
-                                            that.tell(addr, new active_1.Abort());
-                                        });
-                                    }
-                                });
-                                return [4 /*yield*/, future_1.delay(function () { }, 0)];
-                            case 1:
-                                _a.sent();
-                                return [2 /*return*/, future_1.attempt(function () {
-                                        assert_1.assert(aborted).true();
-                                        assert_1.assert(s.vm.state.threads['parent/form'])
-                                            .undefined();
-                                    })];
-                        }
-                    });
-                }));
-            });
-            it('should handle Save message', function () {
-                return future_1.toPromise(future_1.doFuture(function () {
-                    var s;
-                    return __generator(this, function (_a) {
-                        switch (_a.label) {
-                            case 0:
-                                s = system();
-                                s.spawn({
-                                    id: 'parent',
-                                    create: function (s) {
-                                        return new actor_1.GenericImmutable(s, [], function (that) {
-                                            var addr = that.spawn(form(that.self()));
-                                            that.tell(addr, new active_1.Save());
-                                        });
-                                    }
-                                });
-                                return [4 /*yield*/, future_1.delay(function () { })];
-                            case 1:
-                                _a.sent();
-                                return [2 /*return*/, future_1.attempt(function () {
-                                        var runtime = s.vm.state.threads['parent/form'];
-                                        var form = runtime.context.actor;
-                                        assert_1.assert(form.__MOCK__.wasCalled('save')).true();
-                                    })];
-                        }
-                    });
-                }));
-            });
-            it('should handle SaveOk message', function () {
-                return future_1.toPromise(future_1.doFuture(function () {
-                    var s, saved, cases;
-                    return __generator(this, function (_a) {
-                        switch (_a.label) {
-                            case 0:
-                                s = system();
-                                saved = false;
-                                cases = [
-                                    new case_1.Case(active_1.FormSaved, function () { saved = true; })
-                                ];
-                                s.spawn({
-                                    id: 'parent',
-                                    create: function (s) {
-                                        return new actor_1.GenericImmutable(s, cases, function (that) {
-                                            var addr = that.spawn(form(that.self()));
-                                            that.tell(addr, new active_1.SaveOk());
-                                        });
-                                    }
-                                });
-                                return [4 /*yield*/, future_1.delay(function () { })];
-                            case 1:
-                                _a.sent();
-                                return [2 /*return*/, future_1.attempt(function () {
-                                        assert_1.assert(saved).true();
-                                        assert_1.assert(s.vm.state.threads['parent/form'])
-                                            .undefined();
-                                    })];
-                        }
-                    });
-                }));
-            });
-            it('should handle SaveFailed message', function () {
-                return future_1.toPromise(future_1.doFuture(function () {
-                    var s;
-                    return __generator(this, function (_a) {
-                        switch (_a.label) {
-                            case 0:
-                                s = system();
-                                s.spawn({
-                                    id: 'parent',
-                                    create: function (s) {
-                                        return new actor_1.GenericImmutable(s, [], function (that) {
-                                            var addr = that.spawn(form(that.self()));
-                                            that.tell(addr, new active_1.SaveFailed());
-                                        });
-                                    }
-                                });
-                                return [4 /*yield*/, future_1.delay(function () { })];
-                            case 1:
-                                _a.sent();
-                                return [2 /*return*/, future_1.attempt(function () {
-                                        var runtime = s.vm.state.threads['parent/form'];
-                                        var form = runtime.context.actor;
-                                        assert_1.assert(form.__MOCK__.wasCalled('onSaveFailed')).true();
-                                    })];
-                        }
-                    });
-                }));
-            });
-            it('should handle Input message', function () {
-                return future_1.toPromise(future_1.doFuture(function () {
-                    var s;
-                    return __generator(this, function (_a) {
-                        switch (_a.label) {
-                            case 0:
-                                s = system();
-                                s.spawn({
-                                    id: 'parent',
-                                    create: function (s) {
-                                        return new actor_1.GenericImmutable(s, [], function (that) {
-                                            var addr = that.spawn(form(that.self()));
-                                            that.tell(addr, { name: 'name', value: 'asp' });
-                                        });
-                                    }
-                                });
-                                return [4 /*yield*/, future_1.delay(function () { })];
-                            case 1:
-                                _a.sent();
-                                return [2 /*return*/, future_1.attempt(function () {
-                                        var runtime = s.vm.state.threads['parent/form'];
-                                        var form = runtime.context.actor;
-                                        assert_1.assert(form.__MOCK__.wasCalled('set')).true();
-                                        assert_1.assert(form.data).equate({ name: 'asp' });
-                                    })];
-                        }
-                    });
-                }));
-            });
-        });
-    });
-    describe('NoValidateStrategy', function () {
-        describe('validate', function () {
-            it('should invoke set', function () {
-                var form = new Form(system(), '?');
-                var strategy = new strategy_1.NoStrategy(form);
-                strategy.validate({ name: 'index', value: 1 });
-                assert_1.assert(form.__MOCK__.wasCalled('set')).true();
-            });
-        });
-    });
-    describe('OneForOneStrategy', function () {
-        describe('validate', function () {
-            it('should invoke the correct callbacks', function () {
-                var form = new Form(system(), '?');
-                var validYes = {
-                    validate: function (_, value) {
-                        return either_1.right(String(value));
-                    }
-                };
-                var validNo = {
-                    validate: function (name, _) {
-                        return either_1.left(name);
-                    }
-                };
-                var strategy = new strategy_1.OneForOneStrategy(form, validYes);
-                strategy.validate({ name: 'index', value: 1 });
-                assert_1.assert(form.__MOCK__.wasCalled('set')).true();
-                assert_1.assert(form.data['index']).equal('1');
-                assert_1.assert(form.__MOCK__.wasCalled('onFieldValid')).true();
-                var form2 = new Form(system(), '?');
-                var strategy2 = new strategy_1.OneForOneStrategy(form2, validNo);
-                strategy2.validate({ name: 'index2', value: 2 });
-                assert_1.assert(form2.__MOCK__.wasCalled('set')).false();
-                assert_1.assert(form2.data['index']).undefined();
-                assert_1.assert(form2.__MOCK__.wasCalled('onFieldInvalid')).true();
-            });
-        });
-    });
-    describe('AllForOneStrategy', function () {
-        describe('validate', function () {
-            it('should invoke the correct callbacks', function () {
-                var form = new Form(system(), '?');
-                var validYes = {
-                    validate: function (_, value) {
-                        return either_1.right(String(value));
-                    },
-                    validateAll: function () {
-                        return either_1.right({ modifed: true });
-                    }
-                };
-                var validNo = {
-                    validate: function (name, _) {
-                        return either_1.left(name);
-                    },
-                    validateAll: function () {
-                        return either_1.left({ all: 'wrong' });
-                    }
-                };
-                var strategy = new strategy_1.AllForOneStrategy(form, validYes);
-                strategy.validate({ name: 'index', value: 1 });
-                assert_1.assert(form.__MOCK__.wasCalled('set')).true();
-                assert_1.assert(form.data['index']).equal('1');
-                assert_1.assert(form.__MOCK__.wasCalled('onFieldValid')).true();
-                assert_1.assert(form.__MOCK__.wasCalled('onFormValid')).true();
-                var form2 = new Form(system(), '?');
-                var strategy2 = new strategy_1.OneForOneStrategy(form2, validNo);
-                strategy2.validate({ name: 'index2', value: 2 });
-                assert_1.assert(form2.__MOCK__.wasCalled('set')).false();
-                assert_1.assert(form2.data['index']).undefined();
-                assert_1.assert(form2.__MOCK__.wasCalled('onFieldInvalid')).true();
-                assert_1.assert(form2.__MOCK__.wasCalled('onFormInvalid')).false();
-            });
-        });
-    });
-});
-
-},{"../../../../lib/app/form/active":3,"../../../../lib/app/form/active/validate/strategy":4,"../../app/fixtures/app":95,"../fixtures/actor":94,"@quenk/noni/lib/control/monad/future":18,"@quenk/noni/lib/data/either":22,"@quenk/potoo/lib/actor/resident/case":34,"@quenk/test/lib/assert":63,"@quenk/test/lib/mock":64}],97:[function(require,module,exports){
+},{"../../../../lib/app":2}],92:[function(require,module,exports){
 "use strict";
 var __generator = (this && this.__generator) || function (thisArg, body) {
     var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
@@ -10604,7 +9669,7 @@ describe('remote', function () {
     });
 });
 
-},{"../../../../lib/app/remote":8,"../../app/fixtures/actor":94,"../../app/fixtures/app":95,"@quenk/jhr/lib/agent/mock":11,"@quenk/jhr/lib/request":12,"@quenk/jhr/lib/response":14,"@quenk/noni/lib/control/monad/future":18,"@quenk/potoo/lib/actor/resident/case":34,"@quenk/test/lib/assert":63}],98:[function(require,module,exports){
+},{"../../../../lib/app/remote":4,"../../app/fixtures/actor":90,"../../app/fixtures/app":91,"@quenk/jhr/lib/agent/mock":8,"@quenk/jhr/lib/request":9,"@quenk/jhr/lib/response":11,"@quenk/noni/lib/control/monad/future":15,"@quenk/potoo/lib/actor/resident/case":31,"@quenk/test/lib/assert":60}],93:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -10980,7 +10045,7 @@ describe('model', function () {
     });
 });
 
-},{"../../../../lib/app/remote":8,"../../../../lib/app/remote/model":9,"../../app/fixtures/app":95,"@quenk/jhr/lib/request":12,"@quenk/jhr/lib/response":14,"@quenk/noni/lib/control/monad/future":18,"@quenk/noni/lib/data/record":25,"@quenk/potoo/lib/actor/resident/case":34,"@quenk/potoo/lib/actor/resident/immutable":36,"@quenk/test/lib/assert":63,"@quenk/test/lib/mock":64}],99:[function(require,module,exports){
+},{"../../../../lib/app/remote":4,"../../../../lib/app/remote/model":5,"../../app/fixtures/app":91,"@quenk/jhr/lib/request":9,"@quenk/jhr/lib/response":11,"@quenk/noni/lib/control/monad/future":15,"@quenk/noni/lib/data/record":22,"@quenk/potoo/lib/actor/resident/case":31,"@quenk/potoo/lib/actor/resident/immutable":33,"@quenk/test/lib/assert":60,"@quenk/test/lib/mock":61}],94:[function(require,module,exports){
 "use strict";
 var __generator = (this && this.__generator) || function (thisArg, body) {
     var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
@@ -11323,11 +10388,336 @@ describe('observable', function () {
     });
 });
 
-},{"../../../../lib/app/remote/observer":10,"../../app/fixtures/actor":94,"../../app/fixtures/app":95,"@quenk/jhr/lib/agent/mock":11,"@quenk/jhr/lib/request":12,"@quenk/jhr/lib/response":14,"@quenk/noni/lib/control/monad/future":18,"@quenk/potoo/lib/actor/resident/case":34,"@quenk/test/lib/assert":63,"@quenk/test/lib/mock":64}],100:[function(require,module,exports){
-require("./app/form/active_test.js");
-require("./app/director_test.js");
+},{"../../../../lib/app/remote/observer":6,"../../app/fixtures/actor":90,"../../app/fixtures/app":91,"@quenk/jhr/lib/agent/mock":8,"@quenk/jhr/lib/request":9,"@quenk/jhr/lib/response":11,"@quenk/noni/lib/control/monad/future":15,"@quenk/potoo/lib/actor/resident/case":31,"@quenk/test/lib/assert":60,"@quenk/test/lib/mock":61}],95:[function(require,module,exports){
+"use strict";
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+        return extendStatics(d, b);
+    };
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
+var __generator = (this && this.__generator) || function (thisArg, body) {
+    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
+    return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
+    function verb(n) { return function (v) { return step([n, v]); }; }
+    function step(op) {
+        if (f) throw new TypeError("Generator is already executing.");
+        while (_) try {
+            if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
+            if (y = 0, t) op = [op[0] & 2, t.value];
+            switch (op[0]) {
+                case 0: case 1: t = op; break;
+                case 4: _.label++; return { value: op[1], done: false };
+                case 5: _.label++; y = op[1]; op = [0]; continue;
+                case 7: op = _.ops.pop(); _.trys.pop(); continue;
+                default:
+                    if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) { _ = 0; continue; }
+                    if (op[0] === 3 && (!t || (op[1] > t[0] && op[1] < t[3]))) { _.label = op[1]; break; }
+                    if (op[0] === 6 && _.label < t[1]) { _.label = t[1]; t = op; break; }
+                    if (t && _.label < t[2]) { _.label = t[2]; _.ops.push(op); break; }
+                    if (t[2]) _.ops.pop();
+                    _.trys.pop(); continue;
+            }
+            op = body.call(thisArg, _);
+        } catch (e) { op = [6, e]; y = 0; } finally { f = t = 0; }
+        if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
+    }
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+var mock_1 = require("@quenk/test/lib/mock");
+var assert_1 = require("@quenk/test/lib/assert");
+var string_1 = require("@quenk/noni/lib/data/string");
+var record_1 = require("@quenk/noni/lib/data/record");
+var future_1 = require("@quenk/noni/lib/control/monad/future");
+var case_1 = require("@quenk/potoo/lib/actor/resident/case");
+var director_1 = require("../../../../lib/app/service/director");
+var actor_1 = require("../../../../lib/actor");
+var app_1 = require("../../app/fixtures/app");
+var Router = /** @class */ (function () {
+    function Router() {
+        this.mock = new mock_1.Mock();
+        this.handlers = {};
+    }
+    Router.prototype.add = function (route, handler) {
+        this.mock.invoke('add', [route, handler], this);
+        this.handlers[route] = handler;
+        return this;
+    };
+    return Router;
+}());
+var Controller = /** @class */ (function (_super) {
+    __extends(Controller, _super);
+    function Controller(cases, system) {
+        var _this = _super.call(this, system) || this;
+        _this.cases = cases;
+        _this.system = system;
+        return _this;
+    }
+    Controller.prototype.receive = function () {
+        return this.cases(this);
+    };
+    Controller.template = function (id, cases) {
+        return { id: id, create: function (s) { return new Controller(cases, s); } };
+    };
+    Controller.prototype.run = function () {
+    };
+    return Controller;
+}(actor_1.Immutable));
+var system = function () { return new app_1.TestApp(); };
+var director = function (routes, router, timeout) {
+    if (timeout === void 0) { timeout = 0; }
+    return ({
+        id: 'director',
+        create: function (s) { return new director_1.Director('display', router, { timeout: timeout }, routes, s); }
+    });
+};
+describe('director', function () {
+    describe('Director', function () {
+        it('should execute routes ', function () { return future_1.toPromise(future_1.doFuture(function () {
+            var app, router, executed;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        app = system();
+                        router = new Router();
+                        executed = false;
+                        app.spawn(director({ '/foo': 'ctl' }, router, 0));
+                        app.spawn(Controller.template('ctl', function () { return [
+                            new case_1.Case(director_1.Resume, function () { executed = true; })
+                        ]; }));
+                        return [4 /*yield*/, router.handlers['/foo']('foo')];
+                    case 1:
+                        _a.sent();
+                        return [4 /*yield*/, future_1.fromCallback(function (cb) { return setTimeout(cb); })];
+                    case 2:
+                        _a.sent();
+                        return [2 /*return*/, future_1.attempt(function () { return assert_1.assert(executed).true(); })];
+                }
+            });
+        })); });
+        it('should send Suspend before change', function () {
+            return future_1.toPromise(future_1.doFuture(function () {
+                var app, router, routes, passed;
+                return __generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0:
+                            app = system();
+                            router = new Router();
+                            routes = { '/foo': 'foo', '/bar': 'bar' };
+                            passed = false;
+                            app.spawn(director(routes, router, 0));
+                            app.spawn(Controller.template('foo', function (c) { return [
+                                new case_1.Case(director_1.Suspend, function (_a) {
+                                    var director = _a.director;
+                                    passed = true;
+                                    c.tell(director, new director_1.Suspended(c.self()));
+                                })
+                            ]; }));
+                            app.spawn(Controller.template('bar', function () { return []; }));
+                            return [4 /*yield*/, router.handlers['/foo']('/foo')];
+                        case 1:
+                            _a.sent();
+                            return [4 /*yield*/, router.handlers['/bar']('/bar')];
+                        case 2:
+                            _a.sent();
+                            return [4 /*yield*/, future_1.fromCallback(function (cb) { return setTimeout(cb, 100); })];
+                        case 3:
+                            _a.sent();
+                            return [2 /*return*/, future_1.attempt(function () {
+                                    var runtime = app.vm.state.threads['director'];
+                                    var dir = runtime.context.actor;
+                                    assert_1.assert(dir.routes['/foo']).not.undefined();
+                                    assert_1.assert(dir.routes['/bar']).not.undefined();
+                                    assert_1.assert(passed).true();
+                                })];
+                    }
+                });
+            }));
+        });
+        it('should remove unresponsive routes', function () {
+            return future_1.toPromise(future_1.doFuture(function () {
+                var app, router, routes, passed;
+                return __generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0:
+                            app = system();
+                            router = new Router();
+                            routes = { '/foo': 'foo', '/bar': 'bar' };
+                            passed = false;
+                            app.spawn(director(routes, router, 100));
+                            app.spawn(Controller.template('foo', function () { return []; }));
+                            app.spawn(Controller.template('bar', function () { return [
+                                new case_1.Case(director_1.Resume, function () { passed = true; })
+                            ]; }));
+                            return [4 /*yield*/, router.handlers['/foo']('/foo')];
+                        case 1:
+                            _a.sent();
+                            return [4 /*yield*/, router.handlers['/bar']('/bar')];
+                        case 2:
+                            _a.sent();
+                            return [4 /*yield*/, future_1.fromCallback(function (cb) { return setTimeout(cb, 500); })];
+                        case 3:
+                            _a.sent();
+                            return [2 /*return*/, future_1.attempt(function () {
+                                    var runtime = app.vm.state.threads['director'];
+                                    var dir = runtime.context.actor;
+                                    assert_1.assert(dir.routes['/foo']).undefined();
+                                    assert_1.assert(dir.routes['/bar']).not.undefined();
+                                    assert_1.assert(passed).true();
+                                })];
+                    }
+                });
+            }));
+        });
+        it('should spawn templates ', function () {
+            return future_1.toPromise(future_1.doFuture(function () {
+                var app, router, passed, actualResume, actualTemplate, tmpl;
+                return __generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0:
+                            app = system();
+                            router = new Router();
+                            passed = false;
+                            tmpl = {
+                                id: 'foo',
+                                create: function (s, t, r) {
+                                    actualResume = r;
+                                    actualTemplate = t;
+                                    return new Controller(function () { return [
+                                        new case_1.Case(director_1.Resume, function () { passed = true; })
+                                    ]; }, s);
+                                }
+                            };
+                            app.spawn(director({ '/foo': tmpl }, router, 0));
+                            return [4 /*yield*/, router.handlers['/foo']('/foo')];
+                        case 1:
+                            _a.sent();
+                            return [4 /*yield*/, future_1.fromCallback(function (cb) { return setTimeout(cb); })];
+                        case 2:
+                            _a.sent();
+                            return [2 /*return*/, future_1.attempt(function () {
+                                    assert_1.assert(passed).true();
+                                    assert_1.assert(actualTemplate.id).equal("foo");
+                                    assert_1.assert(actualResume).instance.of(director_1.Resume);
+                                })];
+                    }
+                });
+            }));
+        });
+        it('should kill spawned templates ', function () {
+            return future_1.toPromise(future_1.doFuture(function () {
+                var app, router, spawned;
+                return __generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0:
+                            app = system();
+                            router = new Router();
+                            spawned = false;
+                            app.spawn(director({
+                                '/foo': Controller.template('foo', function (c) { return [
+                                    new case_1.Case(director_1.Suspend, function (_a) {
+                                        var director = _a.director;
+                                        spawned = true;
+                                        c.tell(director, new director_1.Suspended(c.self()));
+                                    })
+                                ]; }),
+                                '/bar': Controller.template('bar', function () { return []; }),
+                            }, router, 0));
+                            return [4 /*yield*/, router.handlers['/foo']('/foo')];
+                        case 1:
+                            _a.sent();
+                            return [4 /*yield*/, router.handlers['/bar']('/bar')];
+                        case 2:
+                            _a.sent();
+                            return [4 /*yield*/, future_1.fromCallback(function (cb) { return setTimeout(cb, 100); })];
+                        case 3:
+                            _a.sent();
+                            return [2 /*return*/, future_1.attempt(function () {
+                                    var threads = app.vm.state.threads;
+                                    var matches = record_1.reduce(threads, 0, function (p, _, k) {
+                                        return string_1.startsWith(String(k), 'director/') ? p + 1 : p;
+                                    });
+                                    assert_1.assert(spawned).true();
+                                    assert_1.assert(matches).equal(2);
+                                })];
+                    }
+                });
+            }));
+        });
+        it('should exec functions', function () { return future_1.toPromise(future_1.doFuture(function () {
+            var app, router, spawned;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        app = system();
+                        router = new Router();
+                        spawned = false;
+                        app.spawn(director({
+                            '/foo': function () {
+                                spawned = true;
+                                return 'foo';
+                            }
+                        }, router, 0));
+                        return [4 /*yield*/, router.handlers['/foo']('/foo')];
+                    case 1:
+                        _a.sent();
+                        return [4 /*yield*/, future_1.fromCallback(function (cb) { return setTimeout(cb, 100); })];
+                    case 2:
+                        _a.sent();
+                        return [2 /*return*/, future_1.attempt(function () { assert_1.assert(spawned).true(); })];
+                }
+            });
+        })); });
+        it('should reload actors', function () { return future_1.toPromise(future_1.doFuture(function () {
+            var app, router, called;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        app = system();
+                        router = new Router();
+                        called = 0;
+                        app.spawn(director({
+                            '/foo': Controller.template('foo', function (c) { return [
+                                new case_1.Case(director_1.Resume, function (_a) {
+                                    var director = _a.director;
+                                    if (called === 0) {
+                                        called++;
+                                        c.tell(director, new director_1.Reload(c.self()));
+                                    }
+                                    else {
+                                        called++;
+                                    }
+                                }),
+                                new case_1.Case(director_1.Suspend, function (_a) {
+                                    var director = _a.director;
+                                    c.tell(director, new director_1.Suspended(c.self()));
+                                })
+                            ]; }),
+                        }, router, 0));
+                        return [4 /*yield*/, router.handlers['/foo']('/foo')];
+                    case 1:
+                        _a.sent();
+                        return [4 /*yield*/, future_1.fromCallback(function (cb) { return setTimeout(cb, 100); })];
+                    case 2:
+                        _a.sent();
+                        return [2 /*return*/, future_1.attempt(function () { assert_1.assert(called).equal(2); })];
+                }
+            });
+        })); });
+    });
+});
+
+},{"../../../../lib/actor":1,"../../../../lib/app/service/director":7,"../../app/fixtures/app":91,"@quenk/noni/lib/control/monad/future":15,"@quenk/noni/lib/data/record":22,"@quenk/noni/lib/data/string":24,"@quenk/potoo/lib/actor/resident/case":31,"@quenk/test/lib/assert":60,"@quenk/test/lib/mock":61}],96:[function(require,module,exports){
 require("./app/remote/index_test.js");
 require("./app/remote/model_test.js");
 require("./app/remote/observer_test.js");
+require("./app/service/director_test.js");
 
-},{"./app/director_test.js":93,"./app/form/active_test.js":96,"./app/remote/index_test.js":97,"./app/remote/model_test.js":98,"./app/remote/observer_test.js":99}]},{},[100]);
+},{"./app/remote/index_test.js":92,"./app/remote/model_test.js":93,"./app/remote/observer_test.js":94,"./app/service/director_test.js":95}]},{},[96]);

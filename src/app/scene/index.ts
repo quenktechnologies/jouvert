@@ -22,7 +22,7 @@
  *
  * In a typical Jouvert application, these actors send their content via a
  * [[Show]] message to a display which is usually the address of a
- * [[ViewService]] instance. Scene actors are meant to be spawned on demand and
+ * [[Display]] instance. Scene actors are meant to be spawned on demand and
  * usually send this message as part of their run() method.
  */
 
@@ -31,7 +31,7 @@ import { Address } from '@quenk/potoo/lib/actor/address';
 import { View } from '@quenk/wml';
 
 import { Api, Immutable } from '../../actor';
-import { Show } from '../service/view';
+import { Show } from '../service/display';
 
 /**
  * AppScene is the parent interface of all scenes found with an application.

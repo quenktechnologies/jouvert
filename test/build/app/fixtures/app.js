@@ -24,6 +24,6 @@ var TestApp = /** @class */ (function (_super) {
         return this.vm.spawn(this.vm, temp);
     };
     return TestApp;
-}(app_1.JApp));
+}(app_1.Jouvert));
 exports.TestApp = TestApp;
 //# sourceMappingURL=app.js.map

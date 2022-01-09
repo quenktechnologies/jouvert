@@ -1,41 +1,64 @@
-import { Case } from '@quenk/potoo/lib/actor/resident/case';
-import { System } from '@quenk/potoo/lib/actor/system';
-import { Immutable, Api } from '../../actor';
-import { Resume, Suspend } from '../director';
 /**
- * AppSceneMessage is the type of messages an AppScene handles.
+ * In a Jouvert application, scenes are actors that produce the primary content
+ * to display to the user.
+ *
+ * The content produced by all the scene actors in an application essentially
+ * provide the application's UI. The actors themselves serve as the controllers
+ * of the application's logic.
+ *
+ * This toolkit provides 3 main types of scene actors:
+ *
+ * 1. [[MainScene]]   - These are actors that provide the main views in an
+ *                      application such as a dashboard or a user profile.
+ *                      These typically coordinate the other types of scenes to
+ *                      provide the appropriate UI at the right time.
+ *
+ * 2. [[FormScene]]   - These are specialised to support the content of one or
+ *                      more HTML forms and have methods for setting and
+ *                      validating values.
+ *
+ * 3. [[DialogScene]] - These scenes are controllers intended for modal dialog
+ *                      content.
+ *
+ * In a typical Jouvert application, these actors send their content via a
+ * [[Show]] message to a display which is usually the address of a
+ * [[Display]] instance. Scene actors are meant to be spawned on demand and
+ * usually send this message as part of their run() method.
  */
-export declare type AppSceneMessage<M> = Suspend | M;
+import { Address } from '@quenk/potoo/lib/actor/address';
+import { View } from '@quenk/wml';
+import { Api, Immutable } from '../../actor';
 /**
- * SuspendListener is an interface for actors interested in triggering some
- * action when the Director's Suspend message is received.
+ * AppScene is the parent interface of all scenes found with an application.
+ *
+ * The properties of this interface are largely meant for interaction with the
+ * display actor(s).
  */
-export interface SuspendListener extends Api {
+export interface AppScene extends Api {
     /**
-     * beforeSuspend handler.
+     * name used to identify the Scene mainly used by the display actor.
      */
-    beforeSuspended(s: Suspend): SuspendListener;
+    name: string;
+    /**
+     * view sent to the display actor to render content.
+     */
+    view: View;
+    /**
+     * display content will be sent to.
+     */
+    display: Address;
 }
 /**
- * SuspendCase invokes the [[SuspendListener.beforeSuspend]] callback.
- */
-export declare class SuspendCase<T, M> extends Case<Suspend> {
-    listener: AppScene<T, M>;
-    constructor(listener: AppScene<T, M>);
-}
-/**
- * AppScene is an actor used to provide a main activity of an application.
+ * BaseAppScene that provides a basis for more specialized AppScenes.
  *
- * These are typically the actors that react to [[Director]] messages (Resume
- * and Suspend). This class however is designed to be spawned directly by the
- * Director so it is killed when it loses control.
- *
- * Spawn them directly in the Director's route configuation.
+ * This class only sends content to the display actor when run.
  */
-export declare abstract class AppScene<T, M> extends Immutable<AppSceneMessage<M>> {
-    resume: Resume<T>;
-    system: System;
-    constructor(resume: Resume<T>, system: System);
-    receive(): Case<AppSceneMessage<M>>[];
-    beforeSuspended(_: Suspend): AppScene<T, M>;
+export declare abstract class BaseAppScene<T> extends Immutable<T> implements AppScene {
+    abstract name: string;
+    abstract view: View;
+    abstract display: Address;
+    /**
+     * run the actor by sending its content to the display.
+     */
+    run(): void;
 }

@@ -3,7 +3,7 @@ import { GenericResponse } from '@quenk/jhr/lib/response';
 import { Case } from '@quenk/potoo/lib/actor/resident/case';
 import { Address } from '@quenk/potoo/lib/actor/address';
 import { Mutable } from '../../../actor';
-import { JApp } from '../../';
+import { App } from '../../';
 import { StageListener } from './stage/listener';
 import { TransportErr, Response, Request, Send, ParSend, SeqSend, BatchResponse } from '../';
 export { TransportErr, Response, Request, Send, ParSend, SeqSend, BatchResponse };
@@ -22,8 +22,8 @@ export declare type RemoteObserverMessage<Req, Res> = Send<Req> | ParSend<Req> |
 export declare class RemoteObserver<Req, Res> extends Mutable {
     agent: HTTPAgent<Req, Res>;
     listener: StageListener<Req, Res>;
-    system: JApp;
-    constructor(agent: HTTPAgent<Req, Res>, listener: StageListener<Req, Res>, system: JApp);
+    system: App;
+    constructor(agent: HTTPAgent<Req, Res>, listener: StageListener<Req, Res>, system: App);
     remote: Address;
     onWake: (req: Request<Req>) => void;
     onRequest: (current: Request<Req>, buffer: Request<Req>[]) => (msg: Request<Req>) => void;

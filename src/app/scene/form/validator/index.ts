@@ -11,7 +11,7 @@ import {
     FormSceneMessage,
     BaseFormScene
 } from '../';
-import { ValidationStrategy } from './strategy';
+import {  ValidationStrategy, NoStrategy} from './strategy';
 import {
     InputEvent,
     SaveFailed,
@@ -110,7 +110,7 @@ export abstract class BaseValidatorFormScene<T extends Object, M>
     implements
     FormStateListener<T> {
 
-    abstract strategy: ValidationStrategy;
+    strategy: ValidationStrategy = new NoStrategy(this);
 
     receive() {
 

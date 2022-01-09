@@ -5,9 +5,7 @@
   "author": [
     "Quenk Technologies Limited <info@quenk.com> (https://quenk.com)"
   ],
-  "main": [
-    "lib/app/index.js"
-  ],
+  "main":     "lib/app/index.js",
   "files": [
     "lib"
   ],

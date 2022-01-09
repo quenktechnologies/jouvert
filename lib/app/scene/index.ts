@@ -74,11 +74,17 @@ export abstract class BaseAppScene<T>
     abstract display: Address;
 
     /**
-     * run the actor by sending its content to the display.
+     * show the AppScene by sending a message to the display.
      */
-    run() {
+    show() {
 
         this.tell(this.display, new Show(this.name, this.view, this.self()));
+
+    }
+
+    run() {
+
+        this.show();
 
     }
 

@@ -2,6 +2,7 @@ import { Case } from '@quenk/potoo/lib/actor/resident/case';
 import { System } from '@quenk/potoo/lib/actor/system';
 
 import {
+    Reload,
     Resume,
     Suspend,
     SuspendCase,
@@ -74,5 +75,16 @@ export abstract class MainScene<T, M>
     }
 
     beforeSuspended(_: Suspend) { }
+
+    /**
+     * reload the AppScene by sending a Reload request to the Director.
+     *
+     * This will end this instance and spawn a new one.
+     */
+    reload() {
+
+        this.tell(this.resume.director, new Reload(this.self()));
+
+    }
 
 }

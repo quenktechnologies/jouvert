@@ -58,7 +58,8 @@ export declare abstract class BaseAppScene<T> extends Immutable<T> implements Ap
     abstract view: View;
     abstract display: Address;
     /**
-     * run the actor by sending its content to the display.
+     * show the AppScene by sending a message to the display.
      */
+    show(): void;
     run(): void;
 }

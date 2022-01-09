@@ -32,4 +32,10 @@ export declare abstract class MainScene<T, M> extends BaseAppScene<MainSceneMess
     get display(): string;
     receive(): Case<MainSceneMessage<M>>[];
     beforeSuspended(_: Suspend): void;
+    /**
+     * reload the AppScene by sending a Reload request to the Director.
+     *
+     * This will end this instance and spawn a new one.
+     */
+    reload(): void;
 }

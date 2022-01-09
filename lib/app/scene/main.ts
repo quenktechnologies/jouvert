@@ -1,12 +1,13 @@
 import { Case } from '@quenk/potoo/lib/actor/resident/case';
 import { System } from '@quenk/potoo/lib/actor/system';
 
-import { 
-  Resume,
-  Suspend,
-  SuspendCase,
-  SuspendListener 
+import {
+    Resume,
+    Suspend,
+    SuspendCase,
+    SuspendListener
 } from '../service/director';
+import { Pop, Push, Show } from '../service/display';
 import { BaseAppScene } from './';
 
 /**
@@ -14,6 +15,9 @@ import { BaseAppScene } from './';
  */
 export type MainSceneMessage<M>
     = Suspend
+    | Show
+    | Push
+    | Pop
     | M
     ;
 
@@ -21,17 +25,19 @@ export type MainSceneMessage<M>
  * MainScene is an actor used to provide one of the primary activity views of an 
  * application.
  *
- * These actors are typically used in combination with a [[Director]] instance
- * which can spawn them on demand in response to the configured route request.
+ * These actors are meant to be used in combination with a [[Director]] instance
+ * which can spawn them on demand in response to the app's "route" changing.
  *
- * The [[Resume]] parameter serves as proof that the MainScene is allowed to
- * send its content to the user via the address stored in the display property.
+ * The [[Resume]] parameter serves as proof that the MainScene is allowed by the
+ * Director to send content to the user (by sending a [[Show]] to the director.
  * When the Director decides it's time for another actor to be given that right,
- * it kills this actor but not before giving it a chance to suspend itself via
- * the [[Suspend]] message and [[SuspendListener]] interface. By default, a 
- * MainScene only has [[Case]] classes installed to handle the Suspend message.
+ * the MainScene is terminiated but is given a chance to clean up via a 
+ * [[Suspend]]. 
  *
- * Override the receive() method to implement more.
+ * MainScene is intentionally basic to allow for the flexibility needed when
+ * composing the complex main activities of a routed application. However, to 
+ * make working with [[FormScene]]s and [[Dialog]]s easier, it contains Case 
+ * classes for redirecting content received to the Director.
  */
 export abstract class MainScene<T, M>
     extends
@@ -55,7 +61,13 @@ export abstract class MainScene<T, M>
 
         return <Case<MainSceneMessage<M>>[]>[
 
-            new SuspendCase(this, this.resume.director)
+            new SuspendCase(this, this.resume.director),
+
+            new Case(Show, (msg: Show) => this.tell(this.display, msg)),
+
+            new Case(Push, (msg: Push) => this.tell(this.display, msg)),
+
+            new Case(Pop, (msg: Pop) => this.tell(this.display, msg)),
 
         ];
 

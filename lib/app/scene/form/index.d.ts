@@ -230,9 +230,9 @@ export declare class SaveOkCase<T extends Object> extends Case<SaveOk> {
 export declare abstract class BaseFormScene<T extends Object, M> extends BaseAppScene<FormSceneMessage<M>> implements FormScene<T>, SaveFailedListener {
     system: App;
     target: Address;
-    display: Address;
     value: Partial<T>;
-    constructor(system: App, target: Address, display: Address, value?: Partial<T>);
+    constructor(system: App, target: Address, value?: Partial<T>);
+    get display(): string;
     /**
      * fieldsModified tracks the names of those fields whose values have been
      * modified via this class's APIs.

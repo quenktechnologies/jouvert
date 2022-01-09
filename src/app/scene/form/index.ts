@@ -353,8 +353,13 @@ export abstract class BaseFormScene<T extends Object, M>
     constructor(
         public system: App,
         public target: Address,
-        public display: Address,
         public value: Partial<T> = {}) { super(system); }
+
+      get display() {
+
+        return this.target;
+
+      }
 
     /**
      * fieldsModified tracks the names of those fields whose values have been

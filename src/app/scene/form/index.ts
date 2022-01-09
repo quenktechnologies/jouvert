@@ -155,7 +155,7 @@ export class SaveFailed {
 }
 
 /**
- * FormAborted is sent by a FormScene to its owner when the form has been
+ * FormAborted is sent by a FormScene to its target when the form has been
  * aborted.
  */
 export class FormAborted {
@@ -165,7 +165,7 @@ export class FormAborted {
 }
 
 /**
- * FormSaved is sent by a FormScene to its owner when it has been successfully
+ * FormSaved is sent by a FormScene to its target when it has been successfully
  * saved its data.
  */
 export class FormSaved {
@@ -188,8 +188,8 @@ export type FormSceneMessage<M>
 
 /**
  * FormScene is the interface implemented by actors serving as the "controller"
- * for HTML form views. FormScene's have a concept of an "owner" actor which
- * life cycle messages (abort/save) are sent.
+ * for HTML form views. FormScene's have a concept of an "target" actor which
+ * life cycle messages (abort/save) are sent to.
  *
  * Note: This actor provides no methods for direct validation, if that is needed
  * use a CheckedFormScene instead.
@@ -197,11 +197,12 @@ export type FormSceneMessage<M>
 export interface FormScene<T extends Object> extends AppScene {
 
     /**
-     * owner is the address of the actor that the FormScene reports to.
+     * target is the address of the actor the FormScene sends its life cycle
+     * messages to.
      *
      * Usually its parent actor.
      */
-    owner: Address;
+    target: Address;
 
     /**
      * set changes the stored value of a field captured by the FormScene.
@@ -251,7 +252,7 @@ export class InputEventCase<T extends Object>
 
 
 /**
- * AbortCase informs the FormScene's owner, then terminates the FormScene.
+ * AbortCase informs the FormScene's target, then terminates the FormScene.
  */
 export class AbortCase<T extends Object> extends Case<Abort> {
 
@@ -259,7 +260,7 @@ export class AbortCase<T extends Object> extends Case<Abort> {
 
         super(Abort, (_: Abort) => {
 
-            scene.tell(scene.owner, new FormAborted(scene.self()));
+            scene.tell(scene.target, new FormAborted(scene.self()));
 
             scene.exit();
 
@@ -309,7 +310,7 @@ export class SaveFailedCase extends Case<SaveFailed> {
 }
 
 /**
- * SaveOkCase informs the FormScene's owner and exits.
+ * SaveOkCase informs the FormScene's target and exits.
  */
 export class SaveOkCase<T extends Object> extends Case<SaveOk> {
 
@@ -317,7 +318,7 @@ export class SaveOkCase<T extends Object> extends Case<SaveOk> {
 
         super(SaveOk, (_: SaveOk) => {
 
-            form.tell(form.owner, new FormSaved(form.self()));
+            form.tell(form.target, new FormSaved(form.self()));
 
             form.exit();
 
@@ -338,7 +339,7 @@ export class SaveOkCase<T extends Object> extends Case<SaveOk> {
  * system.
  *
  * @param system  The potoo System this actor belongs to.
- * @param owner   The address of the class that owns this actor.
+ * @param target   The address of the class that owns this actor.
  * @param value   Value of the BaseFormScene tracked by the APIs of this 
  *                class. This should not be modified outside of this actor.
  */
@@ -351,7 +352,7 @@ export abstract class BaseFormScene<T extends Object, M>
 
     constructor(
         public system: App,
-        public owner: Address,
+        public target: Address,
         public display: Address,
         public value: Partial<T> = {}) { super(system); }
 

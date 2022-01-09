@@ -1,6 +1,6 @@
 import { Address } from '@quenk/potoo/lib/actor/address';
 
-import { Close } from '../view';
+import { Close } from '../../service/view';
 import { JApp } from '../..';
 import {
     Dialog,

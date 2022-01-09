@@ -1,8 +1,8 @@
 import { Case } from '@quenk/potoo/lib/actor/resident/case';
 import { System } from '@quenk/potoo/lib/actor/system';
 
-import { Immutable } from '../../actor';
 import { Resume, Suspend, SuspendCase, SuspendListener } from '../director';
+import { BaseAppScene } from './';
 
 /**
  * MainSceneMessage type.
@@ -30,7 +30,7 @@ export type MainSceneMessage<M>
  */
 export abstract class MainScene<T, M>
     extends
-    Immutable<MainSceneMessage<M>>
+    BaseAppScene<MainSceneMessage<M>>
     implements
     SuspendListener {
 

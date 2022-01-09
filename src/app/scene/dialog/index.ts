@@ -1,12 +1,10 @@
 import { isString, isFunction, isObject } from '@quenk/noni/lib/data/type';
 
-import { View } from '@quenk/wml';
-
 import { Address } from '@quenk/potoo/lib/actor/address';
 
-import { Immutable } from '../../../actor';
-import { Show, Close } from '../view';
+import { Show, Close } from '../../service/view';
 import { JApp } from '../..';
+import { BaseAppScene } from '..';
 
 /**
  * DialogName indicates the name of a dialog.
@@ -65,22 +63,12 @@ export class DialogClosed extends DialogEvent { }
  * screen, instead it leaves that up to the provided display actor's address.
  * If a handler is provided, it will receive an event when the dialog closes.
  */
-export abstract class Dialog<M> extends Immutable<M> {
+export abstract class Dialog<M> extends BaseAppScene<M> {
 
     constructor(
         public system: JApp,
         public display: Address,
         public target: DialogEventTarget = '?') { super(system); }
-
-    /**
-     * name of the dialog.
-     */
-    abstract name: DialogName;
-
-    /**
-     * view used to display content.
-     */
-    abstract view: View;
 
     /**
      * fire an event to the provided target.

@@ -34,17 +34,17 @@ export abstract class MainScene<T, M>
     implements
     SuspendListener {
 
-    constructor(public resume: Resume<T>, public system: System,) {
+    constructor(public system:System, public resume: Resume<T>) {
 
         super(system);
 
     }
 
-      get display() {
+    get display() {
 
         return this.resume.director;
 
-      }
+    }
 
     receive(): Case<MainSceneMessage<M>>[] {
 

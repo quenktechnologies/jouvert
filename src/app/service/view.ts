@@ -7,7 +7,7 @@ import { System } from '@quenk/potoo/lib/actor/system';
 import { Address } from '@quenk/potoo/lib/actor/address';
 import { Case } from '@quenk/potoo/lib/actor/resident/case';
 
-import {Layout} from '@quenk/wml-widgets/lib/layout';
+import { Layout } from '@quenk/wml-widgets/lib/layout';
 
 /**
  * ViewName is used to identify views.
@@ -52,6 +52,7 @@ export class HTMLElementViewDelegate implements ViewDelegate {
     set(view: View) {
 
         this.unset();
+
         this.node.appendChild(<HTMLElement>view.render());
 
     }
@@ -78,13 +79,14 @@ export class WMLLayoutViewDelegate implements ViewDelegate {
     set(view: View) {
 
         this.unset();
-      this.layout.setContent((<HTMLElement>view.render()));
+
+        this.layout.setContent((<HTMLElement>view.render()));
 
     }
 
     unset() {
 
-      this.layout.removeContent();
+        this.layout.removeContent();
 
     }
 
@@ -171,17 +173,17 @@ export class ViewService extends Immutable<ViewServiceMessage> {
 
     receive() {
 
-      return <Case<ViewServiceMessage>[]>[
+        return <Case<ViewServiceMessage>[]>[
 
-        new Case(Show, (m: Show) => this.show(m)),
+            new Case(Show, (m: Show) => this.show(m)),
 
-        new Case(Push, (m: Push) => this.push(m)),
+            new Case(Push, (m: Push) => this.push(m)),
 
-        new Case(Pop, (m: Pop) => this.pop(m)),
+            new Case(Pop, (m: Pop) => this.pop(m)),
 
-        new Case(Close, () => this.close())
+            new Case(Close, () => this.close())
 
-    ];
+        ];
 
     }
 

@@ -1,6 +1,6 @@
 import { Address } from '@quenk/potoo/lib/actor/address';
 
-import { JApp } from '../..';
+import { App } from '../..';
 import { Dialog, DialogEventTarget } from '.';
 
 /**
@@ -9,7 +9,7 @@ import { Dialog, DialogEventTarget } from '.';
 export abstract class AlertDialog<M> extends Dialog<M> {
 
     constructor(
-        public system: JApp,
+        public system: App,
         public display: Address,
         public message: string,
         public target: DialogEventTarget = '?') {

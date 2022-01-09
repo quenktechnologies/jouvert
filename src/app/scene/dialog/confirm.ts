@@ -1,7 +1,7 @@
 import { Address } from '@quenk/potoo/lib/actor/address';
 
 import { Close } from '../../service/view';
-import { JApp } from '../..';
+import { App } from '../..';
 import {
     Dialog,
     DialogEventFunc,
@@ -46,7 +46,7 @@ export class DialogConfirmed extends DialogEvent { }
 export abstract class ConfirmDialog<M> extends Dialog<M> {
 
     constructor(
-        public system: JApp,
+        public system: App,
         public display: Address,
         public target: ConfirmDialogEventTarget = '?') {
 

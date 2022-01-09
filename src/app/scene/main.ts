@@ -40,6 +40,12 @@ export abstract class MainScene<T, M>
 
     }
 
+      get display() {
+
+        return this.resume.director;
+
+      }
+
     receive(): Case<MainSceneMessage<M>>[] {
 
         return <Case<MainSceneMessage<M>>[]>[

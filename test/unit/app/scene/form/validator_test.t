@@ -18,7 +18,7 @@ import {
     AllForOneStrategy
 } from '../../../../../lib/app/scene/form/validator/strategy';
 import {
-    AbstractValidatedFormScene,
+    BaseValidatorFormScene,
 } from '../../../../../lib/app/form/scene/validator';
 import {
     FormAborted,
@@ -38,7 +38,7 @@ interface Data {
 
 }
 
-class Form extends AbstractValidatedFormScene<Data, void> {
+class Form extends BaseValidatorFormScene<Data, void> {
 
     __MOCK__ = new Mock();
 
@@ -117,7 +117,7 @@ const form = (addr: string) => ({
 
 describe('active', () => {
 
-    describe('AbstractValidatedFormScene', () => {
+    describe('BaseValidatorFormScene', () => {
 
         describe('receive', () => {
 

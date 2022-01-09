@@ -3,7 +3,7 @@ import { isString, isFunction, isObject } from '@quenk/noni/lib/data/type';
 import { Address } from '@quenk/potoo/lib/actor/address';
 
 import { Show, Close } from '../../service/view';
-import { JApp } from '../..';
+import { App } from '../..';
 import { BaseAppScene } from '..';
 
 /**
@@ -66,7 +66,7 @@ export class DialogClosed extends DialogEvent { }
 export abstract class Dialog<M> extends BaseAppScene<M> {
 
     constructor(
-        public system: JApp,
+        public system: App,
         public display: Address,
         public target: DialogEventTarget = '?') { super(system); }
 

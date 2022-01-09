@@ -5,9 +5,9 @@ import { Case } from '@quenk/potoo/lib/actor/resident/case';
 import { Address } from '@quenk/potoo/lib/actor/address';
 
 import { Mutable } from '../../../actor';
-import { JApp } from '../../';
+import { App } from '../../';
 
-import { StageListener} from './stage/listener';
+import { StageListener } from './stage/listener';
 import {
     TransportErr,
     Remote,
@@ -57,7 +57,7 @@ export class RemoteObserver<Req, Res>
     constructor(
         public agent: HTTPAgent<Req, Res>,
         public listener: StageListener<Req, Res>,
-        public system: JApp) {
+        public system: App) {
 
         super(system);
 

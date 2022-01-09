@@ -12,8 +12,9 @@ import {
 import { Address } from '@quenk/potoo/lib/actor/address';
 import { Case } from '@quenk/potoo/lib/actor/resident/case';
 
-import { Api, Immutable } from '../../../actor';
+import { Api } from '../../../actor';
 import { App } from '../..';
+import { AppScene, BaseAppScene } from '../';
 
 /**
  * FieldName type.
@@ -193,7 +194,7 @@ export type FormSceneMessage<M>
  * Note: This actor provides no methods for direct validation, if that is needed
  * use a CheckedFormScene instead.
  */
-export interface FormScene<T extends Object> extends Api {
+export interface FormScene<T extends Object> extends AppScene {
 
     /**
      * owner is the address of the actor that the FormScene reports to.
@@ -325,7 +326,7 @@ export class SaveOkCase<T extends Object> extends Case<SaveOk> {
 }
 
 /**
- * AbstractFormScene provides an abstract implementation of the FormScene 
+ * BaseFormScene provides an abstract implementation of the FormScene 
  * interface.
  *
  * Child classes provide a save() implementation to provide the logic of saving
@@ -338,12 +339,12 @@ export class SaveOkCase<T extends Object> extends Case<SaveOk> {
  *
  * @param system  The potoo System this actor belongs to.
  * @param owner   The address of the class that owns this actor.
- * @param value   Value of the AbstractFormScene tracked by the APIs of this 
+ * @param value   Value of the BaseFormScene tracked by the APIs of this 
  *                class. This should not be modified outside of this actor.
  */
-export abstract class AbstractFormScene<T extends Object, M>
+export abstract class BaseFormScene<T extends Object, M>
     extends
-    Immutable<FormSceneMessage<M>>
+    BaseAppScene<FormSceneMessage<M>>
     implements
     FormScene<T>,
     SaveFailedListener {
@@ -351,6 +352,7 @@ export abstract class AbstractFormScene<T extends Object, M>
     constructor(
         public system: App,
         public owner: Address,
+        public display: Address,
         public value: Partial<T> = {}) { super(system); }
 
     /**
@@ -377,7 +379,7 @@ export abstract class AbstractFormScene<T extends Object, M>
 
     }
 
-    set(name: FieldName, value: FieldValue): AbstractFormScene<T, M> {
+    set(name: FieldName, value: FieldValue): BaseFormScene<T, M> {
 
         if (!contains(this.fieldsModifed, name))
             this.fieldsModifed.push(name);
@@ -401,12 +403,10 @@ export abstract class AbstractFormScene<T extends Object, M>
 
     }
 
-    abort() {
-
-    }
-
-    abstract save(): void;
-
     onSaveFailed(_: SaveFailed) { }
+
+    abort() { }
+
+    save() { }
 
 }

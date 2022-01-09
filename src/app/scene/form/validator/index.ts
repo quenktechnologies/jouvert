@@ -9,7 +9,7 @@ import {
     FieldError,
     FormScene,
     FormSceneMessage,
-    AbstractFormScene
+    BaseFormScene
 } from '../';
 import { ValidationStrategy } from './strategy';
 import {
@@ -101,12 +101,12 @@ export class InputEventCase<T extends Object>
 }
 
 /**
- * AbstractValidatorFormScene is an abstract extension to the AbstractFormScene
+ * BaseValidatorFormScene is an abstract extension to the BaseFormScene
  * class to add validation and feedback features.
  */
-export abstract class AbstractValidatorFormScene<T extends Object, M>
+export abstract class BaseValidatorFormScene<T extends Object, M>
     extends
-    AbstractFormScene<T, M>
+    BaseFormScene<T, M>
     implements
     FormStateListener<T> {
 

@@ -8,7 +8,7 @@ import {
     SuspendCase,
     SuspendListener
 } from '../service/director';
-import { Pop, Push, Show } from '../service/display';
+import { Pop, Push, Show, Close } from '../service/display';
 import { BaseAppScene } from './';
 
 /**
@@ -64,11 +64,13 @@ export abstract class MainScene<T, M>
 
             new SuspendCase(this, this.resume.director),
 
-            new Case(Show, (msg: Show) => void this.tell(this.display, msg) ),
+            new Case(Show, (msg: Show) => void this.tell(this.display, msg)),
 
             new Case(Push, (msg: Push) => void this.tell(this.display, msg)),
 
             new Case(Pop, (msg: Pop) => void this.tell(this.display, msg)),
+
+            new Case(Close, (msg: Close) => void this.tell(this.display, msg)),
 
         ];
 

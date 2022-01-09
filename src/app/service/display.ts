@@ -15,12 +15,13 @@ import { Layout } from '@quenk/wml-widgets/lib/layout';
 export type ViewName = string;
 
 /**
- * ViewServiceMessage is the type of messages the Display handles.
+ * DisplayMessage is the type of messages the Display handles.
  */
-export type ViewServiceMessage
+export type DisplayMessage
     = Show
     | Push
     | Pop
+    | Close
     ;
 
 /**
@@ -166,7 +167,7 @@ export class ViewRemoved {
  * Use this to implement navigation independant of the address bar when needed
  * for example.
  */
-export class Display extends Immutable<ViewServiceMessage> {
+export class Display extends Immutable<DisplayMessage> {
 
     constructor(
         public delegate: ViewDelegate,
@@ -176,7 +177,7 @@ export class Display extends Immutable<ViewServiceMessage> {
 
     receive() {
 
-        return <Case<ViewServiceMessage>[]>[
+        return <Case<DisplayMessage>[]>[
 
             new Case(Show, (m: Show) => this.show(m)),
 

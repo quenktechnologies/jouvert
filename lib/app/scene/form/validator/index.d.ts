@@ -2,7 +2,7 @@ import { Object } from '@quenk/noni/lib/data/jsonx';
 import { Case } from '@quenk/potoo/lib/actor/resident/case';
 import { FieldName, FieldValue, FieldError, FormScene, FormSceneMessage, BaseFormScene } from '../';
 import { ValidationStrategy } from './strategy';
-import { InputEvent, SaveFailed } from '../';
+import { InputEvent } from '../';
 /**
  * ValidatorFormScene is the interface implemented by actors serving as the
  * "controller" for HTML form views with validation.
@@ -68,7 +68,6 @@ export declare class InputEventCase<T extends Object> extends Case<InputEvent> {
 export declare abstract class BaseValidatorFormScene<T extends Object, M> extends BaseFormScene<T, M> implements FormStateListener<T> {
     strategy: ValidationStrategy;
     receive(): Case<FormSceneMessage<M>>[];
-    onSaveFailed(_: SaveFailed): void;
     onFieldInvalid(): void;
     onFieldValid(): void;
     onFormInvalid(): void;

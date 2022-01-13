@@ -122,6 +122,38 @@ export declare class FormSaved {
  */
 export declare type FormSceneMessage<M> = Abort | Save | SaveFailed | SaveOk | InputEvent | M;
 /**
+ * SaveListener indicates an actor has support for reacting to the saving
+ * process of form data.
+ *
+ * These methods are used by the SaveOkCase and SaveFailedCase to allow the
+ * actor to hook into the configured behaviour of these Cases. Use them to
+ * do cleanup work or execute any additional steps not covered by the default
+ * behaviours.
+ */
+export interface SaveListener {
+    /**
+     * onSaveFailed handler.
+     *
+     * This is invoked when the FormScene receives a SaveFailed message
+     * indicating the save operation was a failure.
+     */
+    onSaveFailed(failure: SaveFailed): void | Future<void>;
+    /**
+     * onSaveOk handler.
+     *
+     * This is invoked when the FormScene receives a SaveOk message indicating
+     * the save operation was a success.
+     */
+    onSaveOk(ok: SaveOk): void | Future<void>;
+    /**
+     * onSaveFinished handler.
+     *
+     * This is invoked when the saving operation is complete whether successful
+     * or not.
+     */
+    onSaveFinished(): void | Future<void>;
+}
+/**
  * FormScene is the interface implemented by actors serving as the "controller"
  * for HTML form views. FormScene's have a concept of an "target" actor which
  * life cycle messages (abort/save) are sent to.
@@ -129,7 +161,7 @@ export declare type FormSceneMessage<M> = Abort | Save | SaveFailed | SaveOk | I
  * Note: This actor provides no methods for direct validation, if that is needed
  * use a CheckedFormScene instead.
  */
-export interface FormScene<T extends Object> extends AppScene {
+export interface FormScene<T extends Object> extends AppScene, SaveListener {
     /**
      * target is the address of the actor the FormScene sends its life cycle
      * messages to.
@@ -183,28 +215,18 @@ export declare class SaveCase<T extends Object> extends Case<Save> {
     constructor(form: FormScene<T>);
 }
 /**
- * SaveFailedListener can be implemented by a FormScene to add a  methods for
- * reacting to the failure of saving the form data.
+ * SaveFailedCase simply invokes the onSaveFailed() and onSaveFinished()
+ * handlers.
  *
- * By default, the FormScene [[SaveOkCase]] is configured to exit the actor
- * once matched. For this reason, this interface only considers the failed
- * case.
- */
-export interface SaveFailedListener {
-    /**
-     * onSaveFailed handler
-     */
-    onSaveFailed(failure: SaveFailed): void | Future<void>;
-}
-/**
- * SaveFailedCase invokes the onSaveFailed() handler when matched.
+ * The actor is left as is so the user can edit the form and retry the save
+ * operation.
  */
 export declare class SaveFailedCase extends Case<SaveFailed> {
-    listener: SaveFailedListener;
-    constructor(listener: SaveFailedListener);
+    listener: SaveListener;
+    constructor(listener: SaveListener);
 }
 /**
- * SaveOkCase informs the FormScene's target and exits.
+ * SaveOkCase
  */
 export declare class SaveOkCase<T extends Object> extends Case<SaveOk> {
     form: FormScene<T>;
@@ -227,7 +249,7 @@ export declare class SaveOkCase<T extends Object> extends Case<SaveOk> {
  * @param value   Value of the BaseFormScene tracked by the APIs of this
  *                class. This should not be modified outside of this actor.
  */
-export declare abstract class BaseFormScene<T extends Object, M> extends BaseAppScene<FormSceneMessage<M>> implements FormScene<T>, SaveFailedListener {
+export declare abstract class BaseFormScene<T extends Object, M> extends BaseAppScene<FormSceneMessage<M>> implements FormScene<T> {
     system: App;
     target: Address;
     value: Partial<T>;
@@ -242,7 +264,9 @@ export declare abstract class BaseFormScene<T extends Object, M> extends BaseApp
     set(name: FieldName, value: FieldValue): BaseFormScene<T, M>;
     getValues(): T;
     getModifiedValues(): Partial<T>;
-    onSaveFailed(_: SaveFailed): void;
+    onSaveFailed(): void;
+    onSaveOk(): void;
+    onSaveFinished(): void;
     abort(): void;
     save(): void;
 }

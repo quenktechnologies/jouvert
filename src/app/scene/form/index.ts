@@ -187,6 +187,43 @@ export type FormSceneMessage<M>
     ;
 
 /**
+ * SaveListener indicates an actor has support for reacting to the saving 
+ * process of form data.
+ *
+ * These methods are used by the SaveOkCase and SaveFailedCase to allow the 
+ * actor to hook into the configured behaviour of these Cases. Use them to
+ * do cleanup work or execute any additional steps not covered by the default
+ * behaviours.
+ */
+export interface SaveListener {
+
+    /**
+     * onSaveFailed handler.
+     *
+     * This is invoked when the FormScene receives a SaveFailed message 
+     * indicating the save operation was a failure.
+     */
+    onSaveFailed(failure: SaveFailed): void | Future<void>
+
+    /**
+     * onSaveOk handler.
+     *
+     * This is invoked when the FormScene receives a SaveOk message indicating
+     * the save operation was a success.
+     */
+    onSaveOk(ok: SaveOk): void | Future<void>
+
+    /**
+     * onSaveFinished handler.
+     *
+     * This is invoked when the saving operation is complete whether successful
+     * or not.
+     */
+    onSaveFinished(): void | Future<void>
+
+}
+
+/**
  * FormScene is the interface implemented by actors serving as the "controller"
  * for HTML form views. FormScene's have a concept of an "target" actor which
  * life cycle messages (abort/save) are sent to.
@@ -194,7 +231,7 @@ export type FormSceneMessage<M>
  * Note: This actor provides no methods for direct validation, if that is needed
  * use a CheckedFormScene instead.
  */
-export interface FormScene<T extends Object> extends AppScene {
+export interface FormScene<T extends Object> extends AppScene, SaveListener {
 
     /**
      * target is the address of the actor the FormScene sends its life cycle
@@ -250,7 +287,6 @@ export class InputEventCase<T extends Object>
     }
 }
 
-
 /**
  * AbortCase informs the FormScene's target, then terminates the FormScene.
  */
@@ -282,47 +318,48 @@ export class SaveCase<T extends Object> extends Case<Save> {
 }
 
 /**
- * SaveFailedListener can be implemented by a FormScene to add a  methods for 
- * reacting to the failure of saving the form data.
+ * SaveFailedCase simply invokes the onSaveFailed() and onSaveFinished() 
+ * handlers.
  *
- * By default, the FormScene [[SaveOkCase]] is configured to exit the actor
- * once matched. For this reason, this interface only considers the failed 
- * case.
- */
-export interface SaveFailedListener {
-
-    /**
-     * onSaveFailed handler
-     */
-    onSaveFailed(failure: SaveFailed): void | Future<void>
-
-}
-
-/**
- * SaveFailedCase invokes the onSaveFailed() handler when matched.
+ * The actor is left as is so the user can edit the form and retry the save
+ * operation.
  */
 export class SaveFailedCase extends Case<SaveFailed> {
 
-    constructor(public listener: SaveFailedListener) {
+    constructor(public listener: SaveListener) {
 
-        super(SaveFailed, fail => wrap(listener.onSaveFailed(fail)));
+        super(SaveFailed, fail => doFuture(function*() {
+
+            yield wrap(listener.onSaveFailed(fail));
+
+            yield wrap(listener.onSaveFinished());
+
+            return voidPure;
+
+        }));
     }
 }
 
 /**
- * SaveOkCase informs the FormScene's target and exits.
+ * SaveOkCase 
  */
 export class SaveOkCase<T extends Object> extends Case<SaveOk> {
 
     constructor(public form: FormScene<T>) {
 
-        super(SaveOk, (_: SaveOk) => {
+        super(SaveOk, (ok: SaveOk) => doFuture(function*() {
+
+            yield wrap(form.onSaveOk(ok));
+
+            yield wrap(form.onSaveFinished());
 
             form.tell(form.target, new FormSaved(form.self()));
 
             form.exit();
 
-        });
+            return voidPure;
+
+        }));
     }
 }
 
@@ -347,19 +384,18 @@ export abstract class BaseFormScene<T extends Object, M>
     extends
     BaseAppScene<FormSceneMessage<M>>
     implements
-    FormScene<T>,
-    SaveFailedListener {
+    FormScene<T> {
 
     constructor(
         public system: App,
         public target: Address,
         public value: Partial<T> = {}) { super(system); }
 
-      get display() {
+    get display() {
 
         return this.target;
 
-      }
+    }
 
     /**
      * fieldsModified tracks the names of those fields whose values have been
@@ -409,7 +445,11 @@ export abstract class BaseFormScene<T extends Object, M>
 
     }
 
-    onSaveFailed(_: SaveFailed) { }
+    onSaveFailed() { }
+
+    onSaveOk() { }
+
+    onSaveFinished() { }
 
     abort() { }
 

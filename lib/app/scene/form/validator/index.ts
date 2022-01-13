@@ -11,11 +11,8 @@ import {
     FormSceneMessage,
     BaseFormScene
 } from '../';
-import {  ValidationStrategy, NoStrategy} from './strategy';
-import {
-    InputEvent,
-    SaveFailed,
-} from '../'
+import { ValidationStrategy, NoStrategy } from './strategy';
+import {    InputEvent} from '../'
 
 /**
  * ValidatorFormScene is the interface implemented by actors serving as the 
@@ -123,8 +120,6 @@ export abstract class BaseValidatorFormScene<T extends Object, M>
         ]
 
     }
-
-    onSaveFailed(_: SaveFailed) { }
 
     onFieldInvalid() { }
 

@@ -40,6 +40,9 @@ var Proxy = /** @class */ (function () {
         this.instance.kill(addr);
         return this;
     };
+    Proxy.prototype.wait = function (ft) {
+        return this.instance.wait(ft);
+    };
     Proxy.prototype.exit = function () {
         this.exit();
     };
@@ -4278,8 +4281,8 @@ exports.round = round;
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.isGroup = exports.isChild = exports.getId = exports.getParent = exports.make = exports.isRestricted = exports.ADDRESS_RESTRICTED = exports.ADDRESS_EMPTY = exports.ADDRESS_SYSTEM = exports.ADDRESS_DISCARD = exports.SEPERATOR = void 0;
-var array_1 = require("@quenk/noni/lib/data/array");
-var string_1 = require("@quenk/noni/lib/data/string");
+const array_1 = require("@quenk/noni/lib/data/array");
+const string_1 = require("@quenk/noni/lib/data/string");
 exports.SEPERATOR = '/';
 exports.ADDRESS_DISCARD = '?';
 exports.ADDRESS_SYSTEM = '$';
@@ -4292,35 +4295,33 @@ exports.ADDRESS_RESTRICTED = [
 /**
  * isRestricted indicates whether an actor id is restricted or not.
  */
-exports.isRestricted = function (id) {
-    return ((exports.ADDRESS_RESTRICTED.some(function (a) { return id.indexOf(a) > -1; })) && (id !== exports.SEPERATOR));
-};
+const isRestricted = (id) => ((exports.ADDRESS_RESTRICTED.some(a => id.indexOf(a) > -1)) && (id !== exports.SEPERATOR));
+exports.isRestricted = isRestricted;
 /**
  * make a child address given its id and parent address.
  */
-exports.make = function (parent, id) {
-    return ((parent === exports.SEPERATOR) || (parent === exports.ADDRESS_EMPTY)) ?
-        "" + parent + id :
-        (parent === exports.ADDRESS_SYSTEM) ?
-            id :
-            "" + parent + exports.SEPERATOR + id;
-};
+const make = (parent, id) => ((parent === exports.SEPERATOR) || (parent === exports.ADDRESS_EMPTY)) ?
+    `${parent}${id}` :
+    (parent === exports.ADDRESS_SYSTEM) ?
+        id :
+        `${parent}${exports.SEPERATOR}${id}`;
+exports.make = make;
 /**
  * getParent computes the parent of an Address.
  */
-exports.getParent = function (addr) {
+const getParent = (addr) => {
     if (((addr === exports.ADDRESS_SYSTEM) ||
         (addr === exports.ADDRESS_EMPTY) ||
         (addr === exports.ADDRESS_DISCARD) || (addr === exports.SEPERATOR))) {
         return exports.ADDRESS_SYSTEM;
     }
     else {
-        var b4 = addr.split(exports.SEPERATOR);
+        let b4 = addr.split(exports.SEPERATOR);
         if ((b4.length === 2) && (b4[0] === '')) {
             return exports.SEPERATOR;
         }
         else {
-            var a = b4
+            let a = b4
                 .reverse()
                 .slice(1)
                 .reverse()
@@ -4329,29 +4330,27 @@ exports.getParent = function (addr) {
         }
     }
 };
+exports.getParent = getParent;
 /**
  * getId provides the id part of an actor address.
  */
-exports.getId = function (addr) {
-    return ((addr === exports.ADDRESS_SYSTEM) ||
-        (addr === exports.ADDRESS_DISCARD) ||
-        (addr === exports.ADDRESS_EMPTY) ||
-        (addr === exports.SEPERATOR)) ?
-        addr :
-        array_1.tail(addr.split(exports.SEPERATOR));
-};
+const getId = (addr) => ((addr === exports.ADDRESS_SYSTEM) ||
+    (addr === exports.ADDRESS_DISCARD) ||
+    (addr === exports.ADDRESS_EMPTY) ||
+    (addr === exports.SEPERATOR)) ?
+    addr :
+    (0, array_1.tail)(addr.split(exports.SEPERATOR));
+exports.getId = getId;
 /**
  * isChild tests whether an address is a child of the parent address.
  */
-exports.isChild = function (parent, child) {
-    return (parent === exports.ADDRESS_SYSTEM) || (parent !== child) && string_1.startsWith(child, parent);
-};
+const isChild = (parent, child) => (parent === exports.ADDRESS_SYSTEM) || (parent !== child) && (0, string_1.startsWith)(child, parent);
+exports.isChild = isChild;
 /**
  * isGroup determines if an address is a group reference.
  */
-exports.isGroup = function (addr) {
-    return ((addr[0] === '$') && (addr !== '$'));
-};
+const isGroup = (addr) => ((addr[0] === '$') && (addr !== '$'));
+exports.isGroup = isGroup;
 
 },{"@quenk/noni/lib/data/array":18,"@quenk/noni/lib/data/string":24}],28:[function(require,module,exports){
 "use strict";
@@ -4366,25 +4365,23 @@ exports.FLAG_EXIT_AFTER_RUN = 32;
 /**
  * isImmutable flag test.
  */
-exports.isImmutable = function (f) {
-    return (f & exports.FLAG_IMMUTABLE) === exports.FLAG_IMMUTABLE;
-};
+const isImmutable = (f) => (f & exports.FLAG_IMMUTABLE) === exports.FLAG_IMMUTABLE;
+exports.isImmutable = isImmutable;
 /**
  * isBuffered flag test.
  */
-exports.isBuffered = function (f) {
-    return (f & exports.FLAG_BUFFERED) === exports.FLAG_BUFFERED;
-};
+const isBuffered = (f) => (f & exports.FLAG_BUFFERED) === exports.FLAG_BUFFERED;
+exports.isBuffered = isBuffered;
 /**
  * isRouter flag test.
  */
-exports.isRouter = function (f) {
-    return (f & exports.FLAG_ROUTER) === exports.FLAG_ROUTER;
-};
+const isRouter = (f) => (f & exports.FLAG_ROUTER) === exports.FLAG_ROUTER;
+exports.isRouter = isRouter;
 /**
  * isResident flag test.
  */
-exports.isResident = function (f) { return (f & exports.FLAG_RESIDENT) === exports.FLAG_RESIDENT; };
+const isResident = (f) => (f & exports.FLAG_RESIDENT) === exports.FLAG_RESIDENT;
+exports.isResident = isResident;
 
 },{}],29:[function(require,module,exports){
 "use strict";
@@ -4395,14 +4392,13 @@ exports.Envelope = void 0;
  *
  * Used to internally keep track of message sources and destintations.
  */
-var Envelope = /** @class */ (function () {
-    function Envelope(to, from, message) {
+class Envelope {
+    constructor(to, from, message) {
         this.to = to;
         this.from = from;
         this.message = message;
     }
-    return Envelope;
-}());
+}
 exports.Envelope = Envelope;
 
 },{}],30:[function(require,module,exports){
@@ -4415,73 +4411,58 @@ exports.CaseFunction = void 0;
  * It combines mutliple Case classes into one serving effectively as a pattern
  * matching function.
  */
-var CaseFunction = /** @class */ (function () {
-    function CaseFunction(cases) {
+class CaseFunction {
+    constructor(cases) {
         this.cases = cases;
     }
     /**
      * test whether at least one of the underlying Case classes will handle the
      * Message.
      */
-    CaseFunction.prototype.test = function (msg) {
-        return this.cases.some(function (kase) { return kase.test(msg); });
-    };
+    test(msg) {
+        return this.cases.some(kase => kase.test(msg));
+    }
     /**
      * apply the first Case class that will handle the provided Message.
      *
      * Throws if none of them will.
      */
-    CaseFunction.prototype.apply = function (msg) {
-        var kase = this.cases.find(function (kase) { return kase.test(msg); });
+    apply(msg) {
+        let kase = this.cases.find(kase => kase.test(msg));
         if (!kase)
-            throw new Error("CaseFunction: No Case patterns match!");
+            throw new Error(`CaseFunction: No Case patterns match!`);
         return kase.apply(msg);
-    };
-    return CaseFunction;
-}());
+    }
+}
 exports.CaseFunction = CaseFunction;
 
 },{}],31:[function(require,module,exports){
 "use strict";
-var __extends = (this && this.__extends) || (function () {
-    var extendStatics = function (d, b) {
-        extendStatics = Object.setPrototypeOf ||
-            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
-        return extendStatics(d, b);
-    };
-    return function (d, b) {
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Default = exports.caseOf = exports.Case = void 0;
-var type_1 = require("@quenk/noni/lib/data/type");
+const type_1 = require("@quenk/noni/lib/data/type");
 /**
  * Case is provided for situations where it is better to extend
  * the Case class instead of creating new instances.
  */
-var Case = /** @class */ (function () {
-    function Case(pattern, handler) {
+class Case {
+    constructor(pattern, handler) {
         this.pattern = pattern;
         this.handler = handler;
     }
     /**
      * test whether the supplied message satisfies the Case test.
      */
-    Case.prototype.test = function (m) {
-        return type_1.test(m, this.pattern);
-    };
+    test(m) {
+        return (0, type_1.test)(m, this.pattern);
+    }
     /**
      * apply the handler to the message.
      */
-    Case.prototype.apply = function (m) {
+    apply(m) {
         return this.handler(m);
-    };
-    return Case;
-}());
+    }
+}
 exports.Case = Case;
 function caseOf(pattern, handler) {
     return new Case(pattern, handler);
@@ -4490,266 +4471,196 @@ exports.caseOf = caseOf;
 /**
  * Default matches any message value.
  */
-var Default = /** @class */ (function (_super) {
-    __extends(Default, _super);
-    function Default(handler) {
-        var _this = _super.call(this, Object, handler) || this;
-        _this.handler = handler;
-        return _this;
+class Default extends Case {
+    constructor(handler) {
+        super(Object, handler);
+        this.handler = handler;
     }
-    Default.prototype.test = function (_) {
+    test(_) {
         return true;
-    };
-    Default.prototype.apply = function (m) {
+    }
+    apply(m) {
         return this.handler(m);
-    };
-    return Default;
-}(Case));
+    }
+}
 exports.Default = Default;
 
 },{"@quenk/noni/lib/data/type":25}],32:[function(require,module,exports){
 "use strict";
-var __extends = (this && this.__extends) || (function () {
-    var extendStatics = function (d, b) {
-        extendStatics = Object.setPrototypeOf ||
-            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
-        return extendStatics(d, b);
-    };
-    return function (d, b) {
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Callback = void 0;
-var _1 = require("./");
+const _1 = require("./");
 /**
  * Callback provides an actor that will successfully process one and only one
  * message before exiting.
  *
  * Unmatched messages are ignored.
  */
-var Callback = /** @class */ (function (_super) {
-    __extends(Callback, _super);
-    function Callback() {
-        return _super !== null && _super.apply(this, arguments) || this;
-    }
-    return Callback;
-}(_1.Immutable));
+class Callback extends _1.Immutable {
+}
 exports.Callback = Callback;
 
 },{"./":33}],33:[function(require,module,exports){
 "use strict";
-var __extends = (this && this.__extends) || (function () {
-    var extendStatics = function (d, b) {
-        extendStatics = Object.setPrototypeOf ||
-            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
-        return extendStatics(d, b);
-    };
-    return function (d, b) {
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Immutable = void 0;
-var flags_1 = require("../../flags");
-var function_1 = require("../case/function");
-var __1 = require("../");
+const flags_1 = require("../../flags");
+const function_1 = require("../case/function");
+const __1 = require("../");
 /**
  * Immutable actors do not change their receiver behaviour after receiving
  * a message. The same receiver is applied to each and every message.
  */
-var Immutable = /** @class */ (function (_super) {
-    __extends(Immutable, _super);
-    function Immutable() {
-        return _super !== null && _super.apply(this, arguments) || this;
+class Immutable extends __1.AbstractResident {
+    get $receiver() {
+        return new function_1.CaseFunction(this.receive());
     }
-    Object.defineProperty(Immutable.prototype, "$receiver", {
-        get: function () {
-            return new function_1.CaseFunction(this.receive());
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Immutable.prototype.init = function (c) {
+    init(c) {
         c.flags = c.flags | flags_1.FLAG_IMMUTABLE | flags_1.FLAG_BUFFERED;
         return c;
-    };
+    }
     /**
      * receive provides the list of Case classes that the actor will be used
      * to process incomming messages.
      */
-    Immutable.prototype.receive = function () {
+    receive() {
         return [];
-    };
-    return Immutable;
-}(__1.AbstractResident));
+    }
+}
 exports.Immutable = Immutable;
 
 },{"../":34,"../../flags":28,"../case/function":30}],34:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ref = exports.AbstractResident = void 0;
-var record_1 = require("@quenk/noni/lib/data/record");
-var type_1 = require("@quenk/noni/lib/data/type");
+const record_1 = require("@quenk/noni/lib/data/record");
+const type_1 = require("@quenk/noni/lib/data/type");
+const error_1 = require("../system/vm/runtime/error");
 /**
  * AbstractResident is a base implementation of a Resident actor.
  */
-var AbstractResident = /** @class */ (function () {
-    function AbstractResident(system) {
+class AbstractResident {
+    constructor(system) {
         this.system = system;
         this.self = getSelf(this);
     }
-    AbstractResident.prototype.notify = function () {
-        this.system.getPlatform().exec(this, 'notify');
-    };
-    AbstractResident.prototype.accept = function (_) { };
-    AbstractResident.prototype.spawn = function (t) {
+    get platform() {
+        return this.system.getPlatform();
+    }
+    notify() {
+        this.platform.exec(this, 'notify');
+    }
+    accept(_) { }
+    spawn(t) {
         return this.system.getPlatform().spawn(this, t);
-    };
-    AbstractResident.prototype.spawnGroup = function (group, tmpls) {
-        var _this = this;
-        return record_1.map(tmpls, function (t) { return _this.spawn(type_1.isObject(t) ?
-            record_1.merge(t, { group: group }) : { group: group, create: t }); });
-    };
-    AbstractResident.prototype.tell = function (ref, m) {
-        this.exec('tell', [ref, m]);
+    }
+    spawnGroup(group, tmpls) {
+        return (0, record_1.map)(tmpls, (t) => this.spawn((0, type_1.isObject)(t) ?
+            (0, record_1.merge)(t, { group: group }) : { group, create: t }));
+    }
+    tell(ref, msg) {
+        let { heap } = this.platform;
+        this.exec('tell', [heap.string(ref), heap.object(msg)]);
         return this;
-    };
-    AbstractResident.prototype.raise = function (e) {
+    }
+    raise(e) {
         this.system.getPlatform().raise(this, e);
         return this;
-    };
-    AbstractResident.prototype.kill = function (addr) {
-        var _this = this;
-        this.system.getPlatform().kill(this, addr).fork(function (e) { return _this.raise(e); });
+    }
+    kill(addr) {
+        let { heap } = this.platform;
+        this.exec('kill', [heap.string(addr)]);
         return this;
-    };
-    AbstractResident.prototype.exit = function () {
+    }
+    exit() {
         this.kill(this.self());
-    };
-    AbstractResident.prototype.start = function (addr) {
-        this.self = function () { return addr; };
+    }
+    start(addr) {
+        this.self = () => addr;
         return this.run();
-    };
-    AbstractResident.prototype.run = function () { };
-    AbstractResident.prototype.stop = function () { };
+    }
+    run() { }
+    stop() { }
+    wait(ft) {
+        let mthread = this.platform.getThread(this.self());
+        if (mthread.isJust())
+            mthread.get().wait(ft);
+        else
+            this.raise(new error_1.UnknownInstanceErr(this));
+    }
     /**
      * exec calls a VM function by name on behalf of this actor.
      */
-    AbstractResident.prototype.exec = function (fname, args) {
-        var vm = this.system.getPlatform();
-        vm.exec(this, fname, args);
-    };
-    return AbstractResident;
-}());
+    exec(fname, args) {
+        this.platform.exec(this, fname, args);
+    }
+}
 exports.AbstractResident = AbstractResident;
 /**
  * ref produces a function for sending messages to an actor address.
  */
-exports.ref = function (res, addr) {
-    return function (m) {
-        return res.tell(addr, m);
-    };
-};
-var getSelf = function (actor) {
-    var _self = '?';
-    return function () {
+const ref = (res, addr) => (m) => res.tell(addr, m);
+exports.ref = ref;
+const getSelf = (actor) => {
+    let _self = '?';
+    return () => {
         if (_self === '?')
             _self = actor
                 .system
                 .getPlatform()
                 .identify(actor)
-                .orJust(function () { return '?'; }).get();
+                .orJust(() => '?').get();
         return _self;
     };
 };
 
-},{"@quenk/noni/lib/data/record":22,"@quenk/noni/lib/data/type":25}],35:[function(require,module,exports){
+},{"../system/vm/runtime/error":42,"@quenk/noni/lib/data/record":22,"@quenk/noni/lib/data/type":25}],35:[function(require,module,exports){
 "use strict";
-var __extends = (this && this.__extends) || (function () {
-    var extendStatics = function (d, b) {
-        extendStatics = Object.setPrototypeOf ||
-            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
-        return extendStatics(d, b);
-    };
-    return function (d, b) {
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Mutable = void 0;
-var flags_1 = require("../../flags");
-var __1 = require("../");
-var function_1 = require("../case/function");
+const flags_1 = require("../../flags");
+const __1 = require("../");
+const function_1 = require("../case/function");
 /**
  * Mutable actors can change their behaviour after message processing.
  */
-var Mutable = /** @class */ (function (_super) {
-    __extends(Mutable, _super);
-    function Mutable() {
-        var _this = _super !== null && _super.apply(this, arguments) || this;
-        _this.$receivers = [];
-        return _this;
+class Mutable extends __1.AbstractResident {
+    constructor() {
+        super(...arguments);
+        this.$receivers = [];
     }
-    Mutable.prototype.init = function (c) {
+    init(c) {
         c.flags = c.flags | flags_1.FLAG_BUFFERED;
         return c;
-    };
+    }
     /**
      * select the next message in the mailbox using the provided case classes.
      *
      * If the message cannot be handled by any of them, it will be dropped.
      */
-    Mutable.prototype.select = function (cases) {
+    select(cases) {
         this.$receivers.push(new function_1.CaseFunction(cases));
         this.notify();
         return this;
-    };
-    return Mutable;
-}(__1.AbstractResident));
+    }
+}
 exports.Mutable = Mutable;
 
 },{"../":34,"../../flags":28,"../case/function":30}],36:[function(require,module,exports){
 "use strict";
-var __extends = (this && this.__extends) || (function () {
-    var extendStatics = function (d, b) {
-        extendStatics = Object.setPrototypeOf ||
-            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
-        return extendStatics(d, b);
-    };
-    return function (d, b) {
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
-var __spreadArrays = (this && this.__spreadArrays) || function () {
-    for (var s = 0, i = 0, il = arguments.length; i < il; i++) s += arguments[i].length;
-    for (var r = Array(s), k = 0, i = 0; i < il; i++)
-        for (var a = arguments[i], j = 0, jl = a.length; j < jl; j++, k++)
-            r[k] = a[j];
-    return r;
-};
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.TaskActorScript = exports.MutableActorScript = exports.CallbackActorScript = exports.ImmutableActorScript = void 0;
-var op = require("../system/vm/runtime/op");
-var events = require("../system/vm/event");
-var errors = require("../system/vm/runtime/error");
-var array_1 = require("@quenk/noni/lib/data/array");
-var info_1 = require("../system/vm/script/info");
-var scripts_1 = require("../system/vm/scripts");
-var receiveIdx = scripts_1.commonFunctions.length + 1;
-var residentCommonFunctions = __spreadArrays(scripts_1.commonFunctions, [
+exports.TaskActorScript = exports.MutableActorScript = exports.CallbackActorScript = exports.ImmutableActorScript = exports.GenericResidentScript = void 0;
+const op = require("../system/vm/runtime/op");
+const events = require("../system/vm/event");
+const errors = require("../system/vm/runtime/error");
+const array_1 = require("@quenk/noni/lib/data/array");
+const info_1 = require("../system/vm/script/info");
+const scripts_1 = require("../system/vm/scripts");
+// XXX: This needs to be updated when new functions are added to 
+// residentCommonFunctions.
+const receiveIdx = scripts_1.commonFunctions.length + 2;
+const residentCommonFunctions = [
+    ...scripts_1.commonFunctions,
     new info_1.NewFunInfo('notify', 0, [
         op.MAILCOUNT,
         op.IFZJMP | 5,
@@ -4757,67 +4668,75 @@ var residentCommonFunctions = __spreadArrays(scripts_1.commonFunctions, [
         op.LDN | receiveIdx,
         op.CALL | 1,
         op.NOP // End
-    ])
-]);
+    ]),
+    new info_1.NewForeignFunInfo('kill', 1, (thr, addr) => {
+        thr.wait(thr.vm.kill(thr.context.actor, addr));
+        return 0;
+    })
+];
+/**
+ * GenericResidentScript used by resident actors not declared here.
+ */
+class GenericResidentScript extends scripts_1.BaseScript {
+    constructor() {
+        super(...arguments);
+        this.info = residentCommonFunctions;
+    }
+}
+exports.GenericResidentScript = GenericResidentScript;
 /**
  * ImmutableActorScript used by Immutable actor instances.
  */
-var ImmutableActorScript = /** @class */ (function (_super) {
-    __extends(ImmutableActorScript, _super);
-    function ImmutableActorScript(actor) {
-        var _this = _super.call(this) || this;
-        _this.actor = actor;
-        _this.info = __spreadArrays(residentCommonFunctions, [
-            new info_1.NewForeignFunInfo('receive', 1, function (thr, msg) {
-                return immutableExec(_this.actor, thr, msg);
-            })
-        ]);
-        _this.code = [];
-        return _this;
+class ImmutableActorScript extends scripts_1.BaseScript {
+    constructor(actor) {
+        super();
+        this.actor = actor;
+        this.info = [
+            ...residentCommonFunctions,
+            new info_1.NewForeignFunInfo('receive', 1, (thr, msg) => immutableExec(this.actor, thr, msg))
+        ];
+        this.code = [];
     }
-    return ImmutableActorScript;
-}(scripts_1.BaseScript));
+}
 exports.ImmutableActorScript = ImmutableActorScript;
 /**
  * CallbackActorScript used by Callback actor instances.
  */
-var CallbackActorScript = /** @class */ (function (_super) {
-    __extends(CallbackActorScript, _super);
-    function CallbackActorScript(actor) {
-        var _this = _super.call(this) || this;
-        _this.actor = actor;
-        _this.info = __spreadArrays(residentCommonFunctions, [
-            new info_1.NewForeignFunInfo('receive', 1, function (thr, msg) {
-                var result = immutableExec(_this.actor, thr, msg);
-                _this.actor.exit();
+class CallbackActorScript extends scripts_1.BaseScript {
+    constructor(actor) {
+        super();
+        this.actor = actor;
+        this.info = [
+            ...residentCommonFunctions,
+            new info_1.NewForeignFunInfo('receive', 1, (thr, msg) => {
+                let result = immutableExec(this.actor, thr, msg);
+                this.actor.exit();
                 return result;
             })
-        ]);
-        _this.code = [];
-        return _this;
+        ];
+        this.code = [];
     }
-    return CallbackActorScript;
-}(scripts_1.BaseScript));
+}
 exports.CallbackActorScript = CallbackActorScript;
 /**
  * MutableActorScript used by Mutable actor instances.
  */
-var MutableActorScript = /** @class */ (function (_super) {
-    __extends(MutableActorScript, _super);
-    function MutableActorScript(actor) {
-        var _this = _super.call(this) || this;
-        _this.actor = actor;
-        _this.info = __spreadArrays(residentCommonFunctions, [
-            new info_1.NewForeignFunInfo('receive', 1, function (thr, msg) {
-                var actor = _this.actor;
-                var vm = actor.system.getPlatform();
-                if (array_1.empty(actor.$receivers)) {
+class MutableActorScript extends scripts_1.BaseScript {
+    constructor(actor) {
+        super();
+        this.actor = actor;
+        this.info = [
+            ...residentCommonFunctions,
+            new info_1.NewForeignFunInfo('receive', 1, (thr, msg) => {
+                let { actor } = this;
+                let vm = actor.system.getPlatform();
+                if ((0, array_1.empty)(actor.$receivers)) {
                     thr.raise(new errors.NoReceiverErr(thr.context.address));
                     return 0;
                 }
                 if (actor.$receivers[0].test(msg)) {
-                    var receiver = actor.$receivers.shift();
-                    var future = receiver.apply(msg);
+                    let receiver = actor.$receivers.shift();
+                    let future = receiver.apply(msg);
                     if (future)
                         thr.wait(future);
                     vm.trigger(thr.context.address, events.EVENT_MESSAGE_READ, msg);
@@ -4835,30 +4754,25 @@ var MutableActorScript = /** @class */ (function (_super) {
                 op.CALL | receiveIdx,
                 op.NOP // End
             ]),
-        ]);
-        _this.code = [];
-        return _this;
+        ];
+        this.code = [];
     }
-    return MutableActorScript;
-}(scripts_1.BaseScript));
+}
 exports.MutableActorScript = MutableActorScript;
 /**
  * TaskActorScript used by the Task actor.
  */
-var TaskActorScript = /** @class */ (function (_super) {
-    __extends(TaskActorScript, _super);
-    function TaskActorScript() {
-        var _this = _super !== null && _super.apply(this, arguments) || this;
-        _this.info = scripts_1.commonFunctions;
-        return _this;
+class TaskActorScript extends scripts_1.BaseScript {
+    constructor() {
+        super(...arguments);
+        this.info = scripts_1.commonFunctions;
     }
-    return TaskActorScript;
-}(scripts_1.BaseScript));
+}
 exports.TaskActorScript = TaskActorScript;
-var immutableExec = function (actor, thr, msg) {
-    var vm = actor.system.getPlatform();
+const immutableExec = (actor, thr, msg) => {
+    let vm = actor.system.getPlatform();
     if (actor.$receiver.test(msg)) {
-        var future = actor.$receiver.apply(msg);
+        let future = actor.$receiver.apply(msg);
         if (future)
             thr.wait(future);
         vm.trigger(thr.context.address, events.EVENT_MESSAGE_READ, msg);
@@ -4874,25 +4788,25 @@ var immutableExec = function (actor, thr, msg) {
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.defaults = void 0;
-var log_1 = require("./log");
+const log_1 = require("./log");
 /**
  * defaults Conf settings.
  */
-exports.defaults = function () { return ({
+const defaults = () => ({
     log: {
         level: log_1.LOG_LEVEL_ERROR,
         logger: console
     },
     on: {},
-    accept: function () { }
-}); };
+    accept: () => { }
+});
+exports.defaults = defaults;
 
 },{"./log":40}],38:[function(require,module,exports){
 "use strict";
-var _a;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getLevel = exports.events = exports.EVENT_ACTOR_STOPPED = exports.EVENT_ACTOR_STARTED = exports.EVENT_ACTOR_CREATED = exports.EVENT_MESSAGE_DROPPED = exports.EVENT_MESSAGE_READ = exports.EVENT_EXEC_ACTOR_CHANGED = exports.EVENT_EXEC_ACTOR_GONE = exports.EVENT_EXEC_INSTANCE_STALE = exports.EVENT_SEND_FAILED = exports.EVENT_SEND_OK = void 0;
-var log_1 = require("./log");
+const log_1 = require("./log");
 exports.EVENT_SEND_OK = 'message-send-ok';
 exports.EVENT_SEND_FAILED = 'message-send-failed';
 exports.EVENT_EXEC_INSTANCE_STALE = 'exec-instance-stale';
@@ -4906,107 +4820,74 @@ exports.EVENT_ACTOR_STOPPED = 'actor-stopped';
 /**
  * events holds the EventInfo details for all system events.
  */
-exports.events = (_a = {},
-    _a[exports.EVENT_ACTOR_CREATED] = {
+exports.events = {
+    [exports.EVENT_ACTOR_CREATED]: {
         level: log_1.LOG_LEVEL_INFO
     },
-    _a[exports.EVENT_ACTOR_STARTED] = {
+    [exports.EVENT_ACTOR_STARTED]: {
         level: log_1.LOG_LEVEL_INFO
     },
-    _a[exports.EVENT_SEND_OK] = {
+    [exports.EVENT_SEND_OK]: {
         level: log_1.LOG_LEVEL_INFO
     },
-    _a[exports.EVENT_MESSAGE_READ] = {
+    [exports.EVENT_MESSAGE_READ]: {
         level: log_1.LOG_LEVEL_INFO
     },
-    _a[exports.EVENT_SEND_FAILED] = {
+    [exports.EVENT_SEND_FAILED]: {
         level: log_1.LOG_LEVEL_WARN
     },
-    _a[exports.EVENT_MESSAGE_DROPPED] = {
+    [exports.EVENT_MESSAGE_DROPPED]: {
         level: log_1.LOG_LEVEL_WARN
     },
-    _a[exports.EVENT_EXEC_INSTANCE_STALE] = {
+    [exports.EVENT_EXEC_INSTANCE_STALE]: {
         level: log_1.LOG_LEVEL_WARN
     },
-    _a[exports.EVENT_EXEC_ACTOR_GONE] = {
+    [exports.EVENT_EXEC_ACTOR_GONE]: {
         level: log_1.LOG_LEVEL_WARN
     },
-    _a[exports.EVENT_EXEC_ACTOR_CHANGED] = {
+    [exports.EVENT_EXEC_ACTOR_CHANGED]: {
         level: log_1.LOG_LEVEL_WARN
     },
-    _a[exports.EVENT_ACTOR_STOPPED] = {
+    [exports.EVENT_ACTOR_STOPPED]: {
         level: log_1.LOG_LEVEL_WARN
-    },
-    _a);
+    }
+};
 /**
  * getLevel provides the LogLevel for an event.
  *
  * If none is configured LOG_LEVEL_DEBUG is used.
  */
-exports.getLevel = function (e) { return exports.events.hasOwnProperty(e) ?
-    exports.events[e].level : log_1.LOG_LEVEL_DEBUG; };
+const getLevel = (e) => exports.events.hasOwnProperty(e) ?
+    exports.events[e].level : log_1.LOG_LEVEL_DEBUG;
+exports.getLevel = getLevel;
 
 },{"./log":40}],39:[function(require,module,exports){
 "use strict";
-var __generator = (this && this.__generator) || function (thisArg, body) {
-    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
-    return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
-    function verb(n) { return function (v) { return step([n, v]); }; }
-    function step(op) {
-        if (f) throw new TypeError("Generator is already executing.");
-        while (_) try {
-            if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
-            if (y = 0, t) op = [op[0] & 2, t.value];
-            switch (op[0]) {
-                case 0: case 1: t = op; break;
-                case 4: _.label++; return { value: op[1], done: false };
-                case 5: _.label++; y = op[1]; op = [0]; continue;
-                case 7: op = _.ops.pop(); _.trys.pop(); continue;
-                default:
-                    if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) { _ = 0; continue; }
-                    if (op[0] === 3 && (!t || (op[1] > t[0] && op[1] < t[3]))) { _.label = op[1]; break; }
-                    if (op[0] === 6 && _.label < t[1]) { _.label = t[1]; t = op; break; }
-                    if (t && _.label < t[2]) { _.label = t[2]; _.ops.push(op); break; }
-                    if (t[2]) _.ops.pop();
-                    _.trys.pop(); continue;
-            }
-            op = body.call(thisArg, _);
-        } catch (e) { op = [6, e]; y = 0; } finally { f = t = 0; }
-        if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
-    }
-};
-var __spreadArrays = (this && this.__spreadArrays) || function () {
-    for (var s = 0, i = 0, il = arguments.length; i < il; i++) s += arguments[i].length;
-    for (var r = Array(s), k = 0, i = 0; i < il; i++)
-        for (var a = arguments[i], j = 0, jl = a.length; j < jl; j++, k++)
-            r[k] = a[j];
-    return r;
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.PVM = exports.MAX_WORK_LOAD = void 0;
-var template = require("../../template");
-var errors = require("./runtime/error");
-var events = require("./event");
-var future_1 = require("@quenk/noni/lib/control/monad/future");
-var maybe_1 = require("@quenk/noni/lib/data/maybe");
-var type_1 = require("@quenk/noni/lib/data/type");
-var either_1 = require("@quenk/noni/lib/data/either");
-var array_1 = require("@quenk/noni/lib/data/array");
-var record_1 = require("@quenk/noni/lib/data/record");
-var address_1 = require("../../address");
-var flags_1 = require("../../flags");
-var message_1 = require("../../message");
-var runner_1 = require("./thread/shared/runner");
-var shared_1 = require("./thread/shared");
-var state_1 = require("./state");
-var context_1 = require("./runtime/context");
-var op_1 = require("./runtime/op");
-var conf_1 = require("./conf");
-var log_1 = require("./log");
-var ledger_1 = require("./runtime/heap/ledger");
-var factory_1 = require("./scripts/factory");
-var event_1 = require("./event");
-var ID_RANDOM = "#?POTOORAND?#" + Date.now();
+const template = require("../../template");
+const errors = require("./runtime/error");
+const events = require("./event");
+const future_1 = require("@quenk/noni/lib/control/monad/future");
+const maybe_1 = require("@quenk/noni/lib/data/maybe");
+const type_1 = require("@quenk/noni/lib/data/type");
+const either_1 = require("@quenk/noni/lib/data/either");
+const array_1 = require("@quenk/noni/lib/data/array");
+const record_1 = require("@quenk/noni/lib/data/record");
+const address_1 = require("../../address");
+const flags_1 = require("../../flags");
+const message_1 = require("../../message");
+const scheduler_1 = require("./thread/shared/scheduler");
+const shared_1 = require("./thread/shared");
+const state_1 = require("./state");
+const context_1 = require("./runtime/context");
+const op_1 = require("./runtime/op");
+const conf_1 = require("./conf");
+const log_1 = require("./log");
+const ledger_1 = require("./runtime/heap/ledger");
+const factory_1 = require("./scripts/factory");
+const event_1 = require("./event");
+const ID_RANDOM = `#?POTOORAND?#${Date.now()}`;
 exports.MAX_WORK_LOAD = 25;
 /**
  * PVM (Potoo Virtual Machine) is a JavaScript implemented virtual machine that
@@ -5016,10 +4897,8 @@ exports.MAX_WORK_LOAD = 25;
  * not reside on the same process/worker/thread depending on the underlying
  * platform and individual actor implementations.
  */
-var PVM = /** @class */ (function () {
-    function PVM(system, conf) {
-        var _this = this;
-        if (conf === void 0) { conf = conf_1.defaults(); }
+class PVM {
+    constructor(system, conf = (0, conf_1.defaults)()) {
         this.system = system;
         this.conf = conf;
         this._actorIdCounter = -1;
@@ -5030,16 +4909,16 @@ var PVM = /** @class */ (function () {
         /**
          * threadRunner shared between vm threads.
          */
-        this.threadRunner = new runner_1.SharedThreadRunner(this);
+        this.threadRunner = new scheduler_1.SharedScheduler(this);
         /**
          * state contains information about all the actors in the system, routers
          * and groups.
          */
         this.state = {
             threads: {
-                $: new shared_1.SharedThread(this, factory_1.ScriptFactory.getScript(this), this.threadRunner, context_1.newContext(this._actorIdCounter++, this, '$', {
-                    create: function () { return _this; },
-                    trap: function () { return template.ACTION_RAISE; }
+                $: new shared_1.SharedThread(this, factory_1.ScriptFactory.getScript(this), this.threadRunner, (0, context_1.newContext)(this._actorIdCounter++, this, '$', {
+                    create: () => this,
+                    trap: () => template.ACTION_RAISE
                 }))
             },
             routers: {},
@@ -5051,79 +4930,76 @@ var PVM = /** @class */ (function () {
      * Create a new PVM instance using the provided System implementation and
      * configuration object.
      */
-    PVM.create = function (s, conf) {
-        if (conf === void 0) { conf = {}; }
-        return new PVM(s, record_1.rmerge(conf_1.defaults(), conf));
-    };
-    PVM.prototype.init = function (c) {
+    static create(s, conf = {}) {
+        return new PVM(s, (0, record_1.rmerge)((0, conf_1.defaults)(), conf));
+    }
+    init(c) {
         return c;
-    };
-    PVM.prototype.accept = function (m) {
+    }
+    accept(m) {
         return this.conf.accept(m);
-    };
-    PVM.prototype.start = function () { };
-    PVM.prototype.notify = function () { };
-    PVM.prototype.stop = function () {
+    }
+    start() { }
+    notify() { }
+    stop() {
         return this.kill(this, address_1.ADDRESS_SYSTEM);
-    };
-    PVM.prototype.identify = function (inst) {
-        return state_1.getAddress(this.state, inst);
-    };
-    PVM.prototype.spawn = function (parent, tmpl) {
-        var mparentAddr = this.identify(parent);
+    }
+    identify(inst) {
+        return (0, state_1.getAddress)(this.state, inst);
+    }
+    spawn(parent, tmpl) {
+        let mparentAddr = this.identify(parent);
         if (mparentAddr.isNothing()) {
             this.raise(this, new errors.UnknownInstanceErr(parent));
             return '?';
         }
         return this._spawn(mparentAddr.get(), normalize(tmpl));
-    };
-    PVM.prototype._spawn = function (parent, tmpl) {
-        var _this = this;
-        var eresult = this.allocate(parent, tmpl);
+    }
+    _spawn(parent, tmpl) {
+        let eresult = this.allocate(parent, tmpl);
         if (eresult.isLeft()) {
             this.raise(this.state.threads[parent].context.actor, eresult.takeLeft());
             return '?';
         }
-        var result = eresult.takeRight();
+        let result = eresult.takeRight();
         this.runActor(result);
         if (Array.isArray(tmpl.children))
             // TODO: Make this call stack friendly some day.
-            tmpl.children.forEach(function (tmp) { return _this._spawn(result, tmp); });
+            tmpl.children.forEach(tmp => this._spawn(result, tmp));
         return result;
-    };
-    PVM.prototype.allocate = function (parent, tmpl) {
-        var _this = this;
+    }
+    allocate(parent, tmpl) {
         if (tmpl.id === ID_RANDOM) {
-            var rtime = state_1.get(this.state, parent).get();
-            var prefix = rtime.context.actor.constructor.name.toLowerCase();
-            tmpl.id = "actor::" + (this._actorIdCounter + 1) + "~" + prefix;
+            let rtime = (0, state_1.get)(this.state, parent).get();
+            let prefix = rtime.context.actor.constructor.name.toLowerCase();
+            tmpl.id = `actor::${this._actorIdCounter + 1}~${prefix}`;
         }
-        if (address_1.isRestricted(tmpl.id))
-            return either_1.left(new errors.InvalidIdErr(tmpl.id));
-        var addr = address_1.make(parent, tmpl.id);
+        if ((0, address_1.isRestricted)(tmpl.id))
+            return (0, either_1.left)(new errors.InvalidIdErr(tmpl.id));
+        let addr = (0, address_1.make)(parent, tmpl.id);
         if (this.getThread(addr).isJust())
-            return either_1.left(new errors.DuplicateAddressErr(addr));
-        var args = Array.isArray(tmpl.args) ? tmpl.args : [];
-        var act = tmpl.create.apply(tmpl, __spreadArrays([this.system, tmpl], args));
+            return (0, either_1.left)(new errors.DuplicateAddressErr(addr));
+        let args = Array.isArray(tmpl.args) ? tmpl.args : [];
+        let act = tmpl.create(this.system, tmpl, ...args);
         // TODO: Have thread types depending on the actor type instead.
-        var thr = new shared_1.SharedThread(this, factory_1.ScriptFactory.getScript(act), this.threadRunner, act.init(context_1.newContext(this._actorIdCounter++, act, addr, tmpl)));
+        let thr = new shared_1.SharedThread(this, factory_1.ScriptFactory.getScript(act), this.threadRunner, act.init((0, context_1.newContext)(this._actorIdCounter++, act, addr, tmpl)));
         this.putThread(addr, thr);
         this.trigger(addr, events.EVENT_ACTOR_CREATED);
-        if (flags_1.isRouter(thr.context.flags))
+        if ((0, flags_1.isRouter)(thr.context.flags))
             this.putRoute(addr, addr);
         if (tmpl.group) {
-            var groups = (typeof tmpl.group === 'string') ?
+            let groups = (typeof tmpl.group === 'string') ?
                 [tmpl.group] : tmpl.group;
-            groups.forEach(function (g) { return _this.putMember(g, addr); });
+            groups.forEach(g => this.putMember(g, addr));
         }
-        return either_1.right(addr);
-    };
-    PVM.prototype.runActor = function (target) {
-        var mthread = this.getThread(target);
+        return (0, either_1.right)(addr);
+    }
+    runActor(target) {
+        let mthread = this.getThread(target);
         if (mthread.isNothing())
-            return future_1.raise(new errors.UnknownAddressErr(target));
-        var rtime = mthread.get();
-        var ft = rtime.context.actor.start(target);
+            return (0, future_1.raise)(new errors.UnknownAddressErr(target));
+        let rtime = mthread.get();
+        let ft = rtime.context.actor.start(target);
         // Assumes the actor returned a Future
         if (ft)
             rtime.wait(ft);
@@ -5132,18 +5008,18 @@ var PVM = /** @class */ (function () {
         if (rtime.context.flags & flags_1.FLAG_EXIT_AFTER_RUN)
             rtime.wait(this.kill(rtime.context.actor, target));
         this.trigger(rtime.context.address, events.EVENT_ACTOR_STARTED);
-    };
-    PVM.prototype.sendMessage = function (to, from, msg) {
-        var mRouter = this.getRouter(to);
-        var mctx = mRouter.isJust() ?
+    }
+    sendMessage(to, from, msg) {
+        let mRouter = this.getRouter(to);
+        let mctx = mRouter.isJust() ?
             mRouter :
-            this.getThread(to).map(function (r) { return r.context; });
+            this.getThread(to).map(r => r.context);
         //routers receive enveloped messages.
-        var actualMessage = mRouter.isJust() ?
+        let actualMessage = mRouter.isJust() ?
             new message_1.Envelope(to, from, msg) : msg;
         if (mctx.isJust()) {
-            var ctx = mctx.get();
-            if (flags_1.isBuffered(ctx.flags)) {
+            let ctx = mctx.get();
+            if ((0, flags_1.isBuffered)(ctx.flags)) {
                 ctx.mailbox.push(actualMessage);
                 ctx.actor.notify();
             }
@@ -5158,81 +5034,81 @@ var PVM = /** @class */ (function () {
             this.trigger(from, events.EVENT_SEND_FAILED, to, msg);
             return false;
         }
-    };
-    PVM.prototype.getThread = function (addr) {
-        return state_1.get(this.state, addr);
-    };
-    PVM.prototype.getRouter = function (addr) {
-        return state_1.getRouter(this.state, addr).map(function (r) { return r.context; });
-    };
-    PVM.prototype.getGroup = function (name) {
-        return state_1.getGroup(this.state, name.split('$').join(''));
-    };
-    PVM.prototype.getChildren = function (addr) {
-        return maybe_1.fromNullable(state_1.getChildren(this.state, addr));
-    };
-    PVM.prototype.putThread = function (addr, r) {
-        this.state = state_1.put(this.state, addr, r);
+    }
+    getThread(addr) {
+        return (0, state_1.get)(this.state, addr);
+    }
+    getRouter(addr) {
+        return (0, state_1.getRouter)(this.state, addr).map(r => r.context);
+    }
+    getGroup(name) {
+        return (0, state_1.getGroup)(this.state, name.split('$').join(''));
+    }
+    getChildren(addr) {
+        return (0, maybe_1.fromNullable)((0, state_1.getChildren)(this.state, addr));
+    }
+    putThread(addr, r) {
+        this.state = (0, state_1.put)(this.state, addr, r);
         return this;
-    };
-    PVM.prototype.putMember = function (group, addr) {
-        state_1.putMember(this.state, group, addr);
+    }
+    putMember(group, addr) {
+        (0, state_1.putMember)(this.state, group, addr);
         return this;
-    };
-    PVM.prototype.putRoute = function (target, router) {
-        state_1.putRoute(this.state, target, router);
+    }
+    putRoute(target, router) {
+        (0, state_1.putRoute)(this.state, target, router);
         return this;
-    };
-    PVM.prototype.remove = function (addr) {
-        var _this = this;
-        this.state = state_1.remove(this.state, addr);
-        record_1.map(this.state.routers, function (r, k) {
+    }
+    remove(addr) {
+        this.state = (0, state_1.remove)(this.state, addr);
+        (0, record_1.map)(this.state.routers, (r, k) => {
             if (r === addr)
-                delete _this.state.routers[k];
+                delete this.state.routers[k];
         });
         return this;
-    };
-    PVM.prototype.removeRoute = function (target) {
-        state_1.removeRoute(this.state, target);
+    }
+    removeRoute(target) {
+        (0, state_1.removeRoute)(this.state, target);
         return this;
-    };
-    PVM.prototype.raise = function (src, err) {
-        var _this = this;
-        var maddr = this.identify(src);
+    }
+    raise(src, err) {
+        let maddr = this.identify(src);
         // For now, ignore requests from unknown instances.
         if (maddr.isNothing())
             return;
-        var addr = maddr.get();
+        let addr = maddr.get();
         //TODO: pause the runtime.
-        var next = addr;
-        var _loop_1 = function () {
-            var mrtime = this_1.getThread(next);
+        let next = addr;
+        loop: while (true) {
+            let mrtime = this.getThread(next);
             //TODO: This risks swallowing errors.
             if (mrtime.isNothing())
-                return { value: void 0 };
-            var rtime = mrtime.get();
-            var trap = rtime.context.template.trap ||
-                (function () { return template.ACTION_RAISE; });
+                return;
+            let rtime = mrtime.get();
+            let trap = rtime.context.template.trap ||
+                (() => template.ACTION_RAISE);
             switch (trap(err)) {
-                case template.ACTION_IGNORE: return "break-loop";
+                case template.ACTION_IGNORE:
+                    break loop;
                 case template.ACTION_RESTART:
-                    var maddr_1 = state_1.get(this_1.state, next);
-                    if (maddr_1.isJust())
-                        this_1.kill(maddr_1.get().context.actor, next)
-                            .chain(function () {
-                            var eRes = _this.allocate(address_1.getParent(next), rtime.context.template);
+                    let maddr = (0, state_1.get)(this.state, next);
+                    if (maddr.isJust())
+                        this
+                            .kill(maddr.get().context.actor, next)
+                            .chain(() => {
+                            let eRes = this.allocate((0, address_1.getParent)(next), rtime.context.template);
                             if (eRes.isLeft())
-                                return future_1.raise(new Error(eRes.takeLeft().message));
-                            _this.runActor(eRes.takeRight());
+                                return (0, future_1.raise)(new Error(eRes.takeLeft().message));
+                            this.runActor(eRes.takeRight());
                             return future_1.voidPure;
-                        }).fork(function (e) { return _this.raise(_this, e); });
-                    return "break-loop";
+                        }).fork(e => this.raise(this, e));
+                    break loop;
                 case template.ACTION_STOP:
-                    var smaddr = state_1.get(this_1.state, next);
+                    let smaddr = (0, state_1.get)(this.state, next);
                     if (smaddr.isJust())
-                        this_1.kill(smaddr.get().context.actor, next)
-                            .fork(function (e) { return _this.raise(_this, e); });
-                    return "break-loop";
+                        this.kill(smaddr.get().context.actor, next)
+                            .fork(e => this.raise(this, e));
+                    break loop;
                 default:
                     if (next === address_1.ADDRESS_SYSTEM) {
                         if (err instanceof Error)
@@ -5240,28 +5116,15 @@ var PVM = /** @class */ (function () {
                         throw new Error(err.message);
                     }
                     else {
-                        next = address_1.getParent(next);
+                        next = (0, address_1.getParent)(next);
                     }
                     break;
             }
-        };
-        var this_1 = this;
-        loop: while (true) {
-            var state_2 = _loop_1();
-            if (typeof state_2 === "object")
-                return state_2.value;
-            switch (state_2) {
-                case "break-loop": break loop;
-            }
         }
-    };
-    PVM.prototype.trigger = function (addr, evt) {
-        var args = [];
-        for (var _i = 2; _i < arguments.length; _i++) {
-            args[_i - 2] = arguments[_i];
-        }
-        var elvl = event_1.getLevel(evt);
-        var _a = this.conf.log, level = _a.level, logger = _a.logger;
+    }
+    trigger(addr, evt, ...args) {
+        let elvl = (0, event_1.getLevel)(evt);
+        let { level, logger } = this.conf.log;
         if (level >= elvl) {
             switch (elvl) {
                 case log_1.LOG_LEVEL_DEBUG:
@@ -5283,117 +5146,86 @@ var PVM = /** @class */ (function () {
         }
         //forward the event to relevant hooks.
         if (this.conf.on[evt] != null)
-            this.conf.on[evt].apply(null, __spreadArrays([addr, evt], args));
-    };
-    PVM.prototype.logOp = function (r, f, op, oper) {
-        this.conf.log.logger.debug.apply(null, __spreadArrays([
-            "[" + r.context.address + "]",
-            "(" + f.script.name + ")"
-        ], op_1.toLog(op, r, f, oper)));
-    };
-    PVM.prototype.kill = function (parent, target) {
-        var that = this;
-        return future_1.doFuture(function () {
-            var mparentAddr, parentAddr, addrs;
-            return __generator(this, function (_a) {
-                mparentAddr = that.identify(parent);
-                // For now, ignore unknown kill requests.
-                if (mparentAddr.isNothing())
-                    return [2 /*return*/, future_1.pure(undefined)];
-                parentAddr = mparentAddr.get();
-                addrs = address_1.isGroup(target) ?
-                    that.getGroup(target).orJust(function () { return []; }).get() : [target];
-                return [2 /*return*/, runBatch(addrs.map(function (addr) { return future_1.doFuture(function () {
-                        var err, mthread, thread, mchilds, childs, killChild;
-                        return __generator(this, function (_a) {
-                            switch (_a.label) {
-                                case 0:
-                                    if ((!address_1.isChild(parentAddr, target)) && (target !== parentAddr)) {
-                                        err = new Error("IllegalStopErr: Actor \"" + parentAddr + "\" " +
-                                            ("cannot kill non-child \"" + addr + "\"!"));
-                                        that.raise(parent, err);
-                                        return [2 /*return*/, future_1.raise(err)];
-                                    }
-                                    mthread = that.getThread(addr);
-                                    if (mthread.isNothing())
-                                        return [2 /*return*/, future_1.pure(undefined)];
-                                    thread = mthread.get();
-                                    mchilds = that.getChildren(target);
-                                    childs = mchilds.isJust() ? mchilds.get() : {};
-                                    killChild = function (child, addr) {
-                                        return future_1.doFuture(function () {
-                                            return __generator(this, function (_a) {
-                                                switch (_a.label) {
-                                                    case 0: return [4 /*yield*/, child.die()];
-                                                    case 1:
-                                                        _a.sent();
-                                                        that.remove(addr);
-                                                        that.trigger(addr, events.EVENT_ACTOR_STOPPED);
-                                                        return [2 /*return*/, future_1.voidPure];
-                                                }
-                                            });
-                                        });
-                                    };
-                                    return [4 /*yield*/, runBatch(record_1.mapTo(record_1.map(childs, killChild), function (f) { return f; }))];
-                                case 1:
-                                    _a.sent();
-                                    if (!(addr !== address_1.ADDRESS_SYSTEM)) return [3 /*break*/, 3];
-                                    return [4 /*yield*/, killChild(thread, addr)];
-                                case 2:
-                                    _a.sent();
-                                    _a.label = 3;
-                                case 3: return [2 /*return*/, future_1.voidPure];
-                            }
-                        });
-                    }); }))];
-            });
+            this.conf.on[evt].apply(null, [addr, evt, ...args]);
+    }
+    logOp(r, f, op, oper) {
+        this.conf.log.logger.debug.apply(null, [
+            `[${r.context.address}]`,
+            `(${f.script.name})`,
+            ...(0, op_1.toLog)(op, r, f, oper)
+        ]);
+    }
+    kill(parent, target) {
+        let that = this;
+        return (0, future_1.doFuture)(function* () {
+            let mparentAddr = that.identify(parent);
+            // For now, ignore unknown kill requests.
+            if (mparentAddr.isNothing())
+                return (0, future_1.pure)(undefined);
+            let parentAddr = mparentAddr.get();
+            let addrs = (0, address_1.isGroup)(target) ?
+                that.getGroup(target).orJust(() => []).get() : [target];
+            return runBatch(addrs.map(addr => (0, future_1.doFuture)(function* () {
+                if ((!(0, address_1.isChild)(parentAddr, target)) && (target !== parentAddr)) {
+                    let err = new Error(`IllegalStopErr: Actor "${parentAddr}" ` +
+                        `cannot kill non-child "${addr}"!`);
+                    that.raise(parent, err);
+                    return (0, future_1.raise)(err);
+                }
+                let mthread = that.getThread(addr);
+                if (mthread.isNothing())
+                    return (0, future_1.pure)(undefined);
+                let thread = mthread.get();
+                let mchilds = that.getChildren(target);
+                let childs = mchilds.isJust() ? mchilds.get() : {};
+                let killChild = (child, addr) => (0, future_1.doFuture)(function* () {
+                    yield child.die();
+                    that.remove(addr);
+                    that.trigger(addr, events.EVENT_ACTOR_STOPPED);
+                    return future_1.voidPure;
+                });
+                yield runBatch((0, record_1.mapTo)((0, record_1.map)(childs, killChild), f => f));
+                if (addr !== address_1.ADDRESS_SYSTEM)
+                    yield killChild(thread, addr);
+                return future_1.voidPure;
+            })));
         });
-    };
+    }
     /**
      * tell allows the vm to send a message to another actor via opcodes.
      *
      * If you want to immediately deliver a message, use [[sendMessage]] instead.
      */
-    PVM.prototype.tell = function (ref, msg) {
-        this.exec(this, 'tell', [ref, msg]);
+    tell(ref, msg) {
+        this.exec(this, 'tell', [this.heap.string(ref), this.heap.object(msg)]);
         return this;
-    };
-    PVM.prototype.exec = function (actor, funName, args) {
-        if (args === void 0) { args = []; }
-        var mAddress = this.identify(actor);
+    }
+    exec(actor, funName, args = []) {
+        let mAddress = this.identify(actor);
         if (mAddress.isNothing())
             return this.raise(this, new errors.UnknownInstanceErr(actor));
-        var thread = (this.state.threads[mAddress.get()]);
+        let thread = (this.state.threads[mAddress.get()]);
         thread.exec(funName, args);
-    };
-    return PVM;
-}());
+    }
+}
 exports.PVM = PVM;
-var runBatch = function (work) {
-    return future_1.doFuture(function () {
-        return __generator(this, function (_a) {
-            switch (_a.label) {
-                case 0: return [4 /*yield*/, future_1.batch(array_1.distribute(work, exports.MAX_WORK_LOAD))];
-                case 1:
-                    _a.sent();
-                    return [2 /*return*/, future_1.voidPure];
-            }
-        });
-    });
-};
-var normalize = function (spawnable) {
-    var tmpl = (type_1.isFunction(spawnable) ?
+const runBatch = (work) => (0, future_1.doFuture)(function* () {
+    yield (0, future_1.batch)((0, array_1.distribute)(work, exports.MAX_WORK_LOAD));
+    return future_1.voidPure;
+});
+const normalize = (spawnable) => {
+    let tmpl = ((0, type_1.isFunction)(spawnable) ?
         { create: spawnable } :
         spawnable);
     tmpl.id = tmpl.id ? tmpl.id : ID_RANDOM;
-    return record_1.merge(tmpl, {
-        children: record_1.isRecord(tmpl.children) ?
-            record_1.mapTo(tmpl.children, function (c, k) { return record_1.merge(c, { id: k }); }) :
+    return (0, record_1.merge)(tmpl, {
+        children: (0, record_1.isRecord)(tmpl.children) ?
+            (0, record_1.mapTo)(tmpl.children, (c, k) => (0, record_1.merge)(c, { id: k })) :
             tmpl.children ? tmpl.children : []
     });
 };
 
-},{"../../address":27,"../../flags":28,"../../message":29,"../../template":59,"./conf":37,"./event":38,"./log":40,"./runtime/context":41,"./runtime/error":42,"./runtime/heap/ledger":43,"./runtime/op":47,"./scripts/factory":52,"./state":54,"./thread/shared":56,"./thread/shared/runner":57,"@quenk/noni/lib/control/monad/future":15,"@quenk/noni/lib/data/array":18,"@quenk/noni/lib/data/either":19,"@quenk/noni/lib/data/maybe":21,"@quenk/noni/lib/data/record":22,"@quenk/noni/lib/data/type":25}],40:[function(require,module,exports){
+},{"../../address":27,"../../flags":28,"../../message":29,"../../template":59,"./conf":37,"./event":38,"./log":40,"./runtime/context":41,"./runtime/error":42,"./runtime/heap/ledger":43,"./runtime/op":47,"./scripts/factory":52,"./state":54,"./thread/shared":56,"./thread/shared/scheduler":57,"@quenk/noni/lib/control/monad/future":15,"@quenk/noni/lib/data/array":18,"@quenk/noni/lib/data/either":19,"@quenk/noni/lib/data/maybe":21,"@quenk/noni/lib/data/record":22,"@quenk/noni/lib/data/type":25}],40:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.LOG_LEVEL_ERROR = exports.LOG_LEVEL_WARN = exports.LOG_LEVEL_NOTICE = exports.LOG_LEVEL_INFO = exports.LOG_LEVEL_DEBUG = void 0;
@@ -5410,428 +5242,357 @@ exports.newContext = void 0;
 /**
  * newContext
  */
-exports.newContext = function (aid, actor, address, template) { return ({
-    aid: aid,
+const newContext = (aid, actor, address, template) => ({
+    aid,
     mailbox: [],
-    actor: actor,
+    actor,
     receivers: [],
     flags: 0,
-    address: address,
+    address,
     template: template
-}); };
+});
+exports.newContext = newContext;
 
 },{}],42:[function(require,module,exports){
 "use strict";
-var __extends = (this && this.__extends) || (function () {
-    var extendStatics = function (d, b) {
-        extendStatics = Object.setPrototypeOf ||
-            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
-        return extendStatics(d, b);
-    };
-    return function (d, b) {
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.UnknownFunErr = exports.UnknownInstanceErr = exports.InvalidFunctionErr = exports.InvalidConstructorErr = exports.MissingInfoErr = exports.InvalidPropertyIndex = exports.StackEmptyErr = exports.IntegerOverflowErr = exports.MissingSymbolErr = exports.UnknownAddressErr = exports.EmptyMailboxErr = exports.NoMailboxErr = exports.NoReceiverErr = exports.IllegalStopErr = exports.UnexpectedDataType = exports.NullPointerErr = exports.JumpOutOfBoundsErr = exports.NullFunctionPointerErr = exports.NullTemplatePointerErr = exports.DuplicateAddressErr = exports.UnknownParentAddressErr = exports.InvalidIdErr = exports.Error = void 0;
-var address_1 = require("../../../address");
-var frame_1 = require("./stack/frame");
+const address_1 = require("../../../address");
+const frame_1 = require("./stack/frame");
 /**
  * Error
  */
-var Error = /** @class */ (function () {
-    function Error(message) {
+class Error {
+    constructor(message) {
         this.message = message;
     }
-    return Error;
-}());
+}
 exports.Error = Error;
 /**
  * InvalidIdError indicates an id used in a template is invalid.
  */
-var InvalidIdErr = /** @class */ (function (_super) {
-    __extends(InvalidIdErr, _super);
-    function InvalidIdErr(id) {
-        var _this = _super.call(this, "The id \"" + id + " must not contain" +
-            (address_1.ADDRESS_RESTRICTED + " or be an empty string!")) || this;
-        _this.id = id;
-        return _this;
+class InvalidIdErr extends Error {
+    constructor(id) {
+        super(`The id "${id} must not contain` +
+            `${address_1.ADDRESS_RESTRICTED} or be an empty string!`);
+        this.id = id;
     }
-    return InvalidIdErr;
-}(Error));
+}
 exports.InvalidIdErr = InvalidIdErr;
 /**
  * UnknownParentAddressErr indicates the parent address used for
  * spawning an actor does not exist.
  */
-var UnknownParentAddressErr = /** @class */ (function (_super) {
-    __extends(UnknownParentAddressErr, _super);
-    function UnknownParentAddressErr(address) {
-        var _this = _super.call(this, "The parent address \"" + address + "\" is not part of the system!") || this;
-        _this.address = address;
-        return _this;
+class UnknownParentAddressErr extends Error {
+    constructor(address) {
+        super(`The parent address "${address}" is not part of the system!`);
+        this.address = address;
     }
-    return UnknownParentAddressErr;
-}(Error));
+}
 exports.UnknownParentAddressErr = UnknownParentAddressErr;
 /**
  * DuplicateAddressErr indicates the address of a freshly spawned
  * actor is already in use.
  */
-var DuplicateAddressErr = /** @class */ (function (_super) {
-    __extends(DuplicateAddressErr, _super);
-    function DuplicateAddressErr(address) {
-        var _this = _super.call(this, "Duplicate address \"" + address + "\" detected!") || this;
-        _this.address = address;
-        return _this;
+class DuplicateAddressErr extends Error {
+    constructor(address) {
+        super(`Duplicate address "${address}" detected!`);
+        this.address = address;
     }
-    return DuplicateAddressErr;
-}(Error));
+}
 exports.DuplicateAddressErr = DuplicateAddressErr;
 /**
  * NullTemplatePointerErr occurs when a reference to a template
  * does not exist in the templates table.
  */
-var NullTemplatePointerErr = /** @class */ (function (_super) {
-    __extends(NullTemplatePointerErr, _super);
-    function NullTemplatePointerErr(index) {
-        var _this = _super.call(this, "The index \"" + index + "\" does not exist in the Template table!") || this;
-        _this.index = index;
-        return _this;
+class NullTemplatePointerErr extends Error {
+    constructor(index) {
+        super(`The index "${index}" does not exist in the Template table!`);
+        this.index = index;
     }
-    return NullTemplatePointerErr;
-}(Error));
+}
 exports.NullTemplatePointerErr = NullTemplatePointerErr;
-var NullFunctionPointerErr = /** @class */ (function (_super) {
-    __extends(NullFunctionPointerErr, _super);
-    function NullFunctionPointerErr(index) {
-        var _this = _super.call(this, "The index \"" + index + "\" does not exist in the function table!") || this;
-        _this.index = index;
-        return _this;
+class NullFunctionPointerErr extends Error {
+    constructor(index) {
+        super(`The index "${index}" does not exist in the function table!`);
+        this.index = index;
     }
-    return NullFunctionPointerErr;
-}(Error));
+}
 exports.NullFunctionPointerErr = NullFunctionPointerErr;
 /**
  * JumpOutOfBoundsErr
  */
-var JumpOutOfBoundsErr = /** @class */ (function (_super) {
-    __extends(JumpOutOfBoundsErr, _super);
-    function JumpOutOfBoundsErr(location, size) {
-        var _this = _super.call(this, "Cannot jump to location \"" + location + "\"! Max location: " + size + "!") || this;
-        _this.location = location;
-        _this.size = size;
-        return _this;
+class JumpOutOfBoundsErr extends Error {
+    constructor(location, size) {
+        super(`Cannot jump to location "${location}"! Max location: ${size}!`);
+        this.location = location;
+        this.size = size;
     }
-    return JumpOutOfBoundsErr;
-}(Error));
+}
 exports.JumpOutOfBoundsErr = JumpOutOfBoundsErr;
 /**
  * NullPointerErr
  */
-var NullPointerErr = /** @class */ (function (_super) {
-    __extends(NullPointerErr, _super);
-    function NullPointerErr(data) {
-        var _this = _super.call(this, "Value: [" + data.toString(16) + "]") || this;
-        _this.data = data;
-        return _this;
+class NullPointerErr extends Error {
+    constructor(data) {
+        super(`Value: [${data.toString(16)}]`);
+        this.data = data;
     }
-    return NullPointerErr;
-}(Error));
+}
 exports.NullPointerErr = NullPointerErr;
 /**
  * UnexpectedDataType
  */
-var UnexpectedDataType = /** @class */ (function (_super) {
-    __extends(UnexpectedDataType, _super);
-    function UnexpectedDataType(expected, got) {
-        var _this = _super.call(this, "Expected: " + expected.toString(16) + ", " +
-            ("Received: " + got.toString(16))) || this;
-        _this.expected = expected;
-        _this.got = got;
-        return _this;
+class UnexpectedDataType extends Error {
+    constructor(expected, got) {
+        super(`Expected: ${expected.toString(16)}, ` +
+            `Received: ${got.toString(16)}`);
+        this.expected = expected;
+        this.got = got;
     }
-    return UnexpectedDataType;
-}(Error));
+}
 exports.UnexpectedDataType = UnexpectedDataType;
 /**
  * IllegalStopErr
  */
-var IllegalStopErr = /** @class */ (function (_super) {
-    __extends(IllegalStopErr, _super);
-    function IllegalStopErr(parent, child) {
-        var _this = _super.call(this, "The actor at address \"" + parent + "\" can not kill \"" + child + "\"!") || this;
-        _this.parent = parent;
-        _this.child = child;
-        return _this;
+class IllegalStopErr extends Error {
+    constructor(parent, child) {
+        super(`The actor at address "${parent}" can not kill "${child}"!`);
+        this.parent = parent;
+        this.child = child;
     }
-    return IllegalStopErr;
-}(Error));
+}
 exports.IllegalStopErr = IllegalStopErr;
 /**
  * NoReceiverErr
  */
-var NoReceiverErr = /** @class */ (function (_super) {
-    __extends(NoReceiverErr, _super);
-    function NoReceiverErr(actor) {
-        var _this = _super.call(this, "Actor " + actor + " tried to read a message without a receiver!") || this;
-        _this.actor = actor;
-        return _this;
+class NoReceiverErr extends Error {
+    constructor(actor) {
+        super(`Actor ${actor} tried to read a message without a receiver!`);
+        this.actor = actor;
     }
-    return NoReceiverErr;
-}(Error));
+}
 exports.NoReceiverErr = NoReceiverErr;
 /**
  * NoMailboxErr
  */
-var NoMailboxErr = /** @class */ (function (_super) {
-    __extends(NoMailboxErr, _super);
-    function NoMailboxErr(actor) {
-        var _this = _super.call(this, "Actor " + actor + " has no mailbox!") || this;
-        _this.actor = actor;
-        return _this;
+class NoMailboxErr extends Error {
+    constructor(actor) {
+        super(`Actor ${actor} has no mailbox!`);
+        this.actor = actor;
     }
-    return NoMailboxErr;
-}(Error));
+}
 exports.NoMailboxErr = NoMailboxErr;
 /**
  * EmptyMailboxErr
  */
-var EmptyMailboxErr = /** @class */ (function (_super) {
-    __extends(EmptyMailboxErr, _super);
-    function EmptyMailboxErr() {
-        return _super.call(this, 'Mailbox empty.') || this;
+class EmptyMailboxErr extends Error {
+    constructor() {
+        super('Mailbox empty.');
     }
-    return EmptyMailboxErr;
-}(Error));
+}
 exports.EmptyMailboxErr = EmptyMailboxErr;
 /**
  * UnknownAddressErr
  */
-var UnknownAddressErr = /** @class */ (function (_super) {
-    __extends(UnknownAddressErr, _super);
-    function UnknownAddressErr(actor) {
-        var _this = _super.call(this, "The system has no actor for address \"" + actor + "\"!") || this;
-        _this.actor = actor;
-        return _this;
+class UnknownAddressErr extends Error {
+    constructor(actor) {
+        super(`The system has no actor for address "${actor}"!`);
+        this.actor = actor;
     }
-    return UnknownAddressErr;
-}(Error));
+}
 exports.UnknownAddressErr = UnknownAddressErr;
 /**
  * MissingSymbolErr
  */
-var MissingSymbolErr = /** @class */ (function (_super) {
-    __extends(MissingSymbolErr, _super);
-    function MissingSymbolErr(index) {
-        var _this = _super.call(this, "Cannot locate symbol at index 0x" + index.toString(16)) || this;
-        _this.index = index;
-        return _this;
+class MissingSymbolErr extends Error {
+    constructor(index) {
+        super(`Cannot locate symbol at index 0x${index.toString(16)}`);
+        this.index = index;
     }
-    return MissingSymbolErr;
-}(Error));
+}
 exports.MissingSymbolErr = MissingSymbolErr;
 /**
  * IntegerOverflowErr
  */
-var IntegerOverflowErr = /** @class */ (function (_super) {
-    __extends(IntegerOverflowErr, _super);
-    function IntegerOverflowErr() {
-        return _super.call(this, "DATA_MAX_SAFE_UINT32=" + frame_1.DATA_MAX_SAFE_UINT32) || this;
+class IntegerOverflowErr extends Error {
+    constructor() {
+        super(`DATA_MAX_SAFE_UINT32=${frame_1.DATA_MAX_SAFE_UINT32}`);
     }
-    return IntegerOverflowErr;
-}(Error));
+}
 exports.IntegerOverflowErr = IntegerOverflowErr;
 /**
  * StackEmptyErr
  */
-var StackEmptyErr = /** @class */ (function (_super) {
-    __extends(StackEmptyErr, _super);
-    function StackEmptyErr() {
-        return _super.call(this, 'Stack is empty.') || this;
+class StackEmptyErr extends Error {
+    constructor() {
+        super('Stack is empty.');
     }
-    return StackEmptyErr;
-}(Error));
+}
 exports.StackEmptyErr = StackEmptyErr;
 /**
  * InvalidPropertyIndex
  */
-var InvalidPropertyIndex = /** @class */ (function (_super) {
-    __extends(InvalidPropertyIndex, _super);
-    function InvalidPropertyIndex(cons, idx) {
-        var _this = _super.call(this, "Constructor: " + cons.name + ", index: " + idx) || this;
-        _this.cons = cons;
-        _this.idx = idx;
-        return _this;
+class InvalidPropertyIndex extends Error {
+    constructor(cons, idx) {
+        super(`Constructor: ${cons.name}, index: ${idx}`);
+        this.cons = cons;
+        this.idx = idx;
     }
-    return InvalidPropertyIndex;
-}(Error));
+}
 exports.InvalidPropertyIndex = InvalidPropertyIndex;
 /**
  * MissingInfoErr
  */
-var MissingInfoErr = /** @class */ (function (_super) {
-    __extends(MissingInfoErr, _super);
-    function MissingInfoErr(idx) {
-        var _this = _super.call(this, "No info object index: " + idx + "!") || this;
-        _this.idx = idx;
-        return _this;
+class MissingInfoErr extends Error {
+    constructor(idx) {
+        super(`No info object index: ${idx}!`);
+        this.idx = idx;
     }
-    return MissingInfoErr;
-}(Error));
+}
 exports.MissingInfoErr = MissingInfoErr;
 /**
  * InvalidConstructorErr
  */
-var InvalidConstructorErr = /** @class */ (function (_super) {
-    __extends(InvalidConstructorErr, _super);
-    function InvalidConstructorErr(name) {
-        var _this = _super.call(this, "Named object \"" + name + "\" cannot be used as a constructor!") || this;
-        _this.name = name;
-        return _this;
+class InvalidConstructorErr extends Error {
+    constructor(name) {
+        super(`Named object "${name}" cannot be used as a constructor!`);
+        this.name = name;
     }
-    return InvalidConstructorErr;
-}(Error));
+}
 exports.InvalidConstructorErr = InvalidConstructorErr;
 /**
  * InvalidFunctionErr
  */
-var InvalidFunctionErr = /** @class */ (function (_super) {
-    __extends(InvalidFunctionErr, _super);
-    function InvalidFunctionErr(name) {
-        var _this = _super.call(this, "Named object \"" + name + "\" cannot be used as a function!") || this;
-        _this.name = name;
-        return _this;
+class InvalidFunctionErr extends Error {
+    constructor(name) {
+        super(`Named object "${name}" cannot be used as a function!`);
+        this.name = name;
     }
-    return InvalidFunctionErr;
-}(Error));
+}
 exports.InvalidFunctionErr = InvalidFunctionErr;
 /**
  * UnknownInstanceErr
  */
-var UnknownInstanceErr = /** @class */ (function (_super) {
-    __extends(UnknownInstanceErr, _super);
-    function UnknownInstanceErr(instance) {
-        var _this = _super.call(this, 'The instance provided with constructor ' +
+class UnknownInstanceErr extends Error {
+    constructor(instance) {
+        super('The instance provided with constructor ' +
             (instance ? instance.constructor.name || instance : instance) +
-            '" is not in the system!') || this;
-        _this.instance = instance;
-        return _this;
+            '" is not in the system!');
+        this.instance = instance;
     }
-    return UnknownInstanceErr;
-}(Error));
+}
 exports.UnknownInstanceErr = UnknownInstanceErr;
 /**
  * UnknownFuncErr
  */
-var UnknownFunErr = /** @class */ (function (_super) {
-    __extends(UnknownFunErr, _super);
-    function UnknownFunErr(name) {
-        var _this = _super.call(this, "The function '" + name + "' does not exist and cannot be executed!") || this;
-        _this.name = name;
-        return _this;
+class UnknownFunErr extends Error {
+    constructor(name) {
+        super(`The function '${name}' does not exist and cannot be executed!`);
+        this.name = name;
     }
-    return UnknownFunErr;
-}(Error));
+}
 exports.UnknownFunErr = UnknownFunErr;
 
 },{"../../../address":27,"./stack/frame":49}],43:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.DefaultHeapLedger = void 0;
-var maybe_1 = require("@quenk/noni/lib/data/maybe");
-var record_1 = require("@quenk/noni/lib/data/record");
-var type_1 = require("@quenk/noni/lib/data/type");
-var info_1 = require("../../script/info");
-var frame_1 = require("../stack/frame");
+exports.isHeapAddress = exports.DefaultHeapLedger = void 0;
+const maybe_1 = require("@quenk/noni/lib/data/maybe");
+const record_1 = require("@quenk/noni/lib/data/record");
+const type_1 = require("@quenk/noni/lib/data/type");
+const info_1 = require("../../script/info");
+const frame_1 = require("../stack/frame");
 /**
  * HeapLedger keeps track of objects created on the heap and their ownership.
  */
-var DefaultHeapLedger = /** @class */ (function () {
-    function DefaultHeapLedger(objects, owners) {
-        if (objects === void 0) { objects = {}; }
-        if (owners === void 0) { owners = {}; }
+class DefaultHeapLedger {
+    constructor(objects = {}, owners = {}) {
         this.objects = objects;
         this.owners = owners;
         this.counter = 0;
     }
-    DefaultHeapLedger.prototype._addItem = function (frame, value, flag) {
-        var addr = (this.counter++) | flag;
+    _addItem(name, value, flag) {
+        let addr = (this.counter++) | flag;
         this.objects[addr] = value;
-        this.owners[addr] = frame.name;
+        if (name !== '')
+            this.owners[addr] = name;
         return addr;
-    };
-    DefaultHeapLedger.prototype.addString = function (frame, value) {
-        return this._addItem(frame, value, frame_1.DATA_TYPE_HEAP_STRING);
-    };
-    DefaultHeapLedger.prototype.addObject = function (frame, obj) {
-        return this._addItem(frame, obj, frame_1.DATA_TYPE_HEAP_OBJECT);
-    };
-    DefaultHeapLedger.prototype.addFun = function (frame, obj) {
-        return this._addItem(frame, obj, frame_1.DATA_TYPE_HEAP_FUN);
-    };
-    DefaultHeapLedger.prototype.getString = function (ref) {
-        var value = this.objects[ref];
+    }
+    string(value) {
+        return this._addItem('', value, frame_1.DATA_TYPE_HEAP_STRING);
+    }
+    object(value) {
+        return this._addItem('', value, frame_1.DATA_TYPE_HEAP_OBJECT);
+    }
+    fun(value) {
+        return this._addItem('', value, frame_1.DATA_TYPE_HEAP_FUN);
+    }
+    addString(frame, value) {
+        return this._addItem(frame.name, value, frame_1.DATA_TYPE_HEAP_STRING);
+    }
+    addObject(frame, obj) {
+        return this._addItem(frame.name, obj, frame_1.DATA_TYPE_HEAP_OBJECT);
+    }
+    addFun(frame, obj) {
+        return this._addItem(frame.name, obj, frame_1.DATA_TYPE_HEAP_FUN);
+    }
+    getString(ref) {
+        let value = this.objects[ref];
         return (value != null) ? value : '';
-    };
-    DefaultHeapLedger.prototype.getObject = function (ref) {
-        return maybe_1.fromNullable(this.objects[ref]);
-    };
-    DefaultHeapLedger.prototype.getFrameRefs = function (frame) {
-        return record_1.mapTo(record_1.filter(this.owners, function (owner) { return owner === frame.name; }), function (_, k) { return Number(k); });
-    };
-    DefaultHeapLedger.prototype.getThreadRefs = function (thread) {
-        return record_1.mapTo(record_1.filter(this.owners, function (owner) {
-            return threadId(owner) === thread.context.aid;
-        }), function (_, k) { return Number(k); });
-    };
-    DefaultHeapLedger.prototype.intern = function (frame, value) {
-        var maddr = record_1.pickKey(this.objects, function (val) { return val === value; });
+    }
+    getObject(ref) {
+        return (0, maybe_1.fromNullable)(this.objects[ref]);
+    }
+    getFrameRefs(frame) {
+        return (0, record_1.mapTo)((0, record_1.filter)(this.owners, owner => owner === frame.name), (_, k) => Number(k));
+    }
+    getThreadRefs(thread) {
+        return (0, record_1.mapTo)((0, record_1.filter)(this.owners, owner => threadId(owner) === thread.context.aid), (_, k) => Number(k));
+    }
+    intern(frame, value) {
+        let maddr = (0, record_1.pickKey)(this.objects, val => val === value);
         if (maddr.isJust())
             return Number(maddr.get());
-        if (type_1.isNumber(value))
+        if ((0, type_1.isNumber)(value))
             return value;
-        else if (type_1.isString(value))
+        else if ((0, type_1.isString)(value))
             return this.addString(frame, value);
-        else if (type_1.isObject(value))
+        else if ((0, type_1.isObject)(value))
             return ((value instanceof info_1.NewFunInfo) ||
                 (value instanceof info_1.NewForeignFunInfo)) ?
                 this.addFun(frame, value) : this.addObject(frame, value);
         else
             return 0;
-    };
-    DefaultHeapLedger.prototype.move = function (ref, newOwner) {
+    }
+    move(ref, newOwner) {
         this.owners[ref] = newOwner;
-    };
-    DefaultHeapLedger.prototype.frameExit = function (frame) {
-        var _this = this;
-        if (frame.parent.isJust() && isHeapAddress(frame.thread.rp))
+        return ref;
+    }
+    frameExit(frame) {
+        if (frame.parent.isJust() && (0, exports.isHeapAddress)(frame.thread.rp))
             this.move(frame.thread.rp, frame.parent.get().name);
-        this.getFrameRefs(frame).forEach(function (ref) {
+        this.getFrameRefs(frame).forEach(ref => {
             if (ref !== frame.thread.rp) {
-                delete _this.objects[ref];
-                delete _this.owners[ref];
+                delete this.objects[ref];
+                delete this.owners[ref];
             }
         });
-    };
-    DefaultHeapLedger.prototype.threadExit = function (thread) {
-        var _this = this;
-        this.getThreadRefs(thread).forEach(function (ref) {
-            delete _this.objects[ref];
-            delete _this.owners[ref];
+    }
+    threadExit(thread) {
+        this.getThreadRefs(thread).forEach(ref => {
+            delete this.objects[ref];
+            delete this.owners[ref];
         });
-    };
-    return DefaultHeapLedger;
-}());
+    }
+}
 exports.DefaultHeapLedger = DefaultHeapLedger;
-var isHeapAddress = function (ref) {
-    var kind = ref & frame_1.DATA_MASK_TYPE;
+const isHeapAddress = (ref) => {
+    let kind = ref & frame_1.DATA_MASK_TYPE;
     return (kind === frame_1.DATA_TYPE_HEAP_STRING) || (kind === frame_1.DATA_TYPE_HEAP_OBJECT);
 };
-var threadId = function (name) { return Number((name.split('@')[1]).split('#')[0]); };
+exports.isHeapAddress = isHeapAddress;
+const threadId = (name) => Number((name.split('@')[1]).split('#')[0]);
 
 },{"../../script/info":51,"../stack/frame":49,"@quenk/noni/lib/data/maybe":21,"@quenk/noni/lib/data/record":22,"@quenk/noni/lib/data/type":25}],44:[function(require,module,exports){
 "use strict";
@@ -5859,15 +5620,15 @@ exports.stop = exports.maildq = exports.mailcount = exports.recvcount = exports.
  * Stack:
  * <template>,<address> -> <address>
  */
-exports.alloc = function (r, f, _) {
-    var eTemp = f.popObject();
+const alloc = (r, f, _) => {
+    let eTemp = f.popObject();
     if (eTemp.isLeft())
         return r.raise(eTemp.takeLeft());
-    var temp = eTemp.takeRight().promote();
-    var eParent = f.popString();
+    let temp = eTemp.takeRight().promote();
+    let eParent = f.popString();
     if (eParent.isLeft())
         return r.raise(eParent.takeLeft());
-    var eresult = r.vm.allocate(eParent.takeRight(), temp);
+    let eresult = r.vm.allocate(eParent.takeRight(), temp);
     if (eresult.isLeft()) {
         r.raise(eresult.takeLeft());
     }
@@ -5875,24 +5636,26 @@ exports.alloc = function (r, f, _) {
         f.push(r.vm.heap.addString(f, eresult.takeRight()));
     }
 };
+exports.alloc = alloc;
 /**
  * self puts the address of the current actor on to the stack.
  * TODO: make self an automatic variable
  */
-exports.self = function (_, f, __) {
+const self = (_, f, __) => {
     f.pushSelf();
 };
+exports.self = self;
 /**
  * send a message to another actor.
  *
  * Stack:
  * <message>,<address> -> <uint8>
  */
-exports.send = function (r, f, _) {
-    var eMsg = f.popValue();
+const send = (r, f, _) => {
+    let eMsg = f.popValue();
     if (eMsg.isLeft())
         return r.raise(eMsg.takeLeft());
-    var eAddr = f.popString();
+    let eAddr = f.popString();
     if (eAddr.isLeft())
         return r.raise(eAddr.takeLeft());
     if (r.vm.sendMessage(eAddr.takeRight(), r.context.address, eMsg.takeRight()))
@@ -5900,6 +5663,7 @@ exports.send = function (r, f, _) {
     else
         f.pushUInt8(0);
 };
+exports.send = send;
 /**
  * recv schedules a receiver function for the next available message.
  *
@@ -5910,23 +5674,25 @@ exports.send = function (r, f, _) {
  * Stack:
  * <function> ->
  */
-exports.recv = function (r, f, _) {
-    var einfo = f.popFunction();
+const recv = (r, f, _) => {
+    let einfo = f.popFunction();
     if (einfo.isLeft())
         return r.raise(einfo.takeLeft());
     r.context.receivers.push(einfo.takeRight());
     if (r.context.mailbox.length > 0)
         r.context.actor.notify();
 };
+exports.recv = recv;
 /**
  * recvcount pushes the total count of pending receives to the top of the stack.
  *
  * Stack:
  *  -> <uint32>
  */
-exports.recvcount = function (r, f, _) {
+const recvcount = (r, f, _) => {
     f.push(r.context.receivers.length);
 };
+exports.recvcount = recvcount;
 /**
  * mailcount pushes the number of messages in the actor's mailbox onto the top
  * of the stack.
@@ -5934,9 +5700,10 @@ exports.recvcount = function (r, f, _) {
  * Stack:
  *  -> <uint32>
  */
-exports.mailcount = function (r, f, _) {
+const mailcount = (r, f, _) => {
     f.push(r.context.mailbox.length);
 };
+exports.mailcount = mailcount;
 /**
  * maildq pushes the earliest message in the mailbox (if any).
  *
@@ -5944,9 +5711,10 @@ exports.mailcount = function (r, f, _) {
  *
  *  -> <message>?
  */
-exports.maildq = function (_, f, __) {
+const maildq = (_, f, __) => {
     f.pushMessage();
 };
+exports.maildq = maildq;
 /**
  * stop an actor in the system.
  *
@@ -5956,45 +5724,49 @@ exports.maildq = function (_, f, __) {
  *
  * <address> ->
  */
-exports.stop = function (r, f, _) {
-    var eaddr = f.popString();
+const stop = (r, f, _) => {
+    let eaddr = f.popString();
     if (eaddr.isLeft())
         return r.raise(eaddr.takeLeft());
     r.wait(r.vm.kill(r.context.actor, eaddr.takeRight()));
 };
+exports.stop = stop;
 
 },{}],46:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ifneqjmp = exports.ifeqjmp = exports.ifnzjmp = exports.ifzjmp = exports.jmp = exports.raise = exports.call = exports.addui32 = exports.ceq = exports.load = exports.store = exports.dup = exports.ldn = exports.lds = exports.pushui32 = exports.pushui16 = exports.pushui8 = exports.nop = void 0;
-var error = require("../error");
-var array_1 = require("@quenk/noni/lib/data/array");
-var frame_1 = require("../stack/frame");
+const error = require("../error");
+const array_1 = require("@quenk/noni/lib/data/array");
+const frame_1 = require("../stack/frame");
 /**
  * nop does nothing.
  *
  * Stack:
  *  ->
  */
-exports.nop = function (_, __, ___) { };
+const nop = (_, __, ___) => { };
+exports.nop = nop;
 /**
  * pushui8 pushes an unsigned 8bit integer onto the stack.
  *
  * Stack:
  * -> <uint8>
  */
-exports.pushui8 = function (_, f, oper) {
+const pushui8 = (_, f, oper) => {
     f.pushUInt8(oper);
 };
+exports.pushui8 = pushui8;
 /**
  * pushui16 pushes an unsigned 16bit integer onto the stack.
  *
  * Stack:
  *  -> <uint16>
  */
-exports.pushui16 = function (_, f, oper) {
+const pushui16 = (_, f, oper) => {
     f.pushUInt16(oper);
 };
+exports.pushui16 = pushui16;
 /**
  * pushui32 pushes an unsigned 32bit integer onto the stack.
  *
@@ -6002,35 +5774,39 @@ exports.pushui16 = function (_, f, oper) {
  * Stack:
  *  -> <uint32>
  */
-exports.pushui32 = function (_, f, oper) {
+const pushui32 = (_, f, oper) => {
     f.pushUInt32(oper);
 };
+exports.pushui32 = pushui32;
 /**
  * lds loads a string from the constant pool onto the stack.
  *
  * Stack:
  *  -> <string>
  */
-exports.lds = function (_, f, idx) {
+const lds = (_, f, idx) => {
     f.pushString(idx);
 };
+exports.lds = lds;
 /**
  * ldn loads an info object from the compiled script.
  *
  * -> <value>
  */
-exports.ldn = function (_, f, idx) {
+const ldn = (_, f, idx) => {
     f.pushName(idx);
 };
+exports.ldn = ldn;
 /**
  * dup duplicates the value on top of the data stack.
  *
  * Stack:
  * <any> -> <any>,<any>
  */
-exports.dup = function (_, f, __) {
+const dup = (_, f, __) => {
     f.duplicate();
 };
+exports.dup = dup;
 /**
  * store the value at the top of the data stack in the variable indicated
  * by idx.
@@ -6038,9 +5814,10 @@ exports.dup = function (_, f, __) {
  * Stack:
  * <any> ->
  */
-exports.store = function (_, f, idx) {
+const store = (_, f, idx) => {
     f.locals[idx] = f.pop();
 };
+exports.store = store;
 /**
  * load the value stored at idx in the variables array onto the top of the
  * stack.
@@ -6050,10 +5827,11 @@ exports.store = function (_, f, idx) {
  * Stack:
  *  -> <any>
  */
-exports.load = function (_, f, idx) {
-    var d = f.locals[idx];
+const load = (_, f, idx) => {
+    let d = f.locals[idx];
     f.push((d == null) ? 0 : d);
 };
+exports.load = load;
 /**
  * ceq compares two values for equality.
  *
@@ -6063,10 +5841,10 @@ exports.load = function (_, f, idx) {
  *
  * <val1>,<val2> -> <unint32>
  */
-exports.ceq = function (r, f, __) {
+const ceq = (r, f, __) => {
     //TODO: Should null == null or raise an error?
-    var eLhs = f.popValue();
-    var eRhs = f.popValue();
+    let eLhs = f.popValue();
+    let eRhs = f.popValue();
     if (eLhs.isLeft())
         return r.raise(eLhs.takeLeft());
     if (eRhs.isLeft())
@@ -6076,6 +5854,7 @@ exports.ceq = function (r, f, __) {
     else
         f.push(0);
 };
+exports.ceq = ceq;
 /**
  * addui32 treats the top two operands on the data stack as uint32s and adds
  * them.
@@ -6083,12 +5862,13 @@ exports.ceq = function (r, f, __) {
  * The result is a 32 bit value. If the result is more than MAX_SAFE_INTEGER an
  * IntergerOverflowErr will be raised.
  */
-exports.addui32 = function (r, f, _) {
-    var val = f.pop() + f.pop();
+const addui32 = (r, f, _) => {
+    let val = f.pop() + f.pop();
     if (val > frame_1.DATA_MAX_SAFE_UINT32)
         return r.raise(new error.IntegerOverflowErr());
     f.push(val);
 };
+exports.addui32 = addui32;
 /**
  * call a function placing its result on the heap.
  *
@@ -6096,21 +5876,22 @@ exports.addui32 = function (r, f, _) {
  *
  * <arg>...? -> <result>
  */
-exports.call = function (r, f, _) {
-    var einfo = f.popFunction();
+const call = (r, f, _) => {
+    let einfo = f.popFunction();
     if (einfo.isLeft())
         return r.raise(einfo.takeLeft());
-    var fn = einfo.takeRight();
+    let fn = einfo.takeRight();
     if (fn.foreign === true) {
         //TODO: This is unsafe but the extent of its effect on overall stability
         // should be compared to the time taken to ensure each value.
-        var args = array_1.make(fn.argc || 0, function () { return f.popValue().takeRight(); });
+        let args = (0, array_1.make)(fn.argc || 0, () => f.popValue().takeRight());
         r.invokeForeign(f, fn, args);
     }
     else {
         r.invokeVM(f, fn);
     }
 };
+exports.call = call;
 /**
  * raise an exception.
  *
@@ -6118,19 +5899,21 @@ exports.call = function (r, f, _) {
  *
  * <message> ->
  */
-exports.raise = function (r, f, _) {
-    var emsg = f.popString();
+const raise = (r, f, _) => {
+    let emsg = f.popString();
     r.raise(new Error(emsg.takeRight()));
 };
+exports.raise = raise;
 /**
  * jmp jumps to the instruction at the specified address.
  *
  * Stack:
  *  ->
  */
-exports.jmp = function (_, f, oper) {
+const jmp = (_, f, oper) => {
     f.seek(oper);
 };
+exports.jmp = jmp;
 /**
  * ifzjmp jumps to the instruction at the specified address if the top
  * of the stack is === 0.
@@ -6139,11 +5922,12 @@ exports.jmp = function (_, f, oper) {
  *
  * <uint32> ->
  */
-exports.ifzjmp = function (_, f, oper) {
-    var eValue = f.popValue();
+const ifzjmp = (_, f, oper) => {
+    let eValue = f.popValue();
     if ((eValue.isLeft()) || (eValue.takeRight() === 0))
         f.seek(oper);
 };
+exports.ifzjmp = ifzjmp;
 /**
  * ifnzjmp jumps to the instruction at the specified address if the top
  * of the stack is !== 0.
@@ -6151,20 +5935,21 @@ exports.ifzjmp = function (_, f, oper) {
  * Stack:
  * <uint32> ->
  */
-exports.ifnzjmp = function (_, f, oper) {
-    var eValue = f.popValue();
+const ifnzjmp = (_, f, oper) => {
+    let eValue = f.popValue();
     if ((eValue.isRight()) && (eValue.takeRight() !== 0))
         f.seek(oper);
 };
+exports.ifnzjmp = ifnzjmp;
 /**
  * ifeqjmp jumps to the instruction at the specified address if the top
  * two elements of the stack are strictly equal to each other.
  * Stack:
  * <any><any> ->
  */
-exports.ifeqjmp = function (r, f, oper) {
-    var eLhs = f.popValue();
-    var eRhs = f.popValue();
+const ifeqjmp = (r, f, oper) => {
+    let eLhs = f.popValue();
+    let eRhs = f.popValue();
     if (eLhs.isLeft())
         r.raise(eLhs.takeLeft());
     else if (eRhs.isLeft())
@@ -6172,15 +5957,16 @@ exports.ifeqjmp = function (r, f, oper) {
     else if (eLhs.takeRight() === eRhs.takeRight())
         f.seek(oper);
 };
+exports.ifeqjmp = ifeqjmp;
 /**
  * ifneqjmp jumps to the instruction at the specified address if the top
  * two elements of the stack are not strictly equal to each other.
  * Stack:
  * <any><any> ->
  */
-exports.ifneqjmp = function (r, f, oper) {
-    var eLhs = f.popValue();
-    var eRhs = f.popValue();
+const ifneqjmp = (r, f, oper) => {
+    let eLhs = f.popValue();
+    let eRhs = f.popValue();
     if (eLhs.isLeft())
         r.raise(eLhs.takeLeft());
     else if (eRhs.isLeft())
@@ -6188,17 +5974,17 @@ exports.ifneqjmp = function (r, f, oper) {
     else if (eLhs.takeRight() !== eRhs.takeRight())
         f.seek(oper);
 };
+exports.ifneqjmp = ifneqjmp;
 
 },{"../error":42,"../stack/frame":49,"@quenk/noni/lib/data/array":18}],47:[function(require,module,exports){
 "use strict";
-var _a;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.toLog = exports.toName = exports.handlers = exports.opcodes = exports.ARELM = exports.ARLENGTH = exports.GETPROP = exports.STOP = exports.SELF = exports.MAILDQ = exports.MAILCOUNT = exports.RECVCOUNT = exports.RECV = exports.SEND = exports.ALLOC = exports.IFNEQJMP = exports.IFEQJMP = exports.IFNZJMP = exports.IFZJMP = exports.JMP = exports.RAISE = exports.CALL = exports.ADDUI32 = exports.CEQ = exports.LOAD = exports.STORE = exports.DUP = exports.LDN = exports.LDS = exports.PUSHUI32 = exports.PUSHUI16 = exports.PUSHUI8 = exports.NOP = exports.OP_CODE_RANGE_STEP = exports.OP_CODE_RANGE_HIGH = exports.OP_CODE_RANGE_LOW = void 0;
-var base = require("./base");
-var actor = require("./actor");
-var obj = require("./object");
-var record_1 = require("@quenk/noni/lib/data/record");
-var frame_1 = require("../stack/frame");
+const base = require("./base");
+const actor = require("./actor");
+const obj = require("./object");
+const record_1 = require("@quenk/noni/lib/data/record");
+const frame_1 = require("../stack/frame");
 exports.OP_CODE_RANGE_LOW = 0x1000000;
 exports.OP_CODE_RANGE_HIGH = 0xff000000;
 exports.OP_CODE_RANGE_STEP = 0x1000000;
@@ -6235,182 +6021,172 @@ exports.ARELM = exports.OP_CODE_RANGE_STEP * 112;
 /**
  * opcodes
  */
-exports.opcodes = (_a = {},
-    _a[exports.NOP] = {
+exports.opcodes = {
+    [exports.NOP]: {
         name: 'nop',
         handler: base.nop,
-        log: function () { return ['nop']; }
+        log: () => ['nop']
     },
-    _a[exports.PUSHUI8] = {
+    [exports.PUSHUI8]: {
         name: 'pushui8',
         handler: base.pushui8,
-        log: function (_, __, oper) { return ['pushui8', oper]; }
+        log: (_, __, oper) => ['pushui8', oper]
     },
-    _a[exports.PUSHUI16] = {
+    [exports.PUSHUI16]: {
         name: 'pushui16',
         handler: base.pushui16,
-        log: function (_, __, oper) { return ['pushui16', oper]; }
+        log: (_, __, oper) => ['pushui16', oper]
     },
-    _a[exports.PUSHUI32] = {
+    [exports.PUSHUI32]: {
         name: 'pushui32',
         handler: base.pushui32,
-        log: function (_, __, oper) { return ['pushui32', oper]; }
+        log: (_, __, oper) => ['pushui32', oper]
     },
-    _a[exports.LDS] = {
+    [exports.LDS]: {
         name: 'lds',
         handler: base.lds,
-        log: function (_, f, oper) {
-            return ['lds', oper, eToLog(f.resolve(frame_1.DATA_TYPE_STRING | oper))];
-        }
+        log: (_, f, oper) => ['lds', oper, eToLog(f.resolve(frame_1.DATA_TYPE_STRING | oper))]
     },
-    _a[exports.LDN] = {
+    [exports.LDN]: {
         name: 'ldn',
         handler: base.ldn,
-        log: function (_, f, oper) {
-            return ['ldn', oper, eToLog(f.resolve(frame_1.DATA_TYPE_INFO | oper))];
-        }
+        log: (_, f, oper) => ['ldn', oper, eToLog(f.resolve(frame_1.DATA_TYPE_INFO | oper))]
     },
-    _a[exports.DUP] = {
+    [exports.DUP]: {
         name: 'dup',
         handler: base.dup,
-        log: function (_, __, ___) { return ['dup']; }
+        log: (_, __, ___) => ['dup']
     },
-    _a[exports.STORE] = {
+    [exports.STORE]: {
         name: 'store',
         handler: base.store,
-        log: function (_, __, oper) {
-            return ['store', oper];
-        }
+        log: (_, __, oper) => ['store', oper]
     },
-    _a[exports.LOAD] = {
+    [exports.LOAD]: {
         name: 'load',
         handler: base.load,
-        log: function (_, f, oper) {
-            return ['load', oper, eToLog(f.resolve(frame_1.DATA_TYPE_LOCAL | oper))];
-        }
+        log: (_, f, oper) => ['load', oper, eToLog(f.resolve(frame_1.DATA_TYPE_LOCAL | oper))]
     },
-    _a[exports.CEQ] = {
+    [exports.CEQ]: {
         name: 'ceq',
         handler: base.ceq,
-        log: function (_, __, ___) { return ['ceq']; }
+        log: (_, __, ___) => ['ceq']
     },
-    _a[exports.ADDUI32] = {
+    [exports.ADDUI32]: {
         name: 'addui32',
         handler: base.addui32,
-        log: function (_, __, ___) { return ['addui32']; }
+        log: (_, __, ___) => ['addui32']
     },
-    _a[exports.CALL] = {
+    [exports.CALL]: {
         name: 'call',
         handler: base.call,
-        log: function (_, __, ___) { return ['call']; }
+        log: (_, __, ___) => ['call']
     },
-    _a[exports.RAISE] = {
+    [exports.RAISE]: {
         name: 'raise',
         handler: base.raise,
-        log: function (_, __, ___) { return ['raise']; }
+        log: (_, __, ___) => ['raise']
     },
-    _a[exports.JMP] = {
+    [exports.JMP]: {
         name: 'jmp',
         handler: base.jmp,
-        log: function (_, __, oper) { return ['jmp', oper]; }
+        log: (_, __, oper) => ['jmp', oper]
     },
-    _a[exports.IFZJMP] = {
+    [exports.IFZJMP]: {
         name: 'ifzjmp',
         handler: base.ifzjmp,
-        log: function (_, __, oper) { return ['ifzjmp', oper]; }
+        log: (_, __, oper) => ['ifzjmp', oper]
     },
-    _a[exports.IFNZJMP] = {
+    [exports.IFNZJMP]: {
         name: 'ifnzjmp',
         handler: base.ifnzjmp,
-        log: function (_, __, oper) { return ['ifnzjmp', oper]; }
+        log: (_, __, oper) => ['ifnzjmp', oper]
     },
-    _a[exports.IFEQJMP] = {
+    [exports.IFEQJMP]: {
         name: 'ifeqjmp',
         handler: base.ifeqjmp,
-        log: function (_, __, oper) { return ['ifeqjmp', oper]; }
+        log: (_, __, oper) => ['ifeqjmp', oper]
     },
-    _a[exports.IFNEQJMP] = {
+    [exports.IFNEQJMP]: {
         name: 'ifneqjmp',
         handler: base.ifneqjmp,
-        log: function (_, __, oper) { return ['ifneqjmp', oper]; }
+        log: (_, __, oper) => ['ifneqjmp', oper]
     },
-    _a[exports.ALLOC] = {
+    [exports.ALLOC]: {
         name: 'alloc',
         handler: actor.alloc,
-        log: function (_, __, ___) { return ['alloc']; }
+        log: (_, __, ___) => ['alloc']
     },
-    _a[exports.SEND] = {
+    [exports.SEND]: {
         name: 'send',
         handler: actor.send,
-        log: function (_, __, ___) { return ['send']; }
+        log: (_, __, ___) => ['send']
     },
-    _a[exports.RECV] = {
+    [exports.RECV]: {
         name: 'recv',
         handler: actor.recv,
-        log: function (_, f, oper) {
-            return ['recv', oper, eToLog(f.resolve(frame_1.DATA_TYPE_INFO | oper))];
-        }
+        log: (_, f, oper) => ['recv', oper, eToLog(f.resolve(frame_1.DATA_TYPE_INFO | oper))]
     },
-    _a[exports.RECVCOUNT] = {
+    [exports.RECVCOUNT]: {
         name: 'recvcount',
         handler: actor.recvcount,
-        log: function (_, __, ___) { return ['recvcount']; }
+        log: (_, __, ___) => ['recvcount']
     },
-    _a[exports.MAILCOUNT] = {
+    [exports.MAILCOUNT]: {
         name: 'mailcount',
         handler: actor.mailcount,
-        log: function (_, __, ___) { return ['mailcount']; }
+        log: (_, __, ___) => ['mailcount']
     },
-    _a[exports.MAILDQ] = {
+    [exports.MAILDQ]: {
         name: 'maildq',
         handler: actor.maildq,
-        log: function (_, __, ___) { return ['maildq']; }
+        log: (_, __, ___) => ['maildq']
     },
-    _a[exports.SELF] = {
+    [exports.SELF]: {
         name: 'self',
         handler: actor.self,
-        log: function (_, __, ___) { return ['self']; }
+        log: (_, __, ___) => ['self']
     },
-    _a[exports.STOP] = {
+    [exports.STOP]: {
         name: 'stop',
         handler: actor.stop,
-        log: function (_, __, ___) { return ['stop']; }
+        log: (_, __, ___) => ['stop']
     },
-    _a[exports.GETPROP] = {
+    [exports.GETPROP]: {
         name: 'getprop',
         handler: obj.getprop,
-        log: function (_, __, oper) { return ['getprop', oper]; }
+        log: (_, __, oper) => ['getprop', oper]
     },
-    _a[exports.ARELM] = {
+    [exports.ARELM]: {
         name: 'arelm',
         handler: obj.arelm,
-        log: function (_, __, oper) { return ['arelm', oper]; }
+        log: (_, __, oper) => ['arelm', oper]
     },
-    _a[exports.ARLENGTH] = {
+    [exports.ARLENGTH]: {
         name: 'arlength',
         handler: obj.arlength,
-        log: function (_, __, ___) { return ['arlength']; }
-    },
-    _a);
-var eToLog = function (e) { return e.isLeft() ?
-    e.takeLeft().message : e.takeRight(); };
+        log: (_, __, ___) => ['arlength']
+    }
+};
+const eToLog = (e) => e.isLeft() ?
+    e.takeLeft().message : e.takeRight();
 /**
  * handlers maps opcode numbers to their handler
  */
-exports.handlers = record_1.map(exports.opcodes, function (i) { return i.handler; });
+exports.handlers = (0, record_1.map)(exports.opcodes, i => i.handler);
 /**
  * toName converts an opcode to it's mnemonic.
  */
-exports.toName = function (op) { return exports.opcodes.hasOwnProperty(op) ?
-    exports.opcodes[op].name : '<unknown>'; };
+const toName = (op) => exports.opcodes.hasOwnProperty(op) ?
+    exports.opcodes[op].name : '<unknown>';
+exports.toName = toName;
 /**
  * toLog provides a log line for an op.
  *
  * If the op is invalid an empty line is produced.
  */
-exports.toLog = function (op, r, f, oper) {
-    return exports.opcodes.hasOwnProperty(op) ? exports.opcodes[op].log(r, f, oper) : [];
-};
+const toLog = (op, r, f, oper) => exports.opcodes.hasOwnProperty(op) ? exports.opcodes[op].log(r, f, oper) : [];
+exports.toLog = toLog;
 
 },{"../stack/frame":49,"./actor":45,"./base":46,"./object":48,"@quenk/noni/lib/data/record":22}],48:[function(require,module,exports){
 "use strict";
@@ -6422,12 +6198,12 @@ exports.arelm = exports.arlength = exports.getprop = void 0;
  * Stack:
  *  <objectref> -> <value>
  */
-exports.getprop = function (r, f, idx) {
-    var eobj = f.popObject();
+const getprop = (r, f, idx) => {
+    let eobj = f.popObject();
     if (eobj.isLeft())
         return r.raise(eobj.takeLeft());
-    var obj = eobj.takeRight();
-    var mval = obj.get(idx);
+    let obj = eobj.takeRight();
+    let mval = obj.get(idx);
     if (mval.isJust()) {
         f.push(r.vm.heap.intern(f, mval.get()));
     }
@@ -6436,6 +6212,7 @@ exports.getprop = function (r, f, idx) {
         f.push(0);
     }
 };
+exports.getprop = getprop;
 /**
  * arlength pushes the length of an array on the top of the stack onto
  * the stack.
@@ -6446,13 +6223,14 @@ exports.getprop = function (r, f, idx) {
  * Stack:
  * <arrayref> -> <uint32>
  */
-exports.arlength = function (r, f, _) {
-    var eobj = f.popObject();
+const arlength = (r, f, _) => {
+    let eobj = f.popObject();
     if (eobj.isLeft())
         return r.raise(eobj.takeLeft());
-    var obj = eobj.takeRight();
+    let obj = eobj.takeRight();
     f.push(obj.getCount());
 };
+exports.arlength = arlength;
 /**
  * arelm provides the array element at the specified index.
  *
@@ -6462,12 +6240,12 @@ exports.arlength = function (r, f, _) {
  *
  * <arrayref>,<index> -> <element>
  */
-exports.arelm = function (r, f, _) {
-    var earr = f.popObject();
+const arelm = (r, f, _) => {
+    let earr = f.popObject();
     if (earr.isLeft())
         return r.raise(earr.takeLeft());
-    var arr = earr.takeRight();
-    var melm = arr.get(f.pop());
+    let arr = earr.takeRight();
+    let melm = arr.get(f.pop());
     if (melm.isJust()) {
         f.push(r.vm.heap.intern(f, melm.get()));
     }
@@ -6475,16 +6253,17 @@ exports.arelm = function (r, f, _) {
         f.push(0);
     }
 };
+exports.arelm = arelm;
 
 },{}],49:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.StackFrame = exports.BYTE_CONSTANT_INFO = exports.BYTE_CONSTANT_STR = exports.BYTE_CONSTANT_NUM = exports.DATA_TYPE_SELF = exports.DATA_TYPE_MAILBOX = exports.DATA_TYPE_LOCAL = exports.DATA_TYPE_HEAP_FUN = exports.DATA_TYPE_HEAP_FOREIGN = exports.DATA_TYPE_HEAP_OBJECT = exports.DATA_TYPE_HEAP_STRING = exports.DATA_TYPE_INFO = exports.DATA_TYPE_STRING = exports.DATA_MAX_SAFE_UINT32 = exports.DATA_MAX_SIZE = exports.DATA_MASK_VALUE32 = exports.DATA_MASK_VALUE24 = exports.DATA_MASK_VALUE16 = exports.DATA_MASK_VALUE8 = exports.DATA_MASK_TYPE = exports.DATA_RANGE_TYPE_STEP = exports.DATA_RANGE_TYPE_LOW = exports.DATA_RANGE_TYPE_HIGH = void 0;
-var indexes = require("../../script");
-var error = require("../error");
-var either_1 = require("@quenk/noni/lib/data/either");
-var maybe_1 = require("@quenk/noni/lib/data/maybe");
-var type_1 = require("../../type");
+const indexes = require("../../script");
+const error = require("../error");
+const either_1 = require("@quenk/noni/lib/data/either");
+const maybe_1 = require("@quenk/noni/lib/data/maybe");
+const type_1 = require("../../type");
 exports.DATA_RANGE_TYPE_HIGH = 0xf0000000;
 exports.DATA_RANGE_TYPE_LOW = 0x1000000;
 exports.DATA_RANGE_TYPE_STEP = 0x1000000;
@@ -6513,13 +6292,8 @@ exports.BYTE_CONSTANT_INFO = 0x30000;
 /**
  * StackFrame (Frame implementation).
  */
-var StackFrame = /** @class */ (function () {
-    function StackFrame(name, script, thread, parent, code, data, locals, ip) {
-        if (parent === void 0) { parent = maybe_1.nothing(); }
-        if (code === void 0) { code = []; }
-        if (data === void 0) { data = []; }
-        if (locals === void 0) { locals = []; }
-        if (ip === void 0) { ip = 0; }
+class StackFrame {
+    constructor(name, script, thread, parent = (0, maybe_1.nothing)(), code = [], data = [], locals = [], ip = 0) {
         this.name = name;
         this.script = script;
         this.thread = thread;
@@ -6529,42 +6303,41 @@ var StackFrame = /** @class */ (function () {
         this.locals = locals;
         this.ip = ip;
     }
-    StackFrame.prototype.getPosition = function () {
+    getPosition() {
         return this.ip;
-    };
-    StackFrame.prototype.push = function (d) {
+    }
+    push(d) {
         this.data.push(d);
         return this;
-    };
-    StackFrame.prototype.pushUInt8 = function (value) {
+    }
+    pushUInt8(value) {
         return this.push((value >>> 0) & exports.DATA_MASK_VALUE8);
-    };
-    StackFrame.prototype.pushUInt16 = function (value) {
+    }
+    pushUInt16(value) {
         return this.push((value >>> 0) & exports.DATA_MASK_VALUE16);
-    };
-    StackFrame.prototype.pushUInt32 = function (value) {
+    }
+    pushUInt32(value) {
         return this.push(value >>> 0);
-    };
-    StackFrame.prototype.pushString = function (idx) {
+    }
+    pushString(idx) {
         return this.push(idx | exports.DATA_TYPE_STRING);
-    };
-    StackFrame.prototype.pushName = function (idx) {
+    }
+    pushName(idx) {
         return this.push(idx | exports.DATA_TYPE_INFO);
-    };
-    StackFrame.prototype.pushMessage = function () {
+    }
+    pushMessage() {
         return this.push(0 | exports.DATA_TYPE_MAILBOX);
-    };
-    StackFrame.prototype.pushSelf = function () {
+    }
+    pushSelf() {
         return this.push(exports.DATA_TYPE_SELF);
-    };
-    StackFrame.prototype.peek = function (n) {
-        if (n === void 0) { n = 0; }
-        return maybe_1.fromNullable(this.data.length - (n + 1));
-    };
-    StackFrame.prototype.resolve = function (data) {
-        var context = this.thread.context;
-        var typ = data & exports.DATA_MASK_TYPE;
-        var value = data & exports.DATA_MASK_VALUE24;
+    }
+    peek(n = 0) {
+        return (0, maybe_1.fromNullable)(this.data.length - (n + 1));
+    }
+    resolve(data) {
+        let { context } = this.thread;
+        let typ = data & exports.DATA_MASK_TYPE;
+        let value = data & exports.DATA_MASK_VALUE24;
         switch (typ) {
             case exports.DATA_TYPE_STRING:
             case exports.DATA_TYPE_HEAP_STRING:
@@ -6584,7 +6357,7 @@ var StackFrame = /** @class */ (function () {
                 return this.popName();
             //TODO: This is probably not needed.
             case exports.DATA_TYPE_LOCAL:
-                var mRef = maybe_1.fromNullable(this.locals[value]);
+                let mRef = (0, maybe_1.fromNullable)(this.locals[value]);
                 if (mRef.isNothing())
                     return nullErr(data);
                 //TODO: review call stack safety of this recursive call.
@@ -6593,440 +6366,365 @@ var StackFrame = /** @class */ (function () {
                 if (context.mailbox.length === 0)
                     return nullErr(data);
                 //messages are always accessed sequentially FIFO
-                return either_1.right(context.mailbox.shift());
+                return (0, either_1.right)(context.mailbox.shift());
             case exports.DATA_TYPE_SELF:
-                return either_1.right(context.address);
+                return (0, either_1.right)(context.address);
             //TODO: This sometimes results in us treating 0 as a legitimate
             //value whereas it should be an error. However, 0 is a valid value
             //for numbers, and booleans. Needs review, solution may be in ops
             //rather than here.
             default:
-                return either_1.right(value);
+                return (0, either_1.right)(value);
         }
-    };
-    StackFrame.prototype.pop = function () {
+    }
+    pop() {
         return (this.data.pop() | 0);
-    };
-    StackFrame.prototype.popValue = function () {
+    }
+    popValue() {
         return (this.data.length === 0) ?
-            either_1.left(new error.StackEmptyErr()) :
+            (0, either_1.left)(new error.StackEmptyErr()) :
             this.resolve(this.pop());
-    };
-    StackFrame.prototype.popString = function () {
-        var data = this.pop();
-        var typ = data & exports.DATA_MASK_TYPE;
-        var idx = data & exports.DATA_MASK_VALUE24;
+    }
+    popString() {
+        let data = this.pop();
+        let typ = data & exports.DATA_MASK_TYPE;
+        let idx = data & exports.DATA_MASK_VALUE24;
         if (typ === exports.DATA_TYPE_STRING) {
-            var s = this.script.constants[indexes.CONSTANTS_INDEX_STRING][idx];
+            let s = this.script.constants[indexes.CONSTANTS_INDEX_STRING][idx];
             if (s == null)
                 return missingSymbol(data);
-            return either_1.right(s);
+            return (0, either_1.right)(s);
         }
         else if (typ === exports.DATA_TYPE_HEAP_STRING) {
-            return either_1.right(this.thread.vm.heap.getString(data));
+            return (0, either_1.right)(this.thread.vm.heap.getString(data));
         }
         else if (typ === exports.DATA_TYPE_SELF) {
-            return either_1.right(this.thread.context.address);
+            return (0, either_1.right)(this.thread.context.address);
         }
         else {
             return wrongType(exports.DATA_TYPE_STRING, typ);
         }
-    };
-    StackFrame.prototype.popName = function () {
-        var data = this.pop();
-        var typ = data & exports.DATA_MASK_TYPE;
-        var idx = data & exports.DATA_MASK_VALUE24;
+    }
+    popName() {
+        let data = this.pop();
+        let typ = data & exports.DATA_MASK_TYPE;
+        let idx = data & exports.DATA_MASK_VALUE24;
         if (typ === exports.DATA_TYPE_INFO) {
-            var info = this.script.info[idx];
+            let info = this.script.info[idx];
             if (info == null)
                 return nullErr(data);
-            return either_1.right(info);
+            return (0, either_1.right)(info);
         }
         else {
             return wrongType(exports.DATA_TYPE_INFO, data);
         }
-    };
-    StackFrame.prototype.popFunction = function () {
-        var data = this.pop();
-        var typ = data & exports.DATA_MASK_TYPE;
+    }
+    popFunction() {
+        let data = this.pop();
+        let typ = data & exports.DATA_MASK_TYPE;
         if (typ === exports.DATA_TYPE_HEAP_FUN) {
-            var mFun = this.thread.vm.heap.getObject(data);
-            return mFun.isJust() ? either_1.right(mFun.get()) : nullFunPtr(data);
+            let mFun = this.thread.vm.heap.getObject(data);
+            return mFun.isJust() ? (0, either_1.right)(mFun.get()) : nullFunPtr(data);
         }
         else {
             this.push(data);
             return this
                 .popName()
-                .chain(function (nfo) {
+                .chain(nfo => {
                 if ((nfo.descriptor & type_1.BYTE_TYPE) !== type_1.TYPE_FUN)
                     return notAFunction(nfo.name);
-                return either_1.right(nfo);
+                return (0, either_1.right)(nfo);
             });
         }
-    };
-    StackFrame.prototype.popObject = function () {
-        var data = this.pop();
-        var typ = data & exports.DATA_MASK_TYPE;
+    }
+    popObject() {
+        let data = this.pop();
+        let typ = data & exports.DATA_MASK_TYPE;
         if (typ === exports.DATA_TYPE_HEAP_OBJECT) {
-            var mho = this.thread.vm.heap.getObject(data);
+            let mho = this.thread.vm.heap.getObject(data);
             if (mho.isNothing())
                 return nullErr(data);
-            return either_1.right(mho.get());
+            return (0, either_1.right)(mho.get());
         }
         else {
             return wrongType(exports.DATA_TYPE_HEAP_OBJECT, typ);
         }
-    };
-    StackFrame.prototype.popForeign = function () {
-        var data = this.pop();
-        var typ = data & exports.DATA_MASK_TYPE;
+    }
+    popForeign() {
+        let data = this.pop();
+        let typ = data & exports.DATA_MASK_TYPE;
         if (typ === exports.DATA_TYPE_HEAP_FOREIGN) {
-            var mho = this.thread.vm.heap.getObject(data);
+            let mho = this.thread.vm.heap.getObject(data);
             if (mho.isNothing())
                 return nullErr(data);
-            return either_1.right(mho.get());
+            return (0, either_1.right)(mho.get());
         }
         else {
             return wrongType(exports.DATA_TYPE_HEAP_FOREIGN, typ);
         }
-    };
-    StackFrame.prototype.duplicate = function () {
-        var top = this.data.pop();
+    }
+    duplicate() {
+        let top = this.data.pop();
         this.data.push(top);
         this.data.push(top);
         return this;
-    };
-    StackFrame.prototype.advance = function () {
+    }
+    advance() {
         this.ip = this.ip + 1;
         return this;
-    };
-    StackFrame.prototype.seek = function (loc) {
+    }
+    seek(loc) {
         this.ip = loc;
         return this;
-    };
-    StackFrame.prototype.isFinished = function () {
+    }
+    isFinished() {
         return this.ip >= this.code.length;
-    };
-    return StackFrame;
-}());
+    }
+}
 exports.StackFrame = StackFrame;
-var nullErr = function (data) {
-    return either_1.left(new error.NullPointerErr(data));
-};
-var wrongType = function (expect, got) {
-    return either_1.left(new error.UnexpectedDataType(expect, got));
-};
-var notAFunction = function (name) {
-    return either_1.left(new error.InvalidFunctionErr(name));
-};
-var nullFunPtr = function (addr) {
-    return either_1.left(new error.NullFunctionPointerErr(addr));
-};
-var missingSymbol = function (data) {
-    return either_1.left(new error.MissingSymbolErr(data));
-};
+const nullErr = (data) => (0, either_1.left)(new error.NullPointerErr(data));
+const wrongType = (expect, got) => (0, either_1.left)(new error.UnexpectedDataType(expect, got));
+const notAFunction = (name) => (0, either_1.left)(new error.InvalidFunctionErr(name));
+const nullFunPtr = (addr) => (0, either_1.left)(new error.NullFunctionPointerErr(addr));
+const missingSymbol = (data) => (0, either_1.left)(new error.MissingSymbolErr(data));
 
 },{"../../script":50,"../../type":58,"../error":42,"@quenk/noni/lib/data/either":19,"@quenk/noni/lib/data/maybe":21}],50:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getInfo = exports.PScript = exports.CONSTANTS_INDEX_STRING = exports.CONSTANTS_INDEX_NUMBER = void 0;
-var either_1 = require("@quenk/noni/lib/data/either");
-var error_1 = require("../runtime/error");
+const either_1 = require("@quenk/noni/lib/data/either");
+const error_1 = require("../runtime/error");
 exports.CONSTANTS_INDEX_NUMBER = 0;
 exports.CONSTANTS_INDEX_STRING = 1;
 /**
  * PScript provides a constructor for creating Scripts.
  */
-var PScript = /** @class */ (function () {
-    function PScript(name, constants, info, code) {
-        if (constants === void 0) { constants = [[], []]; }
-        if (info === void 0) { info = []; }
-        if (code === void 0) { code = []; }
+class PScript {
+    constructor(name, constants = [[], []], info = [], code = []) {
         this.name = name;
         this.constants = constants;
         this.info = info;
         this.code = code;
     }
-    return PScript;
-}());
+}
 exports.PScript = PScript;
 /**
  * getInfo retrivies an Info object from the info section.
  */
-exports.getInfo = function (s, idx) {
+const getInfo = (s, idx) => {
     if (s.info[idx] == null)
-        return either_1.left(new error_1.MissingInfoErr(idx));
-    return either_1.right(s.info[idx]);
+        return (0, either_1.left)(new error_1.MissingInfoErr(idx));
+    return (0, either_1.right)(s.info[idx]);
 };
+exports.getInfo = getInfo;
 
 },{"../runtime/error":42,"@quenk/noni/lib/data/either":19}],51:[function(require,module,exports){
 "use strict";
-var __extends = (this && this.__extends) || (function () {
-    var extendStatics = function (d, b) {
-        extendStatics = Object.setPrototypeOf ||
-            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
-        return extendStatics(d, b);
-    };
-    return function (d, b) {
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.funType = exports.objectType = exports.arrayType = exports.stringType = exports.booleanType = exports.uint32Type = exports.uint16Type = exports.uint8Type = exports.int32Type = exports.int16Type = exports.int8Type = exports.voidType = exports.NewPropInfo = exports.NewArrayTypeInfo = exports.NewTypeInfo = exports.NewForeignFunInfo = exports.NewFunInfo = exports.NewArrayInfo = exports.NewObjectInfo = exports.NewStringInfo = exports.NewBooleanInfo = exports.NewInt32Info = exports.NewInt16Info = exports.NewInt8Info = exports.NewUInt32Info = exports.NewUInt16Info = exports.NewUInt8Info = exports.VoidInfo = exports.NewInfo = void 0;
-var types = require("../type");
+const types = require("../type");
 /**
  * NewInfo
  */
-var NewInfo = /** @class */ (function () {
-    function NewInfo(name) {
+class NewInfo {
+    constructor(name) {
         this.name = name;
     }
-    return NewInfo;
-}());
+}
 exports.NewInfo = NewInfo;
 /**
  * VoidInfo
  */
-var VoidInfo = /** @class */ (function (_super) {
-    __extends(VoidInfo, _super);
-    function VoidInfo() {
-        var _this = _super !== null && _super.apply(this, arguments) || this;
-        _this.type = exports.voidType;
-        _this.descriptor = types.TYPE_VOID;
-        return _this;
+class VoidInfo extends NewInfo {
+    constructor() {
+        super(...arguments);
+        this.type = exports.voidType;
+        this.descriptor = types.TYPE_VOID;
     }
-    return VoidInfo;
-}(NewInfo));
+}
 exports.VoidInfo = VoidInfo;
 /**
  * NewUInt8Info
  */
-var NewUInt8Info = /** @class */ (function (_super) {
-    __extends(NewUInt8Info, _super);
-    function NewUInt8Info() {
-        var _this = _super !== null && _super.apply(this, arguments) || this;
-        _this.type = exports.uint8Type;
-        _this.descriptor = types.TYPE_UINT8;
-        return _this;
+class NewUInt8Info extends NewInfo {
+    constructor() {
+        super(...arguments);
+        this.type = exports.uint8Type;
+        this.descriptor = types.TYPE_UINT8;
     }
-    return NewUInt8Info;
-}(NewInfo));
+}
 exports.NewUInt8Info = NewUInt8Info;
 /**
  * NewUInt16Info
  */
-var NewUInt16Info = /** @class */ (function (_super) {
-    __extends(NewUInt16Info, _super);
-    function NewUInt16Info() {
-        var _this = _super !== null && _super.apply(this, arguments) || this;
-        _this.type = exports.uint16Type;
-        _this.descriptor = types.TYPE_UINT16;
-        return _this;
+class NewUInt16Info extends NewInfo {
+    constructor() {
+        super(...arguments);
+        this.type = exports.uint16Type;
+        this.descriptor = types.TYPE_UINT16;
     }
-    return NewUInt16Info;
-}(NewInfo));
+}
 exports.NewUInt16Info = NewUInt16Info;
 /**
  * NewUInt32Info
  */
-var NewUInt32Info = /** @class */ (function (_super) {
-    __extends(NewUInt32Info, _super);
-    function NewUInt32Info() {
-        var _this = _super !== null && _super.apply(this, arguments) || this;
-        _this.type = exports.uint32Type;
-        _this.descriptor = types.TYPE_UINT32;
-        return _this;
+class NewUInt32Info extends NewInfo {
+    constructor() {
+        super(...arguments);
+        this.type = exports.uint32Type;
+        this.descriptor = types.TYPE_UINT32;
     }
-    return NewUInt32Info;
-}(NewInfo));
+}
 exports.NewUInt32Info = NewUInt32Info;
 /**
  * NewInt8Info
  */
-var NewInt8Info = /** @class */ (function (_super) {
-    __extends(NewInt8Info, _super);
-    function NewInt8Info() {
-        var _this = _super !== null && _super.apply(this, arguments) || this;
-        _this.type = exports.int8Type;
-        _this.descriptor = types.TYPE_INT8;
-        return _this;
+class NewInt8Info extends NewInfo {
+    constructor() {
+        super(...arguments);
+        this.type = exports.int8Type;
+        this.descriptor = types.TYPE_INT8;
     }
-    return NewInt8Info;
-}(NewInfo));
+}
 exports.NewInt8Info = NewInt8Info;
 /**
  * NewInt16Info
  */
-var NewInt16Info = /** @class */ (function (_super) {
-    __extends(NewInt16Info, _super);
-    function NewInt16Info() {
-        var _this = _super !== null && _super.apply(this, arguments) || this;
-        _this.type = exports.int16Type;
-        _this.descriptor = types.TYPE_INT16;
-        return _this;
+class NewInt16Info extends NewInfo {
+    constructor() {
+        super(...arguments);
+        this.type = exports.int16Type;
+        this.descriptor = types.TYPE_INT16;
     }
-    return NewInt16Info;
-}(NewInfo));
+}
 exports.NewInt16Info = NewInt16Info;
 /**
  * NewInt32Info
  */
-var NewInt32Info = /** @class */ (function (_super) {
-    __extends(NewInt32Info, _super);
-    function NewInt32Info() {
-        var _this = _super !== null && _super.apply(this, arguments) || this;
-        _this.type = exports.int32Type;
-        _this.descriptor = types.TYPE_INT32;
-        return _this;
+class NewInt32Info extends NewInfo {
+    constructor() {
+        super(...arguments);
+        this.type = exports.int32Type;
+        this.descriptor = types.TYPE_INT32;
     }
-    return NewInt32Info;
-}(NewInfo));
+}
 exports.NewInt32Info = NewInt32Info;
 /**
  * NewBooleanInfo
  */
-var NewBooleanInfo = /** @class */ (function (_super) {
-    __extends(NewBooleanInfo, _super);
-    function NewBooleanInfo() {
-        var _this = _super !== null && _super.apply(this, arguments) || this;
-        _this.type = exports.booleanType;
-        _this.descriptor = types.TYPE_BOOLEAN;
-        return _this;
+class NewBooleanInfo extends NewInfo {
+    constructor() {
+        super(...arguments);
+        this.type = exports.booleanType;
+        this.descriptor = types.TYPE_BOOLEAN;
     }
-    return NewBooleanInfo;
-}(NewInfo));
+}
 exports.NewBooleanInfo = NewBooleanInfo;
 /**
  * NewStringInfo
  */
-var NewStringInfo = /** @class */ (function (_super) {
-    __extends(NewStringInfo, _super);
-    function NewStringInfo() {
-        var _this = _super !== null && _super.apply(this, arguments) || this;
-        _this.type = exports.stringType;
-        _this.descriptor = types.TYPE_STRING;
-        return _this;
+class NewStringInfo extends NewInfo {
+    constructor() {
+        super(...arguments);
+        this.type = exports.stringType;
+        this.descriptor = types.TYPE_STRING;
     }
-    return NewStringInfo;
-}(NewInfo));
+}
 exports.NewStringInfo = NewStringInfo;
 /**
  * NewObjectInfo
  */
-var NewObjectInfo = /** @class */ (function (_super) {
-    __extends(NewObjectInfo, _super);
-    function NewObjectInfo() {
-        var _this = _super !== null && _super.apply(this, arguments) || this;
-        _this.type = exports.objectType;
-        _this.descriptor = types.TYPE_OBJECT;
-        return _this;
+class NewObjectInfo extends NewInfo {
+    constructor() {
+        super(...arguments);
+        this.type = exports.objectType;
+        this.descriptor = types.TYPE_OBJECT;
     }
-    return NewObjectInfo;
-}(NewInfo));
+}
 exports.NewObjectInfo = NewObjectInfo;
 /**
  * NewArrayInfo
  */
-var NewArrayInfo = /** @class */ (function (_super) {
-    __extends(NewArrayInfo, _super);
-    function NewArrayInfo(name, type) {
-        var _this = _super.call(this, name) || this;
-        _this.name = name;
-        _this.type = type;
-        _this.descriptor = types.TYPE_ARRAY;
-        return _this;
+class NewArrayInfo extends NewInfo {
+    constructor(name, type) {
+        super(name);
+        this.name = name;
+        this.type = type;
+        this.descriptor = types.TYPE_ARRAY;
     }
-    return NewArrayInfo;
-}(NewInfo));
+}
 exports.NewArrayInfo = NewArrayInfo;
 /**
  * NewFunInfo
  */
-var NewFunInfo = /** @class */ (function (_super) {
-    __extends(NewFunInfo, _super);
-    function NewFunInfo(name, argc, code) {
-        var _this = _super.call(this, name) || this;
-        _this.name = name;
-        _this.argc = argc;
-        _this.code = code;
-        _this.type = exports.funType;
-        _this.descriptor = types.TYPE_FUN;
-        _this.foreign = false;
-        return _this;
+class NewFunInfo extends NewInfo {
+    constructor(name, argc, code) {
+        super(name);
+        this.name = name;
+        this.argc = argc;
+        this.code = code;
+        this.type = exports.funType;
+        this.descriptor = types.TYPE_FUN;
+        this.foreign = false;
     }
-    return NewFunInfo;
-}(NewInfo));
+}
 exports.NewFunInfo = NewFunInfo;
 /**
  * NewForeignFunInfo
  */
-var NewForeignFunInfo = /** @class */ (function (_super) {
-    __extends(NewForeignFunInfo, _super);
-    function NewForeignFunInfo(name, argc, exec) {
-        var _this = _super.call(this, name) || this;
-        _this.name = name;
-        _this.argc = argc;
-        _this.exec = exec;
-        _this.type = exports.funType;
-        _this.descriptor = types.TYPE_FUN;
-        _this.foreign = true;
-        _this.code = [];
-        return _this;
+class NewForeignFunInfo extends NewInfo {
+    constructor(name, argc, exec) {
+        super(name);
+        this.name = name;
+        this.argc = argc;
+        this.exec = exec;
+        this.type = exports.funType;
+        this.descriptor = types.TYPE_FUN;
+        this.foreign = true;
+        this.code = [];
     }
-    return NewForeignFunInfo;
-}(NewInfo));
+}
 exports.NewForeignFunInfo = NewForeignFunInfo;
 /**
  * NewTypeInfo
  */
-var NewTypeInfo = /** @class */ (function (_super) {
-    __extends(NewTypeInfo, _super);
-    function NewTypeInfo(name, argc, properties, descriptor) {
-        if (descriptor === void 0) { descriptor = types.TYPE_OBJECT; }
-        var _this = _super.call(this, name) || this;
-        _this.name = name;
-        _this.argc = argc;
-        _this.properties = properties;
-        _this.descriptor = descriptor;
-        _this.type = exports.funType;
-        _this.code = [];
-        return _this;
+class NewTypeInfo extends NewInfo {
+    constructor(name, argc, properties, descriptor = types.TYPE_OBJECT) {
+        super(name);
+        this.name = name;
+        this.argc = argc;
+        this.properties = properties;
+        this.descriptor = descriptor;
+        this.type = exports.funType;
+        this.code = [];
     }
-    return NewTypeInfo;
-}(NewInfo));
+}
 exports.NewTypeInfo = NewTypeInfo;
 /**
  * NewArrayTypeInfo
  */
-var NewArrayTypeInfo = /** @class */ (function (_super) {
-    __extends(NewArrayTypeInfo, _super);
-    function NewArrayTypeInfo(name, elements) {
-        var _this = _super.call(this, name) || this;
-        _this.name = name;
-        _this.elements = elements;
-        _this.type = exports.funType;
-        _this.argc = 0;
-        _this.properties = [];
-        _this.code = [];
-        _this.descriptor = types.TYPE_ARRAY;
-        return _this;
+class NewArrayTypeInfo extends NewInfo {
+    constructor(name, elements) {
+        super(name);
+        this.name = name;
+        this.elements = elements;
+        this.type = exports.funType;
+        this.argc = 0;
+        this.properties = [];
+        this.code = [];
+        this.descriptor = types.TYPE_ARRAY;
     }
-    return NewArrayTypeInfo;
-}(NewInfo));
+}
 exports.NewArrayTypeInfo = NewArrayTypeInfo;
 /**
  * NewPropInfo
  */
-var NewPropInfo = /** @class */ (function () {
-    function NewPropInfo(name, type) {
+class NewPropInfo {
+    constructor(name, type) {
         this.name = name;
         this.type = type;
     }
-    return NewPropInfo;
-}());
+}
 exports.NewPropInfo = NewPropInfo;
 /**
  * voidType constructor.
@@ -7081,24 +6779,23 @@ exports.funType = new NewTypeInfo('function', 0, [], types.TYPE_FUN);
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ScriptFactory = void 0;
-var scripts_1 = require("../../../resident/scripts");
-var callback_1 = require("../../../resident/immutable/callback");
-var immutable_1 = require("../../../resident/immutable");
-var mutable_1 = require("../../../resident/mutable");
-var scripts_2 = require("../scripts");
-var __1 = require("..");
+const scripts_1 = require("../../../resident/scripts");
+const resident_1 = require("../../../resident");
+const callback_1 = require("../../../resident/immutable/callback");
+const immutable_1 = require("../../../resident/immutable");
+const mutable_1 = require("../../../resident/mutable");
+const scripts_2 = require("../scripts");
+const __1 = require("..");
 /**
  * ScriptFactory is a factory class for creating Script instances based on the
  * actor provided.
  */
-var ScriptFactory = /** @class */ (function () {
-    function ScriptFactory() {
-    }
+class ScriptFactory {
     /**
      * getScript appropriate for the actor instance.
      */
-    ScriptFactory.getScript = function (actor) {
-        var script = new scripts_2.NoScript();
+    static getScript(actor) {
+        let script = new scripts_2.NoScript();
         if (actor instanceof callback_1.Callback) {
             script = new scripts_1.CallbackActorScript(actor);
         }
@@ -7108,41 +6805,23 @@ var ScriptFactory = /** @class */ (function () {
         else if (actor instanceof mutable_1.Mutable) {
             script = new scripts_1.MutableActorScript(actor);
         }
+        else if (actor instanceof resident_1.AbstractResident) {
+            script = new scripts_1.GenericResidentScript();
+        }
         else if (actor instanceof __1.PVM) {
             script = new scripts_2.VMActorScript();
         }
         return script;
-    };
-    return ScriptFactory;
-}());
+    }
+}
 exports.ScriptFactory = ScriptFactory;
 
-},{"..":39,"../../../resident/immutable":33,"../../../resident/immutable/callback":32,"../../../resident/mutable":35,"../../../resident/scripts":36,"../scripts":53}],53:[function(require,module,exports){
+},{"..":39,"../../../resident":34,"../../../resident/immutable":33,"../../../resident/immutable/callback":32,"../../../resident/mutable":35,"../../../resident/scripts":36,"../scripts":53}],53:[function(require,module,exports){
 "use strict";
-var __extends = (this && this.__extends) || (function () {
-    var extendStatics = function (d, b) {
-        extendStatics = Object.setPrototypeOf ||
-            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
-        return extendStatics(d, b);
-    };
-    return function (d, b) {
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
-var __spreadArrays = (this && this.__spreadArrays) || function () {
-    for (var s = 0, i = 0, il = arguments.length; i < il; i++) s += arguments[i].length;
-    for (var r = Array(s), k = 0, i = 0; i < il; i++)
-        for (var a = arguments[i], j = 0, jl = a.length; j < jl; j++, k++)
-            r[k] = a[j];
-    return r;
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.VMActorScript = exports.NoScript = exports.BaseScript = exports.commonFunctions = void 0;
-var op = require("../runtime/op");
-var info_1 = require("../script/info");
+const op = require("../runtime/op");
+const info_1 = require("../script/info");
 /**
  * commonFunctions used by both the VM script and the resident ones.
  */
@@ -7153,26 +6832,20 @@ exports.commonFunctions = [
 /**
  * BaseScript providing sane defaults for all our Script instances.
  */
-var BaseScript = /** @class */ (function () {
-    function BaseScript() {
+class BaseScript {
+    constructor() {
         this.constants = [[], []];
         this.name = '<main>';
         this.info = [];
         this.code = [];
     }
-    return BaseScript;
-}());
+}
 exports.BaseScript = BaseScript;
 /**
  * NoScript is used for actors that do not execute any code.
  */
-var NoScript = /** @class */ (function (_super) {
-    __extends(NoScript, _super);
-    function NoScript() {
-        return _super !== null && _super.apply(this, arguments) || this;
-    }
-    return NoScript;
-}(BaseScript));
+class NoScript extends BaseScript {
+}
 exports.NoScript = NoScript;
 /**
  * VMActorScript is the script used by the VM for its own actor (the $ actor).
@@ -7183,71 +6856,65 @@ exports.NoScript = NoScript;
  * 3. Killing other actors.
  * 4. Racing exceptions.
  */
-var VMActorScript = /** @class */ (function (_super) {
-    __extends(VMActorScript, _super);
-    function VMActorScript() {
-        var _this = _super !== null && _super.apply(this, arguments) || this;
-        _this.info = __spreadArrays(exports.commonFunctions);
-        return _this;
+class VMActorScript extends BaseScript {
+    constructor() {
+        super(...arguments);
+        this.info = exports.commonFunctions;
     }
-    return VMActorScript;
-}(BaseScript));
+}
 exports.VMActorScript = VMActorScript;
 
 },{"../runtime/op":47,"../script/info":51}],54:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.destroyMessageBuffer = exports.createMessageBuffer = exports.removeMember = exports.putMember = exports.getGroup = exports.removeGroup = exports.removeRoute = exports.putRoute = exports.getRouter = exports.getParent = exports.getChildren = exports.getAddress = exports.remove = exports.put = exports.get = exports.exists = void 0;
-var maybe_1 = require("@quenk/noni/lib/data/maybe");
-var record_1 = require("@quenk/noni/lib/data/record");
-var string_1 = require("@quenk/noni/lib/data/string");
-var address_1 = require("../../address");
+const maybe_1 = require("@quenk/noni/lib/data/maybe");
+const record_1 = require("@quenk/noni/lib/data/record");
+const string_1 = require("@quenk/noni/lib/data/string");
+const address_1 = require("../../address");
 /**
  * exists tests whether an address exists in the State.
  */
-exports.exists = function (s, addr) { return record_1.hasKey(s.threads, addr); };
+const exists = (s, addr) => (0, record_1.hasKey)(s.threads, addr);
+exports.exists = exists;
 /**
  * get a Thread from the State using an address.
  */
-exports.get = function (s, addr) { return maybe_1.fromNullable(s.threads[addr]); };
+const get = (s, addr) => (0, maybe_1.fromNullable)(s.threads[addr]);
+exports.get = get;
 /**
  * put a new Thread in the State.
  */
-exports.put = function (s, addr, r) {
+const put = (s, addr, r) => {
     s.threads[addr] = r;
     return s;
 };
+exports.put = put;
 /**
  * remove an actor entry.
  */
-exports.remove = function (s, addr) {
+const remove = (s, addr) => {
     delete s.threads[addr];
     return s;
 };
+exports.remove = remove;
 /**
  * getAddress attempts to retrieve the address of an Actor instance.
  */
-exports.getAddress = function (s, actor) {
-    return record_1.reduce(s.threads, maybe_1.nothing(), function (p, c, k) {
-        return c.context.actor === actor ? maybe_1.fromString(k) : p;
-    });
-};
+const getAddress = (s, actor) => (0, record_1.reduce)(s.threads, (0, maybe_1.nothing)(), (p, c, k) => c.context.actor === actor ? (0, maybe_1.fromString)(k) : p);
+exports.getAddress = getAddress;
 /**
  * getChildren returns the child contexts for an address.
  */
-exports.getChildren = function (s, addr) {
-    return (addr === address_1.ADDRESS_SYSTEM) ?
-        record_1.exclude(s.threads, address_1.ADDRESS_SYSTEM) :
-        record_1.partition(s.threads, function (_, key) {
-            return (string_1.startsWith(key, addr) && key !== addr);
-        })[0];
-};
+const getChildren = (s, addr) => (addr === address_1.ADDRESS_SYSTEM) ?
+    (0, record_1.exclude)(s.threads, address_1.ADDRESS_SYSTEM) :
+    (0, record_1.partition)(s.threads, (_, key) => ((0, string_1.startsWith)(key, addr) && key !== addr))[0];
+exports.getChildren = getChildren;
 /**
  * getParent context using an Address.
  */
-exports.getParent = function (s, addr) {
-    return maybe_1.fromNullable(s.threads[address_1.getParent(addr)]);
-};
+const getParent = (s, addr) => (0, maybe_1.fromNullable)(s.threads[(0, address_1.getParent)(addr)]);
+exports.getParent = getParent;
 /**
  * getRouter will attempt to provide the
  * router context for an Address.
@@ -7255,76 +6922,79 @@ exports.getParent = function (s, addr) {
  * The value returned depends on whether the given
  * address begins with any of the installed router's address.
  */
-exports.getRouter = function (s, addr) {
-    return record_1.reduce(s.routers, maybe_1.nothing(), function (p, k) {
-        return string_1.startsWith(addr, k) ? maybe_1.fromNullable(s.threads[k]) : p;
-    });
-};
+const getRouter = (s, addr) => (0, record_1.reduce)(s.routers, (0, maybe_1.nothing)(), (p, k) => (0, string_1.startsWith)(addr, k) ? (0, maybe_1.fromNullable)(s.threads[k]) : p);
+exports.getRouter = getRouter;
 /**
  * putRoute adds a route to the routing table.
  */
-exports.putRoute = function (s, target, router) {
+const putRoute = (s, target, router) => {
     s.routers[target] = router;
     return s;
 };
+exports.putRoute = putRoute;
 /**
  * removeRoute from the routing table.
  */
-exports.removeRoute = function (s, target) {
+const removeRoute = (s, target) => {
     delete s.routers[target];
     return s;
 };
+exports.removeRoute = removeRoute;
 /**
  * removeGroup from the groups table.
  */
-exports.removeGroup = function (s, target) {
+const removeGroup = (s, target) => {
     delete s.groups[target];
     return s;
 };
+exports.removeGroup = removeGroup;
 /**
  * getGroup attempts to provide the addresses of actors that have
  * been assigned to a group.
  *
  * Note that groups must be prefixed with a '$' to be resolved.
  */
-exports.getGroup = function (s, name) {
-    return s.groups.hasOwnProperty(name) ?
-        maybe_1.fromArray(s.groups[name]) : maybe_1.nothing();
-};
+const getGroup = (s, name) => s.groups.hasOwnProperty(name) ?
+    (0, maybe_1.fromArray)(s.groups[name]) : (0, maybe_1.nothing)();
+exports.getGroup = getGroup;
 /**
  * putMember adds an address to a group.
  *
  * If the group does not exist, it will be created.
  */
-exports.putMember = function (s, group, member) {
+const putMember = (s, group, member) => {
     if (s.groups[group] == null)
         s.groups[group] = [];
     s.groups[group].push(member);
     return s;
 };
+exports.putMember = putMember;
 /**
  * removeMember from a group.
  */
-exports.removeMember = function (s, group, member) {
+const removeMember = (s, group, member) => {
     if (s.groups[group] != null)
-        s.groups[group] = s.groups[group].filter(function (m) { return m != member; });
+        s.groups[group] = s.groups[group].filter(m => m != member);
     return s;
 };
+exports.removeMember = removeMember;
 /**
  * createMessageBuffer creates a temporary message buffer for the actor address.
  */
-exports.createMessageBuffer = function (s, addr) {
+const createMessageBuffer = (s, addr) => {
     s.pendingMessages[addr] = [];
     return s;
 };
+exports.createMessageBuffer = createMessageBuffer;
 /**
  * destroyMessageBuffer removes the message buffer (if any) for the provided
  * address.
  */
-exports.destroyMessageBuffer = function (s, addr) {
+const destroyMessageBuffer = (s, addr) => {
     delete s.pendingMessages[addr];
     return s;
 };
+exports.destroyMessageBuffer = destroyMessageBuffer;
 
 },{"../../address":27,"@quenk/noni/lib/data/maybe":21,"@quenk/noni/lib/data/record":22,"@quenk/noni/lib/data/string":24}],55:[function(require,module,exports){
 "use strict";
@@ -7338,280 +7008,233 @@ exports.THREAD_STATE_INVALID = 4;
 
 },{}],56:[function(require,module,exports){
 "use strict";
-var __generator = (this && this.__generator) || function (thisArg, body) {
-    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
-    return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
-    function verb(n) { return function (v) { return step([n, v]); }; }
-    function step(op) {
-        if (f) throw new TypeError("Generator is already executing.");
-        while (_) try {
-            if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
-            if (y = 0, t) op = [op[0] & 2, t.value];
-            switch (op[0]) {
-                case 0: case 1: t = op; break;
-                case 4: _.label++; return { value: op[1], done: false };
-                case 5: _.label++; y = op[1]; op = [0]; continue;
-                case 7: op = _.ops.pop(); _.trys.pop(); continue;
-                default:
-                    if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) { _ = 0; continue; }
-                    if (op[0] === 3 && (!t || (op[1] > t[0] && op[1] < t[3]))) { _.label = op[1]; break; }
-                    if (op[0] === 6 && _.label < t[1]) { _.label = t[1]; t = op; break; }
-                    if (t && _.label < t[2]) { _.label = t[2]; _.ops.push(op); break; }
-                    if (t[2]) _.ops.pop();
-                    _.trys.pop(); continue;
-            }
-            op = body.call(thisArg, _);
-        } catch (e) { op = [6, e]; y = 0; } finally { f = t = 0; }
-        if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
-    }
-};
-var __spreadArrays = (this && this.__spreadArrays) || function () {
-    for (var s = 0, i = 0, il = arguments.length; i < il; i++) s += arguments[i].length;
-    for (var r = Array(s), k = 0, i = 0; i < il; i++)
-        for (var a = arguments[i], j = 0, jl = a.length; j < jl; j++, k++)
-            r[k] = a[j];
-    return r;
-};
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.SharedThread = void 0;
-var errors = require("../../runtime/error");
-var op = require("../../runtime/op");
-var future_1 = require("@quenk/noni/lib/control/monad/future");
-var array_1 = require("@quenk/noni/lib/data/array");
-var maybe_1 = require("@quenk/noni/lib/data/maybe");
-var frame_1 = require("../../runtime/stack/frame");
-var type_1 = require("../../type");
-var __1 = require("../");
-var runner_1 = require("./runner");
+exports.makeFrameName = exports.SharedThread = exports.Job = void 0;
+const errors = require("../../runtime/error");
+const op = require("../../runtime/op");
+const future_1 = require("@quenk/noni/lib/control/monad/future");
+const array_1 = require("@quenk/noni/lib/data/array");
+const maybe_1 = require("@quenk/noni/lib/data/maybe");
+const frame_1 = require("../../runtime/stack/frame");
+const ledger_1 = require("../../runtime/heap/ledger");
+const op_1 = require("../../runtime/op");
+const type_1 = require("../../type");
+const __1 = require("../");
+const runtime_1 = require("../../runtime");
+/**
+ * Job serves a unit of work a SharedThread needs to execute.
+ *
+ * Execution of Jobs is intended to be sequential with no Job pre-empting any
+ * other with the same thread. For this reason, Jobs are only executed when
+ * provided by the scheduler.
+ */
+class Job {
+    constructor(thread, fun, args = []) {
+        this.thread = thread;
+        this.fun = fun;
+        this.args = args;
+        /**
+         * active indicates if the Job is already active or not.
+         *
+         * If a Job is active, a new StackFrame is not created.
+         */
+        this.active = false;
+    }
+}
+exports.Job = Job;
 /**
  * SharedThread is used by actors that run in a shared runtime i.e. the single
  * threaded JS event loop.
  *
- * Actual code execution takes place in a SharedThreadRunner which queues up
- * ExecutionFrame on behalf every SharedThread in the system.
+ * Code execution only takes place when the resume() method is invoked by the
+ * SharedScheduler which takes care of managing which Job (and SharedThread)
+ * is allowed to run at any point in time.
  */
-var SharedThread = /** @class */ (function () {
-    function SharedThread(vm, script, runner, context) {
+class SharedThread {
+    constructor(vm, script, scheduler, context) {
         this.vm = vm;
         this.script = script;
-        this.runner = runner;
+        this.scheduler = scheduler;
         this.context = context;
         this.fstack = [];
         this.fsp = 0;
         this.rp = 0;
         this.state = __1.THREAD_STATE_IDLE;
     }
-    /**
-     * makeFrameName produces a suitable name for a Frame given its function
-     * name.
-     */
-    SharedThread.prototype.makeFrameName = function (funName) {
-        return array_1.empty(this.fstack) ?
-            this.context.template.id + "@" + this.context.aid + "#" + funName :
-            array_1.tail(this.fstack).name + "/" + funName;
-    };
-    SharedThread.prototype.invokeVM = function (p, f) {
-        var frm = new frame_1.StackFrame(this.makeFrameName(f.name), p.script, this, maybe_1.just(p), f.code.slice());
-        for (var i = 0; i < f.argc; i++)
+    invokeVM(p, f) {
+        let frm = new frame_1.StackFrame((0, exports.makeFrameName)(this, f.name), p.script, this, (0, maybe_1.just)(p), f.code.slice());
+        for (let i = 0; i < f.argc; i++)
             frm.push(p.pop());
         this.fstack.push(frm);
         this.fsp = this.fstack.length - 1;
-        this.runner.run();
-    };
-    SharedThread.prototype.invokeForeign = function (frame, fun, args) {
+        this.scheduler.run();
+    }
+    invokeForeign(frame, fun, args) {
         //TODO: Support async functions.   
-        var val = fun.exec.apply(null, __spreadArrays([this], args));
+        let val = fun.exec.apply(null, [this, ...args]);
         frame.push(this.vm.heap.intern(frame, val));
-        this.runner.run();
-    };
-    SharedThread.prototype.wait = function (task) {
-        var _this = this;
+        this.scheduler.run();
+    }
+    wait(task) {
         this.state = __1.THREAD_STATE_WAIT;
-        var onError = function (e) {
-            _this.state = __1.THREAD_STATE_ERROR;
-            _this.raise(e);
+        let onError = (e) => {
+            this.state = __1.THREAD_STATE_ERROR;
+            this.raise(e);
         };
-        var onSuccess = function () {
-            _this.state = __1.THREAD_STATE_IDLE;
-            _this.runner.run(); // Continue execution.
+        let onSuccess = () => {
+            this.state = __1.THREAD_STATE_IDLE;
+            this.scheduler.run(); // Continue execution if stopped.
         };
         task.fork(onError, onSuccess);
-    };
-    SharedThread.prototype.raise = function (e) {
+    }
+    raise(e) {
         this.state = __1.THREAD_STATE_ERROR;
         this.vm.raise(this.context.actor, e);
-    };
-    SharedThread.prototype.die = function () {
-        var that = this;
+    }
+    die() {
+        let that = this;
         this.state = __1.THREAD_STATE_INVALID;
-        this.runner.dequeue(this);
-        return future_1.doFuture(function () {
-            var ret;
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0:
-                        ret = that.context.actor.stop();
-                        if (!ret) return [3 /*break*/, 2];
-                        return [4 /*yield*/, ret];
-                    case 1:
-                        _a.sent();
-                        _a.label = 2;
-                    case 2:
-                        that.vm.heap.threadExit(that);
-                        return [2 /*return*/, future_1.pure(undefined)];
-                }
-            });
+        this.scheduler.dequeue(this);
+        return (0, future_1.doFuture)(function* () {
+            let ret = that.context.actor.stop();
+            if (ret)
+                yield ret;
+            that.vm.heap.threadExit(that);
+            return (0, future_1.pure)(undefined);
         });
-    };
-    SharedThread.prototype.restore = function (eframe) {
-        this.fstack = eframe.fstack;
-        this.fsp = eframe.fsp;
-        this.rp = eframe.rp;
+    }
+    resume(job) {
         this.state = __1.THREAD_STATE_RUN;
-    };
-    SharedThread.prototype.processNextFrame = function (rp) {
-        this.vm.heap.frameExit(this.fstack.pop());
-        this.fsp--;
-        this.rp = rp;
+        if (!job.active) {
+            job.active = true;
+            let { fun, args } = job;
+            let frame = new frame_1.StackFrame((0, exports.makeFrameName)(this, fun.name), this.script, this, (0, maybe_1.nothing)(), fun.foreign ?
+                [op.LDN | this.script.info.indexOf(fun), op.CALL] :
+                fun.code.slice());
+            frame.data = args.map(arg => (0, ledger_1.isHeapAddress)(arg) ?
+                this.vm.heap.move(arg, frame.name)
+                : arg);
+            this.fstack = [frame];
+            this.fsp = 0;
+            this.rp = 0;
+        }
+        while (!(0, array_1.empty)(this.fstack)) {
+            let sp = this.fsp;
+            let frame = this.fstack[sp];
+            if (this.rp != 0)
+                frame.data.push(this.rp);
+            while (!frame.isFinished() &&
+                (this.state === __1.THREAD_STATE_RUN)) {
+                // execute frame instructions
+                let pos = frame.getPosition();
+                let next = (frame.code[pos] >>> 0);
+                let opcode = next & runtime_1.OPCODE_MASK;
+                let operand = next & runtime_1.OPERAND_MASK;
+                this.vm.logOp(this, frame, opcode, operand);
+                // TODO: Error if the opcode is invalid, out of range etc.
+                op_1.handlers[opcode](this, frame, operand);
+                if (pos === frame.getPosition())
+                    frame.advance();
+                // frame pointer changed, another frame has been pushed
+                // and needs to be executed.
+                if (sp !== this.fsp)
+                    break;
+            }
+            // If this is true, give other threads a chance to execute while we
+            // wait on an async task to complete.
+            if (this.state === __1.THREAD_STATE_WAIT)
+                return;
+            // Handle the next frame.
+            if (sp === this.fsp) {
+                this.vm.heap.frameExit(this.fstack.pop());
+                this.fsp--;
+                this.rp = frame.data.pop();
+            }
+        }
         this.state = __1.THREAD_STATE_IDLE;
-    };
-    SharedThread.prototype.exec = function (name, args) {
-        var _this = this;
-        if (args === void 0) { args = []; }
-        var script = this.script;
-        var fun = script.info.find(function (info) {
-            return (info.name === name) && info.descriptor === type_1.TYPE_FUN;
-        });
+    }
+    exec(name, args = []) {
+        let { script } = this;
+        let fun = script.info.find(info => (info.name === name) && (info.descriptor === type_1.TYPE_FUN));
         if (!fun)
             return this.raise(new errors.UnknownFunErr(name));
-        var frame = new frame_1.StackFrame(this.makeFrameName(fun.name), script, this, maybe_1.nothing(), fun.foreign ?
-            [op.LDN | this.script.info.indexOf(fun), op.CALL] :
-            fun.code.slice());
-        frame.data = args.map(function (arg) { return _this.vm.heap.intern(frame, arg); });
-        this.runner.enqueue(new runner_1.ExecutionFrame(this, [frame]));
-        this.runner.run();
-    };
-    return SharedThread;
-}());
+        this.scheduler.postJob(new Job(this, fun, args));
+    }
+}
 exports.SharedThread = SharedThread;
+/**
+ * makeFrameName produces a suitable name for a Frame given its function
+ * name.
+ */
+const makeFrameName = (thread, funName) => (0, array_1.empty)(thread.fstack) ?
+    `${thread.context.template.id}@${thread.context.aid}#${funName}` :
+    `${(0, array_1.tail)(thread.fstack).name}/${funName}`;
+exports.makeFrameName = makeFrameName;
 
-},{"../":55,"../../runtime/error":42,"../../runtime/op":47,"../../runtime/stack/frame":49,"../../type":58,"./runner":57,"@quenk/noni/lib/control/monad/future":15,"@quenk/noni/lib/data/array":18,"@quenk/noni/lib/data/maybe":21}],57:[function(require,module,exports){
+},{"../":55,"../../runtime":44,"../../runtime/error":42,"../../runtime/heap/ledger":43,"../../runtime/op":47,"../../runtime/stack/frame":49,"../../type":58,"@quenk/noni/lib/control/monad/future":15,"@quenk/noni/lib/data/array":18,"@quenk/noni/lib/data/maybe":21}],57:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.SharedThreadRunner = exports.ExecutionFrame = void 0;
-var array_1 = require("@quenk/noni/lib/data/array");
-var op_1 = require("../../runtime/op");
-var runtime_1 = require("../../runtime");
-var __1 = require("../");
+exports.SharedScheduler = void 0;
+const array_1 = require("@quenk/noni/lib/data/array");
+const __1 = require("../");
 /**
- * ExecutionFrame stores the state of the fstack for a VMThread.
+ * SharedScheduler allows SharedThreads to execute code sequentially and
+ * cooperatively on the single JS event loop.
  *
- * This is used to both trigger execution of an fstack as well as restore
- * execution in the shared environment. When a VMThread needs to perform an
- * async task for example, it's current state is saved an a new ExecutionFrame
- * is pushed to the runner to continue where it left off.
+ * In prior versions of the VM, threads executed their code on their own making
+ * situations possible where internal actor state could be before a prior frame
+ * completed leading to strange, hard to debug errors.
+ *
+ * To avoid a repeat of these, the SharedScheduler guarantees a SharedThread
+ * will only execute one "job" at a time, only allowing another to start when
+ * the thread is finished.
  */
-var ExecutionFrame = /** @class */ (function () {
-    function ExecutionFrame(thread, fstack, fsp, rp) {
-        if (fstack === void 0) { fstack = []; }
-        if (fsp === void 0) { fsp = 0; }
-        if (rp === void 0) { rp = 0; }
-        this.thread = thread;
-        this.fstack = fstack;
-        this.fsp = fsp;
-        this.rp = rp;
-    }
-    return ExecutionFrame;
-}());
-exports.ExecutionFrame = ExecutionFrame;
-/**
- * SharedThreadRunner allows multiple Threads to execute their code sequentially
- * in a single JS event loop.
- *
- * In prior versions of the VM, threads executed their code in their own run
- * methods making it possible to have situations where actor state is being
- * mutated before a previous frame is complete.
- *
- * This was less of a problem due to the simplistic use of the VM to date and
- * the queuing done by the VM itself however it did introduce some heap
- * management related bugs due to the immediate execution of spawn scripts.
- *
- * By moving actual execution here and sharing an instance of this class between
- * threads we make it easier to keep execution sequential an reflect the reality
- * of a shared event loop.
- */
-var SharedThreadRunner = /** @class */ (function () {
-    function SharedThreadRunner(vm, eframes) {
-        if (eframes === void 0) { eframes = []; }
+class SharedScheduler {
+    constructor(vm, queue = []) {
         this.vm = vm;
-        this.eframes = eframes;
+        this.queue = queue;
         this._running = false;
     }
     /**
-     * enqueue an ExecutionFrame for future execution.
+     * postJob enqueues a Job for execution by the SharedScheduler.
+     *
+     * If no other Jobs are being executed, the Job will be executed immediately
+     * provided the Thread is able to do so.
      */
-    SharedThreadRunner.prototype.enqueue = function (frame) {
-        this.eframes.push(frame);
-        return this;
-    };
+    postJob(job) {
+        this.queue.push(job);
+        this.run();
+    }
     /**
-     * dequeue all ExecutionFrames for the provide thread effectively ending its
+     * dequeue all Jobs for the provided thread, effectively ending its
      * execution.
      */
-    SharedThreadRunner.prototype.dequeue = function (thread) {
-        this.eframes = this.eframes.filter(function (frame) { return frame.thread !== thread; });
-    };
-    SharedThreadRunner.prototype.run = function () {
+    dequeue(thread) {
+        this.queue = this.queue.filter(job => job.thread !== thread);
+    }
+    /**
+     * run the Job processing loop until there are no more Jobs to process in
+     * the queue.
+     */
+    run() {
         if (this._running)
             return;
         this._running = true;
-        var eframe;
-        while (eframe = this.eframes.find(function (frame) {
-            return frame.thread.state === __1.THREAD_STATE_IDLE;
-        })) {
-            var thread = eframe.thread;
-            thread.restore(eframe);
-            while (!array_1.empty(thread.fstack)) {
-                var sp = thread.fsp;
-                var frame = thread.fstack[sp];
-                if (thread.rp != 0)
-                    frame.data.push(thread.rp);
-                while (!frame.isFinished() &&
-                    (thread.state === __1.THREAD_STATE_RUN)) {
-                    //execute frame instructions
-                    var pos = frame.getPosition();
-                    var next = (frame.code[pos] >>> 0);
-                    var opcode = next & runtime_1.OPCODE_MASK;
-                    var operand = next & runtime_1.OPERAND_MASK;
-                    this.vm.logOp(thread, frame, opcode, operand);
-                    // TODO: Error if the opcode is invalid, out of range etc.
-                    op_1.handlers[opcode](thread, frame, operand);
-                    if (pos === frame.getPosition())
-                        frame.advance();
-                    // frame pointer changed another frame has been pushed
-                    // and needs to be executed.
-                    if (sp !== thread.fsp)
-                        break;
-                }
-                if (thread.state === __1.THREAD_STATE_WAIT)
-                    // Thread is waiting on an async task to complete break out
-                    // and handle other threads.
-                    break;
-                if (sp === thread.fsp)
-                    thread.processNextFrame(frame.data.pop() || 0);
-            }
-            if (array_1.empty(thread.fstack))
-                // The thread's frame stack is empty, meaning all execution is 
-                // complete. Remove the eframe from the queue.
-                this.eframes = array_1.remove(this.eframes, eframe);
+        let job;
+        while (job = this.queue.find(({ thread }) => (thread.state === __1.THREAD_STATE_IDLE))) {
+            let { thread } = job;
+            thread.resume(job);
+            // If the thread is waiting on async work to complete then do not
+            // remove the Job.
+            if (thread.state !== __1.THREAD_STATE_WAIT)
+                this.queue = (0, array_1.remove)(this.queue, job);
         }
         this._running = false;
-    };
-    return SharedThreadRunner;
-}());
-exports.SharedThreadRunner = SharedThreadRunner;
+    }
+}
+exports.SharedScheduler = SharedScheduler;
 
-},{"../":55,"../../runtime":44,"../../runtime/op":47,"@quenk/noni/lib/data/array":18}],58:[function(require,module,exports){
+},{"../":55,"@quenk/noni/lib/data/array":18}],58:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getType = exports.TYPE_CONS = exports.TYPE_FUN = exports.TYPE_ARRAY = exports.TYPE_OBJECT = exports.TYPE_STRING = exports.TYPE_BOOLEAN = exports.TYPE_INT32 = exports.TYPE_INT16 = exports.TYPE_INT8 = exports.TYPE_UINT32 = exports.TYPE_UINT16 = exports.TYPE_UINT8 = exports.TYPE_VOID = exports.BYTE_INDEX = exports.BYTE_TYPE = exports.TYPE_STEP = void 0;
@@ -7636,9 +7259,8 @@ exports.TYPE_CONS = exports.TYPE_STEP * 12;
  *
  * The highest byte of the 32bit descriptor indicates its type.
  */
-exports.getType = function (d) {
-    return d & exports.BYTE_TYPE;
-};
+const getType = (d) => d & exports.BYTE_TYPE;
+exports.getType = getType;
 
 },{}],59:[function(require,module,exports){
 "use strict";
@@ -9339,7 +8961,7 @@ var implementation = require('./implementation');
 var getPolyfill = require('./polyfill');
 var shim = require('./shim');
 
-var flagsBound = callBind(implementation);
+var flagsBound = callBind(getPolyfill());
 
 define(flagsBound, {
 	getPolyfill: getPolyfill,

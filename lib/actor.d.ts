@@ -1,4 +1,5 @@
 import { Err } from '@quenk/noni/lib/control/error';
+import { Future } from '@quenk/noni/lib/control/monad/future';
 import { Api } from '@quenk/potoo/lib/actor/resident/api';
 import { Case } from '@quenk/potoo/lib/actor/resident/case';
 import { Mutable } from '@quenk/potoo/lib/actor/resident/mutable';
@@ -21,5 +22,6 @@ export declare class Proxy<A extends App> implements Api {
     select<T>(c: Case<T>[]): Proxy<A>;
     raise(e: Err): Proxy<A>;
     kill(addr: Address): Proxy<A>;
+    wait(ft: Future<void>): void;
     exit(): void;
 }

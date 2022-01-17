@@ -1,4 +1,6 @@
 import { Err } from '@quenk/noni/lib/control/error';
+import { Future } from '@quenk/noni/lib/control/monad/future';
+
 import { Api } from '@quenk/potoo/lib/actor/resident/api';
 import { Case } from '@quenk/potoo/lib/actor/resident/case';
 import { Mutable } from '@quenk/potoo/lib/actor/resident/mutable';
@@ -45,7 +47,7 @@ export class Proxy<A extends App> implements Api {
 
     select<T>(c: Case<T>[]): Proxy<A> {
 
-      //XXX: This is not typesafe and should be removed.
+        //XXX: This is not typesafe and should be removed.
         (<Mutable>this.instance).select(c);
         return this;
 
@@ -62,6 +64,12 @@ export class Proxy<A extends App> implements Api {
 
         this.instance.kill(addr);
         return this;
+
+    }
+
+    wait(ft: Future<void>) {
+
+        return this.instance.wait(ft);
 
     }
 

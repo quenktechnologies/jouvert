@@ -2,59 +2,58 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Proxy = exports.Immutable = exports.Mutable = void 0;
-var mutable_1 = require("@quenk/potoo/lib/actor/resident/mutable");
+const mutable_1 = require("@quenk/potoo/lib/actor/resident/mutable");
 Object.defineProperty(exports, "Mutable", { enumerable: true, get: function () { return mutable_1.Mutable; } });
-var immutable_1 = require("@quenk/potoo/lib/actor/resident/immutable");
+const immutable_1 = require("@quenk/potoo/lib/actor/resident/immutable");
 Object.defineProperty(exports, "Immutable", { enumerable: true, get: function () { return immutable_1.Immutable; } });
 /**
  * Proxy provides an actor API implementation that delegates
  * all its operations to a target actor.
  */
-var Proxy = /** @class */ (function () {
-    function Proxy(instance) {
+class Proxy {
+    constructor(instance) {
         this.instance = instance;
     }
-    Proxy.prototype.self = function () {
+    self() {
         return this.instance.self();
-    };
-    Proxy.prototype.spawn = function (t) {
+    }
+    spawn(t) {
         return this.instance.spawn(t);
-    };
-    Proxy.prototype.spawnGroup = function (name, tmpls) {
+    }
+    spawnGroup(name, tmpls) {
         return this.instance.spawnGroup(name, tmpls);
-    };
-    Proxy.prototype.tell = function (actor, m) {
+    }
+    tell(actor, m) {
         this.instance.tell(actor, m);
         return this;
-    };
-    Proxy.prototype.select = function (c) {
+    }
+    select(c) {
         //XXX: This is not typesafe and should be removed.
         this.instance.select(c);
         return this;
-    };
-    Proxy.prototype.raise = function (e) {
+    }
+    raise(e) {
         this.instance.raise(e);
         return this;
-    };
-    Proxy.prototype.kill = function (addr) {
+    }
+    kill(addr) {
         this.instance.kill(addr);
         return this;
-    };
-    Proxy.prototype.wait = function (ft) {
+    }
+    wait(ft) {
         return this.instance.wait(ft);
-    };
-    Proxy.prototype.exit = function () {
+    }
+    exit() {
         this.exit();
-    };
-    return Proxy;
-}());
+    }
+}
 exports.Proxy = Proxy;
 
 },{"@quenk/potoo/lib/actor/resident/immutable":33,"@quenk/potoo/lib/actor/resident/mutable":35}],2:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Jouvert = void 0;
-var vm_1 = require("@quenk/potoo/lib/actor/system/vm");
+const vm_1 = require("@quenk/potoo/lib/actor/system/vm");
 /**
  * Jouvert is meant to be the main class of any jouvert application.
  *
@@ -72,36 +71,33 @@ var vm_1 = require("@quenk/potoo/lib/actor/system/vm");
  * application cleanup, caching, could also be handle in the Jouvert instance
  * and exposed to actors via message passing if desired.
  */
-var Jouvert = /** @class */ (function () {
-    function Jouvert(conf) {
-        var _this = this;
-        if (conf === void 0) { conf = { accept: function (m) { return _this.onMessage(m); } }; }
+class Jouvert {
+    constructor(conf = { accept: m => this.onMessage(m) }) {
         this.conf = conf;
         this.vm = vm_1.PVM.create(this, this.conf);
     }
-    Jouvert.prototype.getPlatform = function () {
+    getPlatform() {
         return this.vm;
-    };
+    }
     /**
      * onMessage handler used to intercept messages sent to the vm via the
      * accept configuration property.
      */
-    Jouvert.prototype.onMessage = function (_) { };
+    onMessage(_) { }
     /**
      * tell sends a message to the specified address using the root actor.
      */
-    Jouvert.prototype.tell = function (addr, msg) {
+    tell(addr, msg) {
         this.vm.tell(addr, msg);
         return this;
-    };
+    }
     /**
      * spawn a new actor from template using the root actor as parent.
      */
-    Jouvert.prototype.spawn = function (t) {
+    spawn(t) {
         return this.vm.spawn(this.vm, t);
-    };
-    return Jouvert;
-}());
+    }
+}
 exports.Jouvert = Jouvert;
 
 },{"@quenk/potoo/lib/actor/system/vm":39}],3:[function(require,module,exports){
@@ -113,256 +109,204 @@ exports.Jouvert = Jouvert;
  * received, they exit. The response from the request can be handled
  * by specifying a handler object to the callback's constructor.
  */
-var __extends = (this && this.__extends) || (function () {
-    var extendStatics = function (d, b) {
-        extendStatics = Object.setPrototypeOf ||
-            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
-        return extendStatics(d, b);
-    };
-    return function (d, b) {
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.SeqSendCallback = exports.ParSendCallback = exports.SendCallback = exports.CompositeBatchCompleteHandler = exports.CompositeCompleteHandler = exports.AbstractBatchCompleteHandler = exports.AbstractCompleteHandler = exports.SeqSend = exports.ParSend = exports.Send = void 0;
 /** imports */
-var type_1 = require("@quenk/noni/lib/data/type");
-var case_1 = require("@quenk/potoo/lib/actor/resident/case");
-var callback_1 = require("@quenk/potoo/lib/actor/resident/immutable/callback");
-var _1 = require("./");
+const type_1 = require("@quenk/noni/lib/data/type");
+const case_1 = require("@quenk/potoo/lib/actor/resident/case");
+const callback_1 = require("@quenk/potoo/lib/actor/resident/immutable/callback");
+const _1 = require("./");
 Object.defineProperty(exports, "Send", { enumerable: true, get: function () { return _1.Send; } });
 Object.defineProperty(exports, "ParSend", { enumerable: true, get: function () { return _1.ParSend; } });
 Object.defineProperty(exports, "SeqSend", { enumerable: true, get: function () { return _1.SeqSend; } });
-var typeMatch = { code: Number, options: Object, body: type_1.Any, headers: Object };
+const typeMatch = { code: Number, options: Object, body: type_1.Any, headers: Object };
 /**
  * AbstractCompleteHandler can be extended to partially implement a
  * [[CompleteHandler]].
  */
-var AbstractCompleteHandler = /** @class */ (function () {
-    function AbstractCompleteHandler() {
-    }
-    AbstractCompleteHandler.prototype.onError = function (_) { };
-    AbstractCompleteHandler.prototype.onClientError = function (_) { };
-    AbstractCompleteHandler.prototype.onServerError = function (_) { };
-    AbstractCompleteHandler.prototype.onComplete = function (_) { };
-    return AbstractCompleteHandler;
-}());
+class AbstractCompleteHandler {
+    onError(_) { }
+    onClientError(_) { }
+    onServerError(_) { }
+    onComplete(_) { }
+}
 exports.AbstractCompleteHandler = AbstractCompleteHandler;
 /**
  * AbstractBatchCompleteHandler can be extended to partially implement a
  * [[BatchCompleteHandler]].
  */
-var AbstractBatchCompleteHandler = /** @class */ (function (_super) {
-    __extends(AbstractBatchCompleteHandler, _super);
-    function AbstractBatchCompleteHandler() {
-        return _super !== null && _super.apply(this, arguments) || this;
-    }
-    AbstractBatchCompleteHandler.prototype.onBatchComplete = function (_) { };
-    return AbstractBatchCompleteHandler;
-}(AbstractCompleteHandler));
+class AbstractBatchCompleteHandler extends AbstractCompleteHandler {
+    onBatchComplete(_) { }
+}
 exports.AbstractBatchCompleteHandler = AbstractBatchCompleteHandler;
 /**
  * CompositeCompleteHandler allows multiple [[CompleteHandler]]s to be used as
  * one.
  */
-var CompositeCompleteHandler = /** @class */ (function () {
-    function CompositeCompleteHandler(handlers) {
+class CompositeCompleteHandler {
+    constructor(handlers) {
         this.handlers = handlers;
     }
-    CompositeCompleteHandler.prototype.onError = function (e) {
-        this.handlers.forEach(function (h) { return h.onError(e); });
-    };
-    CompositeCompleteHandler.prototype.onClientError = function (r) {
-        this.handlers.forEach(function (h) { return h.onClientError(r); });
-    };
-    CompositeCompleteHandler.prototype.onServerError = function (r) {
-        this.handlers.forEach(function (h) { return h.onServerError(r); });
-    };
-    CompositeCompleteHandler.prototype.onComplete = function (r) {
-        this.handlers.forEach(function (h) { return h.onComplete(r); });
-    };
-    return CompositeCompleteHandler;
-}());
+    onError(e) {
+        this.handlers.forEach(h => h.onError(e));
+    }
+    onClientError(r) {
+        this.handlers.forEach(h => h.onClientError(r));
+    }
+    onServerError(r) {
+        this.handlers.forEach(h => h.onServerError(r));
+    }
+    onComplete(r) {
+        this.handlers.forEach(h => h.onComplete(r));
+    }
+}
 exports.CompositeCompleteHandler = CompositeCompleteHandler;
 /**
  * CompositeBatchCompleteHandler allows multiple [[BatchCompleteHandler]]s to
  * be used as one.
  */
-var CompositeBatchCompleteHandler = /** @class */ (function () {
-    function CompositeBatchCompleteHandler(handlers) {
+class CompositeBatchCompleteHandler {
+    constructor(handlers) {
         this.handlers = handlers;
     }
-    CompositeBatchCompleteHandler.prototype.onError = function (e) {
-        this.handlers.forEach(function (h) { return h.onError(e); });
-    };
-    CompositeBatchCompleteHandler.prototype.onClientError = function (r) {
-        this.handlers.forEach(function (h) { return h.onClientError(r); });
-    };
-    CompositeBatchCompleteHandler.prototype.onServerError = function (r) {
-        this.handlers.forEach(function (h) { return h.onServerError(r); });
-    };
-    CompositeBatchCompleteHandler.prototype.onBatchComplete = function (r) {
-        this.handlers.forEach(function (h) { return h.onBatchComplete(r); });
-    };
-    return CompositeBatchCompleteHandler;
-}());
+    onError(e) {
+        this.handlers.forEach(h => h.onError(e));
+    }
+    onClientError(r) {
+        this.handlers.forEach(h => h.onClientError(r));
+    }
+    onServerError(r) {
+        this.handlers.forEach(h => h.onServerError(r));
+    }
+    onBatchComplete(r) {
+        this.handlers.forEach(h => h.onBatchComplete(r));
+    }
+}
 exports.CompositeBatchCompleteHandler = CompositeBatchCompleteHandler;
 /**
  * SendCallback sends a Send to a Remote's address, processing the response
  * with the provided handler.
  */
-var SendCallback = /** @class */ (function (_super) {
-    __extends(SendCallback, _super);
-    function SendCallback(system, remote, request, handler) {
-        var _this = _super.call(this, system) || this;
-        _this.system = system;
-        _this.remote = remote;
-        _this.request = request;
-        _this.handler = handler;
-        return _this;
+class SendCallback extends callback_1.Callback {
+    constructor(system, remote, request, handler) {
+        super(system);
+        this.system = system;
+        this.remote = remote;
+        this.request = request;
+        this.handler = handler;
     }
-    SendCallback.prototype.receive = function () {
-        var _this = this;
+    receive() {
         return [
-            new case_1.Case(_1.TransportErr, function (e) {
-                _this.handler.onError(e);
+            new case_1.Case(_1.TransportErr, (e) => {
+                this.handler.onError(e);
             }),
-            new case_1.Case(typeMatch, function (r) {
+            new case_1.Case(typeMatch, (r) => {
                 if (r.code > 499) {
-                    _this.handler.onServerError(r);
+                    this.handler.onServerError(r);
                 }
                 else if (r.code > 399) {
-                    _this.handler.onClientError(r);
+                    this.handler.onClientError(r);
                 }
                 else {
-                    _this.handler.onComplete(r);
+                    this.handler.onComplete(r);
                 }
             })
         ];
-    };
-    SendCallback.prototype.run = function () {
+    }
+    run() {
         this.tell(this.remote, new _1.Send(this.self(), this.request));
-    };
-    return SendCallback;
-}(callback_1.Callback));
+    }
+}
 exports.SendCallback = SendCallback;
 /**
  * ParSendCallback sends a ParSend request to a remote, processing the result
  * with the provided handler.
  */
-var ParSendCallback = /** @class */ (function (_super) {
-    __extends(ParSendCallback, _super);
-    function ParSendCallback(system, remote, requests, handler) {
-        var _this = _super.call(this, system) || this;
-        _this.system = system;
-        _this.remote = remote;
-        _this.requests = requests;
-        _this.handler = handler;
-        return _this;
+class ParSendCallback extends callback_1.Callback {
+    constructor(system, remote, requests, handler) {
+        super(system);
+        this.system = system;
+        this.remote = remote;
+        this.requests = requests;
+        this.handler = handler;
     }
-    ParSendCallback.prototype.receive = function () {
-        var _this = this;
+    receive() {
         return [
-            new case_1.Case(_1.TransportErr, function (e) {
-                _this.handler.onError(e);
+            new case_1.Case(_1.TransportErr, (e) => {
+                this.handler.onError(e);
             }),
-            new case_1.Case(_1.BatchResponse, function (r) {
-                var failed = r.value.filter(function (r) { return r.code > 299; });
+            new case_1.Case(_1.BatchResponse, (r) => {
+                let failed = r.value.filter(r => r.code > 299);
                 if (failed.length > 0) {
-                    var res = failed[0];
+                    let res = failed[0];
                     if (res.code > 499) {
-                        _this.handler.onServerError(res);
+                        this.handler.onServerError(res);
                     }
                     else {
-                        _this.handler.onClientError(res);
+                        this.handler.onClientError(res);
                     }
                 }
                 else {
-                    _this.handler.onBatchComplete(r);
+                    this.handler.onBatchComplete(r);
                 }
             })
         ];
-    };
-    ParSendCallback.prototype.run = function () {
+    }
+    run() {
         this.tell(this.remote, new _1.ParSend(this.self(), this.requests));
-    };
-    return ParSendCallback;
-}(callback_1.Callback));
+    }
+}
 exports.ParSendCallback = ParSendCallback;
 /**
  * SeqSendCallback sends a SeqSend request to a remote, processing the
  * response using the provided handler.
  */
-var SeqSendCallback = /** @class */ (function (_super) {
-    __extends(SeqSendCallback, _super);
-    function SeqSendCallback() {
-        return _super !== null && _super.apply(this, arguments) || this;
-    }
-    SeqSendCallback.prototype.run = function () {
+class SeqSendCallback extends ParSendCallback {
+    run() {
         this.tell(this.remote, new _1.SeqSend(this.self(), this.requests));
-    };
-    return SeqSendCallback;
-}(ParSendCallback));
+    }
+}
 exports.SeqSendCallback = SeqSendCallback;
 
 },{"./":4,"@quenk/noni/lib/data/type":25,"@quenk/potoo/lib/actor/resident/case":31,"@quenk/potoo/lib/actor/resident/immutable/callback":32}],4:[function(require,module,exports){
 "use strict";
-var __extends = (this && this.__extends) || (function () {
-    var extendStatics = function (d, b) {
-        extendStatics = Object.setPrototypeOf ||
-            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
-        return extendStatics(d, b);
-    };
-    return function (d, b) {
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Remote = exports.BatchResponse = exports.TransportErr = exports.ParSend = exports.SeqSend = exports.Send = void 0;
-var future_1 = require("@quenk/noni/lib/control/monad/future");
-var case_1 = require("@quenk/potoo/lib/actor/resident/case");
-var actor_1 = require("../../actor");
+const future_1 = require("@quenk/noni/lib/control/monad/future");
+const case_1 = require("@quenk/potoo/lib/actor/resident/case");
+const actor_1 = require("../../actor");
 /**
  * Send a single request to the remote host, forwarding the response to the
  * specified address.
  */
-var Send = /** @class */ (function () {
-    function Send(client, request) {
+class Send {
+    constructor(client, request) {
         this.client = client;
         this.request = request;
     }
-    return Send;
-}());
+}
 exports.Send = Send;
 /**
  * ParSend sends a batch of requests to the remote host in sequentially,
  * forwarding the combined responses to the specified address.
  */
-var SeqSend = /** @class */ (function () {
-    function SeqSend(client, requests) {
+class SeqSend {
+    constructor(client, requests) {
         this.client = client;
         this.requests = requests;
     }
-    return SeqSend;
-}());
+}
 exports.SeqSend = SeqSend;
 /**
  * ParSend sends a batch of requests to the remote host in parallel, forwarding
  * the combined responses to the specified address.
  */
-var ParSend = /** @class */ (function () {
-    function ParSend(client, requests) {
+class ParSend {
+    constructor(client, requests) {
         this.client = client;
         this.requests = requests;
     }
-    return ParSend;
-}());
+}
 exports.ParSend = ParSend;
 /**
  * TransportErr is a wrapper around errors that occur before the request
@@ -371,30 +315,24 @@ exports.ParSend = ParSend;
  * Indicates we were unable to initiate the request for some reason, for example,
  * the network is down or a Same-Origin policy violation.
  */
-var TransportErr = /** @class */ (function () {
-    function TransportErr(client, error) {
+class TransportErr {
+    constructor(client, error) {
         this.client = client;
         this.error = error;
     }
-    Object.defineProperty(TransportErr.prototype, "message", {
-        get: function () {
-            return this.error.message;
-        },
-        enumerable: false,
-        configurable: true
-    });
-    return TransportErr;
-}());
+    get message() {
+        return this.error.message;
+    }
+}
 exports.TransportErr = TransportErr;
 /**
  * BatchResponse is a combined list of responses for batch requests.
  */
-var BatchResponse = /** @class */ (function () {
-    function BatchResponse(value) {
+class BatchResponse {
+    constructor(value) {
         this.value = value;
     }
-    return BatchResponse;
-}());
+}
 exports.BatchResponse = BatchResponse;
 /**
  * Remote represents an HTTP server the app has access to.
@@ -404,66 +342,48 @@ exports.BatchResponse = BatchResponse;
  * concerned with application level logic than the details of the HTTP
  * protocols.
  */
-var Remote = /** @class */ (function (_super) {
-    __extends(Remote, _super);
-    function Remote(agent, system) {
-        var _this = _super.call(this, system) || this;
-        _this.agent = agent;
-        _this.system = system;
-        _this.onUnit = function (_a) {
-            var client = _a.client, request = _a.request;
-            var onErr = function (e) {
-                return _this.tell(client, new TransportErr(client, e));
-            };
-            var onSucc = function (res) {
-                return _this.tell(client, res);
-            };
-            _this
+class Remote extends actor_1.Immutable {
+    constructor(agent, system) {
+        super(system);
+        this.agent = agent;
+        this.system = system;
+        this.onUnit = ({ client, request }) => {
+            let onErr = (e) => this.tell(client, new TransportErr(client, e));
+            let onSucc = (res) => this.tell(client, res);
+            this
                 .agent
                 .send(request)
                 .fork(onErr, onSucc);
         };
-        _this.onParallel = function (_a) {
-            var client = _a.client, requests = _a.requests;
-            var agent = _this.agent;
-            var onErr = function (e) { return _this.tell(client, e); };
-            var onSucc = function (res) {
-                return _this.tell(client, new BatchResponse(res));
-            };
-            var rs = requests
-                .map(function (r) {
-                return agent
-                    .send(r)
-                    .catch(function (e) { return future_1.raise(new TransportErr(client, e)); });
-            });
+        this.onParallel = ({ client, requests }) => {
+            let { agent } = this;
+            let onErr = (e) => this.tell(client, e);
+            let onSucc = (res) => this.tell(client, new BatchResponse(res));
+            let rs = requests
+                .map((r) => agent
+                .send(r)
+                .catch(e => future_1.raise(new TransportErr(client, e))));
             future_1.parallel(rs).fork(onErr, onSucc);
         };
-        _this.onSequential = function (_a) {
-            var client = _a.client, requests = _a.requests;
-            var agent = _this.agent;
-            var onErr = function (e) { return _this.tell(client, e); };
-            var onSucc = function (res) {
-                return _this.tell(client, new BatchResponse(res));
-            };
-            var rs = requests
-                .map(function (r) {
-                return agent
-                    .send(r)
-                    .catch(function (e) { return future_1.raise(new TransportErr(client, e)); });
-            });
+        this.onSequential = ({ client, requests }) => {
+            let { agent } = this;
+            let onErr = (e) => this.tell(client, e);
+            let onSucc = (res) => this.tell(client, new BatchResponse(res));
+            let rs = requests
+                .map((r) => agent
+                .send(r)
+                .catch(e => future_1.raise(new TransportErr(client, e))));
             future_1.sequential(rs).fork(onErr, onSucc);
         };
-        return _this;
     }
-    Remote.prototype.receive = function () {
+    receive() {
         return [
             new case_1.Case(Send, this.onUnit),
             new case_1.Case(ParSend, this.onParallel),
             new case_1.Case(SeqSend, this.onSequential)
         ];
-    };
-    return Remote;
-}(actor_1.Immutable));
+    }
+}
 exports.Remote = Remote;
 
 },{"../../actor":1,"@quenk/noni/lib/control/monad/future":15,"@quenk/potoo/lib/actor/resident/case":31}],5:[function(require,module,exports){
@@ -473,34 +393,16 @@ exports.Remote = Remote;
  * apis. NOTE: Responses received by this API are expected to be in the result
  * format specified.
  */
-var __extends = (this && this.__extends) || (function () {
-    var extendStatics = function (d, b) {
-        extendStatics = Object.setPrototypeOf ||
-            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
-        return extendStatics(d, b);
-    };
-    return function (d, b) {
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.RemoteModel = exports.NotFoundHandler = exports.FutureHandler = void 0;
 /** imports */
-var future_1 = require("@quenk/noni/lib/control/monad/future");
-var maybe_1 = require("@quenk/noni/lib/data/maybe");
-var string_1 = require("@quenk/noni/lib/data/string");
-var request_1 = require("@quenk/jhr/lib/request");
-var callback_1 = require("../callback");
-var DefaultCompleteHandler = /** @class */ (function (_super) {
-    __extends(DefaultCompleteHandler, _super);
-    function DefaultCompleteHandler() {
-        return _super !== null && _super.apply(this, arguments) || this;
-    }
-    return DefaultCompleteHandler;
-}(callback_1.AbstractCompleteHandler));
+const future_1 = require("@quenk/noni/lib/control/monad/future");
+const maybe_1 = require("@quenk/noni/lib/data/maybe");
+const string_1 = require("@quenk/noni/lib/data/string");
+const request_1 = require("@quenk/jhr/lib/request");
+const callback_1 = require("../callback");
+class DefaultCompleteHandler extends callback_1.AbstractCompleteHandler {
+}
 /**
  * FutureHandler is used to proxy the events of a request's lifecycle to a noni
  * [[Future]].
@@ -508,60 +410,56 @@ var DefaultCompleteHandler = /** @class */ (function (_super) {
  * The [[CompleteHandler]] provided also receives the events as they happen
  * however work is assumed to be handled in the Future.
  */
-var FutureHandler = /** @class */ (function () {
-    function FutureHandler(handler, onFailure, onSuccess) {
+class FutureHandler {
+    constructor(handler, onFailure, onSuccess) {
         this.handler = handler;
         this.onFailure = onFailure;
         this.onSuccess = onSuccess;
     }
-    FutureHandler.prototype.onError = function (e) {
+    onError(e) {
         this.handler.onError(e);
         this.onFailure(e.error instanceof Error ?
             e.error :
             new Error(e.error.message));
-    };
-    FutureHandler.prototype.onClientError = function (r) {
+    }
+    onClientError(r) {
         this.handler.onClientError(r);
-        var e = new Error('ClientError');
+        let e = new Error('ClientError');
         e.code = r.code;
         this.onFailure(e);
-    };
-    FutureHandler.prototype.onServerError = function (r) {
+    }
+    onServerError(r) {
         this.handler.onServerError(r);
-        var e = new Error('ServerError');
+        let e = new Error('ServerError');
         e.code = r.code;
         this.onFailure(e);
-    };
-    FutureHandler.prototype.onComplete = function (r) {
+    }
+    onComplete(r) {
         this.handler.onComplete(r);
         this.onSuccess(r);
-    };
-    return FutureHandler;
-}());
+    }
+}
 exports.FutureHandler = FutureHandler;
 /**
  * NotFoundHandler does not treat a 404 as an error.
  *
  * The onNotFound handler is used instead.
  */
-var NotFoundHandler = /** @class */ (function (_super) {
-    __extends(NotFoundHandler, _super);
-    function NotFoundHandler(handler, onFailure, onNotFound, onSuccess) {
-        var _this = _super.call(this, handler, onFailure, onSuccess) || this;
-        _this.handler = handler;
-        _this.onFailure = onFailure;
-        _this.onNotFound = onNotFound;
-        _this.onSuccess = onSuccess;
-        return _this;
+class NotFoundHandler extends FutureHandler {
+    constructor(handler, onFailure, onNotFound, onSuccess) {
+        super(handler, onFailure, onSuccess);
+        this.handler = handler;
+        this.onFailure = onFailure;
+        this.onNotFound = onNotFound;
+        this.onSuccess = onSuccess;
     }
-    NotFoundHandler.prototype.onClientError = function (r) {
+    onClientError(r) {
         if (r.code === 404)
             this.onNotFound();
         else
-            _super.prototype.onClientError.call(this, r);
-    };
-    return NotFoundHandler;
-}(FutureHandler));
+            super.onClientError(r);
+    }
+}
 exports.NotFoundHandler = NotFoundHandler;
 /**
  * RemoteModel provides a Model implementation that relies on the [[Remote]]
@@ -570,9 +468,8 @@ exports.NotFoundHandler = NotFoundHandler;
  * A handler can be provided to observe the result of requests if more data
  * is needed than the Model api provides.
  */
-var RemoteModel = /** @class */ (function () {
-    function RemoteModel(remote, path, spawn, handler) {
-        if (handler === void 0) { handler = new DefaultCompleteHandler(); }
+class RemoteModel {
+    constructor(remote, path, spawn, handler = new DefaultCompleteHandler()) {
         this.remote = remote;
         this.path = path;
         this.spawn = spawn;
@@ -581,94 +478,68 @@ var RemoteModel = /** @class */ (function () {
     /**
      * create a new entry for the data type.
      */
-    RemoteModel.prototype.create = function (data) {
-        var _this = this;
-        return future_1.fromCallback(function (cb) {
-            _this.spawn(function (s) { return new callback_1.SendCallback(s, _this.remote, new request_1.Post(_this.path, data), new FutureHandler(_this.handler, cb, function (r) {
+    create(data) {
+        return future_1.fromCallback(cb => {
+            this.spawn((s) => new callback_1.SendCallback(s, this.remote, new request_1.Post(this.path, data), new FutureHandler(this.handler, cb, r => {
                 cb(null, r.body.data.id);
-            })); });
+            })));
         });
-    };
+    }
     /**
      * search for entries that match the provided query.
      */
-    RemoteModel.prototype.search = function (qry) {
-        var _this = this;
-        return future_1.fromCallback(function (cb) {
-            _this.spawn(function (s) { return new callback_1.SendCallback(s, _this.remote, new request_1.Get(_this.path, qry), new FutureHandler(_this.handler, cb, function (r) {
+    search(qry) {
+        return future_1.fromCallback(cb => {
+            this.spawn((s) => new callback_1.SendCallback(s, this.remote, new request_1.Get(this.path, qry), new FutureHandler(this.handler, cb, r => {
                 cb(null, (r.code === 204) ?
                     [] : r.body.data);
-            })); });
+            })));
         });
-    };
+    }
     /**
      * update a single entry using its id.
      */
-    RemoteModel.prototype.update = function (id, changes) {
-        var _this = this;
-        return future_1.fromCallback(function (cb) {
-            _this.spawn(function (s) { return new callback_1.SendCallback(s, _this.remote, new request_1.Patch(string_1.interpolate(_this.path, { id: id }), changes), new FutureHandler(_this.handler, cb, function (r) {
+    update(id, changes) {
+        return future_1.fromCallback(cb => {
+            this.spawn((s) => new callback_1.SendCallback(s, this.remote, new request_1.Patch(string_1.interpolate(this.path, { id }), changes), new FutureHandler(this.handler, cb, r => {
                 cb(null, (r.code === 200) ? true : false);
-            })); });
+            })));
         });
-    };
+    }
     /**
      * get a single entry by its id.
      */
-    RemoteModel.prototype.get = function (id) {
-        var _this = this;
-        return future_1.fromCallback(function (cb) {
-            _this.spawn(function (s) { return new callback_1.SendCallback(s, _this.remote, new request_1.Get(string_1.interpolate(_this.path, { id: id }), {}), new NotFoundHandler(_this.handler, cb, function () {
+    get(id) {
+        return future_1.fromCallback(cb => {
+            this.spawn((s) => new callback_1.SendCallback(s, this.remote, new request_1.Get(string_1.interpolate(this.path, { id }), {}), new NotFoundHandler(this.handler, cb, () => {
                 cb(null, maybe_1.nothing());
-            }, function (r) {
+            }, r => {
                 cb(null, maybe_1.fromNullable(r.body.data));
-            })); });
+            })));
         });
-    };
+    }
     /**
      * remove a single entry by its id.
      */
-    RemoteModel.prototype.remove = function (id) {
-        var _this = this;
-        return future_1.fromCallback(function (cb) {
-            _this.spawn(function (s) { return new callback_1.SendCallback(s, _this.remote, new request_1.Delete(string_1.interpolate(_this.path, { id: id }), {}), new FutureHandler(_this.handler, cb, function (r) {
+    remove(id) {
+        return future_1.fromCallback(cb => {
+            this.spawn((s) => new callback_1.SendCallback(s, this.remote, new request_1.Delete(string_1.interpolate(this.path, { id }), {}), new FutureHandler(this.handler, cb, r => {
                 cb(null, (r.code === 200) ? true : false);
-            })); });
+            })));
         });
-    };
-    return RemoteModel;
-}());
+    }
+}
 exports.RemoteModel = RemoteModel;
 
 },{"../callback":3,"@quenk/jhr/lib/request":9,"@quenk/noni/lib/control/monad/future":15,"@quenk/noni/lib/data/maybe":21,"@quenk/noni/lib/data/string":24}],6:[function(require,module,exports){
 "use strict";
-var __extends = (this && this.__extends) || (function () {
-    var extendStatics = function (d, b) {
-        extendStatics = Object.setPrototypeOf ||
-            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
-        return extendStatics(d, b);
-    };
-    return function (d, b) {
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
-var __spreadArrays = (this && this.__spreadArrays) || function () {
-    for (var s = 0, i = 0, il = arguments.length; i < il; i++) s += arguments[i].length;
-    for (var r = Array(s), k = 0, i = 0; i < il; i++)
-        for (var a = arguments[i], j = 0, jl = a.length; j < jl; j++, k++)
-            r[k] = a[j];
-    return r;
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.RemoteObserver = exports.BatchResponse = exports.SeqSend = exports.ParSend = exports.Send = exports.TransportErr = void 0;
-var match_1 = require("@quenk/noni/lib/control/match");
-var response_1 = require("@quenk/jhr/lib/response");
-var case_1 = require("@quenk/potoo/lib/actor/resident/case");
-var actor_1 = require("../../../actor");
-var __1 = require("../");
+const match_1 = require("@quenk/noni/lib/control/match");
+const response_1 = require("@quenk/jhr/lib/response");
+const case_1 = require("@quenk/potoo/lib/actor/resident/case");
+const actor_1 = require("../../../actor");
+const __1 = require("../");
 Object.defineProperty(exports, "TransportErr", { enumerable: true, get: function () { return __1.TransportErr; } });
 Object.defineProperty(exports, "Send", { enumerable: true, get: function () { return __1.Send; } });
 Object.defineProperty(exports, "ParSend", { enumerable: true, get: function () { return __1.ParSend; } });
@@ -682,72 +553,66 @@ Object.defineProperty(exports, "BatchResponse", { enumerable: true, get: functio
  * for the manipulation of UI indicators when requests are made in the
  * foreground of an application.
  */
-var RemoteObserver = /** @class */ (function (_super) {
-    __extends(RemoteObserver, _super);
-    function RemoteObserver(agent, listener, system) {
-        var _this = _super.call(this, system) || this;
-        _this.agent = agent;
-        _this.listener = listener;
-        _this.system = system;
-        _this.remote = '?';
-        _this.onWake = function (req) {
-            _this.send(req);
-            _this.select(_this.pending(req, []));
+class RemoteObserver extends actor_1.Mutable {
+    constructor(agent, listener, system) {
+        super(system);
+        this.agent = agent;
+        this.listener = listener;
+        this.system = system;
+        this.remote = '?';
+        this.onWake = (req) => {
+            this.send(req);
+            this.select(this.pending(req, []));
         };
-        _this.onRequest = function (current, buffer) {
-            return function (msg) {
-                _this.select(_this.pending(current, __spreadArrays(buffer, [msg])));
-            };
+        this.onRequest = (current, buffer) => (msg) => {
+            this.select(this.pending(current, [...buffer, msg]));
         };
-        _this.onError = function (current) { return function (err) {
-            _this.listener.onError(err);
-            _this.listener.onFinish();
-            _this.tell(current.client, new __1.TransportErr(current.client, err.error));
-        }; };
-        _this.onResponse = function (current, buffer) {
-            return function (r) {
-                var res = r;
-                if (r instanceof __1.BatchResponse) {
-                    var failed = r.value.filter(function (r) { return r.code > 299; });
-                    if (failed.length > 0)
-                        res = failed[0];
-                }
-                else {
-                    res = r;
-                }
-                if (res.code > 499) {
-                    _this.listener.onServerError(res);
-                }
-                else if (res.code > 399) {
-                    _this.listener.onClientError(res);
-                }
-                else {
-                    _this.listener.onComplete(res);
-                }
-                _this.listener.onFinish();
-                _this.tell(current.client, res);
-                if (buffer.length > 0) {
-                    var next = buffer[0];
-                    _this.send(next);
-                    _this.select(_this.pending(next, buffer.slice()));
-                }
-                else {
-                    _this.select(_this.idle());
-                }
-            };
+        this.onError = (current) => (err) => {
+            this.listener.onError(err);
+            this.listener.onFinish();
+            this.tell(current.client, new __1.TransportErr(current.client, err.error));
         };
-        return _this;
+        this.onResponse = (current, buffer) => (r) => {
+            let res = r;
+            if (r instanceof __1.BatchResponse) {
+                let failed = r.value.filter(r => r.code > 299);
+                if (failed.length > 0)
+                    res = failed[0];
+            }
+            else {
+                res = r;
+            }
+            if (res.code > 499) {
+                this.listener.onServerError(res);
+            }
+            else if (res.code > 399) {
+                this.listener.onClientError(res);
+            }
+            else {
+                this.listener.onComplete(res);
+            }
+            this.listener.onFinish();
+            this.tell(current.client, res);
+            if (buffer.length > 0) {
+                let next = buffer[0];
+                this.send(next);
+                this.select(this.pending(next, buffer.slice()));
+            }
+            else {
+                this.select(this.idle());
+            }
+        };
     }
-    RemoteObserver.prototype.idle = function () {
+    idle() {
         return [
             new case_1.Case(__1.Send, this.onWake),
             new case_1.Case(__1.ParSend, this.onWake),
             new case_1.Case(__1.SeqSend, this.onWake),
         ];
-    };
-    RemoteObserver.prototype.pending = function (current, buffer) {
-        var onReq = this.onRequest(current, buffer);
-        var onRes = this.onResponse(current, buffer);
+    }
+    pending(current, buffer) {
+        let onReq = this.onRequest(current, buffer);
+        let onRes = this.onResponse(current, buffer);
         return [
             new case_1.Case(__1.Send, onReq),
             new case_1.Case(__1.ParSend, onReq),
@@ -756,114 +621,50 @@ var RemoteObserver = /** @class */ (function (_super) {
             new case_1.Case(response_1.GenericResponse, onRes),
             new case_1.Case(__1.BatchResponse, onRes),
         ];
-    };
-    RemoteObserver.prototype.send = function (req) {
-        var self = this.self();
+    }
+    send(req) {
+        let self = this.self();
         this.listener.onStart(req);
-        var msg = match_1.match(req)
-            .caseOf(__1.Send, function (msg) {
-            return new __1.Send(self, msg.request);
-        })
-            .caseOf(__1.ParSend, function (msg) {
-            return new __1.ParSend(self, msg.requests);
-        })
-            .caseOf(__1.SeqSend, function (msg) {
-            return new __1.SeqSend(self, msg.requests);
-        })
+        let msg = match_1.match(req)
+            .caseOf(__1.Send, (msg) => new __1.Send(self, msg.request))
+            .caseOf(__1.ParSend, (msg) => new __1.ParSend(self, msg.requests))
+            .caseOf(__1.SeqSend, (msg) => new __1.SeqSend(self, msg.requests))
             .end();
         this.tell(this.remote, msg);
-    };
-    RemoteObserver.prototype.run = function () {
-        var _this = this;
-        this.remote = this.spawn(function (s) { return new __1.Remote(_this.agent, s); });
+    }
+    run() {
+        this.remote = this.spawn(s => new __1.Remote(this.agent, s));
         this.select(this.idle());
-    };
-    return RemoteObserver;
-}(actor_1.Mutable));
+    }
+}
 exports.RemoteObserver = RemoteObserver;
 
 },{"../":4,"../../../actor":1,"@quenk/jhr/lib/response":11,"@quenk/noni/lib/control/match":14,"@quenk/potoo/lib/actor/resident/case":31}],7:[function(require,module,exports){
 "use strict";
-var __extends = (this && this.__extends) || (function () {
-    var extendStatics = function (d, b) {
-        extendStatics = Object.setPrototypeOf ||
-            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
-        return extendStatics(d, b);
-    };
-    return function (d, b) {
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
-var __generator = (this && this.__generator) || function (thisArg, body) {
-    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
-    return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
-    function verb(n) { return function (v) { return step([n, v]); }; }
-    function step(op) {
-        if (f) throw new TypeError("Generator is already executing.");
-        while (_) try {
-            if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
-            if (y = 0, t) op = [op[0] & 2, t.value];
-            switch (op[0]) {
-                case 0: case 1: t = op; break;
-                case 4: _.label++; return { value: op[1], done: false };
-                case 5: _.label++; y = op[1]; op = [0]; continue;
-                case 7: op = _.ops.pop(); _.trys.pop(); continue;
-                default:
-                    if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) { _ = 0; continue; }
-                    if (op[0] === 3 && (!t || (op[1] > t[0] && op[1] < t[3]))) { _.label = op[1]; break; }
-                    if (op[0] === 6 && _.label < t[1]) { _.label = t[1]; t = op; break; }
-                    if (t && _.label < t[2]) { _.label = t[2]; _.ops.push(op); break; }
-                    if (t[2]) _.ops.pop();
-                    _.trys.pop(); continue;
-            }
-            op = body.call(thisArg, _);
-        } catch (e) { op = [6, e]; y = 0; } finally { f = t = 0; }
-        if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
-    }
-};
-var __spreadArrays = (this && this.__spreadArrays) || function () {
-    for (var s = 0, i = 0, il = arguments.length; i < il; i++) s += arguments[i].length;
-    for (var r = Array(s), k = 0, i = 0; i < il; i++)
-        for (var a = arguments[i], j = 0, jl = a.length; j < jl; j++, k++)
-            r[k] = a[j];
-    return r;
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Director = exports.ActorSuspended = exports.RouteChanged = exports.Supervisor = exports.SuspendActor = exports.SuspendTimer = exports.CancelTimer = exports.Suspended = exports.Suspend = exports.Reload = exports.Resume = exports.SuspendCase = exports.DEFAULT_TIMEOUT = void 0;
-var record_1 = require("@quenk/noni/lib/data/record");
-var type_1 = require("@quenk/noni/lib/data/type");
-var future_1 = require("@quenk/noni/lib/control/monad/future");
-var case_1 = require("@quenk/potoo/lib/actor/resident/case");
-var actor_1 = require("../../actor");
+const record_1 = require("@quenk/noni/lib/data/record");
+const type_1 = require("@quenk/noni/lib/data/type");
+const future_1 = require("@quenk/noni/lib/control/monad/future");
+const case_1 = require("@quenk/potoo/lib/actor/resident/case");
+const actor_1 = require("../../actor");
 exports.DEFAULT_TIMEOUT = 1000;
 /**
  * SuspendCase invokes [[SuspendListener.beforeSuspend]] upon receiving a
  * [[Suspend]] message then informs the Director that the actor has been
  * suspended.
  */
-var SuspendCase = /** @class */ (function (_super) {
-    __extends(SuspendCase, _super);
-    function SuspendCase(listener, director) {
-        var _this = _super.call(this, Suspend, function (s) { return future_1.doFuture(function () {
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0: return [4 /*yield*/, future_1.wrap(listener.beforeSuspended(s))];
-                    case 1:
-                        _a.sent();
-                        listener.tell(director, new Suspended(listener.self()));
-                        return [2 /*return*/, future_1.voidPure];
-                }
-            });
-        }); }) || this;
-        _this.listener = listener;
-        _this.director = director;
-        return _this;
+class SuspendCase extends case_1.Case {
+    constructor(listener, director) {
+        super(Suspend, (s) => future_1.doFuture(function* () {
+            yield future_1.wrap(listener.beforeSuspended(s));
+            listener.tell(director, new Suspended(listener.self()));
+            return future_1.voidPure;
+        }));
+        this.listener = listener;
+        this.director = director;
     }
-    return SuspendCase;
-}(case_1.Case));
+}
 exports.SuspendCase = SuspendCase;
 /**
  * Resume hints to the receiving actor that is now the current actor and can
@@ -874,13 +675,12 @@ exports.SuspendCase = SuspendCase;
  *                   information about the route request. This value may not
  *                   be type safe.
  */
-var Resume = /** @class */ (function () {
-    function Resume(director, request) {
+class Resume {
+    constructor(director, request) {
         this.director = director;
         this.request = request;
     }
-    return Resume;
-}());
+}
 exports.Resume = Resume;
 /**
  * Reload can be sent by the current actor to repeat the steps involved in
@@ -889,87 +689,74 @@ exports.Resume = Resume;
  * Note: The will only repeat the steps taken by the Director and not any
  * external libraries.
  */
-var Reload = /** @class */ (function () {
-    function Reload(target) {
+class Reload {
+    constructor(target) {
         this.target = target;
     }
-    return Reload;
-}());
+}
 exports.Reload = Reload;
 /**
  * Suspend indicates the actor should cease streaming as it no longer considered
  * the current actor.
  */
-var Suspend = /** @class */ (function () {
-    function Suspend(director) {
+class Suspend {
+    constructor(director) {
         this.director = director;
     }
-    return Suspend;
-}());
+}
 exports.Suspend = Suspend;
 /**
  * Suspended MUST be sent by the current actor when a Suspend request has
  * been received. Failure to do so indicates the actor is no longer responding.
  */
-var Suspended = /** @class */ (function () {
-    function Suspended(actor) {
+class Suspended {
+    constructor(actor) {
         this.actor = actor;
     }
-    return Suspended;
-}());
+}
 exports.Suspended = Suspended;
 /**
  * CancelTimer indicates the SuspendTimer should cancel its timer and invoke
  * the onFinish callback.
  */
-var CancelTimer = /** @class */ (function () {
-    function CancelTimer() {
-    }
-    return CancelTimer;
-}());
+class CancelTimer {
+}
 exports.CancelTimer = CancelTimer;
 /**
  * SuspendTimer is spawned by the Director to handle the logic of removing
  * unresponsive current actors from the routing apparatus.
  */
-var SuspendTimer = /** @class */ (function (_super) {
-    __extends(SuspendTimer, _super);
-    function SuspendTimer(director, timeout, system, onExpire, onFinish) {
-        var _this = _super.call(this, system) || this;
-        _this.director = director;
-        _this.timeout = timeout;
-        _this.system = system;
-        _this.onExpire = onExpire;
-        _this.onFinish = onFinish;
-        _this.timer = -1;
-        _this.onCancelTimer = function (_) {
-            clearTimeout(_this.timer);
-            _this.onFinish();
-            _this.exit();
+class SuspendTimer extends actor_1.Immutable {
+    constructor(director, timeout, system, onExpire, onFinish) {
+        super(system);
+        this.director = director;
+        this.timeout = timeout;
+        this.system = system;
+        this.onExpire = onExpire;
+        this.onFinish = onFinish;
+        this.timer = -1;
+        this.onCancelTimer = (_) => {
+            clearTimeout(this.timer);
+            this.onFinish();
+            this.exit();
         };
-        return _this;
     }
-    SuspendTimer.prototype.receive = function () {
+    receive() {
         return [new case_1.Case(CancelTimer, this.onCancelTimer)];
-    };
-    SuspendTimer.prototype.run = function () {
-        var _this = this;
-        this.timer = setTimeout(function () {
-            _this.onExpire();
-            _this.exit();
+    }
+    run() {
+        this.timer = setTimeout(() => {
+            this.onExpire();
+            this.exit();
         }, this.timeout);
-    };
-    return SuspendTimer;
-}(actor_1.Immutable));
+    }
+}
 exports.SuspendTimer = SuspendTimer;
 /**
  * SuspendActor indicates the Supervisor should suspend its supervised actor.
  */
-var SuspendActor = /** @class */ (function () {
-    function SuspendActor() {
-    }
-    return SuspendActor;
-}());
+class SuspendActor {
+}
 exports.SuspendActor = SuspendActor;
 /**
  * Supervisor is used to contain communication between the actor in control
@@ -982,71 +769,63 @@ exports.SuspendActor = SuspendActor;
  * Routes that require a spawned actor are also done here having the side-effect
  * of killing them once the Supervisor exits.
  */
-var Supervisor = /** @class */ (function (_super) {
-    __extends(Supervisor, _super);
-    function Supervisor(director, display, info, system) {
-        var _this = _super.call(this, system) || this;
-        _this.director = director;
-        _this.display = display;
-        _this.info = info;
-        _this.system = system;
-        _this.actor = '?';
-        return _this;
+class Supervisor extends actor_1.Immutable {
+    constructor(director, display, info, system) {
+        super(system);
+        this.director = director;
+        this.display = display;
+        this.info = info;
+        this.system = system;
+        this.actor = '?';
     }
-    Supervisor.prototype.receive = function () {
-        var _this = this;
+    receive() {
         return [
-            new case_1.Case(SuspendActor, function () {
-                _this.tell(_this.actor, new Suspend(_this.self()));
+            new case_1.Case(SuspendActor, () => {
+                this.tell(this.actor, new Suspend(this.self()));
             }),
-            new case_1.Case(Reload, function () {
-                _this.tell(_this.director, _this.info);
+            new case_1.Case(Reload, () => {
+                this.tell(this.director, this.info);
             }),
-            new case_1.Case(Suspended, function () {
-                _this.tell(_this.director, new ActorSuspended());
+            new case_1.Case(Suspended, () => {
+                this.tell(this.director, new ActorSuspended());
             }),
-            new case_1.Default(function (m) { _this.tell(_this.display, m); })
+            new case_1.Default(m => { this.tell(this.display, m); })
         ];
-    };
-    Supervisor.prototype.run = function () {
-        var _a = this.info, request = _a.request, spec = _a.spec;
-        var r = new Resume(this.self(), request);
-        var candidate = type_1.isFunction(spec) ? spec(r) : spec;
+    }
+    run() {
+        let { request, spec } = this.info;
+        let r = new Resume(this.self(), request);
+        let candidate = type_1.isFunction(spec) ? spec(r) : spec;
         if (type_1.isObject(candidate)) {
-            var tmpl = candidate;
-            var args = tmpl.args ? tmpl.args : [];
-            tmpl = record_1.merge(tmpl, { args: __spreadArrays([r], args) });
+            let tmpl = candidate;
+            let args = tmpl.args ? tmpl.args : [];
+            tmpl = record_1.merge(tmpl, { args: [r, ...args] });
             this.actor = this.spawn(tmpl);
         }
         else {
             this.actor = candidate;
         }
         this.tell(this.actor, r);
-    };
-    return Supervisor;
-}(actor_1.Immutable));
+    }
+}
 exports.Supervisor = Supervisor;
 /**
  * RouteChanged signals to the Director that a new actor should be given control
  * of the display.
  */
-var RouteChanged = /** @class */ (function () {
-    function RouteChanged(route, spec, request) {
+class RouteChanged {
+    constructor(route, spec, request) {
         this.route = route;
         this.spec = spec;
         this.request = request;
     }
-    return RouteChanged;
-}());
+}
 exports.RouteChanged = RouteChanged;
 /**
  * ActorSuspended indicates an actor has been successfully suspended.
  */
-var ActorSuspended = /** @class */ (function () {
-    function ActorSuspended() {
-    }
-    return ActorSuspended;
-}());
+class ActorSuspended {
+}
 exports.ActorSuspended = ActorSuspended;
 /**
  * Director is an actor used to mediate control of a single view or "display"
@@ -1069,74 +848,68 @@ exports.ActorSuspended = ActorSuspended;
  * If the Suspended message is not received in time, the actor will not be
  * allowed to stream again by the Director.
  */
-var Director = /** @class */ (function (_super) {
-    __extends(Director, _super);
-    function Director(display, router, conf, routes, system) {
-        var _this = _super.call(this, system) || this;
-        _this.display = display;
-        _this.router = router;
-        _this.conf = conf;
-        _this.routes = routes;
-        _this.system = system;
-        _this.current = ['', '?', '?'];
-        _this.config = defaultConfig(_this.conf);
-        _this.onRouteChanged = function (msg) {
-            var self = _this.self();
-            var _a = _this, display = _a.display, routes = _a.routes, current = _a.current, config = _a.config;
-            var route = current[0], supervisor = current[1];
-            var onFinish = function () {
+class Director extends actor_1.Immutable {
+    constructor(display, router, conf, routes, system) {
+        super(system);
+        this.display = display;
+        this.router = router;
+        this.conf = conf;
+        this.routes = routes;
+        this.system = system;
+        this.current = ['', '?', '?'];
+        this.config = defaultConfig(this.conf);
+        this.onRouteChanged = (msg) => {
+            let self = this.self();
+            let { display, routes, current, config } = this;
+            let [route, supervisor] = current;
+            let onFinish = () => {
                 if (supervisor != '?')
-                    _this.kill(supervisor);
-                _this.current = [msg.route, _this.spawn(function (s) { return new Supervisor(self, display, msg, s); }), '?'];
+                    this.kill(supervisor);
+                this.current = [msg.route, this.spawn(s => new Supervisor(self, display, msg, s)), '?'];
             };
             if (supervisor != '?') {
-                var timeout_1 = config.timeout;
-                var onExpire_1 = function () {
-                    _this.routes = record_1.exclude(routes, route);
+                let { timeout } = config;
+                let onExpire = () => {
+                    this.routes = record_1.exclude(routes, route);
                     onFinish();
                 };
-                _this.current = [
+                this.current = [
                     route,
                     supervisor,
-                    _this.spawn(function (s) { return new SuspendTimer(self, timeout_1, s, onExpire_1, onFinish); })
+                    this.spawn(s => new SuspendTimer(self, timeout, s, onExpire, onFinish))
                 ];
-                _this.tell(supervisor, new SuspendActor());
+                this.tell(supervisor, new SuspendActor());
             }
             else {
                 onFinish();
             }
         };
-        _this.onActorSuspended = function (_) {
-            _this.tell(_this.current[2], new CancelTimer());
+        this.onActorSuspended = (_) => {
+            this.tell(this.current[2], new CancelTimer());
         };
-        return _this;
     }
-    Director.prototype.receive = function () {
+    receive() {
         return [
             new case_1.Case(RouteChanged, this.onRouteChanged),
             new case_1.Case(ActorSuspended, this.onActorSuspended)
         ];
-    };
-    Director.prototype.run = function () {
-        var _this = this;
-        record_1.forEach(this.routes, function (spec, route) {
-            _this.router.add(route, function (r) { return future_1.fromCallback(function (cb) {
-                if (!_this.routes.hasOwnProperty(route)) {
-                    return cb(new Error(route + ": not responding!"));
+    }
+    run() {
+        record_1.forEach(this.routes, (spec, route) => {
+            this.router.add(route, (r) => future_1.fromCallback(cb => {
+                if (!this.routes.hasOwnProperty(route)) {
+                    return cb(new Error(`${route}: not responding!`));
                 }
                 else {
-                    _this.tell(_this.self(), new RouteChanged(route, spec, r));
+                    this.tell(this.self(), new RouteChanged(route, spec, r));
                     cb(null);
                 }
-            }); });
+            }));
         });
-    };
-    return Director;
-}(actor_1.Immutable));
+    }
+}
 exports.Director = Director;
-var defaultConfig = function (c) {
-    return record_1.merge({ timeout: exports.DEFAULT_TIMEOUT }, c);
-};
+const defaultConfig = (c) => record_1.merge({ timeout: exports.DEFAULT_TIMEOUT }, c);
 
 },{"../../actor":1,"@quenk/noni/lib/control/monad/future":15,"@quenk/noni/lib/data/record":22,"@quenk/noni/lib/data/type":25,"@quenk/potoo/lib/actor/resident/case":31}],8:[function(require,module,exports){
 "use strict";
@@ -9023,607 +8796,401 @@ module.exports = function shimFlags() {
 
 },{"./polyfill":88,"define-properties":66}],90:[function(require,module,exports){
 "use strict";
-var __extends = (this && this.__extends) || (function () {
-    var extendStatics = function (d, b) {
-        extendStatics = Object.setPrototypeOf ||
-            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
-        return extendStatics(d, b);
-    };
-    return function (d, b) {
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.GenericImmutable = void 0;
-var actor_1 = require("../../../../lib/actor");
+const actor_1 = require("../../../../lib/actor");
 /**
  * GenericImmutable is an Immutable that accepts its cases in the constructor.
  */
-var GenericImmutable = /** @class */ (function (_super) {
-    __extends(GenericImmutable, _super);
-    function GenericImmutable(system, cases, runFunc) {
-        var _this = _super.call(this, system) || this;
-        _this.system = system;
-        _this.cases = cases;
-        _this.runFunc = runFunc;
-        return _this;
+class GenericImmutable extends actor_1.Immutable {
+    constructor(system, cases, runFunc) {
+        super(system);
+        this.system = system;
+        this.cases = cases;
+        this.runFunc = runFunc;
     }
-    GenericImmutable.prototype.receive = function () {
+    receive() {
         return this.cases;
-    };
-    GenericImmutable.prototype.run = function () {
+    }
+    run() {
         this.runFunc(this);
-    };
-    return GenericImmutable;
-}(actor_1.Immutable));
+    }
+}
 exports.GenericImmutable = GenericImmutable;
 
 },{"../../../../lib/actor":1}],91:[function(require,module,exports){
 "use strict";
-var __extends = (this && this.__extends) || (function () {
-    var extendStatics = function (d, b) {
-        extendStatics = Object.setPrototypeOf ||
-            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
-        return extendStatics(d, b);
-    };
-    return function (d, b) {
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.TestApp = void 0;
-var app_1 = require("../../../../lib/app");
-var TestApp = /** @class */ (function (_super) {
-    __extends(TestApp, _super);
-    function TestApp() {
-        return _super !== null && _super.apply(this, arguments) || this;
-    }
-    TestApp.prototype.spawn = function (temp) {
+const app_1 = require("../../../../lib/app");
+class TestApp extends app_1.Jouvert {
+    spawn(temp) {
         return this.vm.spawn(this.vm, temp);
-    };
-    return TestApp;
-}(app_1.Jouvert));
+    }
+}
 exports.TestApp = TestApp;
 
 },{"../../../../lib/app":2}],92:[function(require,module,exports){
 "use strict";
-var __generator = (this && this.__generator) || function (thisArg, body) {
-    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
-    return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
-    function verb(n) { return function (v) { return step([n, v]); }; }
-    function step(op) {
-        if (f) throw new TypeError("Generator is already executing.");
-        while (_) try {
-            if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
-            if (y = 0, t) op = [op[0] & 2, t.value];
-            switch (op[0]) {
-                case 0: case 1: t = op; break;
-                case 4: _.label++; return { value: op[1], done: false };
-                case 5: _.label++; y = op[1]; op = [0]; continue;
-                case 7: op = _.ops.pop(); _.trys.pop(); continue;
-                default:
-                    if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) { _ = 0; continue; }
-                    if (op[0] === 3 && (!t || (op[1] > t[0] && op[1] < t[3]))) { _.label = op[1]; break; }
-                    if (op[0] === 6 && _.label < t[1]) { _.label = t[1]; t = op; break; }
-                    if (t && _.label < t[2]) { _.label = t[2]; _.ops.push(op); break; }
-                    if (t[2]) _.ops.pop();
-                    _.trys.pop(); continue;
-            }
-            op = body.call(thisArg, _);
-        } catch (e) { op = [6, e]; y = 0; } finally { f = t = 0; }
-        if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
-    }
-};
 Object.defineProperty(exports, "__esModule", { value: true });
-var assert_1 = require("@quenk/test/lib/assert");
-var future_1 = require("@quenk/noni/lib/control/monad/future");
-var case_1 = require("@quenk/potoo/lib/actor/resident/case");
-var mock_1 = require("@quenk/jhr/lib/agent/mock");
-var request_1 = require("@quenk/jhr/lib/request");
-var response_1 = require("@quenk/jhr/lib/response");
-var remote_1 = require("../../../../lib/app/remote");
-var actor_1 = require("../../app/fixtures/actor");
-var app_1 = require("../../app/fixtures/app");
-describe('remote', function () {
-    describe('Remote', function () {
-        describe('api', function () {
-            it('should handle Send', function () { return future_1.toPromise(future_1.doFuture(function () {
-                var s, mock, res, success, cases;
-                return __generator(this, function (_a) {
-                    switch (_a.label) {
-                        case 0:
-                            s = new app_1.TestApp();
-                            mock = new mock_1.MockAgent();
-                            res = new response_1.Ok('text', {}, {});
-                            success = false;
-                            mock.__MOCK__.setReturnValue('send', future_1.pure(res));
-                            cases = [
-                                new case_1.Case(response_1.Ok, function (r) {
-                                    success = r === res;
-                                })
-                            ];
-                            s.spawn({
-                                id: 'remote',
-                                create: function (s) { return new remote_1.Remote(mock, s); }
-                            });
-                            s.spawn({
-                                id: 'client',
-                                create: function (s) {
-                                    return new actor_1.GenericImmutable(s, cases, function (that) {
-                                        var msg = new remote_1.Send(that.self(), new request_1.Get('', {}));
-                                        that.tell('remote', msg);
-                                    });
-                                }
-                            });
-                            return [4 /*yield*/, future_1.delay(function () { }, 0)];
-                        case 1:
-                            _a.sent();
-                            return [2 /*return*/, future_1.attempt(function () {
-                                    assert_1.assert(success).true();
-                                })];
-                    }
+const assert_1 = require("@quenk/test/lib/assert");
+const future_1 = require("@quenk/noni/lib/control/monad/future");
+const case_1 = require("@quenk/potoo/lib/actor/resident/case");
+const mock_1 = require("@quenk/jhr/lib/agent/mock");
+const request_1 = require("@quenk/jhr/lib/request");
+const response_1 = require("@quenk/jhr/lib/response");
+const remote_1 = require("../../../../lib/app/remote");
+const actor_1 = require("../../app/fixtures/actor");
+const app_1 = require("../../app/fixtures/app");
+describe('remote', () => {
+    describe('Remote', () => {
+        describe('api', () => {
+            it('should handle Send', () => future_1.toPromise(future_1.doFuture(function* () {
+                let s = new app_1.TestApp();
+                let mock = new mock_1.MockAgent();
+                let res = new response_1.Ok('text', {}, {});
+                let success = false;
+                mock.__MOCK__.setReturnValue('send', future_1.pure(res));
+                let cases = [
+                    new case_1.Case(response_1.Ok, (r) => {
+                        success = r === res;
+                    })
+                ];
+                s.spawn({
+                    id: 'remote',
+                    create: s => new remote_1.Remote(mock, s)
                 });
-            })); });
-            it('should handle ParSend', function () {
-                return future_1.toPromise(future_1.doFuture(function () {
-                    var s, mock, res, success, cases;
-                    return __generator(this, function (_a) {
-                        switch (_a.label) {
-                            case 0:
-                                s = new app_1.TestApp();
-                                mock = new mock_1.MockAgent();
-                                res = new response_1.Ok('text', {}, {});
-                                success = false;
-                                mock.__MOCK__.setReturnValue('send', future_1.pure(res));
-                                cases = [
-                                    new case_1.Case(remote_1.BatchResponse, function (r) {
-                                        success = r.value.every(function (r) { return r === res; });
-                                    })
-                                ];
-                                s.spawn({
-                                    id: 'remote',
-                                    create: function (s) { return new remote_1.Remote(mock, s); }
-                                });
-                                s.spawn({
-                                    id: 'client',
-                                    create: function (s) {
-                                        return new actor_1.GenericImmutable(s, cases, function (that) {
-                                            var msg = new remote_1.ParSend(that.self(), [
-                                                new request_1.Get('', {}),
-                                                new request_1.Get('', {}),
-                                                new request_1.Get('', {})
-                                            ]);
-                                            that.tell('remote', msg);
-                                        });
-                                    }
-                                });
-                                return [4 /*yield*/, future_1.delay(function () { }, 0)];
-                            case 1:
-                                _a.sent();
-                                return [2 /*return*/, future_1.attempt(function () {
-                                        assert_1.assert(success).true();
-                                    })];
-                        }
-                    });
-                }));
-            });
-            it('should handle SeqSend', function () {
-                return future_1.toPromise(future_1.doFuture(function () {
-                    var s, mock, res, success, cases;
-                    return __generator(this, function (_a) {
-                        switch (_a.label) {
-                            case 0:
-                                s = new app_1.TestApp();
-                                mock = new mock_1.MockAgent();
-                                res = new response_1.Ok('text', {}, {});
-                                success = false;
-                                mock.__MOCK__.setReturnValue('send', future_1.pure(res));
-                                cases = [
-                                    new case_1.Case(remote_1.BatchResponse, function (r) {
-                                        success = r.value.every(function (r) { return r === res; });
-                                    })
-                                ];
-                                s.spawn({
-                                    id: 'remote',
-                                    create: function (s) { return new remote_1.Remote(mock, s); }
-                                });
-                                s.spawn({
-                                    id: 'client',
-                                    create: function (s) {
-                                        return new actor_1.GenericImmutable(s, cases, function (that) {
-                                            var msg = new remote_1.SeqSend(that.self(), [
-                                                new request_1.Get('', {}),
-                                                new request_1.Get('', {}),
-                                                new request_1.Get('', {})
-                                            ]);
-                                            that.tell('remote', msg);
-                                        });
-                                    }
-                                });
-                                return [4 /*yield*/, future_1.delay(function () { }, 0)];
-                            case 1:
-                                _a.sent();
-                                return [2 /*return*/, future_1.attempt(function () {
-                                        assert_1.assert(success).true();
-                                    })];
-                        }
-                    });
-                }));
-            });
-            it('should handle transport errors', function () {
-                return future_1.toPromise(future_1.doFuture(function () {
-                    var s, mock, req, failed, cases;
-                    return __generator(this, function (_a) {
-                        switch (_a.label) {
-                            case 0:
-                                s = new app_1.TestApp();
-                                mock = new mock_1.MockAgent();
-                                req = new request_1.Get('', {});
-                                failed = false;
-                                mock.__MOCK__.setReturnValue('send', future_1.raise(new remote_1.TransportErr('client', new Error('err'))));
-                                cases = [
-                                    new case_1.Case(remote_1.TransportErr, function (_) { failed = true; })
-                                ];
-                                s.spawn({
-                                    id: 'remote',
-                                    create: function (s) { return new remote_1.Remote(mock, s); }
-                                });
-                                s.spawn({
-                                    id: 'client',
-                                    create: function (s) {
-                                        return new actor_1.GenericImmutable(s, cases, function (that) {
-                                            var msg = new remote_1.Send(that.self(), req);
-                                            that.tell('remote', msg);
-                                        });
-                                    }
-                                });
-                                return [4 /*yield*/, future_1.delay(function () { }, 0)];
-                            case 1:
-                                _a.sent();
-                                return [2 /*return*/, future_1.attempt(function () {
-                                        assert_1.assert(failed).true();
-                                    })];
-                        }
-                    });
-                }));
-            });
+                s.spawn({
+                    id: 'client',
+                    create: s => new actor_1.GenericImmutable(s, cases, that => {
+                        let msg = new remote_1.Send(that.self(), new request_1.Get('', {}));
+                        that.tell('remote', msg);
+                    })
+                });
+                yield future_1.delay(() => { }, 0);
+                return future_1.attempt(() => {
+                    assert_1.assert(success).true();
+                });
+            })));
+            it('should handle ParSend', () => future_1.toPromise(future_1.doFuture(function* () {
+                let s = new app_1.TestApp();
+                let mock = new mock_1.MockAgent();
+                let res = new response_1.Ok('text', {}, {});
+                let success = false;
+                mock.__MOCK__.setReturnValue('send', future_1.pure(res));
+                let cases = [
+                    new case_1.Case(remote_1.BatchResponse, (r) => {
+                        success = r.value.every(r => r === res);
+                    })
+                ];
+                s.spawn({
+                    id: 'remote',
+                    create: s => new remote_1.Remote(mock, s)
+                });
+                s.spawn({
+                    id: 'client',
+                    create: s => new actor_1.GenericImmutable(s, cases, that => {
+                        let msg = new remote_1.ParSend(that.self(), [
+                            new request_1.Get('', {}),
+                            new request_1.Get('', {}),
+                            new request_1.Get('', {})
+                        ]);
+                        that.tell('remote', msg);
+                    })
+                });
+                yield future_1.delay(() => { }, 0);
+                return future_1.attempt(() => {
+                    assert_1.assert(success).true();
+                });
+            })));
+            it('should handle SeqSend', () => future_1.toPromise(future_1.doFuture(function* () {
+                let s = new app_1.TestApp();
+                let mock = new mock_1.MockAgent();
+                let res = new response_1.Ok('text', {}, {});
+                let success = false;
+                mock.__MOCK__.setReturnValue('send', future_1.pure(res));
+                let cases = [
+                    new case_1.Case(remote_1.BatchResponse, (r) => {
+                        success = r.value.every(r => r === res);
+                    })
+                ];
+                s.spawn({
+                    id: 'remote',
+                    create: s => new remote_1.Remote(mock, s)
+                });
+                s.spawn({
+                    id: 'client',
+                    create: s => new actor_1.GenericImmutable(s, cases, that => {
+                        let msg = new remote_1.SeqSend(that.self(), [
+                            new request_1.Get('', {}),
+                            new request_1.Get('', {}),
+                            new request_1.Get('', {})
+                        ]);
+                        that.tell('remote', msg);
+                    })
+                });
+                yield future_1.delay(() => { }, 0);
+                return future_1.attempt(() => {
+                    assert_1.assert(success).true();
+                });
+            })));
+            it('should handle transport errors', () => future_1.toPromise(future_1.doFuture(function* () {
+                let s = new app_1.TestApp();
+                let mock = new mock_1.MockAgent();
+                let req = new request_1.Get('', {});
+                let failed = false;
+                mock.__MOCK__.setReturnValue('send', future_1.raise(new remote_1.TransportErr('client', new Error('err'))));
+                let cases = [
+                    new case_1.Case(remote_1.TransportErr, (_) => { failed = true; })
+                ];
+                s.spawn({
+                    id: 'remote',
+                    create: s => new remote_1.Remote(mock, s)
+                });
+                s.spawn({
+                    id: 'client',
+                    create: s => new actor_1.GenericImmutable(s, cases, that => {
+                        let msg = new remote_1.Send(that.self(), req);
+                        that.tell('remote', msg);
+                    })
+                });
+                yield future_1.delay(() => { }, 0);
+                return future_1.attempt(() => {
+                    assert_1.assert(failed).true();
+                });
+            })));
         });
     });
 });
 
 },{"../../../../lib/app/remote":4,"../../app/fixtures/actor":90,"../../app/fixtures/app":91,"@quenk/jhr/lib/agent/mock":8,"@quenk/jhr/lib/request":9,"@quenk/jhr/lib/response":11,"@quenk/noni/lib/control/monad/future":15,"@quenk/potoo/lib/actor/resident/case":31,"@quenk/test/lib/assert":60}],93:[function(require,module,exports){
 "use strict";
-var __extends = (this && this.__extends) || (function () {
-    var extendStatics = function (d, b) {
-        extendStatics = Object.setPrototypeOf ||
-            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
-        return extendStatics(d, b);
-    };
-    return function (d, b) {
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
-var __generator = (this && this.__generator) || function (thisArg, body) {
-    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
-    return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
-    function verb(n) { return function (v) { return step([n, v]); }; }
-    function step(op) {
-        if (f) throw new TypeError("Generator is already executing.");
-        while (_) try {
-            if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
-            if (y = 0, t) op = [op[0] & 2, t.value];
-            switch (op[0]) {
-                case 0: case 1: t = op; break;
-                case 4: _.label++; return { value: op[1], done: false };
-                case 5: _.label++; y = op[1]; op = [0]; continue;
-                case 7: op = _.ops.pop(); _.trys.pop(); continue;
-                default:
-                    if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) { _ = 0; continue; }
-                    if (op[0] === 3 && (!t || (op[1] > t[0] && op[1] < t[3]))) { _.label = op[1]; break; }
-                    if (op[0] === 6 && _.label < t[1]) { _.label = t[1]; t = op; break; }
-                    if (t && _.label < t[2]) { _.label = t[2]; _.ops.push(op); break; }
-                    if (t[2]) _.ops.pop();
-                    _.trys.pop(); continue;
-            }
-            op = body.call(thisArg, _);
-        } catch (e) { op = [6, e]; y = 0; } finally { f = t = 0; }
-        if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
-    }
-};
 Object.defineProperty(exports, "__esModule", { value: true });
-var assert_1 = require("@quenk/test/lib/assert");
-var mock_1 = require("@quenk/test/lib/mock");
-var record_1 = require("@quenk/noni/lib/data/record");
-var future_1 = require("@quenk/noni/lib/control/monad/future");
-var case_1 = require("@quenk/potoo/lib/actor/resident/case");
-var immutable_1 = require("@quenk/potoo/lib/actor/resident/immutable");
-var response_1 = require("@quenk/jhr/lib/response");
-var request_1 = require("@quenk/jhr/lib/request");
-var model_1 = require("../../../../lib/app/remote/model");
-var remote_1 = require("../../../../lib/app/remote");
-var app_1 = require("../../app/fixtures/app");
-var TestRemote = /** @class */ (function (_super) {
-    __extends(TestRemote, _super);
-    function TestRemote(system, cases) {
-        var _this = _super.call(this, system) || this;
-        _this.system = system;
-        _this.cases = cases;
-        return _this;
+const assert_1 = require("@quenk/test/lib/assert");
+const mock_1 = require("@quenk/test/lib/mock");
+const record_1 = require("@quenk/noni/lib/data/record");
+const future_1 = require("@quenk/noni/lib/control/monad/future");
+const case_1 = require("@quenk/potoo/lib/actor/resident/case");
+const immutable_1 = require("@quenk/potoo/lib/actor/resident/immutable");
+const response_1 = require("@quenk/jhr/lib/response");
+const request_1 = require("@quenk/jhr/lib/request");
+const model_1 = require("../../../../lib/app/remote/model");
+const remote_1 = require("../../../../lib/app/remote");
+const app_1 = require("../../app/fixtures/app");
+class TestRemote extends immutable_1.Immutable {
+    constructor(system, cases) {
+        super(system);
+        this.system = system;
+        this.cases = cases;
     }
-    TestRemote.prototype.receive = function () {
+    receive() {
         return this.cases;
-    };
-    TestRemote.prototype.run = function () { };
-    return TestRemote;
-}(immutable_1.Immutable));
-var MockHandler = /** @class */ (function () {
-    function MockHandler() {
+    }
+    run() { }
+}
+class MockHandler {
+    constructor() {
         this.MOCK = new mock_1.Mock();
     }
-    MockHandler.prototype.onError = function (e) {
+    onError(e) {
         this.MOCK.invoke('onError', [e], undefined);
-    };
-    MockHandler.prototype.onClientError = function (r) {
+    }
+    onClientError(r) {
         this.MOCK.invoke('onClientError', [r], undefined);
-    };
-    MockHandler.prototype.onServerError = function (r) {
+    }
+    onServerError(r) {
         this.MOCK.invoke('onServerError', [r], undefined);
-    };
-    MockHandler.prototype.onComplete = function (r) {
+    }
+    onComplete(r) {
         this.MOCK.invoke('onComplete', [r], undefined);
-    };
-    return MockHandler;
-}());
-describe('model', function () {
-    describe('RemoteModel', function () {
-        describe('create', function () {
-            it('should provide the created id', function () {
-                return future_1.toPromise(future_1.doFuture(function () {
-                    var app, handler, model, response, request, remote, payload, id;
-                    return __generator(this, function (_a) {
-                        switch (_a.label) {
-                            case 0:
-                                app = new app_1.TestApp();
-                                handler = new MockHandler();
-                                model = new model_1.RemoteModel('remote', '/', function (create) {
-                                    var id = 'callback';
-                                    app.spawn({ id: id, create: create });
-                                    return id;
-                                }, handler);
-                                response = new response_1.Created({ data: { id: 1 } }, {}, {});
-                                remote = new TestRemote(app, [
-                                    new case_1.Case(remote_1.Send, function (s) {
-                                        request = s.request;
-                                        remote.tell(s.client, response);
-                                    })
-                                ]);
-                                app.spawn({ id: 'remote', create: function () { return remote; } });
-                                payload = { name: 'Dennis Hall' };
-                                return [4 /*yield*/, model.create(payload)];
-                            case 1:
-                                id = _a.sent();
-                                return [2 /*return*/, future_1.attempt(function () {
-                                        assert_1.assert(request).instance.of(request_1.Post);
-                                        assert_1.assert(request.body).equate(payload);
-                                        assert_1.assert(id).equal(1);
-                                        assert_1.assert(handler.MOCK.getCalledList())
-                                            .equate(['onComplete']);
-                                    })];
-                        }
-                    });
-                }));
-            });
+    }
+}
+describe('model', () => {
+    describe('RemoteModel', () => {
+        describe('create', () => {
+            it('should provide the created id', () => future_1.toPromise(future_1.doFuture(function* () {
+                let app = new app_1.TestApp();
+                let handler = new MockHandler();
+                let model = new model_1.RemoteModel('remote', '/', (create) => {
+                    let id = 'callback';
+                    app.spawn({ id, create });
+                    return id;
+                }, handler);
+                let response = new response_1.Created({ data: { id: 1 } }, {}, {});
+                let request;
+                let remote = new TestRemote(app, [
+                    new case_1.Case(remote_1.Send, s => {
+                        request = s.request;
+                        remote.tell(s.client, response);
+                    })
+                ]);
+                app.spawn({ id: 'remote', create: () => remote });
+                let payload = { name: 'Dennis Hall' };
+                let id = yield model.create(payload);
+                return future_1.attempt(() => {
+                    assert_1.assert(request).instance.of(request_1.Post);
+                    assert_1.assert(request.body).equate(payload);
+                    assert_1.assert(id).equal(1);
+                    assert_1.assert(handler.MOCK.getCalledList())
+                        .equate(['onComplete']);
+                });
+            })));
         });
-        describe('search', function () {
-            it('should provide the list of results', function () {
-                return future_1.toPromise(future_1.doFuture(function () {
-                    var app, handler, model, request, responseBody, response, remote, qry, results;
-                    return __generator(this, function (_a) {
-                        switch (_a.label) {
-                            case 0:
-                                app = new app_1.TestApp();
-                                handler = new MockHandler();
-                                model = new model_1.RemoteModel('remote', '/', function (create) {
-                                    var id = 'callback';
-                                    app.spawn({ id: id, create: create });
-                                    return id;
-                                }, handler);
-                                responseBody = {
-                                    data: [
-                                        { name: 'Tony Hall' },
-                                        { name: 'Dennis Hall' }
-                                    ]
-                                };
-                                response = new response_1.Ok(responseBody, {}, {});
-                                remote = new TestRemote(app, [
-                                    new case_1.Case(remote_1.Send, function (s) {
-                                        request = s.request;
-                                        remote.tell(s.client, response);
-                                    })
-                                ]);
-                                app.spawn({ id: 'remote', create: function () { return remote; } });
-                                qry = { limit: 10, filter: 'name:Hall' };
-                                return [4 /*yield*/, model.search(qry)];
-                            case 1:
-                                results = _a.sent();
-                                return [2 /*return*/, future_1.attempt(function () {
-                                        assert_1.assert(request).instance.of(request_1.Get);
-                                        assert_1.assert(request.params).equate(qry);
-                                        assert_1.assert(handler.MOCK.getCalledList())
-                                            .equate(['onComplete']);
-                                        assert_1.assert(handler.MOCK.wasCalledWith('onComplete', [response]));
-                                        assert_1.assert(results).equate(responseBody.data);
-                                    })];
-                        }
-                    });
-                }));
-            });
+        describe('search', () => {
+            it('should provide the list of results', () => future_1.toPromise(future_1.doFuture(function* () {
+                let app = new app_1.TestApp();
+                let handler = new MockHandler();
+                let model = new model_1.RemoteModel('remote', '/', (create) => {
+                    let id = 'callback';
+                    app.spawn({ id, create });
+                    return id;
+                }, handler);
+                let request;
+                let responseBody = {
+                    data: [
+                        { name: 'Tony Hall' },
+                        { name: 'Dennis Hall' }
+                    ]
+                };
+                let response = new response_1.Ok(responseBody, {}, {});
+                let remote = new TestRemote(app, [
+                    new case_1.Case(remote_1.Send, s => {
+                        request = s.request;
+                        remote.tell(s.client, response);
+                    })
+                ]);
+                app.spawn({ id: 'remote', create: () => remote });
+                let qry = { limit: 10, filter: 'name:Hall' };
+                let results = yield model.search(qry);
+                return future_1.attempt(() => {
+                    assert_1.assert(request).instance.of(request_1.Get);
+                    assert_1.assert(request.params).equate(qry);
+                    assert_1.assert(handler.MOCK.getCalledList())
+                        .equate(['onComplete']);
+                    assert_1.assert(handler.MOCK.wasCalledWith('onComplete', [response]));
+                    assert_1.assert(results).equate(responseBody.data);
+                });
+            })));
         });
-        describe('update', function () {
-            it('should work', function () {
-                return future_1.toPromise(future_1.doFuture(function () {
-                    var app, handler, model, request, response, remote, changes, result;
-                    return __generator(this, function (_a) {
-                        switch (_a.label) {
-                            case 0:
-                                app = new app_1.TestApp();
-                                handler = new MockHandler();
-                                model = new model_1.RemoteModel('remote', '/{id}', function (create) {
-                                    var id = 'callback';
-                                    app.spawn({ id: id, create: create });
-                                    return id;
-                                }, handler);
-                                response = new response_1.Ok({}, {}, {});
-                                remote = new TestRemote(app, [
-                                    new case_1.Case(remote_1.Send, function (s) {
-                                        request = s.request;
-                                        remote.tell(s.client, response);
-                                    })
-                                ]);
-                                app.spawn({ id: 'remote', create: function () { return remote; } });
-                                changes = { active: true };
-                                return [4 /*yield*/, model.update(1, changes)];
-                            case 1:
-                                result = _a.sent();
-                                return [2 /*return*/, future_1.attempt(function () {
-                                        assert_1.assert(request).instance.of(request_1.Patch);
-                                        assert_1.assert(request.body).equate(changes);
-                                        assert_1.assert(handler.MOCK.getCalledList())
-                                            .equate(['onComplete']);
-                                        assert_1.assert(handler.MOCK.wasCalledWith('onComplete', [response]));
-                                        assert_1.assert(result).true();
-                                    })];
-                        }
-                    });
-                }));
-            });
+        describe('update', () => {
+            it('should work', () => future_1.toPromise(future_1.doFuture(function* () {
+                let app = new app_1.TestApp();
+                let handler = new MockHandler();
+                let model = new model_1.RemoteModel('remote', '/{id}', (create) => {
+                    let id = 'callback';
+                    app.spawn({ id, create });
+                    return id;
+                }, handler);
+                let request;
+                let response = new response_1.Ok({}, {}, {});
+                let remote = new TestRemote(app, [
+                    new case_1.Case(remote_1.Send, s => {
+                        request = s.request;
+                        remote.tell(s.client, response);
+                    })
+                ]);
+                app.spawn({ id: 'remote', create: () => remote });
+                let changes = { active: true };
+                let result = yield model.update(1, changes);
+                return future_1.attempt(() => {
+                    assert_1.assert(request).instance.of(request_1.Patch);
+                    assert_1.assert(request.body).equate(changes);
+                    assert_1.assert(handler.MOCK.getCalledList())
+                        .equate(['onComplete']);
+                    assert_1.assert(handler.MOCK.wasCalledWith('onComplete', [response]));
+                    assert_1.assert(result).true();
+                });
+            })));
         });
-        describe('get', function () {
-            it('should provide the target record', function () {
-                return future_1.toPromise(future_1.doFuture(function () {
-                    var app, handler, model, request, response, remote, mtarget;
-                    return __generator(this, function (_a) {
-                        switch (_a.label) {
-                            case 0:
-                                app = new app_1.TestApp();
-                                handler = new MockHandler();
-                                model = new model_1.RemoteModel('remote', '/{id}', function (create) {
-                                    var id = 'callback';
-                                    app.spawn({ id: id, create: create });
-                                    return id;
-                                }, handler);
-                                response = new response_1.Ok({ data: { name: 'Dennis Hall' } }, {}, {});
-                                remote = new TestRemote(app, [
-                                    new case_1.Case(remote_1.Send, function (s) {
-                                        request = s.request;
-                                        remote.tell(s.client, response);
-                                    })
-                                ]);
-                                app.spawn({ id: 'remote', create: function () { return remote; } });
-                                return [4 /*yield*/, model.get(1)];
-                            case 1:
-                                mtarget = _a.sent();
-                                return [2 /*return*/, future_1.attempt(function () {
-                                        assert_1.assert(request).instance.of(request_1.Get);
-                                        assert_1.assert(request.path).equal('/1');
-                                        assert_1.assert(handler.MOCK.getCalledList())
-                                            .equate(['onComplete']);
-                                        assert_1.assert(handler.MOCK.wasCalledWith('onComplete', [response]));
-                                        assert_1.assert(mtarget.get()).equate({ name: 'Dennis Hall' });
-                                    })];
-                        }
-                    });
-                }));
-            });
-            it('should return Nothing if not found', function () {
-                return future_1.toPromise(future_1.doFuture(function () {
-                    var app, handler, model, response, remote, mresult;
-                    return __generator(this, function (_a) {
-                        switch (_a.label) {
-                            case 0:
-                                app = new app_1.TestApp();
-                                handler = new MockHandler();
-                                model = new model_1.RemoteModel('remote', '/{id}', function (create) {
-                                    var id = 'callback';
-                                    app.spawn({ id: id, create: create });
-                                    return id;
-                                }, handler);
-                                response = new response_1.NotFound({}, {}, {});
-                                remote = new TestRemote(app, [
-                                    new case_1.Case(remote_1.Send, function (s) {
-                                        remote.tell(s.client, response);
-                                    })
-                                ]);
-                                app.spawn({ id: 'remote', create: function () { return remote; } });
-                                return [4 /*yield*/, model.get(1)];
-                            case 1:
-                                mresult = _a.sent();
-                                return [2 /*return*/, future_1.attempt(function () {
-                                        assert_1.assert(handler.MOCK.getCalledList())
-                                            .equate([]);
-                                        assert_1.assert(mresult.isNothing()).true();
-                                    })];
-                        }
-                    });
-                }));
-            });
+        describe('get', () => {
+            it('should provide the target record', () => future_1.toPromise(future_1.doFuture(function* () {
+                let app = new app_1.TestApp();
+                let handler = new MockHandler();
+                let model = new model_1.RemoteModel('remote', '/{id}', (create) => {
+                    let id = 'callback';
+                    app.spawn({ id, create });
+                    return id;
+                }, handler);
+                let request;
+                let response = new response_1.Ok({ data: { name: 'Dennis Hall' } }, {}, {});
+                let remote = new TestRemote(app, [
+                    new case_1.Case(remote_1.Send, s => {
+                        request = s.request;
+                        remote.tell(s.client, response);
+                    })
+                ]);
+                app.spawn({ id: 'remote', create: () => remote });
+                let mtarget = yield model.get(1);
+                return future_1.attempt(() => {
+                    assert_1.assert(request).instance.of(request_1.Get);
+                    assert_1.assert(request.path).equal('/1');
+                    assert_1.assert(handler.MOCK.getCalledList())
+                        .equate(['onComplete']);
+                    assert_1.assert(handler.MOCK.wasCalledWith('onComplete', [response]));
+                    assert_1.assert(mtarget.get()).equate({ name: 'Dennis Hall' });
+                });
+            })));
+            it('should return Nothing if not found', () => future_1.toPromise(future_1.doFuture(function* () {
+                let app = new app_1.TestApp();
+                let handler = new MockHandler();
+                let model = new model_1.RemoteModel('remote', '/{id}', (create) => {
+                    let id = 'callback';
+                    app.spawn({ id, create });
+                    return id;
+                }, handler);
+                let response = new response_1.NotFound({}, {}, {});
+                let remote = new TestRemote(app, [
+                    new case_1.Case(remote_1.Send, s => {
+                        remote.tell(s.client, response);
+                    })
+                ]);
+                app.spawn({ id: 'remote', create: () => remote });
+                let mresult = yield model.get(1);
+                return future_1.attempt(() => {
+                    assert_1.assert(handler.MOCK.getCalledList())
+                        .equate([]);
+                    assert_1.assert(mresult.isNothing()).true();
+                });
+            })));
         });
-        describe('remove', function () {
-            it('should remove the target record', function () {
-                return future_1.toPromise(future_1.doFuture(function () {
-                    var app, handler, model, request, response, remote;
-                    return __generator(this, function (_a) {
-                        switch (_a.label) {
-                            case 0:
-                                app = new app_1.TestApp();
-                                handler = new MockHandler();
-                                model = new model_1.RemoteModel('remote', '/{id}', function (create) {
-                                    var id = 'callback';
-                                    app.spawn({ id: id, create: create });
-                                    return id;
-                                }, handler);
-                                response = new response_1.Ok({}, {}, {});
-                                remote = new TestRemote(app, [
-                                    new case_1.Case(remote_1.Send, function (s) {
-                                        request = s.request;
-                                        remote.tell(s.client, response);
-                                    })
-                                ]);
-                                app.spawn({ id: 'remote', create: function () { return remote; } });
-                                return [4 /*yield*/, model.remove(1)];
-                            case 1:
-                                _a.sent();
-                                return [2 /*return*/, future_1.attempt(function () {
-                                        assert_1.assert(request).instance.of(request_1.Delete);
-                                        assert_1.assert(request.path).equal('/1');
-                                        assert_1.assert(handler.MOCK.getCalledList())
-                                            .equate(['onComplete']);
-                                        assert_1.assert(handler.MOCK.wasCalledWith('onComplete', [response]));
-                                    })];
-                        }
-                    });
-                }));
-            });
+        describe('remove', () => {
+            it('should remove the target record', () => future_1.toPromise(future_1.doFuture(function* () {
+                let app = new app_1.TestApp();
+                let handler = new MockHandler();
+                let model = new model_1.RemoteModel('remote', '/{id}', (create) => {
+                    let id = 'callback';
+                    app.spawn({ id, create });
+                    return id;
+                }, handler);
+                let request;
+                let response = new response_1.Ok({}, {}, {});
+                let remote = new TestRemote(app, [
+                    new case_1.Case(remote_1.Send, s => {
+                        request = s.request;
+                        remote.tell(s.client, response);
+                    })
+                ]);
+                app.spawn({ id: 'remote', create: () => remote });
+                yield model.remove(1);
+                return future_1.attempt(() => {
+                    assert_1.assert(request).instance.of(request_1.Delete);
+                    assert_1.assert(request.path).equal('/1');
+                    assert_1.assert(handler.MOCK.getCalledList())
+                        .equate(['onComplete']);
+                    assert_1.assert(handler.MOCK.wasCalledWith('onComplete', [response]));
+                });
+            })));
         });
-        describe('handlers', function () {
-            it('should call the correct hooks', function () {
-                var methods = [
+        describe('handlers', () => {
+            it('should call the correct hooks', () => {
+                let methods = [
                     ['create', [{}]],
                     ['search', [{}]],
                     ['update', [1, {}]],
                     ['get', [1]],
                     ['remove', [1]]
                 ];
-                var codes = {
+                let codes = {
                     400: ['onClientError'],
                     401: ['onClientError'],
                     403: ['onClientError'],
@@ -9631,42 +9198,32 @@ describe('model', function () {
                     409: ['onClientError'],
                     500: ['onServerError']
                 };
-                var work = methods.map(function (method) {
-                    return record_1.mapTo(codes, function (expected, code) { return future_1.doFuture(function () {
-                        var app, handler, model, response, remote, ft;
-                        return __generator(this, function (_a) {
-                            switch (_a.label) {
-                                case 0:
-                                    app = new app_1.TestApp();
-                                    handler = new MockHandler();
-                                    model = new model_1.RemoteModel('remote', '/', function (create) {
-                                        var id = 'callback';
-                                        app.spawn({ id: id, create: create });
-                                        return id;
-                                    }, handler);
-                                    response = new response_1.GenericResponse(Number(code), {}, {}, {});
-                                    remote = new TestRemote(app, [
-                                        new case_1.Case(remote_1.Send, function (s) {
-                                            remote.tell(s.client, response);
-                                        })
-                                    ]);
-                                    app.spawn({ id: 'remote', create: function () { return remote; } });
-                                    ft = model[method[0]].call(model, method[1]);
-                                    return [4 /*yield*/, ft.catch(function () { return future_1.pure(undefined); })];
-                                case 1:
-                                    _a.sent();
-                                    return [2 /*return*/, future_1.attempt(function () {
-                                            if ((code === '404') && (method[0] === 'get'))
-                                                assert_1.assert(handler.MOCK.getCalledList())
-                                                    .equate([]);
-                                            else
-                                                assert_1.assert(handler.MOCK.getCalledList())
-                                                    .equate(expected);
-                                        })];
-                            }
-                        });
-                    }); });
-                });
+                let work = methods.map(method => record_1.mapTo(codes, (expected, code) => future_1.doFuture(function* () {
+                    let app = new app_1.TestApp();
+                    let handler = new MockHandler();
+                    let model = new model_1.RemoteModel('remote', '/', (create) => {
+                        let id = 'callback';
+                        app.spawn({ id, create });
+                        return id;
+                    }, handler);
+                    let response = new response_1.GenericResponse(Number(code), {}, {}, {});
+                    let remote = new TestRemote(app, [
+                        new case_1.Case(remote_1.Send, s => {
+                            remote.tell(s.client, response);
+                        })
+                    ]);
+                    app.spawn({ id: 'remote', create: () => remote });
+                    let ft = model[method[0]].call(model, method[1]);
+                    yield ft.catch(() => future_1.pure(undefined));
+                    return future_1.attempt(() => {
+                        if ((code === '404') && (method[0] === 'get'))
+                            assert_1.assert(handler.MOCK.getCalledList())
+                                .equate([]);
+                        else
+                            assert_1.assert(handler.MOCK.getCalledList())
+                                .equate(expected);
+                    });
+                })));
                 return future_1.toPromise(future_1.batch(work));
             });
         });
@@ -9675,670 +9232,425 @@ describe('model', function () {
 
 },{"../../../../lib/app/remote":4,"../../../../lib/app/remote/model":5,"../../app/fixtures/app":91,"@quenk/jhr/lib/request":9,"@quenk/jhr/lib/response":11,"@quenk/noni/lib/control/monad/future":15,"@quenk/noni/lib/data/record":22,"@quenk/potoo/lib/actor/resident/case":31,"@quenk/potoo/lib/actor/resident/immutable":33,"@quenk/test/lib/assert":60,"@quenk/test/lib/mock":61}],94:[function(require,module,exports){
 "use strict";
-var __generator = (this && this.__generator) || function (thisArg, body) {
-    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
-    return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
-    function verb(n) { return function (v) { return step([n, v]); }; }
-    function step(op) {
-        if (f) throw new TypeError("Generator is already executing.");
-        while (_) try {
-            if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
-            if (y = 0, t) op = [op[0] & 2, t.value];
-            switch (op[0]) {
-                case 0: case 1: t = op; break;
-                case 4: _.label++; return { value: op[1], done: false };
-                case 5: _.label++; y = op[1]; op = [0]; continue;
-                case 7: op = _.ops.pop(); _.trys.pop(); continue;
-                default:
-                    if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) { _ = 0; continue; }
-                    if (op[0] === 3 && (!t || (op[1] > t[0] && op[1] < t[3]))) { _.label = op[1]; break; }
-                    if (op[0] === 6 && _.label < t[1]) { _.label = t[1]; t = op; break; }
-                    if (t && _.label < t[2]) { _.label = t[2]; _.ops.push(op); break; }
-                    if (t[2]) _.ops.pop();
-                    _.trys.pop(); continue;
-            }
-            op = body.call(thisArg, _);
-        } catch (e) { op = [6, e]; y = 0; } finally { f = t = 0; }
-        if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
-    }
-};
 Object.defineProperty(exports, "__esModule", { value: true });
-var assert_1 = require("@quenk/test/lib/assert");
-var mock_1 = require("@quenk/test/lib/mock");
-var future_1 = require("@quenk/noni/lib/control/monad/future");
-var case_1 = require("@quenk/potoo/lib/actor/resident/case");
-var mock_2 = require("@quenk/jhr/lib/agent/mock");
-var request_1 = require("@quenk/jhr/lib/request");
-var response_1 = require("@quenk/jhr/lib/response");
-var observer_1 = require("../../../../lib/app/remote/observer");
-var actor_1 = require("../../app/fixtures/actor");
-var app_1 = require("../../app/fixtures/app");
-var MockRemoteObserver = /** @class */ (function () {
-    function MockRemoteObserver() {
+const assert_1 = require("@quenk/test/lib/assert");
+const mock_1 = require("@quenk/test/lib/mock");
+const future_1 = require("@quenk/noni/lib/control/monad/future");
+const case_1 = require("@quenk/potoo/lib/actor/resident/case");
+const mock_2 = require("@quenk/jhr/lib/agent/mock");
+const request_1 = require("@quenk/jhr/lib/request");
+const response_1 = require("@quenk/jhr/lib/response");
+const observer_1 = require("../../../../lib/app/remote/observer");
+const actor_1 = require("../../app/fixtures/actor");
+const app_1 = require("../../app/fixtures/app");
+class MockRemoteObserver {
+    constructor() {
         this.__mock__ = new mock_1.Mock();
     }
-    MockRemoteObserver.prototype.onStart = function (req) {
+    onStart(req) {
         return this.__mock__.invoke('onStart', [req], undefined);
-    };
-    MockRemoteObserver.prototype.onError = function (e) {
+    }
+    onError(e) {
         return this.__mock__.invoke('onError', [e], undefined);
-    };
-    MockRemoteObserver.prototype.onClientError = function (e) {
+    }
+    onClientError(e) {
         return this.__mock__.invoke('onClientError', [e], undefined);
-    };
-    MockRemoteObserver.prototype.onServerError = function (e) {
+    }
+    onServerError(e) {
         return this.__mock__.invoke('onServerError', [e], undefined);
-    };
-    MockRemoteObserver.prototype.onComplete = function (e) {
+    }
+    onComplete(e) {
         return this.__mock__.invoke('onComplete', [e], undefined);
-    };
-    MockRemoteObserver.prototype.onFinish = function () {
+    }
+    onFinish() {
         return this.__mock__.invoke('onFinish', [], undefined);
-    };
-    return MockRemoteObserver;
-}());
-describe('observable', function () {
-    describe('RemoteObserver', function () {
-        describe('api', function () {
-            it('should handle Send', function () { return future_1.toPromise(future_1.doFuture(function () {
-                var s, agent, observer, res, success, cases;
-                return __generator(this, function (_a) {
-                    switch (_a.label) {
-                        case 0:
-                            s = new app_1.TestApp({ log: { logger: console, level: 8 } });
-                            agent = new mock_2.MockAgent();
-                            observer = new MockRemoteObserver();
-                            res = new response_1.Ok('text', {}, {});
-                            success = false;
-                            agent.__MOCK__.setReturnValue('send', future_1.pure(res));
-                            cases = [
-                                new case_1.Case(response_1.Ok, function (r) {
-                                    success = r === res;
-                                })
-                            ];
-                            s.spawn({
-                                id: 'remote',
-                                create: function (s) {
-                                    return new observer_1.RemoteObserver(agent, observer, s);
-                                }
-                            });
-                            s.spawn({
-                                id: 'client',
-                                create: function (s) {
-                                    return new actor_1.GenericImmutable(s, cases, function (that) {
-                                        var msg = new observer_1.Send(that.self(), new request_1.Get('', {}));
-                                        that.tell('remote', msg);
-                                    });
-                                }
-                            });
-                            return [4 /*yield*/, future_1.delay(function () { }, 0)];
-                        case 1:
-                            _a.sent();
-                            return [2 /*return*/, future_1.attempt(function () {
-                                    assert_1.assert(success).true();
-                                    assert_1.assert(observer.__mock__.getCalledList()).equate([
-                                        'onStart',
-                                        'onComplete',
-                                        'onFinish'
-                                    ]);
-                                })];
-                    }
+    }
+}
+describe('observable', () => {
+    describe('RemoteObserver', () => {
+        describe('api', () => {
+            it('should handle Send', () => future_1.toPromise(future_1.doFuture(function* () {
+                let s = new app_1.TestApp({ log: { logger: console, level: 8 } });
+                let agent = new mock_2.MockAgent();
+                let observer = new MockRemoteObserver();
+                let res = new response_1.Ok('text', {}, {});
+                let success = false;
+                agent.__MOCK__.setReturnValue('send', future_1.pure(res));
+                let cases = [
+                    new case_1.Case(response_1.Ok, (r) => {
+                        success = r === res;
+                    })
+                ];
+                s.spawn({
+                    id: 'remote',
+                    create: s => new observer_1.RemoteObserver(agent, observer, s)
                 });
-            })); });
-            it('should handle ParSend', function () {
-                return future_1.toPromise(future_1.doFuture(function () {
-                    var s, agent, observer, res, success, cases;
-                    return __generator(this, function (_a) {
-                        switch (_a.label) {
-                            case 0:
-                                s = new app_1.TestApp();
-                                agent = new mock_2.MockAgent();
-                                observer = new MockRemoteObserver();
-                                res = new response_1.Ok('text', {}, {});
-                                success = false;
-                                agent.__MOCK__.setReturnValue('send', future_1.pure(res));
-                                cases = [
-                                    new case_1.Case(observer_1.BatchResponse, function (r) {
-                                        success = r.value.every(function (r) { return r === res; });
-                                    })
-                                ];
-                                s.spawn({
-                                    id: 'remote',
-                                    create: function (s) {
-                                        return new observer_1.RemoteObserver(agent, observer, s);
-                                    }
-                                });
-                                s.spawn({
-                                    id: 'client',
-                                    create: function (s) {
-                                        return new actor_1.GenericImmutable(s, cases, function (that) {
-                                            var msg = new observer_1.ParSend(that.self(), [
-                                                new request_1.Get('', {}),
-                                                new request_1.Get('', {}),
-                                                new request_1.Get('', {})
-                                            ]);
-                                            that.tell('remote', msg);
-                                        });
-                                    }
-                                });
-                                return [4 /*yield*/, future_1.delay(function () { }, 0)];
-                            case 1:
-                                _a.sent();
-                                return [2 /*return*/, future_1.attempt(function () {
-                                        assert_1.assert(success).true();
-                                        assert_1.assert(observer.__mock__.getCalledList()).equate([
-                                            'onStart',
-                                            'onComplete',
-                                            'onFinish'
-                                        ]);
-                                    })];
-                        }
-                    });
-                }));
-            });
-            it('should handle SeqSend', function () {
-                return future_1.toPromise(future_1.doFuture(function () {
-                    var s, agent, observer, res, success, cases;
-                    return __generator(this, function (_a) {
-                        switch (_a.label) {
-                            case 0:
-                                s = new app_1.TestApp();
-                                agent = new mock_2.MockAgent();
-                                observer = new MockRemoteObserver();
-                                res = new response_1.Ok('text', {}, {});
-                                success = false;
-                                agent.__MOCK__.setReturnValue('send', future_1.pure(res));
-                                cases = [
-                                    new case_1.Case(observer_1.BatchResponse, function (r) {
-                                        success = r.value.every(function (r) { return r === res; });
-                                    })
-                                ];
-                                s.spawn({
-                                    id: 'remote',
-                                    create: function (s) {
-                                        return new observer_1.RemoteObserver(agent, observer, s);
-                                    }
-                                });
-                                s.spawn({
-                                    id: 'client',
-                                    create: function (s) {
-                                        return new actor_1.GenericImmutable(s, cases, function (that) {
-                                            var msg = new observer_1.SeqSend(that.self(), [
-                                                new request_1.Get('', {}),
-                                                new request_1.Get('', {}),
-                                                new request_1.Get('', {})
-                                            ]);
-                                            that.tell('remote', msg);
-                                        });
-                                    }
-                                });
-                                return [4 /*yield*/, future_1.delay(function () { }, 0)];
-                            case 1:
-                                _a.sent();
-                                return [2 /*return*/, future_1.attempt(function () {
-                                        assert_1.assert(success).true();
-                                        assert_1.assert(observer.__mock__.getCalledList()).equate([
-                                            'onStart',
-                                            'onComplete',
-                                            'onFinish'
-                                        ]);
-                                    })];
-                        }
-                    });
-                }));
-            });
-            it('should handle transport errors', function () {
-                return future_1.toPromise(future_1.doFuture(function () {
-                    var s, agent, observer, req, failed, cases;
-                    return __generator(this, function (_a) {
-                        switch (_a.label) {
-                            case 0:
-                                s = new app_1.TestApp();
-                                agent = new mock_2.MockAgent();
-                                observer = new MockRemoteObserver();
-                                req = new request_1.Get('', {});
-                                failed = false;
-                                agent.__MOCK__.setReturnValue('send', future_1.raise(new observer_1.TransportErr('client', new Error('err'))));
-                                cases = [
-                                    new case_1.Case(observer_1.TransportErr, function (_) { failed = true; })
-                                ];
-                                s.spawn({
-                                    id: 'remote',
-                                    create: function (s) {
-                                        return new observer_1.RemoteObserver(agent, observer, s);
-                                    }
-                                });
-                                s.spawn({
-                                    id: 'client',
-                                    create: function (s) {
-                                        return new actor_1.GenericImmutable(s, cases, function (that) {
-                                            var msg = new observer_1.Send(that.self(), req);
-                                            that.tell('remote', msg);
-                                        });
-                                    }
-                                });
-                                return [4 /*yield*/, future_1.delay(function () { }, 0)];
-                            case 1:
-                                _a.sent();
-                                return [2 /*return*/, future_1.attempt(function () {
-                                        assert_1.assert(failed).true();
-                                        assert_1.assert(observer.__mock__.getCalledList()).equate([
-                                            'onStart',
-                                            'onError',
-                                            'onFinish'
-                                        ]);
-                                    })];
-                        }
-                    });
-                }));
-            });
-            it('should handle client errors', function () {
-                return future_1.toPromise(future_1.doFuture(function () {
-                    var s, agent, observer, req;
-                    return __generator(this, function (_a) {
-                        switch (_a.label) {
-                            case 0:
-                                s = new app_1.TestApp();
-                                agent = new mock_2.MockAgent();
-                                observer = new MockRemoteObserver();
-                                req = new request_1.Get('', {});
-                                agent.__MOCK__.setReturnValue('send', future_1.pure(new response_1.BadRequest({}, {}, {})));
-                                s.spawn({
-                                    id: 'remote',
-                                    create: function (s) {
-                                        return new observer_1.RemoteObserver(agent, observer, s);
-                                    }
-                                });
-                                s.spawn({
-                                    id: 'client',
-                                    create: function (s) {
-                                        return new actor_1.GenericImmutable(s, [], function (that) {
-                                            var msg = new observer_1.Send(that.self(), req);
-                                            that.tell('remote', msg);
-                                        });
-                                    }
-                                });
-                                return [4 /*yield*/, future_1.delay(function () { }, 0)];
-                            case 1:
-                                _a.sent();
-                                return [2 /*return*/, future_1.attempt(function () {
-                                        assert_1.assert(observer.__mock__.getCalledList()).equate([
-                                            'onStart',
-                                            'onClientError',
-                                            'onFinish'
-                                        ]);
-                                    })];
-                        }
-                    });
-                }));
-            });
-            it('should handle server errors', function () {
-                return future_1.toPromise(future_1.doFuture(function () {
-                    var s, agent, observer, req;
-                    return __generator(this, function (_a) {
-                        switch (_a.label) {
-                            case 0:
-                                s = new app_1.TestApp();
-                                agent = new mock_2.MockAgent();
-                                observer = new MockRemoteObserver();
-                                req = new request_1.Get('', {});
-                                agent.__MOCK__.setReturnValue('send', future_1.pure(new response_1.InternalServerError({}, {}, {})));
-                                s.spawn({
-                                    id: 'remote',
-                                    create: function (s) {
-                                        return new observer_1.RemoteObserver(agent, observer, s);
-                                    }
-                                });
-                                s.spawn({
-                                    id: 'client',
-                                    create: function (s) {
-                                        return new actor_1.GenericImmutable(s, [], function (that) {
-                                            var msg = new observer_1.Send(that.self(), req);
-                                            that.tell('remote', msg);
-                                        });
-                                    }
-                                });
-                                return [4 /*yield*/, future_1.delay(function () { }, 0)];
-                            case 1:
-                                _a.sent();
-                                return [2 /*return*/, future_1.attempt(function () {
-                                        assert_1.assert(observer.__mock__.getCalledList()).equate([
-                                            'onStart',
-                                            'onServerError',
-                                            'onFinish'
-                                        ]);
-                                    })];
-                        }
-                    });
-                }));
-            });
+                s.spawn({
+                    id: 'client',
+                    create: s => new actor_1.GenericImmutable(s, cases, that => {
+                        let msg = new observer_1.Send(that.self(), new request_1.Get('', {}));
+                        that.tell('remote', msg);
+                    })
+                });
+                yield future_1.delay(() => { }, 0);
+                return future_1.attempt(() => {
+                    assert_1.assert(success).true();
+                    assert_1.assert(observer.__mock__.getCalledList()).equate([
+                        'onStart',
+                        'onComplete',
+                        'onFinish'
+                    ]);
+                });
+            })));
+            it('should handle ParSend', () => future_1.toPromise(future_1.doFuture(function* () {
+                let s = new app_1.TestApp();
+                let agent = new mock_2.MockAgent();
+                let observer = new MockRemoteObserver();
+                let res = new response_1.Ok('text', {}, {});
+                let success = false;
+                agent.__MOCK__.setReturnValue('send', future_1.pure(res));
+                let cases = [
+                    new case_1.Case(observer_1.BatchResponse, (r) => {
+                        success = r.value.every(r => r === res);
+                    })
+                ];
+                s.spawn({
+                    id: 'remote',
+                    create: s => new observer_1.RemoteObserver(agent, observer, s)
+                });
+                s.spawn({
+                    id: 'client',
+                    create: s => new actor_1.GenericImmutable(s, cases, that => {
+                        let msg = new observer_1.ParSend(that.self(), [
+                            new request_1.Get('', {}),
+                            new request_1.Get('', {}),
+                            new request_1.Get('', {})
+                        ]);
+                        that.tell('remote', msg);
+                    })
+                });
+                yield future_1.delay(() => { }, 0);
+                return future_1.attempt(() => {
+                    assert_1.assert(success).true();
+                    assert_1.assert(observer.__mock__.getCalledList()).equate([
+                        'onStart',
+                        'onComplete',
+                        'onFinish'
+                    ]);
+                });
+            })));
+            it('should handle SeqSend', () => future_1.toPromise(future_1.doFuture(function* () {
+                let s = new app_1.TestApp();
+                let agent = new mock_2.MockAgent();
+                let observer = new MockRemoteObserver();
+                let res = new response_1.Ok('text', {}, {});
+                let success = false;
+                agent.__MOCK__.setReturnValue('send', future_1.pure(res));
+                let cases = [
+                    new case_1.Case(observer_1.BatchResponse, (r) => {
+                        success = r.value.every(r => r === res);
+                    })
+                ];
+                s.spawn({
+                    id: 'remote',
+                    create: s => new observer_1.RemoteObserver(agent, observer, s)
+                });
+                s.spawn({
+                    id: 'client',
+                    create: s => new actor_1.GenericImmutable(s, cases, that => {
+                        let msg = new observer_1.SeqSend(that.self(), [
+                            new request_1.Get('', {}),
+                            new request_1.Get('', {}),
+                            new request_1.Get('', {})
+                        ]);
+                        that.tell('remote', msg);
+                    })
+                });
+                yield future_1.delay(() => { }, 0);
+                return future_1.attempt(() => {
+                    assert_1.assert(success).true();
+                    assert_1.assert(observer.__mock__.getCalledList()).equate([
+                        'onStart',
+                        'onComplete',
+                        'onFinish'
+                    ]);
+                });
+            })));
+            it('should handle transport errors', () => future_1.toPromise(future_1.doFuture(function* () {
+                let s = new app_1.TestApp();
+                let agent = new mock_2.MockAgent();
+                let observer = new MockRemoteObserver();
+                let req = new request_1.Get('', {});
+                let failed = false;
+                agent.__MOCK__.setReturnValue('send', future_1.raise(new observer_1.TransportErr('client', new Error('err'))));
+                let cases = [
+                    new case_1.Case(observer_1.TransportErr, (_) => { failed = true; })
+                ];
+                s.spawn({
+                    id: 'remote',
+                    create: s => new observer_1.RemoteObserver(agent, observer, s)
+                });
+                s.spawn({
+                    id: 'client',
+                    create: s => new actor_1.GenericImmutable(s, cases, that => {
+                        let msg = new observer_1.Send(that.self(), req);
+                        that.tell('remote', msg);
+                    })
+                });
+                yield future_1.delay(() => { }, 0);
+                return future_1.attempt(() => {
+                    assert_1.assert(failed).true();
+                    assert_1.assert(observer.__mock__.getCalledList()).equate([
+                        'onStart',
+                        'onError',
+                        'onFinish'
+                    ]);
+                });
+            })));
+            it('should handle client errors', () => future_1.toPromise(future_1.doFuture(function* () {
+                let s = new app_1.TestApp();
+                let agent = new mock_2.MockAgent();
+                let observer = new MockRemoteObserver();
+                let req = new request_1.Get('', {});
+                agent.__MOCK__.setReturnValue('send', future_1.pure(new response_1.BadRequest({}, {}, {})));
+                s.spawn({
+                    id: 'remote',
+                    create: s => new observer_1.RemoteObserver(agent, observer, s)
+                });
+                s.spawn({
+                    id: 'client',
+                    create: s => new actor_1.GenericImmutable(s, [], that => {
+                        let msg = new observer_1.Send(that.self(), req);
+                        that.tell('remote', msg);
+                    })
+                });
+                yield future_1.delay(() => { }, 0);
+                return future_1.attempt(() => {
+                    assert_1.assert(observer.__mock__.getCalledList()).equate([
+                        'onStart',
+                        'onClientError',
+                        'onFinish'
+                    ]);
+                });
+            })));
+            it('should handle server errors', () => future_1.toPromise(future_1.doFuture(function* () {
+                let s = new app_1.TestApp();
+                let agent = new mock_2.MockAgent();
+                let observer = new MockRemoteObserver();
+                let req = new request_1.Get('', {});
+                agent.__MOCK__.setReturnValue('send', future_1.pure(new response_1.InternalServerError({}, {}, {})));
+                s.spawn({
+                    id: 'remote',
+                    create: s => new observer_1.RemoteObserver(agent, observer, s)
+                });
+                s.spawn({
+                    id: 'client',
+                    create: s => new actor_1.GenericImmutable(s, [], that => {
+                        let msg = new observer_1.Send(that.self(), req);
+                        that.tell('remote', msg);
+                    })
+                });
+                yield future_1.delay(() => { }, 0);
+                return future_1.attempt(() => {
+                    assert_1.assert(observer.__mock__.getCalledList()).equate([
+                        'onStart',
+                        'onServerError',
+                        'onFinish'
+                    ]);
+                });
+            })));
         });
     });
 });
 
 },{"../../../../lib/app/remote/observer":6,"../../app/fixtures/actor":90,"../../app/fixtures/app":91,"@quenk/jhr/lib/agent/mock":8,"@quenk/jhr/lib/request":9,"@quenk/jhr/lib/response":11,"@quenk/noni/lib/control/monad/future":15,"@quenk/potoo/lib/actor/resident/case":31,"@quenk/test/lib/assert":60,"@quenk/test/lib/mock":61}],95:[function(require,module,exports){
 "use strict";
-var __extends = (this && this.__extends) || (function () {
-    var extendStatics = function (d, b) {
-        extendStatics = Object.setPrototypeOf ||
-            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
-        return extendStatics(d, b);
-    };
-    return function (d, b) {
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
-var __generator = (this && this.__generator) || function (thisArg, body) {
-    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
-    return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
-    function verb(n) { return function (v) { return step([n, v]); }; }
-    function step(op) {
-        if (f) throw new TypeError("Generator is already executing.");
-        while (_) try {
-            if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
-            if (y = 0, t) op = [op[0] & 2, t.value];
-            switch (op[0]) {
-                case 0: case 1: t = op; break;
-                case 4: _.label++; return { value: op[1], done: false };
-                case 5: _.label++; y = op[1]; op = [0]; continue;
-                case 7: op = _.ops.pop(); _.trys.pop(); continue;
-                default:
-                    if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) { _ = 0; continue; }
-                    if (op[0] === 3 && (!t || (op[1] > t[0] && op[1] < t[3]))) { _.label = op[1]; break; }
-                    if (op[0] === 6 && _.label < t[1]) { _.label = t[1]; t = op; break; }
-                    if (t && _.label < t[2]) { _.label = t[2]; _.ops.push(op); break; }
-                    if (t[2]) _.ops.pop();
-                    _.trys.pop(); continue;
-            }
-            op = body.call(thisArg, _);
-        } catch (e) { op = [6, e]; y = 0; } finally { f = t = 0; }
-        if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
-    }
-};
 Object.defineProperty(exports, "__esModule", { value: true });
-var mock_1 = require("@quenk/test/lib/mock");
-var assert_1 = require("@quenk/test/lib/assert");
-var string_1 = require("@quenk/noni/lib/data/string");
-var record_1 = require("@quenk/noni/lib/data/record");
-var future_1 = require("@quenk/noni/lib/control/monad/future");
-var case_1 = require("@quenk/potoo/lib/actor/resident/case");
-var director_1 = require("../../../../lib/app/service/director");
-var actor_1 = require("../../../../lib/actor");
-var app_1 = require("../../app/fixtures/app");
-var Router = /** @class */ (function () {
-    function Router() {
+const mock_1 = require("@quenk/test/lib/mock");
+const assert_1 = require("@quenk/test/lib/assert");
+const string_1 = require("@quenk/noni/lib/data/string");
+const record_1 = require("@quenk/noni/lib/data/record");
+const future_1 = require("@quenk/noni/lib/control/monad/future");
+const case_1 = require("@quenk/potoo/lib/actor/resident/case");
+const director_1 = require("../../../../lib/app/service/director");
+const actor_1 = require("../../../../lib/actor");
+const app_1 = require("../../app/fixtures/app");
+class Router {
+    constructor() {
         this.mock = new mock_1.Mock();
         this.handlers = {};
     }
-    Router.prototype.add = function (route, handler) {
+    add(route, handler) {
         this.mock.invoke('add', [route, handler], this);
         this.handlers[route] = handler;
         return this;
-    };
-    return Router;
-}());
-var Controller = /** @class */ (function (_super) {
-    __extends(Controller, _super);
-    function Controller(cases, system) {
-        var _this = _super.call(this, system) || this;
-        _this.cases = cases;
-        _this.system = system;
-        return _this;
     }
-    Controller.prototype.receive = function () {
+}
+class Controller extends actor_1.Immutable {
+    constructor(cases, system) {
+        super(system);
+        this.cases = cases;
+        this.system = system;
+    }
+    receive() {
         return this.cases(this);
-    };
-    Controller.template = function (id, cases) {
-        return { id: id, create: function (s) { return new Controller(cases, s); } };
-    };
-    Controller.prototype.run = function () {
-    };
-    return Controller;
-}(actor_1.Immutable));
-var system = function () { return new app_1.TestApp(); };
-var director = function (routes, router, timeout) {
-    if (timeout === void 0) { timeout = 0; }
-    return ({
-        id: 'director',
-        create: function (s) { return new director_1.Director('display', router, { timeout: timeout }, routes, s); }
-    });
-};
-describe('director', function () {
-    describe('Director', function () {
-        it('should execute routes ', function () { return future_1.toPromise(future_1.doFuture(function () {
-            var app, router, executed;
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0:
-                        app = system();
-                        router = new Router();
-                        executed = false;
-                        app.spawn(director({ '/foo': 'ctl' }, router, 0));
-                        app.spawn(Controller.template('ctl', function () { return [
-                            new case_1.Case(director_1.Resume, function () { executed = true; })
-                        ]; }));
-                        return [4 /*yield*/, router.handlers['/foo']('foo')];
-                    case 1:
-                        _a.sent();
-                        return [4 /*yield*/, future_1.fromCallback(function (cb) { return setTimeout(cb); })];
-                    case 2:
-                        _a.sent();
-                        return [2 /*return*/, future_1.attempt(function () { return assert_1.assert(executed).true(); })];
-                }
+    }
+    static template(id, cases) {
+        return { id, create: (s) => new Controller(cases, s) };
+    }
+    run() {
+    }
+}
+const system = () => new app_1.TestApp();
+const director = (routes, router, timeout = 0) => ({
+    id: 'director',
+    create: (s) => new director_1.Director('display', router, { timeout }, routes, s)
+});
+describe('director', () => {
+    describe('Director', () => {
+        it('should execute routes ', () => future_1.toPromise(future_1.doFuture(function* () {
+            let app = system();
+            let router = new Router();
+            let executed = false;
+            app.spawn(director({ '/foo': 'ctl' }, router, 0));
+            app.spawn(Controller.template('ctl', () => [
+                new case_1.Case(director_1.Resume, () => { executed = true; })
+            ]));
+            yield router.handlers['/foo']('foo');
+            yield future_1.fromCallback(cb => setTimeout(cb));
+            return future_1.attempt(() => assert_1.assert(executed).true());
+        })));
+        it('should send Suspend before change', () => future_1.toPromise(future_1.doFuture(function* () {
+            let app = system();
+            let router = new Router();
+            let routes = { '/foo': 'foo', '/bar': 'bar' };
+            let passed = false;
+            app.spawn(director(routes, router, 0));
+            app.spawn(Controller.template('foo', c => [
+                new case_1.Case(director_1.Suspend, ({ director }) => {
+                    passed = true;
+                    c.tell(director, new director_1.Suspended(c.self()));
+                })
+            ]));
+            app.spawn(Controller.template('bar', () => []));
+            yield router.handlers['/foo']('/foo');
+            yield router.handlers['/bar']('/bar');
+            yield future_1.fromCallback(cb => setTimeout(cb, 100));
+            return future_1.attempt(() => {
+                let runtime = app.vm.state.threads['director'];
+                let dir = runtime.context.actor;
+                assert_1.assert(dir.routes['/foo']).not.undefined();
+                assert_1.assert(dir.routes['/bar']).not.undefined();
+                assert_1.assert(passed).true();
             });
-        })); });
-        it('should send Suspend before change', function () {
-            return future_1.toPromise(future_1.doFuture(function () {
-                var app, router, routes, passed;
-                return __generator(this, function (_a) {
-                    switch (_a.label) {
-                        case 0:
-                            app = system();
-                            router = new Router();
-                            routes = { '/foo': 'foo', '/bar': 'bar' };
-                            passed = false;
-                            app.spawn(director(routes, router, 0));
-                            app.spawn(Controller.template('foo', function (c) { return [
-                                new case_1.Case(director_1.Suspend, function (_a) {
-                                    var director = _a.director;
-                                    passed = true;
-                                    c.tell(director, new director_1.Suspended(c.self()));
-                                })
-                            ]; }));
-                            app.spawn(Controller.template('bar', function () { return []; }));
-                            return [4 /*yield*/, router.handlers['/foo']('/foo')];
-                        case 1:
-                            _a.sent();
-                            return [4 /*yield*/, router.handlers['/bar']('/bar')];
-                        case 2:
-                            _a.sent();
-                            return [4 /*yield*/, future_1.fromCallback(function (cb) { return setTimeout(cb, 100); })];
-                        case 3:
-                            _a.sent();
-                            return [2 /*return*/, future_1.attempt(function () {
-                                    var runtime = app.vm.state.threads['director'];
-                                    var dir = runtime.context.actor;
-                                    assert_1.assert(dir.routes['/foo']).not.undefined();
-                                    assert_1.assert(dir.routes['/bar']).not.undefined();
-                                    assert_1.assert(passed).true();
-                                })];
-                    }
-                });
-            }));
-        });
-        it('should remove unresponsive routes', function () {
-            return future_1.toPromise(future_1.doFuture(function () {
-                var app, router, routes, passed;
-                return __generator(this, function (_a) {
-                    switch (_a.label) {
-                        case 0:
-                            app = system();
-                            router = new Router();
-                            routes = { '/foo': 'foo', '/bar': 'bar' };
-                            passed = false;
-                            app.spawn(director(routes, router, 100));
-                            app.spawn(Controller.template('foo', function () { return []; }));
-                            app.spawn(Controller.template('bar', function () { return [
-                                new case_1.Case(director_1.Resume, function () { passed = true; })
-                            ]; }));
-                            return [4 /*yield*/, router.handlers['/foo']('/foo')];
-                        case 1:
-                            _a.sent();
-                            return [4 /*yield*/, router.handlers['/bar']('/bar')];
-                        case 2:
-                            _a.sent();
-                            return [4 /*yield*/, future_1.fromCallback(function (cb) { return setTimeout(cb, 500); })];
-                        case 3:
-                            _a.sent();
-                            return [2 /*return*/, future_1.attempt(function () {
-                                    var runtime = app.vm.state.threads['director'];
-                                    var dir = runtime.context.actor;
-                                    assert_1.assert(dir.routes['/foo']).undefined();
-                                    assert_1.assert(dir.routes['/bar']).not.undefined();
-                                    assert_1.assert(passed).true();
-                                })];
-                    }
-                });
-            }));
-        });
-        it('should spawn templates ', function () {
-            return future_1.toPromise(future_1.doFuture(function () {
-                var app, router, passed, actualResume, actualTemplate, tmpl;
-                return __generator(this, function (_a) {
-                    switch (_a.label) {
-                        case 0:
-                            app = system();
-                            router = new Router();
-                            passed = false;
-                            tmpl = {
-                                id: 'foo',
-                                create: function (s, t, r) {
-                                    actualResume = r;
-                                    actualTemplate = t;
-                                    return new Controller(function () { return [
-                                        new case_1.Case(director_1.Resume, function () { passed = true; })
-                                    ]; }, s);
-                                }
-                            };
-                            app.spawn(director({ '/foo': tmpl }, router, 0));
-                            return [4 /*yield*/, router.handlers['/foo']('/foo')];
-                        case 1:
-                            _a.sent();
-                            return [4 /*yield*/, future_1.fromCallback(function (cb) { return setTimeout(cb); })];
-                        case 2:
-                            _a.sent();
-                            return [2 /*return*/, future_1.attempt(function () {
-                                    assert_1.assert(passed).true();
-                                    assert_1.assert(actualTemplate.id).equal("foo");
-                                    assert_1.assert(actualResume).instance.of(director_1.Resume);
-                                })];
-                    }
-                });
-            }));
-        });
-        it('should kill spawned templates ', function () {
-            return future_1.toPromise(future_1.doFuture(function () {
-                var app, router, spawned;
-                return __generator(this, function (_a) {
-                    switch (_a.label) {
-                        case 0:
-                            app = system();
-                            router = new Router();
-                            spawned = false;
-                            app.spawn(director({
-                                '/foo': Controller.template('foo', function (c) { return [
-                                    new case_1.Case(director_1.Suspend, function (_a) {
-                                        var director = _a.director;
-                                        spawned = true;
-                                        c.tell(director, new director_1.Suspended(c.self()));
-                                    })
-                                ]; }),
-                                '/bar': Controller.template('bar', function () { return []; }),
-                            }, router, 0));
-                            return [4 /*yield*/, router.handlers['/foo']('/foo')];
-                        case 1:
-                            _a.sent();
-                            return [4 /*yield*/, router.handlers['/bar']('/bar')];
-                        case 2:
-                            _a.sent();
-                            return [4 /*yield*/, future_1.fromCallback(function (cb) { return setTimeout(cb, 100); })];
-                        case 3:
-                            _a.sent();
-                            return [2 /*return*/, future_1.attempt(function () {
-                                    var threads = app.vm.state.threads;
-                                    var matches = record_1.reduce(threads, 0, function (p, _, k) {
-                                        return string_1.startsWith(String(k), 'director/') ? p + 1 : p;
-                                    });
-                                    assert_1.assert(spawned).true();
-                                    assert_1.assert(matches).equal(2);
-                                })];
-                    }
-                });
-            }));
-        });
-        it('should exec functions', function () { return future_1.toPromise(future_1.doFuture(function () {
-            var app, router, spawned;
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0:
-                        app = system();
-                        router = new Router();
-                        spawned = false;
-                        app.spawn(director({
-                            '/foo': function () {
-                                spawned = true;
-                                return 'foo';
-                            }
-                        }, router, 0));
-                        return [4 /*yield*/, router.handlers['/foo']('/foo')];
-                    case 1:
-                        _a.sent();
-                        return [4 /*yield*/, future_1.fromCallback(function (cb) { return setTimeout(cb, 100); })];
-                    case 2:
-                        _a.sent();
-                        return [2 /*return*/, future_1.attempt(function () { assert_1.assert(spawned).true(); })];
-                }
+        })));
+        it('should remove unresponsive routes', () => future_1.toPromise(future_1.doFuture(function* () {
+            let app = system();
+            let router = new Router();
+            let routes = { '/foo': 'foo', '/bar': 'bar' };
+            let passed = false;
+            app.spawn(director(routes, router, 100));
+            app.spawn(Controller.template('foo', () => []));
+            app.spawn(Controller.template('bar', () => [
+                new case_1.Case(director_1.Resume, () => { passed = true; })
+            ]));
+            yield router.handlers['/foo']('/foo');
+            yield router.handlers['/bar']('/bar');
+            yield future_1.fromCallback(cb => setTimeout(cb, 500));
+            return future_1.attempt(() => {
+                let runtime = app.vm.state.threads['director'];
+                let dir = runtime.context.actor;
+                assert_1.assert(dir.routes['/foo']).undefined();
+                assert_1.assert(dir.routes['/bar']).not.undefined();
+                assert_1.assert(passed).true();
             });
-        })); });
-        it('should reload actors', function () { return future_1.toPromise(future_1.doFuture(function () {
-            var app, router, called;
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0:
-                        app = system();
-                        router = new Router();
-                        called = 0;
-                        app.spawn(director({
-                            '/foo': Controller.template('foo', function (c) { return [
-                                new case_1.Case(director_1.Resume, function (_a) {
-                                    var director = _a.director;
-                                    if (called === 0) {
-                                        called++;
-                                        c.tell(director, new director_1.Reload(c.self()));
-                                    }
-                                    else {
-                                        called++;
-                                    }
-                                }),
-                                new case_1.Case(director_1.Suspend, function (_a) {
-                                    var director = _a.director;
-                                    c.tell(director, new director_1.Suspended(c.self()));
-                                })
-                            ]; }),
-                        }, router, 0));
-                        return [4 /*yield*/, router.handlers['/foo']('/foo')];
-                    case 1:
-                        _a.sent();
-                        return [4 /*yield*/, future_1.fromCallback(function (cb) { return setTimeout(cb, 100); })];
-                    case 2:
-                        _a.sent();
-                        return [2 /*return*/, future_1.attempt(function () { assert_1.assert(called).equal(2); })];
+        })));
+        it('should spawn templates ', () => future_1.toPromise(future_1.doFuture(function* () {
+            let app = system();
+            let router = new Router();
+            let passed = false;
+            let actualResume;
+            let actualTemplate;
+            let tmpl = {
+                id: 'foo',
+                create: (s, t, r) => {
+                    actualResume = r;
+                    actualTemplate = t;
+                    return new Controller(() => [
+                        new case_1.Case(director_1.Resume, () => { passed = true; })
+                    ], s);
                 }
+            };
+            app.spawn(director({ '/foo': tmpl }, router, 0));
+            yield router.handlers['/foo']('/foo');
+            yield future_1.fromCallback(cb => setTimeout(cb));
+            return future_1.attempt(() => {
+                assert_1.assert(passed).true();
+                assert_1.assert(actualTemplate.id).equal("foo");
+                assert_1.assert(actualResume).instance.of(director_1.Resume);
             });
-        })); });
+        })));
+        it('should kill spawned templates ', () => future_1.toPromise(future_1.doFuture(function* () {
+            let app = system();
+            let router = new Router();
+            let spawned = false;
+            app.spawn(director({
+                '/foo': Controller.template('foo', c => [
+                    new case_1.Case(director_1.Suspend, ({ director }) => {
+                        spawned = true;
+                        c.tell(director, new director_1.Suspended(c.self()));
+                    })
+                ]),
+                '/bar': Controller.template('bar', () => []),
+            }, router, 0));
+            yield router.handlers['/foo']('/foo');
+            yield router.handlers['/bar']('/bar');
+            yield future_1.fromCallback(cb => setTimeout(cb, 100));
+            return future_1.attempt(() => {
+                let threads = app.vm.state.threads;
+                let matches = record_1.reduce(threads, 0, (p, _, k) => string_1.startsWith(String(k), 'director/') ? p + 1 : p);
+                assert_1.assert(spawned).true();
+                assert_1.assert(matches).equal(2);
+            });
+        })));
+        it('should exec functions', () => future_1.toPromise(future_1.doFuture(function* () {
+            let app = system();
+            let router = new Router();
+            let spawned = false;
+            app.spawn(director({
+                '/foo': () => {
+                    spawned = true;
+                    return 'foo';
+                }
+            }, router, 0));
+            yield router.handlers['/foo']('/foo');
+            yield future_1.fromCallback(cb => setTimeout(cb, 100));
+            return future_1.attempt(() => { assert_1.assert(spawned).true(); });
+        })));
+        it('should reload actors', () => future_1.toPromise(future_1.doFuture(function* () {
+            let app = system();
+            let router = new Router();
+            let called = 0;
+            app.spawn(director({
+                '/foo': Controller.template('foo', c => [
+                    new case_1.Case(director_1.Resume, ({ director }) => {
+                        if (called === 0) {
+                            called++;
+                            c.tell(director, new director_1.Reload(c.self()));
+                        }
+                        else {
+                            called++;
+                        }
+                    }),
+                    new case_1.Case(director_1.Suspend, ({ director }) => {
+                        c.tell(director, new director_1.Suspended(c.self()));
+                    })
+                ]),
+            }, router, 0));
+            yield router.handlers['/foo']('/foo');
+            yield future_1.fromCallback(cb => setTimeout(cb, 100));
+            return future_1.attempt(() => { assert_1.assert(called).equal(2); });
+        })));
     });
 });
 

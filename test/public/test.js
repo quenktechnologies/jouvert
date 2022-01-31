@@ -394,7 +394,7 @@ exports.Remote = Remote;
  * format specified.
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.RemoteModel = exports.NotFoundHandler = exports.FutureHandler = void 0;
+exports.RemoteModel = exports.NotFoundHandler = exports.FutureHandler = exports.VoidHandler = exports.GetHandler = exports.SearchHandler = exports.CreateHandler = void 0;
 /** imports */
 const future_1 = require("@quenk/noni/lib/control/monad/future");
 const maybe_1 = require("@quenk/noni/lib/data/maybe");
@@ -403,6 +403,34 @@ const request_1 = require("@quenk/jhr/lib/request");
 const callback_1 = require("../callback");
 class DefaultCompleteHandler extends callback_1.AbstractCompleteHandler {
 }
+/**
+ * CreateHandler is a CompleteHandler that expects the body of the
+ * result to be a [[CreateResult]].
+ */
+class CreateHandler extends callback_1.AbstractCompleteHandler {
+}
+exports.CreateHandler = CreateHandler;
+/**
+ * SearchHandler is a CompleteHandler that expects the body of the
+ * result to be a [[SearchResult]].
+ */
+class SearchHandler extends callback_1.AbstractCompleteHandler {
+}
+exports.SearchHandler = SearchHandler;
+/**
+ * GetHandler is a CompleteHandler that expects the body of the
+ * result to be a [[GetResult]].
+ */
+class GetHandler extends callback_1.AbstractCompleteHandler {
+}
+exports.GetHandler = GetHandler;
+/**
+ * VoidHandler is a CompleteHandler that expects the body of the
+ * result to be empty.
+ */
+class VoidHandler extends callback_1.AbstractCompleteHandler {
+}
+exports.VoidHandler = VoidHandler;
 /**
  * FutureHandler is used to proxy the events of a request's lifecycle to a noni
  * [[Future]].

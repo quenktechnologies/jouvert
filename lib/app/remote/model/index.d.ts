@@ -11,7 +11,7 @@ import { Address } from '@quenk/potoo/lib/actor/address';
 import { Spawnable } from '@quenk/potoo/lib/actor/template';
 import { Response } from '@quenk/jhr/lib/response';
 import { Id, Model } from '../../model';
-import { ErrorBody, CompleteHandler } from '../callback';
+import { ErrorBody, CompleteHandler, AbstractCompleteHandler } from '../callback';
 import { TransportErr } from '../';
 /**
  * SpawnFunc used by RemoteModels to spawn remote callbacks.
@@ -22,6 +22,18 @@ export declare type SpawnFunc = (tmpl: Spawnable) => Address;
  * CSUGR operation.
  */
 export declare type Result<T extends Object> = CreateResult | SearchResult<T> | GetResult<T> | void;
+/**
+ * CreateResponse is a Response with a [[CreateResult]] body.
+ */
+export declare type CreateResponse = Response<CreateResult>;
+/**
+ * SearchResponse is a Response with a [[SearchResult]] body.
+ */
+export declare type SearchResponse<T extends Object> = Response<SearchResult<T>>;
+/**
+ * GetResult is a Response with a [[GetResult]] body.
+ */
+export declare type GetResponse<T extends Object> = Response<GetResult<T>>;
 /**
  * CreateResult is the response body expected after a successful create()
  * operation.
@@ -76,6 +88,30 @@ export interface Pagination {
  */
 export interface GetResult<T extends Object> {
     data: T;
+}
+/**
+ * CreateHandler is a CompleteHandler that expects the body of the
+ * result to be a [[CreateResult]].
+ */
+export declare class CreateHandler extends AbstractCompleteHandler<CreateResult> {
+}
+/**
+ * SearchHandler is a CompleteHandler that expects the body of the
+ * result to be a [[SearchResult]].
+ */
+export declare class SearchHandler<T extends Object> extends AbstractCompleteHandler<SearchResult<T>> {
+}
+/**
+ * GetHandler is a CompleteHandler that expects the body of the
+ * result to be a [[GetResult]].
+ */
+export declare class GetHandler<T extends Object> extends AbstractCompleteHandler<GetResult<T>> {
+}
+/**
+ * VoidHandler is a CompleteHandler that expects the body of the
+ * result to be empty.
+ */
+export declare class VoidHandler extends AbstractCompleteHandler<void> {
 }
 /**
  * FutureHandler is used to proxy the events of a request's lifecycle to a noni

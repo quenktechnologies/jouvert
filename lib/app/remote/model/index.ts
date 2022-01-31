@@ -43,6 +43,21 @@ export type Result<T extends Object>
     ;
 
 /**
+ * CreateResponse is a Response with a [[CreateResult]] body.
+ */
+export type CreateResponse = Response<CreateResult>;
+
+/**
+ * SearchResponse is a Response with a [[SearchResult]] body.
+ */
+export type SearchResponse<T extends Object> = Response<SearchResult<T>>;
+
+/**
+ * GetResult is a Response with a [[GetResult]] body.
+ */
+export type GetResponse<T extends Object> = Response<GetResult<T>>;
+
+/**
  * CreateResult is the response body expected after a successful create()
  * operation.
  */
@@ -125,6 +140,36 @@ export interface GetResult<T extends Object> {
 class DefaultCompleteHandler<T extends Object>
     extends
     AbstractCompleteHandler<Result<T>> { }
+
+/**
+ * CreateHandler is a CompleteHandler that expects the body of the
+ * result to be a [[CreateResult]].
+ */
+export class CreateHandler extends AbstractCompleteHandler<CreateResult>{ }
+
+/**
+ * SearchHandler is a CompleteHandler that expects the body of the
+ * result to be a [[SearchResult]].
+ */
+export class SearchHandler<T extends Object>
+    extends
+    AbstractCompleteHandler<SearchResult<T>>{ }
+
+/**
+ * GetHandler is a CompleteHandler that expects the body of the
+ * result to be a [[GetResult]].
+ */
+export class GetHandler<T extends Object>
+    extends
+    AbstractCompleteHandler<GetResult<T>>{ }
+
+/**
+ * VoidHandler is a CompleteHandler that expects the body of the
+ * result to be empty.
+ */
+export class VoidHandler
+    extends
+    AbstractCompleteHandler<void>{ }
 
 /**
  * FutureHandler is used to proxy the events of a request's lifecycle to a noni

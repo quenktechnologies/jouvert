@@ -24,6 +24,21 @@ import {
 } from '../../remote/callback';
 import { Pagination, SearchHandler, SearchResponse } from '../../remote/model';
 import { getById } from '@quenk/wml-widgets/lib/util';
+import { FormErrors, SaveFailed, SaveListener } from '../form';
+
+/**
+ * ClientErrorBody is the expected shape of the response body when the server
+ * sends a 409 status in response to a write.
+ */
+export interface ClientErrorBody extends Object {
+
+    /**
+     * errors map containing the names and associated messages for all invalid
+     * fields.
+     */
+    errors: FormErrors
+
+}
 
 /**
  * ShiftingOnComplete uses the next [[CompleteHandler]] from the list provided
@@ -146,18 +161,22 @@ export class AfterSearchSetPagination<T extends Object>
 
 }
 
-export class AfterCreateShowErrors extends AbstractCompleteHandler {
+/**
+ * OnSaveFailed notifies the target SaveListener of the failure of an attempt to
+ * save form data.
+ */
+export class OnSaveFailed extends AbstractCompleteHandler<ClientErrorBody> {
 
-  constructor(public form: SaveListener) { super(); }
+    constructor(public form: SaveListener) { super(); }
 
-  onClientError(res: Response) {
+    onClientError(res: Response<ClientErrorBody>) {
 
-    if(res.code === 409) {
+        if (res.code === 409) {
 
-      this.form.onSaveFailed(new SaveFailed(res.data.errors));
+            this.form.onSaveFailed(new SaveFailed(res.body.errors));
+
+        }
 
     }
-
-  }
 
 }

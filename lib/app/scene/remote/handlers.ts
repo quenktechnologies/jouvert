@@ -145,3 +145,19 @@ export class AfterSearchSetPagination<T extends Object>
     }
 
 }
+
+export class AfterCreateShowErrors extends AbstractCompleteHandler {
+
+  constructor(public form: SaveListener) { super(); }
+
+  onClientError(res: Response) {
+
+    if(res.code === 409) {
+
+      this.form.onSaveFailed(new SaveFailed(res.data.errors));
+
+    }
+
+  }
+
+}

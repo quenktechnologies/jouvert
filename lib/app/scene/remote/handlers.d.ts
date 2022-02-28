@@ -105,7 +105,7 @@ export declare class AfterSearchSetPagination<T extends Object> extends SearchHa
  * OnSaveFailed notifies the target SaveListener of the failure of an attempt to
  * save form data.
  */
-export declare class OnSaveFailed extends AbstractCompleteHandler<ClientErrorBody> {
+export declare class OnSaveFailed<T> extends AbstractCompleteHandler<T> {
     form: SaveListener;
     constructor(form: SaveListener);
     onClientError(res: Response<ClientErrorBody>): void;

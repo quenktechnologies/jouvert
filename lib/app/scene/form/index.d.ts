@@ -264,8 +264,8 @@ export declare abstract class BaseFormScene<T extends Object, M> extends BaseApp
     set(name: FieldName, value: FieldValue): BaseFormScene<T, M>;
     getValues(): T;
     getModifiedValues(): Partial<T>;
-    onSaveFailed(): void;
-    onSaveOk(): void;
+    onSaveFailed(_: SaveFailed): void;
+    onSaveOk(_: SaveOk): void;
     onSaveFinished(): void;
     abort(): void;
     save(): void;

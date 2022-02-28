@@ -445,9 +445,9 @@ export abstract class BaseFormScene<T extends Object, M>
 
     }
 
-    onSaveFailed() { }
+    onSaveFailed(_:SaveFailed) { }
 
-    onSaveOk() { }
+    onSaveOk(_:SaveOk) { }
 
     onSaveFinished() { }
 

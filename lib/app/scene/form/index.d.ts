@@ -42,7 +42,7 @@ export interface FormSavedListener extends Api {
     /**
      * afterFormSaved handler.
      */
-    afterFormSaved(m: FormSaved): FormSavedListener;
+    afterFormSaved(m: FormSaved): void | Future<void>;
 }
 /**
  * FormSavedCase invokes the afterFormSaved() handler.

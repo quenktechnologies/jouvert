@@ -24,7 +24,11 @@ export declare type SuspendTimerAddress = Address;
 /**
  * CurrentInfo is a tuple containing information about the current actor.
  */
-export declare type CurrentInfo = [RouteString, SupervisorAddress, SuspendTimerAddress];
+export declare type CurrentInfo = [
+    RouteString,
+    SupervisorAddress,
+    SuspendTimerAddress
+];
 /**
  * SupervisorMessage type.
  */

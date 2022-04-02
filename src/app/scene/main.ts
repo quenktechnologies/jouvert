@@ -1,3 +1,4 @@
+import { Future } from '@quenk/noni/lib/control/monad/future';
 import { Case } from '@quenk/potoo/lib/actor/resident/case';
 import { System } from '@quenk/potoo/lib/actor/system';
 
@@ -10,6 +11,7 @@ import {
 } from '../service/director';
 import { Pop, Push, Show, Close } from '../service/display';
 import { BaseAppScene } from './';
+import { FormAborted, FormSaved, FormListener, FormAbortedCase, FormSavedCase } from './form';
 
 /**
  * MainSceneMessage type.
@@ -19,6 +21,8 @@ export type MainSceneMessage<M>
     | Show
     | Push
     | Pop
+    | FormAborted
+    | FormSaved
     | M
     ;
 
@@ -30,10 +34,12 @@ export type MainSceneMessage<M>
  * which can spawn them on demand in response to the app's "route" changing.
  *
  * The [[Resume]] parameter serves as proof that the MainScene is allowed by the
- * Director to send content to the user (by sending a [[Show]] to the director.
+ * Director to send content to the user (by sending a [[Show]] message to the 
+ * director).
+ *
  * When the Director decides it's time for another actor to be given that right,
- * the MainScene is terminiated but is given a chance to clean up via a 
- * [[Suspend]]. 
+ * the MainScene is terminiated but will receive a [[Suspend]] message which can
+ * be used to clean up.
  *
  * MainScene is intentionally basic to allow for the flexibility needed when
  * composing the complex main activities of a routed application. However, to 
@@ -44,13 +50,18 @@ export abstract class MainScene<T, M>
     extends
     BaseAppScene<MainSceneMessage<M>>
     implements
-    SuspendListener {
+    SuspendListener,
+    FormListener {
 
     constructor(public system: System, public resume: Resume<T>) {
 
         super(system);
 
     }
+
+    afterFormSaved(_: FormSaved): void | Future<void> { }
+
+    afterFormAborted(_: FormAborted): void | Future<void> { }
 
     get display() {
 
@@ -64,7 +75,9 @@ export abstract class MainScene<T, M>
 
             new SuspendCase(this, this.resume.director),
 
-            new Case(Show, (msg: Show) => void this.tell(this.display, msg)),
+            new FormAbortedCase(this),
+
+            new FormSavedCase(this),
 
             new Case(Push, (msg: Push) => void this.tell(this.display, msg)),
 

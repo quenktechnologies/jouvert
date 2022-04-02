@@ -79,6 +79,8 @@ export abstract class MainScene<T, M>
 
             new FormSavedCase(this),
 
+           new Case(Show, (msg: Show) => void this.tell(this.display, msg)),
+
             new Case(Push, (msg: Push) => void this.tell(this.display, msg)),
 
             new Case(Pop, (msg: Pop) => void this.tell(this.display, msg)),

@@ -1,14 +1,14 @@
 /**
  * This module provides common [[CompleteHandlers]] used in Jouvert projects for
  * fetching and displaying data. Information management apps built with Jouvert 
- * tend to have many different screens that function similarly, differing mostly 
- * in the data managed. To enjoy code re-usability between these screens, we use 
- * [[RemoteModel]]s to load data and implement most of the callback work in
- * CompleteHandlers.
+ * tend to have many different screens (scenes) that function similarly,
+ * differing mostly in the data type managed. To enjoy code re-usability between 
+ * these screens, we use [[RemoteModel]]s to load data and implement most of the 
+ * callback work in CompleteHandlers.
  *
  * As much as possible, the CompleteHandlers here try to do one thing only so
- * that they are more composable. This should allow multiple handlers to be
- * combined into one in arrangements that suit the apps needs.
+ * that they are composable. This should allow multiple handlers to be
+ * combined into one in arrangements that suit app needs.
  */
 import { Object } from '@quenk/noni/lib/data/jsonx';
 
@@ -152,13 +152,16 @@ export class AfterSearchUpdateWidget<T extends Object>
 }
 
 /**
- * AfterSearchShowData displays the scene after a successful search result.
+ * OnCompleteShowData calls the show() method of the provided scene on 
+ * successful completion of a request.
  */
-export class AfterSearchShowData<T extends Object> extends SearchHandler<T> {
+export class OnCompleteShowData<T>
+    extends
+    AbstractCompleteHandler<T> {
 
     constructor(public scene: { show(): void }) { super(); }
 
-    onComplete(_: SearchResponse<T>) {
+    onComplete(_: Response<T>) {
 
         this.scene.show();
 
@@ -210,13 +213,13 @@ export class OnSaveFailed<T> extends AbstractCompleteHandler<T> {
  */
 export class OnNotFound<T> extends AbstractCompleteHandler<T> {
 
-    constructor(public handler: ()=>void) { super(); }
+    constructor(public handler: () => void) { super(); }
 
     onClientError<B>(res: Response<B>) {
 
         if (res.code === 404) {
 
-          this.handler();
+            this.handler();
 
         }
 

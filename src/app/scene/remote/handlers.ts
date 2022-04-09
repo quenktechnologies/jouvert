@@ -22,7 +22,13 @@ import {
     AbstractCompleteHandler,
     CompleteHandler
 } from '../../remote/callback';
-import { Pagination, SearchHandler, SearchResponse } from '../../remote/model';
+import {
+    GetHandler,
+    GetResponse,
+    Pagination,
+    SearchHandler,
+    SearchResponse
+} from '../../remote/model';
 import { getById } from '@quenk/wml-widgets/lib/util';
 import { FormErrors, SaveFailed, SaveListener } from '../form';
 
@@ -89,18 +95,36 @@ export class ShiftingOnClientError<T> extends AbstractCompleteHandler<T> {
 }
 
 /**
- * AfterSearchSetData sets the "data" property of the provided object with data
- * returned from a successful search.
+ * AfterSearchSetData calls the supplied callback with the data property of the
+ * body of a successful search request.
  *
- * This handler is intended to be used mostly when loading table data.
+ * This handler is intended to be used mostly when loading data for table scenes.
  */
 export class AfterSearchSetData<T extends Object> extends SearchHandler<T> {
 
-    constructor(public table: { data?: T[] }) { super(); }
+    constructor(public setter: (data: T[]) => void) { super(); }
 
     onComplete(res: SearchResponse<T>) {
 
-        this.table.data = (res.code === 200) ? res.body.data : [];
+        this.setter((res.code === 200) ? res.body.data : []);
+
+    }
+
+}
+
+/**
+ * AfterGetSetData calls the supplied callback with the data property of the
+ * body of a successful search request.
+ *
+ * This handler is intended to be used mostly when loading data for table scenes.
+ */
+export class AfterGetSetData<T extends Object> extends GetHandler<T> {
+
+    constructor(public setter: (data: T) => void) { super(); }
+
+    onComplete(res: GetResponse<T>) {
+
+        if (res.code === 200) this.setter(res.body.data);
 
     }
 
@@ -174,6 +198,25 @@ export class OnSaveFailed<T> extends AbstractCompleteHandler<T> {
         if (res.code === 409) {
 
             this.form.onSaveFailed(new SaveFailed(res.body.errors));
+
+        }
+
+    }
+
+}
+
+/**
+ * OnNotFound executes the provided handler when a 404 error is encountered.
+ */
+export class OnNotFound<T> extends AbstractCompleteHandler<T> {
+
+    constructor(public handler: ()=>void) { super(); }
+
+    onClientError<B>(res: Response<B>) {
+
+        if (res.code === 404) {
+
+          this.handler();
 
         }
 

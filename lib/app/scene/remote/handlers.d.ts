@@ -14,7 +14,7 @@ import { Object } from '@quenk/noni/lib/data/jsonx';
 import { Response } from '@quenk/jhr/lib/response';
 import { View } from '@quenk/wml';
 import { AbstractCompleteHandler, CompleteHandler } from '../../remote/callback';
-import { Pagination, SearchHandler, SearchResponse } from '../../remote/model';
+import { GetHandler, GetResponse, Pagination, SearchHandler, SearchResponse } from '../../remote/model';
 import { FormErrors, SaveListener } from '../form';
 /**
  * ClientErrorBody is the expected shape of the response body when the server
@@ -52,19 +52,26 @@ export declare class ShiftingOnClientError<T> extends AbstractCompleteHandler<T>
     onClientError(r: Response<Object>): void;
 }
 /**
- * AfterSearchSetData sets the "data" property of the provided object with data
- * returned from a successful search.
+ * AfterSearchSetData calls the supplied callback with the data property of the
+ * body of a successful search request.
  *
- * This handler is intended to be used mostly when loading table data.
+ * This handler is intended to be used mostly when loading data for table scenes.
  */
 export declare class AfterSearchSetData<T extends Object> extends SearchHandler<T> {
-    table: {
-        data?: T[];
-    };
-    constructor(table: {
-        data?: T[];
-    });
+    setter: (data: T[]) => void;
+    constructor(setter: (data: T[]) => void);
     onComplete(res: SearchResponse<T>): void;
+}
+/**
+ * AfterGetSetData calls the supplied callback with the data property of the
+ * body of a successful search request.
+ *
+ * This handler is intended to be used mostly when loading data for table scenes.
+ */
+export declare class AfterGetSetData<T extends Object> extends GetHandler<T> {
+    setter: (data: T) => void;
+    constructor(setter: (data: T) => void);
+    onComplete(res: GetResponse<T>): void;
 }
 /**
  * AfterSearchUpdateWidget calls the update() method of a WML updatable widget
@@ -109,4 +116,12 @@ export declare class OnSaveFailed<T> extends AbstractCompleteHandler<T> {
     form: SaveListener;
     constructor(form: SaveListener);
     onClientError(res: Response<ClientErrorBody>): void;
+}
+/**
+ * OnNotFound executes the provided handler when a 404 error is encountered.
+ */
+export declare class OnNotFound<T> extends AbstractCompleteHandler<T> {
+    handler: () => void;
+    constructor(handler: () => void);
+    onClientError<B>(res: Response<B>): void;
 }

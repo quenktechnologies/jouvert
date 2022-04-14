@@ -9,6 +9,7 @@ import { Future, fromCallback } from '@quenk/noni/lib/control/monad/future';
 import { Maybe, fromNullable, nothing } from '@quenk/noni/lib/data/maybe';
 import { Object } from '@quenk/noni/lib/data/jsonx';
 import { interpolate } from '@quenk/noni/lib/data/string';
+import { Record } from '@quenk/noni/lib/data/record';
 
 import { Address } from '@quenk/potoo/lib/actor/address';
 import { Spawnable } from '@quenk/potoo/lib/actor/template';
@@ -30,6 +31,12 @@ import { TransportErr } from '../';
  * SpawnFunc used by RemoteModels to spawn remote callbacks.
  */
 export type SpawnFunc = (tmpl: Spawnable) => Address;
+
+/**
+ * Paths is a record of actor addresses to use for each of the CSUGR
+ * operations of a RemoteModel.
+ */
+export interface Paths extends Record<Address> { }
 
 /**
  * Result is the structure of the response body expected after a succesful
@@ -269,7 +276,7 @@ export class RemoteModel<T extends Object> implements Model<T> {
 
     constructor(
         public remote: Address,
-        public path: string,
+        public paths: Paths,
         public spawn: SpawnFunc,
         public handler: CompleteHandler<Result<T>> = new DefaultCompleteHandler()
     ) { }
@@ -284,7 +291,7 @@ export class RemoteModel<T extends Object> implements Model<T> {
             this.spawn((s: System) => new SendCallback(
                 s,
                 this.remote,
-                new Post(this.path, data),
+                new Post(this.paths.create, data),
                 new FutureHandler<T>(this.handler, cb, r => {
 
                     cb(null, (<CreateResult>r.body).data.id);
@@ -305,7 +312,7 @@ export class RemoteModel<T extends Object> implements Model<T> {
             this.spawn((s: System) => new SendCallback(
                 s,
                 this.remote,
-                new Get(this.path, qry),
+                new Get(this.paths.search, qry),
                 new FutureHandler(this.handler, cb, r => {
 
                     cb(null, (r.code === 204) ?
@@ -327,7 +334,7 @@ export class RemoteModel<T extends Object> implements Model<T> {
             this.spawn((s: System) => new SendCallback(
                 s,
                 this.remote,
-                new Patch(interpolate(this.path, { id }), changes),
+                new Patch(interpolate(this.paths.update, { id }), changes),
                 new FutureHandler(
                     this.handler,
                     cb,
@@ -351,7 +358,7 @@ export class RemoteModel<T extends Object> implements Model<T> {
             this.spawn((s: System) => new SendCallback(
                 s,
                 this.remote,
-                new Get(interpolate(this.path, { id }), {}),
+                new Get(interpolate(this.paths.get, { id }), {}),
                 new NotFoundHandler(
                     this.handler,
                     cb,
@@ -380,7 +387,7 @@ export class RemoteModel<T extends Object> implements Model<T> {
             this.spawn((s: System) => new SendCallback(
                 s,
                 this.remote,
-                new Delete(interpolate(this.path, { id }), {}),
+                new Delete(interpolate(this.paths.remove, { id }), {}),
                 new FutureHandler(this.handler, cb, r => {
 
                     cb(null, (r.code === 200) ? true : false);

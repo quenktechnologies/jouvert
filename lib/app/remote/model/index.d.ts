@@ -7,6 +7,7 @@
 import { Future } from '@quenk/noni/lib/control/monad/future';
 import { Maybe } from '@quenk/noni/lib/data/maybe';
 import { Object } from '@quenk/noni/lib/data/jsonx';
+import { Record } from '@quenk/noni/lib/data/record';
 import { Address } from '@quenk/potoo/lib/actor/address';
 import { Spawnable } from '@quenk/potoo/lib/actor/template';
 import { Response } from '@quenk/jhr/lib/response';
@@ -17,6 +18,12 @@ import { TransportErr } from '../';
  * SpawnFunc used by RemoteModels to spawn remote callbacks.
  */
 export declare type SpawnFunc = (tmpl: Spawnable) => Address;
+/**
+ * Paths is a record of actor addresses to use for each of the CSUGR
+ * operations of a RemoteModel.
+ */
+export interface Paths extends Record<Address> {
+}
 /**
  * Result is the structure of the response body expected after a succesful
  * CSUGR operation.
@@ -152,10 +159,10 @@ export declare class NotFoundHandler<T extends Object> extends FutureHandler<T> 
  */
 export declare class RemoteModel<T extends Object> implements Model<T> {
     remote: Address;
-    path: string;
+    paths: Paths;
     spawn: SpawnFunc;
     handler: CompleteHandler<Result<T>>;
-    constructor(remote: Address, path: string, spawn: SpawnFunc, handler?: CompleteHandler<Result<T>>);
+    constructor(remote: Address, paths: Paths, spawn: SpawnFunc, handler?: CompleteHandler<Result<T>>);
     /**
      * create a new entry for the data type.
      */

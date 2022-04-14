@@ -1,11 +1,12 @@
 import { Object } from '@quenk/noni/lib/data/jsonx';
 import { isObject } from '@quenk/noni/lib/data/type';
 
+import { merge } from '@quenk/noni/lib/data/record';
 import { Spawner } from '@quenk/potoo/lib/actor/resident/api';
 import { Address } from '@quenk/potoo/lib/actor/address';
 
 import { CompleteHandler, CompositeCompleteHandler } from '../callback';
-import { SpawnFunc, RemoteModel, Result } from './';
+import { SpawnFunc, RemoteModel, Result, Paths } from './';
 
 /**
  * SpawnSpec is a type providing a way to spawn a new actor.
@@ -47,14 +48,39 @@ export class RemoteModelFactory<T extends Object> {
     }
 
     /**
-     * create a new RemoteModel based on teh path specified.
+     * create a new RemoteModel using the internal configuration.
+     *
+     * @param paths    If a desired endpoint is missing the following are used:
+     *                               create -> search || '?'
+     *                               search -> create || '?'
+     *                               update -> get || remove || '?'
+     *                               get    -> update || remove || '?'
+     *                               remove -> get || update || '?'
+     *
+     * @param handlers A handler or list of handlers to handle the response.
      */
-    create(path: string, handlers?: CompleteHandlerSpec<T>): RemoteModel<T> {
+    create(paths: Paths, handlers?: CompleteHandlerSpec<T>): RemoteModel<T> {
 
-        return new RemoteModel(this.remote, path,
+        return new RemoteModel(this.remote, normalize(paths),
             this.spawn, Array.isArray(handlers) ?
             new CompositeCompleteHandler(handlers) : handlers);
 
     }
 
 }
+
+
+const normalize = (paths: Paths) =>
+    merge(paths, {
+
+        create: paths.create || paths.search,
+
+        search: paths.search || paths.create,
+
+        update: paths.update || paths.get || paths.remove,
+
+        get: paths.get || paths.update || paths.remove,
+
+        remove: paths.remove || paths.update || paths.get
+
+    })

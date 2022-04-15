@@ -9,7 +9,7 @@ import { Future, fromCallback } from '@quenk/noni/lib/control/monad/future';
 import { Maybe, fromNullable, nothing } from '@quenk/noni/lib/data/maybe';
 import { Object } from '@quenk/noni/lib/data/jsonx';
 import { interpolate } from '@quenk/noni/lib/data/string';
-import { Record } from '@quenk/noni/lib/data/record';
+import { merge, Record } from '@quenk/noni/lib/data/record';
 
 import { Address } from '@quenk/potoo/lib/actor/address';
 import { Spawnable } from '@quenk/potoo/lib/actor/template';
@@ -278,6 +278,7 @@ export class RemoteModel<T extends Object> implements Model<T> {
         public remote: Address,
         public paths: Paths,
         public spawn: SpawnFunc,
+        public context: object = {},
         public handler: CompleteHandler<Result<T>> = new DefaultCompleteHandler()
     ) { }
 
@@ -291,7 +292,7 @@ export class RemoteModel<T extends Object> implements Model<T> {
             this.spawn((s: System) => new SendCallback(
                 s,
                 this.remote,
-                new Post(this.paths.create, data),
+                new Post(interpolate(this.paths.create, this.context), data),
                 new FutureHandler<T>(this.handler, cb, r => {
 
                     cb(null, (<CreateResult>r.body).data.id);
@@ -312,7 +313,7 @@ export class RemoteModel<T extends Object> implements Model<T> {
             this.spawn((s: System) => new SendCallback(
                 s,
                 this.remote,
-                new Get(this.paths.search, qry),
+                new Get(interpolate(this.paths.search, this.context), qry),
                 new FutureHandler(this.handler, cb, r => {
 
                     cb(null, (r.code === 204) ?
@@ -334,7 +335,8 @@ export class RemoteModel<T extends Object> implements Model<T> {
             this.spawn((s: System) => new SendCallback(
                 s,
                 this.remote,
-                new Patch(interpolate(this.paths.update, { id }), changes),
+                new Patch(interpolate(this.paths.update,
+                    merge({ id }, this.context)), changes),
                 new FutureHandler(
                     this.handler,
                     cb,
@@ -358,7 +360,8 @@ export class RemoteModel<T extends Object> implements Model<T> {
             this.spawn((s: System) => new SendCallback(
                 s,
                 this.remote,
-                new Get(interpolate(this.paths.get, { id }), {}),
+                new Get(interpolate(this.paths.get,
+                    merge({ id }, this.context)), {}),
                 new NotFoundHandler(
                     this.handler,
                     cb,
@@ -387,7 +390,8 @@ export class RemoteModel<T extends Object> implements Model<T> {
             this.spawn((s: System) => new SendCallback(
                 s,
                 this.remote,
-                new Delete(interpolate(this.paths.remove, { id }), {}),
+                new Delete(interpolate(this.paths.remove, 
+                  merge({ id },this.context)), {}),
                 new FutureHandler(this.handler, cb, r => {
 
                     cb(null, (r.code === 200) ? true : false);

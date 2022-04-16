@@ -362,8 +362,8 @@ class Remote extends actor_1.Immutable {
             let rs = requests
                 .map((r) => agent
                 .send(r)
-                .catch(e => future_1.raise(new TransportErr(client, e))));
-            future_1.parallel(rs).fork(onErr, onSucc);
+                .catch(e => (0, future_1.raise)(new TransportErr(client, e))));
+            (0, future_1.parallel)(rs).fork(onErr, onSucc);
         };
         this.onSequential = ({ client, requests }) => {
             let { agent } = this;
@@ -372,8 +372,8 @@ class Remote extends actor_1.Immutable {
             let rs = requests
                 .map((r) => agent
                 .send(r)
-                .catch(e => future_1.raise(new TransportErr(client, e))));
-            future_1.sequential(rs).fork(onErr, onSucc);
+                .catch(e => (0, future_1.raise)(new TransportErr(client, e))));
+            (0, future_1.sequential)(rs).fork(onErr, onSucc);
         };
     }
     receive() {
@@ -399,6 +399,7 @@ exports.RemoteModel = exports.NotFoundHandler = exports.FutureHandler = exports.
 const future_1 = require("@quenk/noni/lib/control/monad/future");
 const maybe_1 = require("@quenk/noni/lib/data/maybe");
 const string_1 = require("@quenk/noni/lib/data/string");
+const record_1 = require("@quenk/noni/lib/data/record");
 const request_1 = require("@quenk/jhr/lib/request");
 const callback_1 = require("../callback");
 class DefaultCompleteHandler extends callback_1.AbstractCompleteHandler {
@@ -497,18 +498,19 @@ exports.NotFoundHandler = NotFoundHandler;
  * is needed than the Model api provides.
  */
 class RemoteModel {
-    constructor(remote, path, spawn, handler = new DefaultCompleteHandler()) {
+    constructor(remote, paths, spawn, context = {}, handler = new DefaultCompleteHandler()) {
         this.remote = remote;
-        this.path = path;
+        this.paths = paths;
         this.spawn = spawn;
+        this.context = context;
         this.handler = handler;
     }
     /**
      * create a new entry for the data type.
      */
     create(data) {
-        return future_1.fromCallback(cb => {
-            this.spawn((s) => new callback_1.SendCallback(s, this.remote, new request_1.Post(this.path, data), new FutureHandler(this.handler, cb, r => {
+        return (0, future_1.fromCallback)(cb => {
+            this.spawn((s) => new callback_1.SendCallback(s, this.remote, new request_1.Post((0, string_1.interpolate)(this.paths.create, this.context), data), new FutureHandler(this.handler, cb, r => {
                 cb(null, r.body.data.id);
             })));
         });
@@ -517,8 +519,8 @@ class RemoteModel {
      * search for entries that match the provided query.
      */
     search(qry) {
-        return future_1.fromCallback(cb => {
-            this.spawn((s) => new callback_1.SendCallback(s, this.remote, new request_1.Get(this.path, qry), new FutureHandler(this.handler, cb, r => {
+        return (0, future_1.fromCallback)(cb => {
+            this.spawn((s) => new callback_1.SendCallback(s, this.remote, new request_1.Get((0, string_1.interpolate)(this.paths.search, this.context), qry), new FutureHandler(this.handler, cb, r => {
                 cb(null, (r.code === 204) ?
                     [] : r.body.data);
             })));
@@ -528,8 +530,8 @@ class RemoteModel {
      * update a single entry using its id.
      */
     update(id, changes) {
-        return future_1.fromCallback(cb => {
-            this.spawn((s) => new callback_1.SendCallback(s, this.remote, new request_1.Patch(string_1.interpolate(this.path, { id }), changes), new FutureHandler(this.handler, cb, r => {
+        return (0, future_1.fromCallback)(cb => {
+            this.spawn((s) => new callback_1.SendCallback(s, this.remote, new request_1.Patch((0, string_1.interpolate)(this.paths.update, (0, record_1.merge)({ id }, this.context)), changes), new FutureHandler(this.handler, cb, r => {
                 cb(null, (r.code === 200) ? true : false);
             })));
         });
@@ -538,11 +540,11 @@ class RemoteModel {
      * get a single entry by its id.
      */
     get(id) {
-        return future_1.fromCallback(cb => {
-            this.spawn((s) => new callback_1.SendCallback(s, this.remote, new request_1.Get(string_1.interpolate(this.path, { id }), {}), new NotFoundHandler(this.handler, cb, () => {
-                cb(null, maybe_1.nothing());
+        return (0, future_1.fromCallback)(cb => {
+            this.spawn((s) => new callback_1.SendCallback(s, this.remote, new request_1.Get((0, string_1.interpolate)(this.paths.get, (0, record_1.merge)({ id }, this.context)), {}), new NotFoundHandler(this.handler, cb, () => {
+                cb(null, (0, maybe_1.nothing)());
             }, r => {
-                cb(null, maybe_1.fromNullable(r.body.data));
+                cb(null, (0, maybe_1.fromNullable)(r.body.data));
             })));
         });
     }
@@ -550,8 +552,8 @@ class RemoteModel {
      * remove a single entry by its id.
      */
     remove(id) {
-        return future_1.fromCallback(cb => {
-            this.spawn((s) => new callback_1.SendCallback(s, this.remote, new request_1.Delete(string_1.interpolate(this.path, { id }), {}), new FutureHandler(this.handler, cb, r => {
+        return (0, future_1.fromCallback)(cb => {
+            this.spawn((s) => new callback_1.SendCallback(s, this.remote, new request_1.Delete((0, string_1.interpolate)(this.paths.remove, (0, record_1.merge)({ id }, this.context)), {}), new FutureHandler(this.handler, cb, r => {
                 cb(null, (r.code === 200) ? true : false);
             })));
         });
@@ -559,7 +561,7 @@ class RemoteModel {
 }
 exports.RemoteModel = RemoteModel;
 
-},{"../callback":3,"@quenk/jhr/lib/request":9,"@quenk/noni/lib/control/monad/future":15,"@quenk/noni/lib/data/maybe":21,"@quenk/noni/lib/data/string":24}],6:[function(require,module,exports){
+},{"../callback":3,"@quenk/jhr/lib/request":9,"@quenk/noni/lib/control/monad/future":15,"@quenk/noni/lib/data/maybe":21,"@quenk/noni/lib/data/record":22,"@quenk/noni/lib/data/string":24}],6:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.RemoteObserver = exports.BatchResponse = exports.SeqSend = exports.ParSend = exports.Send = exports.TransportErr = void 0;
@@ -653,7 +655,7 @@ class RemoteObserver extends actor_1.Mutable {
     send(req) {
         let self = this.self();
         this.listener.onStart(req);
-        let msg = match_1.match(req)
+        let msg = (0, match_1.match)(req)
             .caseOf(__1.Send, (msg) => new __1.Send(self, msg.request))
             .caseOf(__1.ParSend, (msg) => new __1.ParSend(self, msg.requests))
             .caseOf(__1.SeqSend, (msg) => new __1.SeqSend(self, msg.requests))
@@ -684,8 +686,8 @@ exports.DEFAULT_TIMEOUT = 1000;
  */
 class SuspendCase extends case_1.Case {
     constructor(listener, director) {
-        super(Suspend, (s) => future_1.doFuture(function* () {
-            yield future_1.wrap(listener.beforeSuspended(s));
+        super(Suspend, (s) => (0, future_1.doFuture)(function* () {
+            yield (0, future_1.wrap)(listener.beforeSuspended(s));
             listener.tell(director, new Suspended(listener.self()));
             return future_1.voidPure;
         }));
@@ -823,11 +825,11 @@ class Supervisor extends actor_1.Immutable {
     run() {
         let { request, spec } = this.info;
         let r = new Resume(this.self(), request);
-        let candidate = type_1.isFunction(spec) ? spec(r) : spec;
-        if (type_1.isObject(candidate)) {
+        let candidate = (0, type_1.isFunction)(spec) ? spec(r) : spec;
+        if ((0, type_1.isObject)(candidate)) {
             let tmpl = candidate;
             let args = tmpl.args ? tmpl.args : [];
-            tmpl = record_1.merge(tmpl, { args: [r, ...args] });
+            tmpl = (0, record_1.merge)(tmpl, { args: [r, ...args] });
             this.actor = this.spawn(tmpl);
         }
         else {
@@ -898,7 +900,7 @@ class Director extends actor_1.Immutable {
             if (supervisor != '?') {
                 let { timeout } = config;
                 let onExpire = () => {
-                    this.routes = record_1.exclude(routes, route);
+                    this.routes = (0, record_1.exclude)(routes, route);
                     onFinish();
                 };
                 this.current = [
@@ -923,8 +925,8 @@ class Director extends actor_1.Immutable {
         ];
     }
     run() {
-        record_1.forEach(this.routes, (spec, route) => {
-            this.router.add(route, (r) => future_1.fromCallback(cb => {
+        (0, record_1.forEach)(this.routes, (spec, route) => {
+            this.router.add(route, (r) => (0, future_1.fromCallback)(cb => {
                 if (!this.routes.hasOwnProperty(route)) {
                     return cb(new Error(`${route}: not responding!`));
                 }
@@ -937,7 +939,7 @@ class Director extends actor_1.Immutable {
     }
 }
 exports.Director = Director;
-const defaultConfig = (c) => record_1.merge({ timeout: exports.DEFAULT_TIMEOUT }, c);
+const defaultConfig = (c) => (0, record_1.merge)({ timeout: exports.DEFAULT_TIMEOUT }, c);
 
 },{"../../actor":1,"@quenk/noni/lib/control/monad/future":15,"@quenk/noni/lib/data/record":22,"@quenk/noni/lib/data/type":25,"@quenk/potoo/lib/actor/resident/case":31}],8:[function(require,module,exports){
 "use strict";
@@ -1703,7 +1705,7 @@ var Future = /** @class */ (function () {
             }
             else {
                 console.warn(_this.tag + ": onError called after task completed");
-                console.trace();
+                console.warn(e);
             }
         };
         var success = function (val) {
@@ -4680,6 +4682,7 @@ const flags_1 = require("../../flags");
 const message_1 = require("../../message");
 const scheduler_1 = require("./thread/shared/scheduler");
 const shared_1 = require("./thread/shared");
+const thread_1 = require("./thread");
 const state_1 = require("./state");
 const context_1 = require("./runtime/context");
 const op_1 = require("./runtime/op");
@@ -4890,6 +4893,9 @@ class PVM {
                 (() => template.ACTION_RAISE);
             switch (trap(err)) {
                 case template.ACTION_IGNORE:
+                    this.getThread(addr).map(thr => {
+                        thr.state = thread_1.THREAD_STATE_IDLE;
+                    });
                     break loop;
                 case template.ACTION_RESTART:
                     let maddr = (0, state_1.get)(this.state, next);
@@ -5026,7 +5032,7 @@ const normalize = (spawnable) => {
     });
 };
 
-},{"../../address":27,"../../flags":28,"../../message":29,"../../template":59,"./conf":37,"./event":38,"./log":40,"./runtime/context":41,"./runtime/error":42,"./runtime/heap/ledger":43,"./runtime/op":47,"./scripts/factory":52,"./state":54,"./thread/shared":56,"./thread/shared/scheduler":57,"@quenk/noni/lib/control/monad/future":15,"@quenk/noni/lib/data/array":18,"@quenk/noni/lib/data/either":19,"@quenk/noni/lib/data/maybe":21,"@quenk/noni/lib/data/record":22,"@quenk/noni/lib/data/type":25}],40:[function(require,module,exports){
+},{"../../address":27,"../../flags":28,"../../message":29,"../../template":59,"./conf":37,"./event":38,"./log":40,"./runtime/context":41,"./runtime/error":42,"./runtime/heap/ledger":43,"./runtime/op":47,"./scripts/factory":52,"./state":54,"./thread":55,"./thread/shared":56,"./thread/shared/scheduler":57,"@quenk/noni/lib/control/monad/future":15,"@quenk/noni/lib/data/array":18,"@quenk/noni/lib/data/either":19,"@quenk/noni/lib/data/maybe":21,"@quenk/noni/lib/data/record":22,"@quenk/noni/lib/data/type":25}],40:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.LOG_LEVEL_ERROR = exports.LOG_LEVEL_WARN = exports.LOG_LEVEL_NOTICE = exports.LOG_LEVEL_INFO = exports.LOG_LEVEL_DEBUG = void 0;
@@ -8873,12 +8879,12 @@ const app_1 = require("../../app/fixtures/app");
 describe('remote', () => {
     describe('Remote', () => {
         describe('api', () => {
-            it('should handle Send', () => future_1.toPromise(future_1.doFuture(function* () {
+            it('should handle Send', () => (0, future_1.toPromise)((0, future_1.doFuture)(function* () {
                 let s = new app_1.TestApp();
                 let mock = new mock_1.MockAgent();
                 let res = new response_1.Ok('text', {}, {});
                 let success = false;
-                mock.__MOCK__.setReturnValue('send', future_1.pure(res));
+                mock.__MOCK__.setReturnValue('send', (0, future_1.pure)(res));
                 let cases = [
                     new case_1.Case(response_1.Ok, (r) => {
                         success = r === res;
@@ -8895,17 +8901,17 @@ describe('remote', () => {
                         that.tell('remote', msg);
                     })
                 });
-                yield future_1.delay(() => { }, 0);
-                return future_1.attempt(() => {
-                    assert_1.assert(success).true();
+                yield (0, future_1.delay)(() => { }, 0);
+                return (0, future_1.attempt)(() => {
+                    (0, assert_1.assert)(success).true();
                 });
             })));
-            it('should handle ParSend', () => future_1.toPromise(future_1.doFuture(function* () {
+            it('should handle ParSend', () => (0, future_1.toPromise)((0, future_1.doFuture)(function* () {
                 let s = new app_1.TestApp();
                 let mock = new mock_1.MockAgent();
                 let res = new response_1.Ok('text', {}, {});
                 let success = false;
-                mock.__MOCK__.setReturnValue('send', future_1.pure(res));
+                mock.__MOCK__.setReturnValue('send', (0, future_1.pure)(res));
                 let cases = [
                     new case_1.Case(remote_1.BatchResponse, (r) => {
                         success = r.value.every(r => r === res);
@@ -8926,17 +8932,17 @@ describe('remote', () => {
                         that.tell('remote', msg);
                     })
                 });
-                yield future_1.delay(() => { }, 0);
-                return future_1.attempt(() => {
-                    assert_1.assert(success).true();
+                yield (0, future_1.delay)(() => { }, 0);
+                return (0, future_1.attempt)(() => {
+                    (0, assert_1.assert)(success).true();
                 });
             })));
-            it('should handle SeqSend', () => future_1.toPromise(future_1.doFuture(function* () {
+            it('should handle SeqSend', () => (0, future_1.toPromise)((0, future_1.doFuture)(function* () {
                 let s = new app_1.TestApp();
                 let mock = new mock_1.MockAgent();
                 let res = new response_1.Ok('text', {}, {});
                 let success = false;
-                mock.__MOCK__.setReturnValue('send', future_1.pure(res));
+                mock.__MOCK__.setReturnValue('send', (0, future_1.pure)(res));
                 let cases = [
                     new case_1.Case(remote_1.BatchResponse, (r) => {
                         success = r.value.every(r => r === res);
@@ -8957,17 +8963,17 @@ describe('remote', () => {
                         that.tell('remote', msg);
                     })
                 });
-                yield future_1.delay(() => { }, 0);
-                return future_1.attempt(() => {
-                    assert_1.assert(success).true();
+                yield (0, future_1.delay)(() => { }, 0);
+                return (0, future_1.attempt)(() => {
+                    (0, assert_1.assert)(success).true();
                 });
             })));
-            it('should handle transport errors', () => future_1.toPromise(future_1.doFuture(function* () {
+            it('should handle transport errors', () => (0, future_1.toPromise)((0, future_1.doFuture)(function* () {
                 let s = new app_1.TestApp();
                 let mock = new mock_1.MockAgent();
                 let req = new request_1.Get('', {});
                 let failed = false;
-                mock.__MOCK__.setReturnValue('send', future_1.raise(new remote_1.TransportErr('client', new Error('err'))));
+                mock.__MOCK__.setReturnValue('send', (0, future_1.raise)(new remote_1.TransportErr('client', new Error('err'))));
                 let cases = [
                     new case_1.Case(remote_1.TransportErr, (_) => { failed = true; })
                 ];
@@ -8982,9 +8988,9 @@ describe('remote', () => {
                         that.tell('remote', msg);
                     })
                 });
-                yield future_1.delay(() => { }, 0);
-                return future_1.attempt(() => {
-                    assert_1.assert(failed).true();
+                yield (0, future_1.delay)(() => { }, 0);
+                return (0, future_1.attempt)(() => {
+                    (0, assert_1.assert)(failed).true();
                 });
             })));
         });
@@ -9036,14 +9042,14 @@ class MockHandler {
 describe('model', () => {
     describe('RemoteModel', () => {
         describe('create', () => {
-            it('should provide the created id', () => future_1.toPromise(future_1.doFuture(function* () {
+            it('should provide the created id', () => (0, future_1.toPromise)((0, future_1.doFuture)(function* () {
                 let app = new app_1.TestApp();
                 let handler = new MockHandler();
-                let model = new model_1.RemoteModel('remote', '/', (create) => {
+                let model = new model_1.RemoteModel('remote', { create: '/' }, (create) => {
                     let id = 'callback';
                     app.spawn({ id, create });
                     return id;
-                }, handler);
+                }, {}, handler);
                 let response = new response_1.Created({ data: { id: 1 } }, {}, {});
                 let request;
                 let remote = new TestRemote(app, [
@@ -9055,24 +9061,24 @@ describe('model', () => {
                 app.spawn({ id: 'remote', create: () => remote });
                 let payload = { name: 'Dennis Hall' };
                 let id = yield model.create(payload);
-                return future_1.attempt(() => {
-                    assert_1.assert(request).instance.of(request_1.Post);
-                    assert_1.assert(request.body).equate(payload);
-                    assert_1.assert(id).equal(1);
-                    assert_1.assert(handler.MOCK.getCalledList())
+                return (0, future_1.attempt)(() => {
+                    (0, assert_1.assert)(request).instance.of(request_1.Post);
+                    (0, assert_1.assert)(request.body).equate(payload);
+                    (0, assert_1.assert)(id).equal(1);
+                    (0, assert_1.assert)(handler.MOCK.getCalledList())
                         .equate(['onComplete']);
                 });
             })));
         });
         describe('search', () => {
-            it('should provide the list of results', () => future_1.toPromise(future_1.doFuture(function* () {
+            it('should provide the list of results', () => (0, future_1.toPromise)((0, future_1.doFuture)(function* () {
                 let app = new app_1.TestApp();
                 let handler = new MockHandler();
-                let model = new model_1.RemoteModel('remote', '/', (create) => {
+                let model = new model_1.RemoteModel('remote', { search: '/' }, (create) => {
                     let id = 'callback';
                     app.spawn({ id, create });
                     return id;
-                }, handler);
+                }, {}, handler);
                 let request;
                 let responseBody = {
                     data: [
@@ -9090,25 +9096,25 @@ describe('model', () => {
                 app.spawn({ id: 'remote', create: () => remote });
                 let qry = { limit: 10, filter: 'name:Hall' };
                 let results = yield model.search(qry);
-                return future_1.attempt(() => {
-                    assert_1.assert(request).instance.of(request_1.Get);
-                    assert_1.assert(request.params).equate(qry);
-                    assert_1.assert(handler.MOCK.getCalledList())
+                return (0, future_1.attempt)(() => {
+                    (0, assert_1.assert)(request).instance.of(request_1.Get);
+                    (0, assert_1.assert)(request.params).equate(qry);
+                    (0, assert_1.assert)(handler.MOCK.getCalledList())
                         .equate(['onComplete']);
-                    assert_1.assert(handler.MOCK.wasCalledWith('onComplete', [response]));
-                    assert_1.assert(results).equate(responseBody.data);
+                    (0, assert_1.assert)(handler.MOCK.wasCalledWith('onComplete', [response]));
+                    (0, assert_1.assert)(results).equate(responseBody.data);
                 });
             })));
         });
         describe('update', () => {
-            it('should work', () => future_1.toPromise(future_1.doFuture(function* () {
+            it('should work', () => (0, future_1.toPromise)((0, future_1.doFuture)(function* () {
                 let app = new app_1.TestApp();
                 let handler = new MockHandler();
-                let model = new model_1.RemoteModel('remote', '/{id}', (create) => {
+                let model = new model_1.RemoteModel('remote', { update: '/{id}' }, (create) => {
                     let id = 'callback';
                     app.spawn({ id, create });
                     return id;
-                }, handler);
+                }, {}, handler);
                 let request;
                 let response = new response_1.Ok({}, {}, {});
                 let remote = new TestRemote(app, [
@@ -9120,25 +9126,25 @@ describe('model', () => {
                 app.spawn({ id: 'remote', create: () => remote });
                 let changes = { active: true };
                 let result = yield model.update(1, changes);
-                return future_1.attempt(() => {
-                    assert_1.assert(request).instance.of(request_1.Patch);
-                    assert_1.assert(request.body).equate(changes);
-                    assert_1.assert(handler.MOCK.getCalledList())
+                return (0, future_1.attempt)(() => {
+                    (0, assert_1.assert)(request).instance.of(request_1.Patch);
+                    (0, assert_1.assert)(request.body).equate(changes);
+                    (0, assert_1.assert)(handler.MOCK.getCalledList())
                         .equate(['onComplete']);
-                    assert_1.assert(handler.MOCK.wasCalledWith('onComplete', [response]));
-                    assert_1.assert(result).true();
+                    (0, assert_1.assert)(handler.MOCK.wasCalledWith('onComplete', [response]));
+                    (0, assert_1.assert)(result).true();
                 });
             })));
         });
         describe('get', () => {
-            it('should provide the target record', () => future_1.toPromise(future_1.doFuture(function* () {
+            it('should provide the target record', () => (0, future_1.toPromise)((0, future_1.doFuture)(function* () {
                 let app = new app_1.TestApp();
                 let handler = new MockHandler();
-                let model = new model_1.RemoteModel('remote', '/{id}', (create) => {
+                let model = new model_1.RemoteModel('remote', { get: '/{id}' }, (create) => {
                     let id = 'callback';
                     app.spawn({ id, create });
                     return id;
-                }, handler);
+                }, {}, handler);
                 let request;
                 let response = new response_1.Ok({ data: { name: 'Dennis Hall' } }, {}, {});
                 let remote = new TestRemote(app, [
@@ -9149,23 +9155,23 @@ describe('model', () => {
                 ]);
                 app.spawn({ id: 'remote', create: () => remote });
                 let mtarget = yield model.get(1);
-                return future_1.attempt(() => {
-                    assert_1.assert(request).instance.of(request_1.Get);
-                    assert_1.assert(request.path).equal('/1');
-                    assert_1.assert(handler.MOCK.getCalledList())
+                return (0, future_1.attempt)(() => {
+                    (0, assert_1.assert)(request).instance.of(request_1.Get);
+                    (0, assert_1.assert)(request.path).equal('/1');
+                    (0, assert_1.assert)(handler.MOCK.getCalledList())
                         .equate(['onComplete']);
-                    assert_1.assert(handler.MOCK.wasCalledWith('onComplete', [response]));
-                    assert_1.assert(mtarget.get()).equate({ name: 'Dennis Hall' });
+                    (0, assert_1.assert)(handler.MOCK.wasCalledWith('onComplete', [response]));
+                    (0, assert_1.assert)(mtarget.get()).equate({ name: 'Dennis Hall' });
                 });
             })));
-            it('should return Nothing if not found', () => future_1.toPromise(future_1.doFuture(function* () {
+            it('should return Nothing if not found', () => (0, future_1.toPromise)((0, future_1.doFuture)(function* () {
                 let app = new app_1.TestApp();
                 let handler = new MockHandler();
-                let model = new model_1.RemoteModel('remote', '/{id}', (create) => {
+                let model = new model_1.RemoteModel('remote', { get: '/{id}' }, (create) => {
                     let id = 'callback';
                     app.spawn({ id, create });
                     return id;
-                }, handler);
+                }, {}, handler);
                 let response = new response_1.NotFound({}, {}, {});
                 let remote = new TestRemote(app, [
                     new case_1.Case(remote_1.Send, s => {
@@ -9174,22 +9180,22 @@ describe('model', () => {
                 ]);
                 app.spawn({ id: 'remote', create: () => remote });
                 let mresult = yield model.get(1);
-                return future_1.attempt(() => {
-                    assert_1.assert(handler.MOCK.getCalledList())
+                return (0, future_1.attempt)(() => {
+                    (0, assert_1.assert)(handler.MOCK.getCalledList())
                         .equate([]);
-                    assert_1.assert(mresult.isNothing()).true();
+                    (0, assert_1.assert)(mresult.isNothing()).true();
                 });
             })));
         });
         describe('remove', () => {
-            it('should remove the target record', () => future_1.toPromise(future_1.doFuture(function* () {
+            it('should remove the target record', () => (0, future_1.toPromise)((0, future_1.doFuture)(function* () {
                 let app = new app_1.TestApp();
                 let handler = new MockHandler();
-                let model = new model_1.RemoteModel('remote', '/{id}', (create) => {
+                let model = new model_1.RemoteModel('remote', { remove: '/{id}' }, (create) => {
                     let id = 'callback';
                     app.spawn({ id, create });
                     return id;
-                }, handler);
+                }, {}, handler);
                 let request;
                 let response = new response_1.Ok({}, {}, {});
                 let remote = new TestRemote(app, [
@@ -9200,12 +9206,12 @@ describe('model', () => {
                 ]);
                 app.spawn({ id: 'remote', create: () => remote });
                 yield model.remove(1);
-                return future_1.attempt(() => {
-                    assert_1.assert(request).instance.of(request_1.Delete);
-                    assert_1.assert(request.path).equal('/1');
-                    assert_1.assert(handler.MOCK.getCalledList())
+                return (0, future_1.attempt)(() => {
+                    (0, assert_1.assert)(request).instance.of(request_1.Delete);
+                    (0, assert_1.assert)(request.path).equal('/1');
+                    (0, assert_1.assert)(handler.MOCK.getCalledList())
                         .equate(['onComplete']);
-                    assert_1.assert(handler.MOCK.wasCalledWith('onComplete', [response]));
+                    (0, assert_1.assert)(handler.MOCK.wasCalledWith('onComplete', [response]));
                 });
             })));
         });
@@ -9226,14 +9232,14 @@ describe('model', () => {
                     409: ['onClientError'],
                     500: ['onServerError']
                 };
-                let work = methods.map(method => record_1.mapTo(codes, (expected, code) => future_1.doFuture(function* () {
+                let work = methods.map(method => (0, record_1.mapTo)(codes, (expected, code) => (0, future_1.doFuture)(function* () {
                     let app = new app_1.TestApp();
                     let handler = new MockHandler();
-                    let model = new model_1.RemoteModel('remote', '/', (create) => {
+                    let model = new model_1.RemoteModel('remote', { create: '/' }, (create) => {
                         let id = 'callback';
                         app.spawn({ id, create });
                         return id;
-                    }, handler);
+                    }, {}, handler);
                     let response = new response_1.GenericResponse(Number(code), {}, {}, {});
                     let remote = new TestRemote(app, [
                         new case_1.Case(remote_1.Send, s => {
@@ -9242,17 +9248,17 @@ describe('model', () => {
                     ]);
                     app.spawn({ id: 'remote', create: () => remote });
                     let ft = model[method[0]].call(model, method[1]);
-                    yield ft.catch(() => future_1.pure(undefined));
-                    return future_1.attempt(() => {
+                    yield ft.catch(() => (0, future_1.pure)(undefined));
+                    return (0, future_1.attempt)(() => {
                         if ((code === '404') && (method[0] === 'get'))
-                            assert_1.assert(handler.MOCK.getCalledList())
+                            (0, assert_1.assert)(handler.MOCK.getCalledList())
                                 .equate([]);
                         else
-                            assert_1.assert(handler.MOCK.getCalledList())
+                            (0, assert_1.assert)(handler.MOCK.getCalledList())
                                 .equate(expected);
                     });
                 })));
-                return future_1.toPromise(future_1.batch(work));
+                return (0, future_1.toPromise)((0, future_1.batch)(work));
             });
         });
     });
@@ -9297,13 +9303,13 @@ class MockRemoteObserver {
 describe('observable', () => {
     describe('RemoteObserver', () => {
         describe('api', () => {
-            it('should handle Send', () => future_1.toPromise(future_1.doFuture(function* () {
+            it('should handle Send', () => (0, future_1.toPromise)((0, future_1.doFuture)(function* () {
                 let s = new app_1.TestApp({ log: { logger: console, level: 8 } });
                 let agent = new mock_2.MockAgent();
                 let observer = new MockRemoteObserver();
                 let res = new response_1.Ok('text', {}, {});
                 let success = false;
-                agent.__MOCK__.setReturnValue('send', future_1.pure(res));
+                agent.__MOCK__.setReturnValue('send', (0, future_1.pure)(res));
                 let cases = [
                     new case_1.Case(response_1.Ok, (r) => {
                         success = r === res;
@@ -9320,23 +9326,23 @@ describe('observable', () => {
                         that.tell('remote', msg);
                     })
                 });
-                yield future_1.delay(() => { }, 0);
-                return future_1.attempt(() => {
-                    assert_1.assert(success).true();
-                    assert_1.assert(observer.__mock__.getCalledList()).equate([
+                yield (0, future_1.delay)(() => { }, 0);
+                return (0, future_1.attempt)(() => {
+                    (0, assert_1.assert)(success).true();
+                    (0, assert_1.assert)(observer.__mock__.getCalledList()).equate([
                         'onStart',
                         'onComplete',
                         'onFinish'
                     ]);
                 });
             })));
-            it('should handle ParSend', () => future_1.toPromise(future_1.doFuture(function* () {
+            it('should handle ParSend', () => (0, future_1.toPromise)((0, future_1.doFuture)(function* () {
                 let s = new app_1.TestApp();
                 let agent = new mock_2.MockAgent();
                 let observer = new MockRemoteObserver();
                 let res = new response_1.Ok('text', {}, {});
                 let success = false;
-                agent.__MOCK__.setReturnValue('send', future_1.pure(res));
+                agent.__MOCK__.setReturnValue('send', (0, future_1.pure)(res));
                 let cases = [
                     new case_1.Case(observer_1.BatchResponse, (r) => {
                         success = r.value.every(r => r === res);
@@ -9357,23 +9363,23 @@ describe('observable', () => {
                         that.tell('remote', msg);
                     })
                 });
-                yield future_1.delay(() => { }, 0);
-                return future_1.attempt(() => {
-                    assert_1.assert(success).true();
-                    assert_1.assert(observer.__mock__.getCalledList()).equate([
+                yield (0, future_1.delay)(() => { }, 0);
+                return (0, future_1.attempt)(() => {
+                    (0, assert_1.assert)(success).true();
+                    (0, assert_1.assert)(observer.__mock__.getCalledList()).equate([
                         'onStart',
                         'onComplete',
                         'onFinish'
                     ]);
                 });
             })));
-            it('should handle SeqSend', () => future_1.toPromise(future_1.doFuture(function* () {
+            it('should handle SeqSend', () => (0, future_1.toPromise)((0, future_1.doFuture)(function* () {
                 let s = new app_1.TestApp();
                 let agent = new mock_2.MockAgent();
                 let observer = new MockRemoteObserver();
                 let res = new response_1.Ok('text', {}, {});
                 let success = false;
-                agent.__MOCK__.setReturnValue('send', future_1.pure(res));
+                agent.__MOCK__.setReturnValue('send', (0, future_1.pure)(res));
                 let cases = [
                     new case_1.Case(observer_1.BatchResponse, (r) => {
                         success = r.value.every(r => r === res);
@@ -9394,23 +9400,23 @@ describe('observable', () => {
                         that.tell('remote', msg);
                     })
                 });
-                yield future_1.delay(() => { }, 0);
-                return future_1.attempt(() => {
-                    assert_1.assert(success).true();
-                    assert_1.assert(observer.__mock__.getCalledList()).equate([
+                yield (0, future_1.delay)(() => { }, 0);
+                return (0, future_1.attempt)(() => {
+                    (0, assert_1.assert)(success).true();
+                    (0, assert_1.assert)(observer.__mock__.getCalledList()).equate([
                         'onStart',
                         'onComplete',
                         'onFinish'
                     ]);
                 });
             })));
-            it('should handle transport errors', () => future_1.toPromise(future_1.doFuture(function* () {
+            it('should handle transport errors', () => (0, future_1.toPromise)((0, future_1.doFuture)(function* () {
                 let s = new app_1.TestApp();
                 let agent = new mock_2.MockAgent();
                 let observer = new MockRemoteObserver();
                 let req = new request_1.Get('', {});
                 let failed = false;
-                agent.__MOCK__.setReturnValue('send', future_1.raise(new observer_1.TransportErr('client', new Error('err'))));
+                agent.__MOCK__.setReturnValue('send', (0, future_1.raise)(new observer_1.TransportErr('client', new Error('err'))));
                 let cases = [
                     new case_1.Case(observer_1.TransportErr, (_) => { failed = true; })
                 ];
@@ -9425,22 +9431,22 @@ describe('observable', () => {
                         that.tell('remote', msg);
                     })
                 });
-                yield future_1.delay(() => { }, 0);
-                return future_1.attempt(() => {
-                    assert_1.assert(failed).true();
-                    assert_1.assert(observer.__mock__.getCalledList()).equate([
+                yield (0, future_1.delay)(() => { }, 0);
+                return (0, future_1.attempt)(() => {
+                    (0, assert_1.assert)(failed).true();
+                    (0, assert_1.assert)(observer.__mock__.getCalledList()).equate([
                         'onStart',
                         'onError',
                         'onFinish'
                     ]);
                 });
             })));
-            it('should handle client errors', () => future_1.toPromise(future_1.doFuture(function* () {
+            it('should handle client errors', () => (0, future_1.toPromise)((0, future_1.doFuture)(function* () {
                 let s = new app_1.TestApp();
                 let agent = new mock_2.MockAgent();
                 let observer = new MockRemoteObserver();
                 let req = new request_1.Get('', {});
-                agent.__MOCK__.setReturnValue('send', future_1.pure(new response_1.BadRequest({}, {}, {})));
+                agent.__MOCK__.setReturnValue('send', (0, future_1.pure)(new response_1.BadRequest({}, {}, {})));
                 s.spawn({
                     id: 'remote',
                     create: s => new observer_1.RemoteObserver(agent, observer, s)
@@ -9452,21 +9458,21 @@ describe('observable', () => {
                         that.tell('remote', msg);
                     })
                 });
-                yield future_1.delay(() => { }, 0);
-                return future_1.attempt(() => {
-                    assert_1.assert(observer.__mock__.getCalledList()).equate([
+                yield (0, future_1.delay)(() => { }, 0);
+                return (0, future_1.attempt)(() => {
+                    (0, assert_1.assert)(observer.__mock__.getCalledList()).equate([
                         'onStart',
                         'onClientError',
                         'onFinish'
                     ]);
                 });
             })));
-            it('should handle server errors', () => future_1.toPromise(future_1.doFuture(function* () {
+            it('should handle server errors', () => (0, future_1.toPromise)((0, future_1.doFuture)(function* () {
                 let s = new app_1.TestApp();
                 let agent = new mock_2.MockAgent();
                 let observer = new MockRemoteObserver();
                 let req = new request_1.Get('', {});
-                agent.__MOCK__.setReturnValue('send', future_1.pure(new response_1.InternalServerError({}, {}, {})));
+                agent.__MOCK__.setReturnValue('send', (0, future_1.pure)(new response_1.InternalServerError({}, {}, {})));
                 s.spawn({
                     id: 'remote',
                     create: s => new observer_1.RemoteObserver(agent, observer, s)
@@ -9478,9 +9484,9 @@ describe('observable', () => {
                         that.tell('remote', msg);
                     })
                 });
-                yield future_1.delay(() => { }, 0);
-                return future_1.attempt(() => {
-                    assert_1.assert(observer.__mock__.getCalledList()).equate([
+                yield (0, future_1.delay)(() => { }, 0);
+                return (0, future_1.attempt)(() => {
+                    (0, assert_1.assert)(observer.__mock__.getCalledList()).equate([
                         'onStart',
                         'onServerError',
                         'onFinish'
@@ -9536,7 +9542,7 @@ const director = (routes, router, timeout = 0) => ({
 });
 describe('director', () => {
     describe('Director', () => {
-        it('should execute routes ', () => future_1.toPromise(future_1.doFuture(function* () {
+        it('should execute routes ', () => (0, future_1.toPromise)((0, future_1.doFuture)(function* () {
             let app = system();
             let router = new Router();
             let executed = false;
@@ -9545,10 +9551,10 @@ describe('director', () => {
                 new case_1.Case(director_1.Resume, () => { executed = true; })
             ]));
             yield router.handlers['/foo']('foo');
-            yield future_1.fromCallback(cb => setTimeout(cb));
-            return future_1.attempt(() => assert_1.assert(executed).true());
+            yield (0, future_1.fromCallback)(cb => setTimeout(cb));
+            return (0, future_1.attempt)(() => (0, assert_1.assert)(executed).true());
         })));
-        it('should send Suspend before change', () => future_1.toPromise(future_1.doFuture(function* () {
+        it('should send Suspend before change', () => (0, future_1.toPromise)((0, future_1.doFuture)(function* () {
             let app = system();
             let router = new Router();
             let routes = { '/foo': 'foo', '/bar': 'bar' };
@@ -9563,16 +9569,16 @@ describe('director', () => {
             app.spawn(Controller.template('bar', () => []));
             yield router.handlers['/foo']('/foo');
             yield router.handlers['/bar']('/bar');
-            yield future_1.fromCallback(cb => setTimeout(cb, 100));
-            return future_1.attempt(() => {
+            yield (0, future_1.fromCallback)(cb => setTimeout(cb, 100));
+            return (0, future_1.attempt)(() => {
                 let runtime = app.vm.state.threads['director'];
                 let dir = runtime.context.actor;
-                assert_1.assert(dir.routes['/foo']).not.undefined();
-                assert_1.assert(dir.routes['/bar']).not.undefined();
-                assert_1.assert(passed).true();
+                (0, assert_1.assert)(dir.routes['/foo']).not.undefined();
+                (0, assert_1.assert)(dir.routes['/bar']).not.undefined();
+                (0, assert_1.assert)(passed).true();
             });
         })));
-        it('should remove unresponsive routes', () => future_1.toPromise(future_1.doFuture(function* () {
+        it('should remove unresponsive routes', () => (0, future_1.toPromise)((0, future_1.doFuture)(function* () {
             let app = system();
             let router = new Router();
             let routes = { '/foo': 'foo', '/bar': 'bar' };
@@ -9584,16 +9590,16 @@ describe('director', () => {
             ]));
             yield router.handlers['/foo']('/foo');
             yield router.handlers['/bar']('/bar');
-            yield future_1.fromCallback(cb => setTimeout(cb, 500));
-            return future_1.attempt(() => {
+            yield (0, future_1.fromCallback)(cb => setTimeout(cb, 500));
+            return (0, future_1.attempt)(() => {
                 let runtime = app.vm.state.threads['director'];
                 let dir = runtime.context.actor;
-                assert_1.assert(dir.routes['/foo']).undefined();
-                assert_1.assert(dir.routes['/bar']).not.undefined();
-                assert_1.assert(passed).true();
+                (0, assert_1.assert)(dir.routes['/foo']).undefined();
+                (0, assert_1.assert)(dir.routes['/bar']).not.undefined();
+                (0, assert_1.assert)(passed).true();
             });
         })));
-        it('should spawn templates ', () => future_1.toPromise(future_1.doFuture(function* () {
+        it('should spawn templates ', () => (0, future_1.toPromise)((0, future_1.doFuture)(function* () {
             let app = system();
             let router = new Router();
             let passed = false;
@@ -9611,14 +9617,14 @@ describe('director', () => {
             };
             app.spawn(director({ '/foo': tmpl }, router, 0));
             yield router.handlers['/foo']('/foo');
-            yield future_1.fromCallback(cb => setTimeout(cb));
-            return future_1.attempt(() => {
-                assert_1.assert(passed).true();
-                assert_1.assert(actualTemplate.id).equal("foo");
-                assert_1.assert(actualResume).instance.of(director_1.Resume);
+            yield (0, future_1.fromCallback)(cb => setTimeout(cb));
+            return (0, future_1.attempt)(() => {
+                (0, assert_1.assert)(passed).true();
+                (0, assert_1.assert)(actualTemplate.id).equal("foo");
+                (0, assert_1.assert)(actualResume).instance.of(director_1.Resume);
             });
         })));
-        it('should kill spawned templates ', () => future_1.toPromise(future_1.doFuture(function* () {
+        it('should kill spawned templates ', () => (0, future_1.toPromise)((0, future_1.doFuture)(function* () {
             let app = system();
             let router = new Router();
             let spawned = false;
@@ -9633,15 +9639,15 @@ describe('director', () => {
             }, router, 0));
             yield router.handlers['/foo']('/foo');
             yield router.handlers['/bar']('/bar');
-            yield future_1.fromCallback(cb => setTimeout(cb, 100));
-            return future_1.attempt(() => {
+            yield (0, future_1.fromCallback)(cb => setTimeout(cb, 100));
+            return (0, future_1.attempt)(() => {
                 let threads = app.vm.state.threads;
-                let matches = record_1.reduce(threads, 0, (p, _, k) => string_1.startsWith(String(k), 'director/') ? p + 1 : p);
-                assert_1.assert(spawned).true();
-                assert_1.assert(matches).equal(2);
+                let matches = (0, record_1.reduce)(threads, 0, (p, _, k) => (0, string_1.startsWith)(String(k), 'director/') ? p + 1 : p);
+                (0, assert_1.assert)(spawned).true();
+                (0, assert_1.assert)(matches).equal(2);
             });
         })));
-        it('should exec functions', () => future_1.toPromise(future_1.doFuture(function* () {
+        it('should exec functions', () => (0, future_1.toPromise)((0, future_1.doFuture)(function* () {
             let app = system();
             let router = new Router();
             let spawned = false;
@@ -9652,10 +9658,10 @@ describe('director', () => {
                 }
             }, router, 0));
             yield router.handlers['/foo']('/foo');
-            yield future_1.fromCallback(cb => setTimeout(cb, 100));
-            return future_1.attempt(() => { assert_1.assert(spawned).true(); });
+            yield (0, future_1.fromCallback)(cb => setTimeout(cb, 100));
+            return (0, future_1.attempt)(() => { (0, assert_1.assert)(spawned).true(); });
         })));
-        it('should reload actors', () => future_1.toPromise(future_1.doFuture(function* () {
+        it('should reload actors', () => (0, future_1.toPromise)((0, future_1.doFuture)(function* () {
             let app = system();
             let router = new Router();
             let called = 0;
@@ -9676,8 +9682,8 @@ describe('director', () => {
                 ]),
             }, router, 0));
             yield router.handlers['/foo']('/foo');
-            yield future_1.fromCallback(cb => setTimeout(cb, 100));
-            return future_1.attempt(() => { assert_1.assert(called).equal(2); });
+            yield (0, future_1.fromCallback)(cb => setTimeout(cb, 100));
+            return (0, future_1.attempt)(() => { (0, assert_1.assert)(called).equal(2); });
         })));
     });
 });

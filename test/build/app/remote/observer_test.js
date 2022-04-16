@@ -36,13 +36,13 @@ class MockRemoteObserver {
 describe('observable', () => {
     describe('RemoteObserver', () => {
         describe('api', () => {
-            it('should handle Send', () => future_1.toPromise(future_1.doFuture(function* () {
+            it('should handle Send', () => (0, future_1.toPromise)((0, future_1.doFuture)(function* () {
                 let s = new app_1.TestApp({ log: { logger: console, level: 8 } });
                 let agent = new mock_2.MockAgent();
                 let observer = new MockRemoteObserver();
                 let res = new response_1.Ok('text', {}, {});
                 let success = false;
-                agent.__MOCK__.setReturnValue('send', future_1.pure(res));
+                agent.__MOCK__.setReturnValue('send', (0, future_1.pure)(res));
                 let cases = [
                     new case_1.Case(response_1.Ok, (r) => {
                         success = r === res;
@@ -59,23 +59,23 @@ describe('observable', () => {
                         that.tell('remote', msg);
                     })
                 });
-                yield future_1.delay(() => { }, 0);
-                return future_1.attempt(() => {
-                    assert_1.assert(success).true();
-                    assert_1.assert(observer.__mock__.getCalledList()).equate([
+                yield (0, future_1.delay)(() => { }, 0);
+                return (0, future_1.attempt)(() => {
+                    (0, assert_1.assert)(success).true();
+                    (0, assert_1.assert)(observer.__mock__.getCalledList()).equate([
                         'onStart',
                         'onComplete',
                         'onFinish'
                     ]);
                 });
             })));
-            it('should handle ParSend', () => future_1.toPromise(future_1.doFuture(function* () {
+            it('should handle ParSend', () => (0, future_1.toPromise)((0, future_1.doFuture)(function* () {
                 let s = new app_1.TestApp();
                 let agent = new mock_2.MockAgent();
                 let observer = new MockRemoteObserver();
                 let res = new response_1.Ok('text', {}, {});
                 let success = false;
-                agent.__MOCK__.setReturnValue('send', future_1.pure(res));
+                agent.__MOCK__.setReturnValue('send', (0, future_1.pure)(res));
                 let cases = [
                     new case_1.Case(observer_1.BatchResponse, (r) => {
                         success = r.value.every(r => r === res);
@@ -96,23 +96,23 @@ describe('observable', () => {
                         that.tell('remote', msg);
                     })
                 });
-                yield future_1.delay(() => { }, 0);
-                return future_1.attempt(() => {
-                    assert_1.assert(success).true();
-                    assert_1.assert(observer.__mock__.getCalledList()).equate([
+                yield (0, future_1.delay)(() => { }, 0);
+                return (0, future_1.attempt)(() => {
+                    (0, assert_1.assert)(success).true();
+                    (0, assert_1.assert)(observer.__mock__.getCalledList()).equate([
                         'onStart',
                         'onComplete',
                         'onFinish'
                     ]);
                 });
             })));
-            it('should handle SeqSend', () => future_1.toPromise(future_1.doFuture(function* () {
+            it('should handle SeqSend', () => (0, future_1.toPromise)((0, future_1.doFuture)(function* () {
                 let s = new app_1.TestApp();
                 let agent = new mock_2.MockAgent();
                 let observer = new MockRemoteObserver();
                 let res = new response_1.Ok('text', {}, {});
                 let success = false;
-                agent.__MOCK__.setReturnValue('send', future_1.pure(res));
+                agent.__MOCK__.setReturnValue('send', (0, future_1.pure)(res));
                 let cases = [
                     new case_1.Case(observer_1.BatchResponse, (r) => {
                         success = r.value.every(r => r === res);
@@ -133,23 +133,23 @@ describe('observable', () => {
                         that.tell('remote', msg);
                     })
                 });
-                yield future_1.delay(() => { }, 0);
-                return future_1.attempt(() => {
-                    assert_1.assert(success).true();
-                    assert_1.assert(observer.__mock__.getCalledList()).equate([
+                yield (0, future_1.delay)(() => { }, 0);
+                return (0, future_1.attempt)(() => {
+                    (0, assert_1.assert)(success).true();
+                    (0, assert_1.assert)(observer.__mock__.getCalledList()).equate([
                         'onStart',
                         'onComplete',
                         'onFinish'
                     ]);
                 });
             })));
-            it('should handle transport errors', () => future_1.toPromise(future_1.doFuture(function* () {
+            it('should handle transport errors', () => (0, future_1.toPromise)((0, future_1.doFuture)(function* () {
                 let s = new app_1.TestApp();
                 let agent = new mock_2.MockAgent();
                 let observer = new MockRemoteObserver();
                 let req = new request_1.Get('', {});
                 let failed = false;
-                agent.__MOCK__.setReturnValue('send', future_1.raise(new observer_1.TransportErr('client', new Error('err'))));
+                agent.__MOCK__.setReturnValue('send', (0, future_1.raise)(new observer_1.TransportErr('client', new Error('err'))));
                 let cases = [
                     new case_1.Case(observer_1.TransportErr, (_) => { failed = true; })
                 ];
@@ -164,22 +164,22 @@ describe('observable', () => {
                         that.tell('remote', msg);
                     })
                 });
-                yield future_1.delay(() => { }, 0);
-                return future_1.attempt(() => {
-                    assert_1.assert(failed).true();
-                    assert_1.assert(observer.__mock__.getCalledList()).equate([
+                yield (0, future_1.delay)(() => { }, 0);
+                return (0, future_1.attempt)(() => {
+                    (0, assert_1.assert)(failed).true();
+                    (0, assert_1.assert)(observer.__mock__.getCalledList()).equate([
                         'onStart',
                         'onError',
                         'onFinish'
                     ]);
                 });
             })));
-            it('should handle client errors', () => future_1.toPromise(future_1.doFuture(function* () {
+            it('should handle client errors', () => (0, future_1.toPromise)((0, future_1.doFuture)(function* () {
                 let s = new app_1.TestApp();
                 let agent = new mock_2.MockAgent();
                 let observer = new MockRemoteObserver();
                 let req = new request_1.Get('', {});
-                agent.__MOCK__.setReturnValue('send', future_1.pure(new response_1.BadRequest({}, {}, {})));
+                agent.__MOCK__.setReturnValue('send', (0, future_1.pure)(new response_1.BadRequest({}, {}, {})));
                 s.spawn({
                     id: 'remote',
                     create: s => new observer_1.RemoteObserver(agent, observer, s)
@@ -191,21 +191,21 @@ describe('observable', () => {
                         that.tell('remote', msg);
                     })
                 });
-                yield future_1.delay(() => { }, 0);
-                return future_1.attempt(() => {
-                    assert_1.assert(observer.__mock__.getCalledList()).equate([
+                yield (0, future_1.delay)(() => { }, 0);
+                return (0, future_1.attempt)(() => {
+                    (0, assert_1.assert)(observer.__mock__.getCalledList()).equate([
                         'onStart',
                         'onClientError',
                         'onFinish'
                     ]);
                 });
             })));
-            it('should handle server errors', () => future_1.toPromise(future_1.doFuture(function* () {
+            it('should handle server errors', () => (0, future_1.toPromise)((0, future_1.doFuture)(function* () {
                 let s = new app_1.TestApp();
                 let agent = new mock_2.MockAgent();
                 let observer = new MockRemoteObserver();
                 let req = new request_1.Get('', {});
-                agent.__MOCK__.setReturnValue('send', future_1.pure(new response_1.InternalServerError({}, {}, {})));
+                agent.__MOCK__.setReturnValue('send', (0, future_1.pure)(new response_1.InternalServerError({}, {}, {})));
                 s.spawn({
                     id: 'remote',
                     create: s => new observer_1.RemoteObserver(agent, observer, s)
@@ -217,9 +217,9 @@ describe('observable', () => {
                         that.tell('remote', msg);
                     })
                 });
-                yield future_1.delay(() => { }, 0);
-                return future_1.attempt(() => {
-                    assert_1.assert(observer.__mock__.getCalledList()).equate([
+                yield (0, future_1.delay)(() => { }, 0);
+                return (0, future_1.attempt)(() => {
+                    (0, assert_1.assert)(observer.__mock__.getCalledList()).equate([
                         'onStart',
                         'onServerError',
                         'onFinish'

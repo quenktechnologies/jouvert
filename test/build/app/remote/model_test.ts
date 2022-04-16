@@ -45,11 +45,11 @@ class TestRemote extends Immutable<Type> {
 
     }
 
-  receive() {
+    receive() {
 
-    return this.cases;
+        return this.cases;
 
-  }
+    }
 
     run() { }
 
@@ -100,7 +100,7 @@ describe('model', () => {
 
                     let model = new RemoteModel(
                         'remote',
-                        '/',
+                        { create: '/' },
                         (create: Type) => {
 
                             let id = 'callback';
@@ -108,6 +108,7 @@ describe('model', () => {
                             return id;
 
                         },
+                        {},
                         handler
                     );
 
@@ -161,7 +162,7 @@ describe('model', () => {
 
                     let model = new RemoteModel(
                         'remote',
-                        '/',
+                        { search: '/' },
                         (create: Type) => {
 
                             let id = 'callback';
@@ -169,6 +170,7 @@ describe('model', () => {
                             return id;
 
                         },
+                        {},
                         handler
                     );
 
@@ -231,7 +233,7 @@ describe('model', () => {
 
                     let model = new RemoteModel(
                         'remote',
-                        '/{id}',
+                        { update: '/{id}' },
                         (create: Type) => {
 
                             let id = 'callback';
@@ -239,6 +241,7 @@ describe('model', () => {
                             return id;
 
                         },
+                        {},
                         handler
                     );
 
@@ -295,7 +298,7 @@ describe('model', () => {
 
                     let model = new RemoteModel(
                         'remote',
-                        '/{id}',
+                        { get: '/{id}' },
                         (create: Type) => {
 
                             let id = 'callback';
@@ -303,6 +306,7 @@ describe('model', () => {
                             return id;
 
                         },
+                        {},
                         handler
                     );
 
@@ -354,7 +358,7 @@ describe('model', () => {
 
                     let model = new RemoteModel(
                         'remote',
-                        '/{id}',
+                        { get: '/{id}' },
                         (create: Type) => {
 
                             let id = 'callback';
@@ -362,6 +366,7 @@ describe('model', () => {
                             return id;
 
                         },
+                        {},
                         handler
                     );
 
@@ -404,7 +409,7 @@ describe('model', () => {
 
                     let model = new RemoteModel(
                         'remote',
-                        '/{id}',
+                        { remove: '/{id}' },
                         (create: Type) => {
 
                             let id = 'callback';
@@ -412,6 +417,7 @@ describe('model', () => {
                             return id;
 
                         },
+                        {},
                         handler
                     );
 
@@ -485,7 +491,7 @@ describe('model', () => {
 
                         let model = new RemoteModel(
                             'remote',
-                            '/',
+                          {create:'/'},
                             (create: Type) => {
 
                                 let id = 'callback';
@@ -493,6 +499,7 @@ describe('model', () => {
                                 return id;
 
                             },
+                          {},
                             handler
                         );
 

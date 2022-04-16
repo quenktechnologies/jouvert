@@ -12,12 +12,12 @@ const app_1 = require("../../app/fixtures/app");
 describe('remote', () => {
     describe('Remote', () => {
         describe('api', () => {
-            it('should handle Send', () => future_1.toPromise(future_1.doFuture(function* () {
+            it('should handle Send', () => (0, future_1.toPromise)((0, future_1.doFuture)(function* () {
                 let s = new app_1.TestApp();
                 let mock = new mock_1.MockAgent();
                 let res = new response_1.Ok('text', {}, {});
                 let success = false;
-                mock.__MOCK__.setReturnValue('send', future_1.pure(res));
+                mock.__MOCK__.setReturnValue('send', (0, future_1.pure)(res));
                 let cases = [
                     new case_1.Case(response_1.Ok, (r) => {
                         success = r === res;
@@ -34,17 +34,17 @@ describe('remote', () => {
                         that.tell('remote', msg);
                     })
                 });
-                yield future_1.delay(() => { }, 0);
-                return future_1.attempt(() => {
-                    assert_1.assert(success).true();
+                yield (0, future_1.delay)(() => { }, 0);
+                return (0, future_1.attempt)(() => {
+                    (0, assert_1.assert)(success).true();
                 });
             })));
-            it('should handle ParSend', () => future_1.toPromise(future_1.doFuture(function* () {
+            it('should handle ParSend', () => (0, future_1.toPromise)((0, future_1.doFuture)(function* () {
                 let s = new app_1.TestApp();
                 let mock = new mock_1.MockAgent();
                 let res = new response_1.Ok('text', {}, {});
                 let success = false;
-                mock.__MOCK__.setReturnValue('send', future_1.pure(res));
+                mock.__MOCK__.setReturnValue('send', (0, future_1.pure)(res));
                 let cases = [
                     new case_1.Case(remote_1.BatchResponse, (r) => {
                         success = r.value.every(r => r === res);
@@ -65,17 +65,17 @@ describe('remote', () => {
                         that.tell('remote', msg);
                     })
                 });
-                yield future_1.delay(() => { }, 0);
-                return future_1.attempt(() => {
-                    assert_1.assert(success).true();
+                yield (0, future_1.delay)(() => { }, 0);
+                return (0, future_1.attempt)(() => {
+                    (0, assert_1.assert)(success).true();
                 });
             })));
-            it('should handle SeqSend', () => future_1.toPromise(future_1.doFuture(function* () {
+            it('should handle SeqSend', () => (0, future_1.toPromise)((0, future_1.doFuture)(function* () {
                 let s = new app_1.TestApp();
                 let mock = new mock_1.MockAgent();
                 let res = new response_1.Ok('text', {}, {});
                 let success = false;
-                mock.__MOCK__.setReturnValue('send', future_1.pure(res));
+                mock.__MOCK__.setReturnValue('send', (0, future_1.pure)(res));
                 let cases = [
                     new case_1.Case(remote_1.BatchResponse, (r) => {
                         success = r.value.every(r => r === res);
@@ -96,17 +96,17 @@ describe('remote', () => {
                         that.tell('remote', msg);
                     })
                 });
-                yield future_1.delay(() => { }, 0);
-                return future_1.attempt(() => {
-                    assert_1.assert(success).true();
+                yield (0, future_1.delay)(() => { }, 0);
+                return (0, future_1.attempt)(() => {
+                    (0, assert_1.assert)(success).true();
                 });
             })));
-            it('should handle transport errors', () => future_1.toPromise(future_1.doFuture(function* () {
+            it('should handle transport errors', () => (0, future_1.toPromise)((0, future_1.doFuture)(function* () {
                 let s = new app_1.TestApp();
                 let mock = new mock_1.MockAgent();
                 let req = new request_1.Get('', {});
                 let failed = false;
-                mock.__MOCK__.setReturnValue('send', future_1.raise(new remote_1.TransportErr('client', new Error('err'))));
+                mock.__MOCK__.setReturnValue('send', (0, future_1.raise)(new remote_1.TransportErr('client', new Error('err'))));
                 let cases = [
                     new case_1.Case(remote_1.TransportErr, (_) => { failed = true; })
                 ];
@@ -121,9 +121,9 @@ describe('remote', () => {
                         that.tell('remote', msg);
                     })
                 });
-                yield future_1.delay(() => { }, 0);
-                return future_1.attempt(() => {
-                    assert_1.assert(failed).true();
+                yield (0, future_1.delay)(() => { }, 0);
+                return (0, future_1.attempt)(() => {
+                    (0, assert_1.assert)(failed).true();
                 });
             })));
         });

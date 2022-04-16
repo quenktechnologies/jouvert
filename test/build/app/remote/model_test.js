@@ -42,14 +42,14 @@ class MockHandler {
 describe('model', () => {
     describe('RemoteModel', () => {
         describe('create', () => {
-            it('should provide the created id', () => future_1.toPromise(future_1.doFuture(function* () {
+            it('should provide the created id', () => (0, future_1.toPromise)((0, future_1.doFuture)(function* () {
                 let app = new app_1.TestApp();
                 let handler = new MockHandler();
-                let model = new model_1.RemoteModel('remote', '/', (create) => {
+                let model = new model_1.RemoteModel('remote', { create: '/' }, (create) => {
                     let id = 'callback';
                     app.spawn({ id, create });
                     return id;
-                }, handler);
+                }, {}, handler);
                 let response = new response_1.Created({ data: { id: 1 } }, {}, {});
                 let request;
                 let remote = new TestRemote(app, [
@@ -61,24 +61,24 @@ describe('model', () => {
                 app.spawn({ id: 'remote', create: () => remote });
                 let payload = { name: 'Dennis Hall' };
                 let id = yield model.create(payload);
-                return future_1.attempt(() => {
-                    assert_1.assert(request).instance.of(request_1.Post);
-                    assert_1.assert(request.body).equate(payload);
-                    assert_1.assert(id).equal(1);
-                    assert_1.assert(handler.MOCK.getCalledList())
+                return (0, future_1.attempt)(() => {
+                    (0, assert_1.assert)(request).instance.of(request_1.Post);
+                    (0, assert_1.assert)(request.body).equate(payload);
+                    (0, assert_1.assert)(id).equal(1);
+                    (0, assert_1.assert)(handler.MOCK.getCalledList())
                         .equate(['onComplete']);
                 });
             })));
         });
         describe('search', () => {
-            it('should provide the list of results', () => future_1.toPromise(future_1.doFuture(function* () {
+            it('should provide the list of results', () => (0, future_1.toPromise)((0, future_1.doFuture)(function* () {
                 let app = new app_1.TestApp();
                 let handler = new MockHandler();
-                let model = new model_1.RemoteModel('remote', '/', (create) => {
+                let model = new model_1.RemoteModel('remote', { search: '/' }, (create) => {
                     let id = 'callback';
                     app.spawn({ id, create });
                     return id;
-                }, handler);
+                }, {}, handler);
                 let request;
                 let responseBody = {
                     data: [
@@ -96,25 +96,25 @@ describe('model', () => {
                 app.spawn({ id: 'remote', create: () => remote });
                 let qry = { limit: 10, filter: 'name:Hall' };
                 let results = yield model.search(qry);
-                return future_1.attempt(() => {
-                    assert_1.assert(request).instance.of(request_1.Get);
-                    assert_1.assert(request.params).equate(qry);
-                    assert_1.assert(handler.MOCK.getCalledList())
+                return (0, future_1.attempt)(() => {
+                    (0, assert_1.assert)(request).instance.of(request_1.Get);
+                    (0, assert_1.assert)(request.params).equate(qry);
+                    (0, assert_1.assert)(handler.MOCK.getCalledList())
                         .equate(['onComplete']);
-                    assert_1.assert(handler.MOCK.wasCalledWith('onComplete', [response]));
-                    assert_1.assert(results).equate(responseBody.data);
+                    (0, assert_1.assert)(handler.MOCK.wasCalledWith('onComplete', [response]));
+                    (0, assert_1.assert)(results).equate(responseBody.data);
                 });
             })));
         });
         describe('update', () => {
-            it('should work', () => future_1.toPromise(future_1.doFuture(function* () {
+            it('should work', () => (0, future_1.toPromise)((0, future_1.doFuture)(function* () {
                 let app = new app_1.TestApp();
                 let handler = new MockHandler();
-                let model = new model_1.RemoteModel('remote', '/{id}', (create) => {
+                let model = new model_1.RemoteModel('remote', { update: '/{id}' }, (create) => {
                     let id = 'callback';
                     app.spawn({ id, create });
                     return id;
-                }, handler);
+                }, {}, handler);
                 let request;
                 let response = new response_1.Ok({}, {}, {});
                 let remote = new TestRemote(app, [
@@ -126,25 +126,25 @@ describe('model', () => {
                 app.spawn({ id: 'remote', create: () => remote });
                 let changes = { active: true };
                 let result = yield model.update(1, changes);
-                return future_1.attempt(() => {
-                    assert_1.assert(request).instance.of(request_1.Patch);
-                    assert_1.assert(request.body).equate(changes);
-                    assert_1.assert(handler.MOCK.getCalledList())
+                return (0, future_1.attempt)(() => {
+                    (0, assert_1.assert)(request).instance.of(request_1.Patch);
+                    (0, assert_1.assert)(request.body).equate(changes);
+                    (0, assert_1.assert)(handler.MOCK.getCalledList())
                         .equate(['onComplete']);
-                    assert_1.assert(handler.MOCK.wasCalledWith('onComplete', [response]));
-                    assert_1.assert(result).true();
+                    (0, assert_1.assert)(handler.MOCK.wasCalledWith('onComplete', [response]));
+                    (0, assert_1.assert)(result).true();
                 });
             })));
         });
         describe('get', () => {
-            it('should provide the target record', () => future_1.toPromise(future_1.doFuture(function* () {
+            it('should provide the target record', () => (0, future_1.toPromise)((0, future_1.doFuture)(function* () {
                 let app = new app_1.TestApp();
                 let handler = new MockHandler();
-                let model = new model_1.RemoteModel('remote', '/{id}', (create) => {
+                let model = new model_1.RemoteModel('remote', { get: '/{id}' }, (create) => {
                     let id = 'callback';
                     app.spawn({ id, create });
                     return id;
-                }, handler);
+                }, {}, handler);
                 let request;
                 let response = new response_1.Ok({ data: { name: 'Dennis Hall' } }, {}, {});
                 let remote = new TestRemote(app, [
@@ -155,23 +155,23 @@ describe('model', () => {
                 ]);
                 app.spawn({ id: 'remote', create: () => remote });
                 let mtarget = yield model.get(1);
-                return future_1.attempt(() => {
-                    assert_1.assert(request).instance.of(request_1.Get);
-                    assert_1.assert(request.path).equal('/1');
-                    assert_1.assert(handler.MOCK.getCalledList())
+                return (0, future_1.attempt)(() => {
+                    (0, assert_1.assert)(request).instance.of(request_1.Get);
+                    (0, assert_1.assert)(request.path).equal('/1');
+                    (0, assert_1.assert)(handler.MOCK.getCalledList())
                         .equate(['onComplete']);
-                    assert_1.assert(handler.MOCK.wasCalledWith('onComplete', [response]));
-                    assert_1.assert(mtarget.get()).equate({ name: 'Dennis Hall' });
+                    (0, assert_1.assert)(handler.MOCK.wasCalledWith('onComplete', [response]));
+                    (0, assert_1.assert)(mtarget.get()).equate({ name: 'Dennis Hall' });
                 });
             })));
-            it('should return Nothing if not found', () => future_1.toPromise(future_1.doFuture(function* () {
+            it('should return Nothing if not found', () => (0, future_1.toPromise)((0, future_1.doFuture)(function* () {
                 let app = new app_1.TestApp();
                 let handler = new MockHandler();
-                let model = new model_1.RemoteModel('remote', '/{id}', (create) => {
+                let model = new model_1.RemoteModel('remote', { get: '/{id}' }, (create) => {
                     let id = 'callback';
                     app.spawn({ id, create });
                     return id;
-                }, handler);
+                }, {}, handler);
                 let response = new response_1.NotFound({}, {}, {});
                 let remote = new TestRemote(app, [
                     new case_1.Case(remote_1.Send, s => {
@@ -180,22 +180,22 @@ describe('model', () => {
                 ]);
                 app.spawn({ id: 'remote', create: () => remote });
                 let mresult = yield model.get(1);
-                return future_1.attempt(() => {
-                    assert_1.assert(handler.MOCK.getCalledList())
+                return (0, future_1.attempt)(() => {
+                    (0, assert_1.assert)(handler.MOCK.getCalledList())
                         .equate([]);
-                    assert_1.assert(mresult.isNothing()).true();
+                    (0, assert_1.assert)(mresult.isNothing()).true();
                 });
             })));
         });
         describe('remove', () => {
-            it('should remove the target record', () => future_1.toPromise(future_1.doFuture(function* () {
+            it('should remove the target record', () => (0, future_1.toPromise)((0, future_1.doFuture)(function* () {
                 let app = new app_1.TestApp();
                 let handler = new MockHandler();
-                let model = new model_1.RemoteModel('remote', '/{id}', (create) => {
+                let model = new model_1.RemoteModel('remote', { remove: '/{id}' }, (create) => {
                     let id = 'callback';
                     app.spawn({ id, create });
                     return id;
-                }, handler);
+                }, {}, handler);
                 let request;
                 let response = new response_1.Ok({}, {}, {});
                 let remote = new TestRemote(app, [
@@ -206,12 +206,12 @@ describe('model', () => {
                 ]);
                 app.spawn({ id: 'remote', create: () => remote });
                 yield model.remove(1);
-                return future_1.attempt(() => {
-                    assert_1.assert(request).instance.of(request_1.Delete);
-                    assert_1.assert(request.path).equal('/1');
-                    assert_1.assert(handler.MOCK.getCalledList())
+                return (0, future_1.attempt)(() => {
+                    (0, assert_1.assert)(request).instance.of(request_1.Delete);
+                    (0, assert_1.assert)(request.path).equal('/1');
+                    (0, assert_1.assert)(handler.MOCK.getCalledList())
                         .equate(['onComplete']);
-                    assert_1.assert(handler.MOCK.wasCalledWith('onComplete', [response]));
+                    (0, assert_1.assert)(handler.MOCK.wasCalledWith('onComplete', [response]));
                 });
             })));
         });
@@ -232,14 +232,14 @@ describe('model', () => {
                     409: ['onClientError'],
                     500: ['onServerError']
                 };
-                let work = methods.map(method => record_1.mapTo(codes, (expected, code) => future_1.doFuture(function* () {
+                let work = methods.map(method => (0, record_1.mapTo)(codes, (expected, code) => (0, future_1.doFuture)(function* () {
                     let app = new app_1.TestApp();
                     let handler = new MockHandler();
-                    let model = new model_1.RemoteModel('remote', '/', (create) => {
+                    let model = new model_1.RemoteModel('remote', { create: '/' }, (create) => {
                         let id = 'callback';
                         app.spawn({ id, create });
                         return id;
-                    }, handler);
+                    }, {}, handler);
                     let response = new response_1.GenericResponse(Number(code), {}, {}, {});
                     let remote = new TestRemote(app, [
                         new case_1.Case(remote_1.Send, s => {
@@ -248,17 +248,17 @@ describe('model', () => {
                     ]);
                     app.spawn({ id: 'remote', create: () => remote });
                     let ft = model[method[0]].call(model, method[1]);
-                    yield ft.catch(() => future_1.pure(undefined));
-                    return future_1.attempt(() => {
+                    yield ft.catch(() => (0, future_1.pure)(undefined));
+                    return (0, future_1.attempt)(() => {
                         if ((code === '404') && (method[0] === 'get'))
-                            assert_1.assert(handler.MOCK.getCalledList())
+                            (0, assert_1.assert)(handler.MOCK.getCalledList())
                                 .equate([]);
                         else
-                            assert_1.assert(handler.MOCK.getCalledList())
+                            (0, assert_1.assert)(handler.MOCK.getCalledList())
                                 .equate(expected);
                     });
                 })));
-                return future_1.toPromise(future_1.batch(work));
+                return (0, future_1.toPromise)((0, future_1.batch)(work));
             });
         });
     });

@@ -27,7 +27,7 @@ import {
 
 export { Send, ParSend, SeqSend }
 
-const typeMatch = { code: Number, options: Object, body: Any, headers: Object };
+const typeMatch = { code: Number, request: Object, body: Any, headers: Object };
 
 /**
  * SendCallbackMessage type.

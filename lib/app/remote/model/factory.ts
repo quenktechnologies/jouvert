@@ -64,7 +64,7 @@ export class RemoteModelFactory<T extends Object> {
      */
     create(
         paths: Paths,
-        context = {},
+        context:Object = {},
         handlers: CompleteHandlerSpec<T> = []
     ): RemoteModel<T> {
 

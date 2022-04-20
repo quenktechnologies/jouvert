@@ -42,5 +42,5 @@ export declare class RemoteModelFactory<T extends Object> {
      *
      * @param handlers A handler or list of handlers to handle the response.
      */
-    create(paths: Paths, context?: {}, handlers?: CompleteHandlerSpec<T>): RemoteModel<T>;
+    create(paths: Paths, context?: Object, handlers?: CompleteHandlerSpec<T>): RemoteModel<T>;
 }

@@ -161,9 +161,9 @@ export declare class RemoteModel<T extends Object> implements Model<T> {
     remote: Address;
     paths: Paths;
     spawn: SpawnFunc;
-    context: object;
+    context: Object;
     handler: CompleteHandler<Result<T>>;
-    constructor(remote: Address, paths: Paths, spawn: SpawnFunc, context?: object, handler?: CompleteHandler<Result<T>>);
+    constructor(remote: Address, paths: Paths, spawn: SpawnFunc, context?: Object, handler?: CompleteHandler<Result<T>>);
     /**
      * create a new entry for the data type.
      */

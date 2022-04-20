@@ -278,7 +278,7 @@ export class RemoteModel<T extends Object> implements Model<T> {
         public remote: Address,
         public paths: Paths,
         public spawn: SpawnFunc,
-        public context: object = {},
+        public context: Object = {},
         public handler: CompleteHandler<Result<T>> = new DefaultCompleteHandler()
     ) { }
 

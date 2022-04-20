@@ -106,7 +106,8 @@ export class AfterSearchSetData<T extends Object> extends SearchHandler<T> {
 
     onComplete(res: SearchResponse<T>) {
 
-        this.setter((res.code === 200) ? res.body.data : []);
+        this.setter(((res.code === 200) && res.request.method === 'GET') ?
+            res.body.data : []);
 
     }
 
@@ -124,7 +125,8 @@ export class AfterGetSetData<T extends Object> extends GetHandler<T> {
 
     onComplete(res: GetResponse<T>) {
 
-        if (res.code === 200) this.setter(res.body.data);
+        if ((res.code === 200) && res.request.method === 'GET')
+            this.setter(res.body.data);
 
     }
 
@@ -142,10 +144,14 @@ export class AfterSearchUpdateWidget<T extends Object>
 
     onComplete(res: SearchResponse<T>) {
 
-        let mtable = getById<Updatable<T>>(this.view, this.id);
+        if ((res.code === 200) && res.request.method === 'GET') {
 
-        if (mtable.isJust())
-            mtable.get().update(res.body.data || []);
+            let mtable = getById<Updatable<T>>(this.view, this.id);
+
+            if (mtable.isJust())
+                mtable.get().update(res.body.data || []);
+
+        }
 
     }
 
@@ -181,7 +187,7 @@ export class AfterSearchSetPagination<T extends Object>
 
     onComplete(res: SearchResponse<T>) {
 
-        if (res.code === 200)
+        if ((res.code === 200) && res.request.method === 'GET')
             this.target.pagination = res.body.meta.pagination;
 
     }

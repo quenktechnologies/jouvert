@@ -37,10 +37,10 @@ export declare class RemoteModelFactory<T extends Object> {
      *                               get    -> update || remove || '?'
      *                               remove -> get || update || '?'
      *
+     * @param handlers A handler or list of handlers to handle the response.
+     *
      * @param context  An object that will be used to expand encountered URL
      *                 templates.
-     *
-     * @param handlers A handler or list of handlers to handle the response.
      */
-    create(paths: Paths, context?: Object, handlers?: CompleteHandlerSpec<T>): RemoteModel<T>;
+    create(paths: Paths, handlers?: CompleteHandlerSpec<T>, context?: Object): RemoteModel<T>;
 }

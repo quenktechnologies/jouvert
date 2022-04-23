@@ -445,13 +445,17 @@ export abstract class BaseFormScene<T extends Object, M>
 
     }
 
-    onSaveFailed(_:SaveFailed) { }
+    onSaveFailed(_: SaveFailed) { }
 
-    onSaveOk(_:SaveOk) { }
+    onSaveOk(_: SaveOk) { }
 
     onSaveFinished() { }
 
-    abort() { }
+    abort() {
+
+        this.tell(this.self(), new FormAborted(this.self()));
+
+    }
 
     save() { }
 

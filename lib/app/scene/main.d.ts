@@ -3,8 +3,8 @@ import { Case } from '@quenk/potoo/lib/actor/resident/case';
 import { System } from '@quenk/potoo/lib/actor/system';
 import { Resume, Suspend, SuspendListener } from '../service/director';
 import { Pop, Push, Show } from '../service/display';
-import { BaseAppScene } from './';
 import { FormAborted, FormSaved, FormListener } from './form';
+import { BaseAppScene } from './';
 /**
  * MainSceneMessage type.
  */
@@ -33,8 +33,8 @@ export declare abstract class MainScene<T, M> extends BaseAppScene<MainSceneMess
     system: System;
     resume: Resume<T>;
     constructor(system: System, resume: Resume<T>);
-    afterFormSaved(_: FormSaved): void | Future<void>;
     afterFormAborted(_: FormAborted): void | Future<void>;
+    afterFormSaved(_: FormSaved): void | Future<void>;
     get display(): string;
     receive(): Case<MainSceneMessage<M>>[];
     beforeSuspended(_: Suspend): void;

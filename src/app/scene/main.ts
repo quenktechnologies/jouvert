@@ -10,8 +10,14 @@ import {
     SuspendListener
 } from '../service/director';
 import { Pop, Push, Show, Close } from '../service/display';
+import {
+  FormAborted, 
+  FormSaved,
+  FormListener, 
+  FormAbortedCase,
+  FormSavedCase 
+} from './form';
 import { BaseAppScene } from './';
-import { FormAborted, FormSaved, FormListener, FormAbortedCase, FormSavedCase } from './form';
 
 /**
  * MainSceneMessage type.
@@ -59,9 +65,17 @@ export abstract class MainScene<T, M>
 
     }
 
-    afterFormSaved(_: FormSaved): void | Future<void> { }
+    afterFormAborted(_: FormAborted): void | Future<void> { 
 
-    afterFormAborted(_: FormAborted): void | Future<void> { }
+      return this.show();
+
+    }
+
+    afterFormSaved(_: FormSaved): void | Future<void> {
+
+      return this.reload();
+
+    }
 
     get display() {
 

@@ -453,7 +453,7 @@ export abstract class BaseFormScene<T extends Object, M>
 
     abort() {
 
-        this.tell(this.self(), new FormAborted(this.self()));
+        this.tell(this.self(), new Abort());
 
     }
 

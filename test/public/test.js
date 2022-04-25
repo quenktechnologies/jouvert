@@ -119,6 +119,8 @@ const _1 = require("./");
 Object.defineProperty(exports, "Send", { enumerable: true, get: function () { return _1.Send; } });
 Object.defineProperty(exports, "ParSend", { enumerable: true, get: function () { return _1.ParSend; } });
 Object.defineProperty(exports, "SeqSend", { enumerable: true, get: function () { return _1.SeqSend; } });
+const future_1 = require("@quenk/noni/lib/control/monad/future");
+const function_1 = require("@quenk/noni/lib/data/function");
 const typeMatch = { code: Number, request: Object, body: type_1.Any, headers: Object };
 /**
  * AbstractCompleteHandler can be extended to partially implement a
@@ -148,16 +150,19 @@ class CompositeCompleteHandler {
         this.handlers = handlers;
     }
     onError(e) {
-        this.handlers.forEach(h => h.onError(e));
+        return (0, future_1.sequential)(this.handlers.map(h => (0, future_1.wrap)(h.onError(e)))).map(function_1.noop);
     }
     onClientError(r) {
-        this.handlers.forEach(h => h.onClientError(r));
+        return (0, future_1.sequential)(this.handlers.map(h => (0, future_1.wrap)(h.onClientError(r))))
+            .map(function_1.noop);
     }
     onServerError(r) {
-        this.handlers.forEach(h => h.onServerError(r));
+        return (0, future_1.sequential)(this.handlers.map(h => (0, future_1.wrap)(h.onServerError(r)))).
+            map(function_1.noop);
     }
     onComplete(r) {
-        this.handlers.forEach(h => h.onComplete(r));
+        return (0, future_1.sequential)(this.handlers.map(h => (0, future_1.wrap)(h.onComplete(r))))
+            .map(function_1.noop);
     }
 }
 exports.CompositeCompleteHandler = CompositeCompleteHandler;
@@ -170,16 +175,19 @@ class CompositeBatchCompleteHandler {
         this.handlers = handlers;
     }
     onError(e) {
-        this.handlers.forEach(h => h.onError(e));
+        return (0, future_1.sequential)(this.handlers.map(h => (0, future_1.wrap)(h.onError(e)))).map(function_1.noop);
     }
     onClientError(r) {
-        this.handlers.forEach(h => h.onClientError(r));
+        return (0, future_1.sequential)(this.handlers.map(h => (0, future_1.wrap)(h.onClientError(r))))
+            .map(function_1.noop);
     }
     onServerError(r) {
-        this.handlers.forEach(h => h.onServerError(r));
+        return (0, future_1.sequential)(this.handlers.map(h => (0, future_1.wrap)(h.onServerError(r)))).
+            map(function_1.noop);
     }
     onBatchComplete(r) {
-        this.handlers.forEach(h => h.onBatchComplete(r));
+        return (0, future_1.sequential)(this.handlers.map(h => (0, future_1.wrap)(h.onBatchComplete(r)))).
+            map(function_1.noop);
     }
 }
 exports.CompositeBatchCompleteHandler = CompositeBatchCompleteHandler;
@@ -197,18 +205,16 @@ class SendCallback extends callback_1.Callback {
     }
     receive() {
         return [
-            new case_1.Case(_1.TransportErr, (e) => {
-                this.handler.onError(e);
-            }),
+            new case_1.Case(_1.TransportErr, (e) => this.handler.onError(e)),
             new case_1.Case(typeMatch, (r) => {
                 if (r.code > 499) {
-                    this.handler.onServerError(r);
+                    return this.handler.onServerError(r);
                 }
                 else if (r.code > 399) {
-                    this.handler.onClientError(r);
+                    return this.handler.onClientError(r);
                 }
                 else {
-                    this.handler.onComplete(r);
+                    return this.handler.onComplete(r);
                 }
             })
         ];
@@ -232,22 +238,20 @@ class ParSendCallback extends callback_1.Callback {
     }
     receive() {
         return [
-            new case_1.Case(_1.TransportErr, (e) => {
-                this.handler.onError(e);
-            }),
+            new case_1.Case(_1.TransportErr, (e) => this.handler.onError(e)),
             new case_1.Case(_1.BatchResponse, (r) => {
                 let failed = r.value.filter(r => r.code > 299);
                 if (failed.length > 0) {
                     let res = failed[0];
                     if (res.code > 499) {
-                        this.handler.onServerError(res);
+                        return this.handler.onServerError(res);
                     }
                     else {
-                        this.handler.onClientError(res);
+                        return this.handler.onClientError(res);
                     }
                 }
                 else {
-                    this.handler.onBatchComplete(r);
+                    return this.handler.onBatchComplete(r);
                 }
             })
         ];
@@ -268,7 +272,7 @@ class SeqSendCallback extends ParSendCallback {
 }
 exports.SeqSendCallback = SeqSendCallback;
 
-},{"./":4,"@quenk/noni/lib/data/type":25,"@quenk/potoo/lib/actor/resident/case":31,"@quenk/potoo/lib/actor/resident/immutable/callback":32}],4:[function(require,module,exports){
+},{"./":4,"@quenk/noni/lib/control/monad/future":15,"@quenk/noni/lib/data/function":20,"@quenk/noni/lib/data/type":25,"@quenk/potoo/lib/actor/resident/case":31,"@quenk/potoo/lib/actor/resident/immutable/callback":32}],4:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Remote = exports.BatchResponse = exports.TransportErr = exports.ParSend = exports.SeqSend = exports.Send = void 0;
@@ -446,26 +450,42 @@ class FutureHandler {
         this.onSuccess = onSuccess;
     }
     onError(e) {
-        this.handler.onError(e);
-        this.onFailure(e.error instanceof Error ?
-            e.error :
-            new Error(e.error.message));
+        let that = this;
+        return (0, future_1.doFuture)(function* () {
+            yield (0, future_1.wrap)(that.handler.onError(e));
+            that.onFailure(e.error instanceof Error ?
+                e.error :
+                new Error(e.error.message));
+            return future_1.voidPure;
+        });
     }
     onClientError(r) {
-        this.handler.onClientError(r);
-        let e = new Error('ClientError');
-        e.code = r.code;
-        this.onFailure(e);
+        let that = this;
+        return (0, future_1.doFuture)(function* () {
+            yield (0, future_1.wrap)(that.handler.onClientError(r));
+            let e = new Error('ClientError');
+            e.code = r.code;
+            that.onFailure(e);
+            return future_1.voidPure;
+        });
     }
     onServerError(r) {
-        this.handler.onServerError(r);
-        let e = new Error('ServerError');
-        e.code = r.code;
-        this.onFailure(e);
+        let that = this;
+        return (0, future_1.doFuture)(function* () {
+            yield (0, future_1.wrap)(that.handler.onServerError(r));
+            let e = new Error('ServerError');
+            e.code = r.code;
+            that.onFailure(e);
+            return future_1.voidPure;
+        });
     }
     onComplete(r) {
-        this.handler.onComplete(r);
-        this.onSuccess(r);
+        let that = this;
+        return (0, future_1.doFuture)(function* () {
+            yield (0, future_1.wrap)(that.handler.onComplete(r));
+            that.onSuccess(r);
+            return future_1.voidPure;
+        });
     }
 }
 exports.FutureHandler = FutureHandler;
@@ -483,10 +503,15 @@ class NotFoundHandler extends FutureHandler {
         this.onSuccess = onSuccess;
     }
     onClientError(r) {
-        if (r.code === 404)
-            this.onNotFound();
-        else
-            super.onClientError(r);
+        let that = this;
+        let superOnClientError = () => super.onClientError(r);
+        return (0, future_1.doFuture)(function* () {
+            if (r.code === 404)
+                that.onNotFound();
+            else
+                yield (0, future_1.wrap)(superOnClientError());
+            return future_1.voidPure;
+        });
     }
 }
 exports.NotFoundHandler = NotFoundHandler;
@@ -3714,10 +3739,11 @@ exports.project = project;
  *  Common functions used to manipulate strings.
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.alphanumeric = exports.numeric = exports.alpha = exports.interpolate = exports.uncapitalize = exports.capitalize = exports.propercase = exports.modulecase = exports.classcase = exports.camelcase = exports.contains = exports.endsWith = exports.startsWith = void 0;
+exports.alphanumeric = exports.numeric = exports.alpha = exports.interp = exports.interpolate = exports.uncapitalize = exports.capitalize = exports.propercase = exports.modulecase = exports.classcase = exports.camelcase = exports.contains = exports.endsWith = exports.startsWith = void 0;
 /** imports */
 var path_1 = require("../record/path");
 var record_1 = require("../record");
+var function_1 = require("../function");
 ;
 /**
  * startsWith polyfill.
@@ -3849,7 +3875,9 @@ var interpolateDefaults = {
     end: '\}',
     regex: '([\\w\$\.\-]+)',
     leaveMissing: true,
-    applyFunctions: false
+    applyFunctions: false,
+    transform: function_1.identity,
+    getter: function (data, path) { return (0, path_1.unsafeGet)(path, data); }
 };
 /**
  * interpolate a template string replacing variable paths with values
@@ -3858,25 +3886,25 @@ var interpolateDefaults = {
 var interpolate = function (str, data, opts) {
     if (opts === void 0) { opts = {}; }
     var options = (0, record_1.assign)({}, interpolateDefaults, opts);
-    var reg = new RegExp("" + options.start + options.regex + options.end, 'g');
+    var getter = options.getter, transform = options.transform, start = options.start, regex = options.regex, end = options.end;
+    var reg = new RegExp("" + start + regex + end, 'g');
     return str.replace(reg, function (_, k) {
-        return (0, path_1.get)(k, data)
-            .map(function (v) {
-            if (typeof v === 'function')
-                return v(k);
+        var value = getter(data, k);
+        if (value != null) {
+            if (typeof value === 'function')
+                value = options.applyFunctions ? value(k) :
+                    opts.leaveMissing ? k : '';
             else
-                return '' + v;
-        })
-            .orJust(function () {
-            if (opts.leaveMissing)
-                return k;
-            else
-                return '';
-        })
-            .get();
+                value = value + '';
+        }
+        else {
+            value = opts.leaveMissing ? k : '';
+        }
+        return transform(value);
     });
 };
 exports.interpolate = interpolate;
+exports.interp = exports.interpolate;
 /**
  * alpha omits characters in a string not found in the English alphabet.
  */
@@ -3900,7 +3928,7 @@ var alphanumeric = function (str) {
 };
 exports.alphanumeric = alphanumeric;
 
-},{"../record":22,"../record/path":23}],25:[function(require,module,exports){
+},{"../function":20,"../record":22,"../record/path":23}],25:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.toString = exports.show = exports.test = exports.is = exports.isPrim = exports.isFunction = exports.isBoolean = exports.isNumber = exports.isString = exports.isArray = exports.isObject = exports.Any = void 0;

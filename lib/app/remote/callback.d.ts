@@ -12,6 +12,7 @@ import { Callback } from '@quenk/potoo/lib/actor/resident/immutable/callback';
 import { Address } from '@quenk/potoo/lib/actor/address';
 import { System } from '@quenk/potoo/lib/actor/system';
 import { Send, ParSend, SeqSend, BatchResponse, TransportErr } from './';
+import { Yield } from '@quenk/noni/lib/control/monad/future';
 export { Send, ParSend, SeqSend };
 /**
  * SendCallbackMessage type.
@@ -39,17 +40,17 @@ export interface FailHandler {
     /**
      * onError is invoked if a TransportErr occurs.
      */
-    onError(e: TransportErr): void;
+    onError(e: TransportErr): Yield<void>;
     /**
      * onClientError is invoked if the response status indicates a client
      * error.
      */
-    onClientError(r: Response<ErrorBody>): void;
+    onClientError(r: Response<ErrorBody>): Yield<void>;
     /**
      * onServerError is invoked if the response status indicates a server
      * error.
      */
-    onServerError(r: Response<ErrorBody>): void;
+    onServerError(r: Response<ErrorBody>): Yield<void>;
 }
 /**
  * CompleteHandler provides a method for handling successful non-batch requests.
@@ -58,7 +59,7 @@ export interface CompleteHandler<B> extends FailHandler {
     /**
      * onComplete handler.
      */
-    onComplete(r: Response<B>): void;
+    onComplete(r: Response<B>): Yield<void>;
 }
 /**
  * BatchComplete provides a method for handling successful batch request.
@@ -67,7 +68,7 @@ export interface BatchCompleteHandler<B> extends FailHandler {
     /**
      * onBatchComplete handler.
      */
-    onBatchComplete(r: BatchResponse<B>): void;
+    onBatchComplete(r: BatchResponse<B>): Yield<void>;
 }
 /**
  * AbstractCompleteHandler can be extended to partially implement a
@@ -93,10 +94,10 @@ export declare class AbstractBatchCompleteHandler<B> extends AbstractCompleteHan
 export declare class CompositeCompleteHandler<B> implements CompleteHandler<B> {
     handlers: CompleteHandler<B>[];
     constructor(handlers: CompleteHandler<B>[]);
-    onError(e: TransportErr): void;
-    onClientError(r: Response<ErrorBody>): void;
-    onServerError(r: Response<ErrorBody>): void;
-    onComplete(r: Response<B>): void;
+    onError(e: TransportErr): import("@quenk/noni/lib/control/monad/future").Future<void>;
+    onClientError(r: Response<ErrorBody>): import("@quenk/noni/lib/control/monad/future").Future<void>;
+    onServerError(r: Response<ErrorBody>): import("@quenk/noni/lib/control/monad/future").Future<void>;
+    onComplete(r: Response<B>): import("@quenk/noni/lib/control/monad/future").Future<void>;
 }
 /**
  * CompositeBatchCompleteHandler allows multiple [[BatchCompleteHandler]]s to
@@ -105,10 +106,10 @@ export declare class CompositeCompleteHandler<B> implements CompleteHandler<B> {
 export declare class CompositeBatchCompleteHandler<B> implements BatchCompleteHandler<B> {
     handlers: BatchCompleteHandler<B>[];
     constructor(handlers: BatchCompleteHandler<B>[]);
-    onError(e: TransportErr): void;
-    onClientError(r: Response<ErrorBody>): void;
-    onServerError(r: Response<ErrorBody>): void;
-    onBatchComplete(r: BatchResponse<B>): void;
+    onError(e: TransportErr): import("@quenk/noni/lib/control/monad/future").Future<void>;
+    onClientError(r: Response<ErrorBody>): import("@quenk/noni/lib/control/monad/future").Future<void>;
+    onServerError(r: Response<ErrorBody>): import("@quenk/noni/lib/control/monad/future").Future<void>;
+    onBatchComplete(r: BatchResponse<B>): import("@quenk/noni/lib/control/monad/future").Future<void>;
 }
 /**
  * SendCallback sends a Send to a Remote's address, processing the response

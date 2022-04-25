@@ -24,6 +24,8 @@ import {
     BatchResponse,
     TransportErr
 } from './';
+import { sequential, wrap, Yield } from '@quenk/noni/lib/control/monad/future';
+import { noop } from '@quenk/noni/lib/data/function';
 
 export { Send, ParSend, SeqSend }
 
@@ -67,19 +69,19 @@ export interface FailHandler {
     /**
      * onError is invoked if a TransportErr occurs.
      */
-    onError(e: TransportErr): void
+    onError(e: TransportErr): Yield<void>
 
     /**
      * onClientError is invoked if the response status indicates a client
      * error.
      */
-    onClientError(r: Response<ErrorBody>): void
+    onClientError(r: Response<ErrorBody>): Yield<void>
 
     /**
      * onServerError is invoked if the response status indicates a server
      * error.
      */
-    onServerError(r: Response<ErrorBody>): void
+    onServerError(r: Response<ErrorBody>): Yield<void>
 
 }
 
@@ -91,7 +93,7 @@ export interface CompleteHandler<B> extends FailHandler {
     /**
      * onComplete handler.
      */
-    onComplete(r: Response<B>): void
+    onComplete(r: Response<B>): Yield<void>
 
 }
 
@@ -103,7 +105,7 @@ export interface BatchCompleteHandler<B> extends FailHandler {
     /**
      * onBatchComplete handler.
      */
-    onBatchComplete(r: BatchResponse<B>): void
+    onBatchComplete(r: BatchResponse<B>): Yield<void>
 
 }
 
@@ -149,25 +151,28 @@ export class CompositeCompleteHandler<B>
 
     onError(e: TransportErr) {
 
-        this.handlers.forEach(h => h.onError(e));
+        return sequential(this.handlers.map(h => wrap(h.onError(e)))).map(noop);
 
     }
 
     onClientError(r: Response<ErrorBody>) {
 
-        this.handlers.forEach(h => h.onClientError(r));
+        return sequential(this.handlers.map(h => wrap(h.onClientError(r))))
+            .map(noop);
 
     }
 
     onServerError(r: Response<ErrorBody>) {
 
-        this.handlers.forEach(h => h.onServerError(r));
+        return sequential(this.handlers.map(h => wrap(h.onServerError(r)))).
+            map(noop);
 
     }
 
     onComplete(r: Response<B>) {
 
-        this.handlers.forEach(h => h.onComplete(r));
+        return sequential(this.handlers.map(h => wrap(h.onComplete(r))))
+            .map(noop);
 
     }
 
@@ -185,25 +190,28 @@ export class CompositeBatchCompleteHandler<B>
 
     onError(e: TransportErr) {
 
-        this.handlers.forEach(h => h.onError(e));
+        return sequential(this.handlers.map(h => wrap(h.onError(e)))).map(noop);
 
     }
 
     onClientError(r: Response<ErrorBody>) {
 
-        this.handlers.forEach(h => h.onClientError(r));
+        return sequential(this.handlers.map(h => wrap(h.onClientError(r))))
+            .map(noop);
 
     }
 
     onServerError(r: Response<ErrorBody>) {
 
-        this.handlers.forEach(h => h.onServerError(r));
+        return sequential(this.handlers.map(h => wrap(h.onServerError(r)))).
+            map(noop);
 
     }
 
     onBatchComplete(r: BatchResponse<B>) {
 
-        this.handlers.forEach(h => h.onBatchComplete(r));
+        return sequential(this.handlers.map(h => wrap(h.onBatchComplete(r)))).
+            map(noop);
 
     }
 
@@ -227,25 +235,21 @@ export class SendCallback<Req, Res>
 
         return <Case<SendCallbackMessage<Res>>[]>[
 
-            new Case(TransportErr, (e: TransportErr) => {
-
-                this.handler.onError(e);
-
-            }),
+            new Case(TransportErr, (e: TransportErr) => this.handler.onError(e)),
 
             new Case(typeMatch, (r: Response<Res>) => {
 
                 if (r.code > 499) {
 
-                    this.handler.onServerError(r);
+                   return  this.handler.onServerError(r);
 
                 } else if (r.code > 399) {
 
-                    this.handler.onClientError(r);
+                    return this.handler.onClientError(r);
 
                 } else {
 
-                    this.handler.onComplete(r);
+                    return this.handler.onComplete(r);
 
                 }
 
@@ -281,11 +285,8 @@ export class ParSendCallback<Req, Res>
 
         return <Case<BatchCallbackMessage<Res>>[]>[
 
-            new Case(TransportErr, (e: TransportErr) => {
-
-                this.handler.onError(e);
-
-            }),
+            new Case(TransportErr, (e: TransportErr) =>
+                this.handler.onError(e)),
 
             new Case(BatchResponse, (r: BatchResponse<Res>) => {
 
@@ -297,17 +298,17 @@ export class ParSendCallback<Req, Res>
 
                     if (res.code > 499) {
 
-                        this.handler.onServerError(res);
+                        return this.handler.onServerError(res);
 
                     } else {
 
-                        this.handler.onClientError(res);
+                       return this.handler.onClientError(res);
 
                     }
 
                 } else {
 
-                    this.handler.onBatchComplete(r);
+                    return this.handler.onBatchComplete(r);
 
                 }
 

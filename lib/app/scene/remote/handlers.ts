@@ -31,6 +31,7 @@ import {
 } from '../../remote/model';
 import { getById } from '@quenk/wml-widgets/lib/util';
 import { FormErrors, SaveFailed, SaveListener } from '../form';
+import { Yield } from '@quenk/noni/lib/control/monad/future';
 
 /**
  * ClientErrorBody is the expected shape of the response body when the server
@@ -102,12 +103,12 @@ export class ShiftingOnClientError<T> extends AbstractCompleteHandler<T> {
  */
 export class AfterSearchSetData<T extends Object> extends SearchHandler<T> {
 
-    constructor(public setter: (data: T[]) => void) { super(); }
+    constructor(public setter: (data: T[]) => Yield<void>) { super(); }
 
     onComplete(res: SearchResponse<T>) {
 
-        this.setter(((res.code === 200) && res.request.method === 'GET') ?
-            res.body.data : []);
+        return this.setter(((res.code === 200) &&
+            res.request.method === 'GET') ? res.body.data : []);
 
     }
 
@@ -126,7 +127,7 @@ export class AfterGetSetData<T extends Object> extends GetHandler<T> {
     onComplete(res: GetResponse<T>) {
 
         if ((res.code === 200) && res.request.method === 'GET')
-            this.setter(res.body.data);
+            return this.setter(res.body.data);
 
     }
 

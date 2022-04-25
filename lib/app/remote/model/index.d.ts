@@ -132,10 +132,10 @@ export declare class FutureHandler<T extends Object> implements CompleteHandler<
     onFailure: (err?: Error) => void;
     onSuccess: (r: Response<Result<T>>) => void;
     constructor(handler: CompleteHandler<Result<T>>, onFailure: (err?: Error) => void, onSuccess: (r: Response<Result<T>>) => void);
-    onError(e: TransportErr): void;
-    onClientError(r: Response<ErrorBody>): void;
-    onServerError(r: Response<ErrorBody>): void;
-    onComplete(r: Response<Result<T>>): void;
+    onError(e: TransportErr): Future<void>;
+    onClientError(r: Response<ErrorBody>): Future<void>;
+    onServerError(r: Response<ErrorBody>): Future<void>;
+    onComplete(r: Response<Result<T>>): Future<void>;
 }
 /**
  * NotFoundHandler does not treat a 404 as an error.
@@ -148,7 +148,7 @@ export declare class NotFoundHandler<T extends Object> extends FutureHandler<T> 
     onNotFound: () => void;
     onSuccess: (r: Response<Result<T>>) => void;
     constructor(handler: CompleteHandler<Result<T>>, onFailure: (err?: Error) => void, onNotFound: () => void, onSuccess: (r: Response<Result<T>>) => void);
-    onClientError(r: Response<ErrorBody>): void;
+    onClientError(r: Response<ErrorBody>): Future<void>;
 }
 /**
  * RemoteModel provides a Model implementation that relies on the [[Remote]]

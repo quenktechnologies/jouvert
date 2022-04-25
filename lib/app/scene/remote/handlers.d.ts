@@ -16,6 +16,7 @@ import { View } from '@quenk/wml';
 import { AbstractCompleteHandler, CompleteHandler } from '../../remote/callback';
 import { GetHandler, GetResponse, Pagination, SearchHandler, SearchResponse } from '../../remote/model';
 import { FormErrors, SaveListener } from '../form';
+import { Yield } from '@quenk/noni/lib/control/monad/future';
 /**
  * ClientErrorBody is the expected shape of the response body when the server
  * sends a 409 status in response to a write.
@@ -58,9 +59,9 @@ export declare class ShiftingOnClientError<T> extends AbstractCompleteHandler<T>
  * This handler is intended to be used mostly when loading data for table scenes.
  */
 export declare class AfterSearchSetData<T extends Object> extends SearchHandler<T> {
-    setter: (data: T[]) => void;
-    constructor(setter: (data: T[]) => void);
-    onComplete(res: SearchResponse<T>): void;
+    setter: (data: T[]) => Yield<void>;
+    constructor(setter: (data: T[]) => Yield<void>);
+    onComplete(res: SearchResponse<T>): Yield<void>;
 }
 /**
  * AfterGetSetData calls the supplied callback with the data property of the

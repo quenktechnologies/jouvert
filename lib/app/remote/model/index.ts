@@ -5,7 +5,7 @@
  */
 
 /** imports */
-import { Future, fromCallback } from '@quenk/noni/lib/control/monad/future';
+import { Future, fromCallback, doFuture, wrap, voidPure } from '@quenk/noni/lib/control/monad/future';
 import { Maybe, fromNullable, nothing } from '@quenk/noni/lib/data/maybe';
 import { Object } from '@quenk/noni/lib/data/jsonx';
 import { interpolate } from '@quenk/noni/lib/data/string';
@@ -196,42 +196,75 @@ export class FutureHandler<T extends Object>
 
     onError(e: TransportErr) {
 
-        this.handler.onError(e);
+        let that = this;
 
-        this.onFailure(e.error instanceof Error ?
-            e.error :
-            new Error(e.error.message));
+        return doFuture(function*() {
+
+            yield wrap(that.handler.onError(e));
+
+            that.onFailure(e.error instanceof Error ?
+                e.error :
+                new Error(e.error.message));
+
+            return voidPure;
+
+        });
 
     }
 
     onClientError(r: Response<ErrorBody>) {
 
-        this.handler.onClientError(r);
+        let that = this;
 
-        let e = new Error('ClientError');
+        return doFuture(function*() {
 
-        (<{ code: number }><object>e).code = r.code;
+            yield wrap(that.handler.onClientError(r));
 
-        this.onFailure(e);
+            let e = new Error('ClientError');
+
+            (<{ code: number }><object>e).code = r.code;
+
+            that.onFailure(e);
+
+            return voidPure;
+
+        });
 
     }
 
     onServerError(r: Response<ErrorBody>) {
 
-        this.handler.onServerError(r);
+        let that = this;
 
-        let e = new Error('ServerError');
+        return doFuture(function*() {
 
-        (<{ code: number }><object>e).code = r.code;
+            yield wrap(that.handler.onServerError(r));
 
-        this.onFailure(e);
+            let e = new Error('ServerError');
+
+            (<{ code: number }><object>e).code = r.code;
+
+            that.onFailure(e);
+
+            return voidPure;
+
+        });
 
     }
 
     onComplete(r: Response<Result<T>>) {
 
-        this.handler.onComplete(r);
-        this.onSuccess(r);
+        let that = this;
+
+        return doFuture(function*() {
+
+            yield wrap(that.handler.onComplete(r));
+
+            that.onSuccess(r);
+
+            return voidPure;
+
+        });
 
     }
 
@@ -256,10 +289,20 @@ export class NotFoundHandler<T extends Object> extends FutureHandler<T>{
 
     onClientError(r: Response<ErrorBody>) {
 
-        if (r.code === 404)
-            this.onNotFound();
-        else
-            super.onClientError(r);
+        let that = this;
+
+        let superOnClientError = () => super.onClientError(r);
+
+        return doFuture(function*() {
+
+            if (r.code === 404)
+                that.onNotFound();
+            else
+                yield wrap(superOnClientError());
+
+            return voidPure;
+
+        });
 
     }
 
@@ -390,8 +433,8 @@ export class RemoteModel<T extends Object> implements Model<T> {
             this.spawn((s: System) => new SendCallback(
                 s,
                 this.remote,
-                new Delete(interpolate(this.paths.remove, 
-                  merge({ id },this.context)), {}),
+                new Delete(interpolate(this.paths.remove,
+                    merge({ id }, this.context)), {}),
                 new FutureHandler(this.handler, cb, r => {
 
                     cb(null, (r.code === 200) ? true : false);

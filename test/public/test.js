@@ -49,7 +49,7 @@ class Proxy {
 }
 exports.Proxy = Proxy;
 
-},{"@quenk/potoo/lib/actor/resident/immutable":33,"@quenk/potoo/lib/actor/resident/mutable":35}],2:[function(require,module,exports){
+},{"@quenk/potoo/lib/actor/resident/immutable":44,"@quenk/potoo/lib/actor/resident/mutable":46}],2:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Jouvert = void 0;
@@ -100,7 +100,7 @@ class Jouvert {
 }
 exports.Jouvert = Jouvert;
 
-},{"@quenk/potoo/lib/actor/system/vm":39}],3:[function(require,module,exports){
+},{"@quenk/potoo/lib/actor/system/vm":50}],3:[function(require,module,exports){
 "use strict";
 /**
  * This module provides actors for sending requests to a [[Remote]] and
@@ -272,7 +272,7 @@ class SeqSendCallback extends ParSendCallback {
 }
 exports.SeqSendCallback = SeqSendCallback;
 
-},{"./":4,"@quenk/noni/lib/control/monad/future":15,"@quenk/noni/lib/data/function":20,"@quenk/noni/lib/data/type":25,"@quenk/potoo/lib/actor/resident/case":31,"@quenk/potoo/lib/actor/resident/immutable/callback":32}],4:[function(require,module,exports){
+},{"./":4,"@quenk/noni/lib/control/monad/future":26,"@quenk/noni/lib/data/function":31,"@quenk/noni/lib/data/type":36,"@quenk/potoo/lib/actor/resident/case":42,"@quenk/potoo/lib/actor/resident/immutable/callback":43}],4:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Remote = exports.BatchResponse = exports.TransportErr = exports.ParSend = exports.SeqSend = exports.Send = void 0;
@@ -390,7 +390,7 @@ class Remote extends actor_1.Immutable {
 }
 exports.Remote = Remote;
 
-},{"../../actor":1,"@quenk/noni/lib/control/monad/future":15,"@quenk/potoo/lib/actor/resident/case":31}],5:[function(require,module,exports){
+},{"../../actor":1,"@quenk/noni/lib/control/monad/future":26,"@quenk/potoo/lib/actor/resident/case":42}],5:[function(require,module,exports){
 "use strict";
 /**
  * Provides a base data model implementation based on the remote and callback
@@ -398,7 +398,7 @@ exports.Remote = Remote;
  * format specified.
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.RemoteModel = exports.NotFoundHandler = exports.FutureHandler = exports.VoidHandler = exports.GetHandler = exports.SearchHandler = exports.CreateHandler = void 0;
+exports.RemoteModel = exports.BaseRemoteModel = exports.NotFoundHandler = exports.FutureHandler = exports.VoidHandler = exports.GetHandler = exports.SearchHandler = exports.CreateHandler = void 0;
 /** imports */
 const future_1 = require("@quenk/noni/lib/control/monad/future");
 const maybe_1 = require("@quenk/noni/lib/data/maybe");
@@ -516,77 +516,89 @@ class NotFoundHandler extends FutureHandler {
 }
 exports.NotFoundHandler = NotFoundHandler;
 /**
- * RemoteModel provides a Model implementation that relies on the [[Remote]]
- * actor.
+ * BaseRemoteModel is a [[Model]] implementation that uses the remote actor API
+ * underneath to provide a CSUGR interface.
  *
- * A handler can be provided to observe the result of requests if more data
- * is needed than the Model api provides.
+ * This class serves as a starting point and exists mostly for that generate
+ * frontend models via Dagen templates. Use the [[RemoteModel]] class to create
+ * RemoteModels manually.
  */
-class RemoteModel {
+class BaseRemoteModel {
+    constructor(remote, spawn, handler = new DefaultCompleteHandler()) {
+        this.remote = remote;
+        this.spawn = spawn;
+        this.handler = handler;
+    }
+    /**
+     * send a request to the remote backend.
+     *
+     * Use this method to submit the request to the remote actor using
+     * the optional installed handler(s) to handle the request before completion.
+     */
+    send(req) {
+        return (0, future_1.fromCallback)(cb => {
+            this.spawn((s) => new callback_1.SendCallback(s, this.remote, req, new FutureHandler(this.handler, cb, r => cb(null, r))));
+        });
+    }
+}
+exports.BaseRemoteModel = BaseRemoteModel;
+/**
+ * RemoteModel implementation
+ */
+class RemoteModel extends BaseRemoteModel {
     constructor(remote, paths, spawn, context = {}, handler = new DefaultCompleteHandler()) {
+        super(remote, spawn, handler);
         this.remote = remote;
         this.paths = paths;
         this.spawn = spawn;
         this.context = context;
         this.handler = handler;
     }
-    /**
-     * create a new entry for the data type.
-     */
     create(data) {
-        return (0, future_1.fromCallback)(cb => {
-            this.spawn((s) => new callback_1.SendCallback(s, this.remote, new request_1.Post((0, string_1.interpolate)(this.paths.create, this.context), data), new FutureHandler(this.handler, cb, r => {
-                cb(null, r.body.data.id);
-            })));
+        let that = this;
+        return (0, future_1.doFuture)(function* () {
+            let r = yield that.send(new request_1.Post((0, string_1.interpolate)(that.paths.create, that.context), data));
+            return (0, future_1.pure)(r.body.data.id);
         });
     }
-    /**
-     * search for entries that match the provided query.
-     */
     search(qry) {
-        return (0, future_1.fromCallback)(cb => {
-            this.spawn((s) => new callback_1.SendCallback(s, this.remote, new request_1.Get((0, string_1.interpolate)(this.paths.search, this.context), qry), new FutureHandler(this.handler, cb, r => {
-                cb(null, (r.code === 204) ?
-                    [] : r.body.data);
-            })));
+        let that = this;
+        return (0, future_1.doFuture)(function* () {
+            let r = yield that.send(new request_1.Get((0, string_1.interpolate)(that.paths.search, that.context), qry));
+            return (0, future_1.pure)((r.code === 204) ?
+                [] : r.body.data);
         });
     }
-    /**
-     * update a single entry using its id.
-     */
     update(id, changes) {
-        return (0, future_1.fromCallback)(cb => {
-            this.spawn((s) => new callback_1.SendCallback(s, this.remote, new request_1.Patch((0, string_1.interpolate)(this.paths.update, (0, record_1.merge)({ id }, this.context)), changes), new FutureHandler(this.handler, cb, r => {
-                cb(null, (r.code === 200) ? true : false);
-            })));
+        let that = this;
+        return (0, future_1.doFuture)(function* () {
+            let r = yield that.send(new request_1.Patch((0, string_1.interpolate)(that.paths.update, (0, record_1.merge)({ id }, that.context)), changes));
+            return (0, future_1.pure)((r.code === 200) ? true : false);
         });
     }
-    /**
-     * get a single entry by its id.
-     */
     get(id) {
-        return (0, future_1.fromCallback)(cb => {
-            this.spawn((s) => new callback_1.SendCallback(s, this.remote, new request_1.Get((0, string_1.interpolate)(this.paths.get, (0, record_1.merge)({ id }, this.context)), {}), new NotFoundHandler(this.handler, cb, () => {
-                cb(null, (0, maybe_1.nothing)());
-            }, r => {
-                cb(null, (0, maybe_1.fromNullable)(r.body.data));
-            })));
+        let that = this;
+        return (0, future_1.doFuture)(function* () {
+            let req = new request_1.Get((0, string_1.interpolate)(that.paths.get, (0, record_1.merge)({ id }, that.context)), {});
+            return that
+                .send(req)
+                .chain(res => (0, future_1.pure)((0, maybe_1.fromNullable)(res.body.data)))
+                .catch(e => ((e.message == 'ClientError') && (e.code == 404)) ?
+                (0, future_1.pure)((0, maybe_1.nothing)()) :
+                (0, future_1.raise)(e));
         });
     }
-    /**
-     * remove a single entry by its id.
-     */
     remove(id) {
-        return (0, future_1.fromCallback)(cb => {
-            this.spawn((s) => new callback_1.SendCallback(s, this.remote, new request_1.Delete((0, string_1.interpolate)(this.paths.remove, (0, record_1.merge)({ id }, this.context)), {}), new FutureHandler(this.handler, cb, r => {
-                cb(null, (r.code === 200) ? true : false);
-            })));
+        let that = this;
+        return (0, future_1.doFuture)(function* () {
+            let r = yield that.send(new request_1.Delete((0, string_1.interpolate)(that.paths.remove, (0, record_1.merge)({ id }, that.context)), {}));
+            return (0, future_1.pure)((r.code === 200) ? true : false);
         });
     }
 }
 exports.RemoteModel = RemoteModel;
 
-},{"../callback":3,"@quenk/jhr/lib/request":9,"@quenk/noni/lib/control/monad/future":15,"@quenk/noni/lib/data/maybe":21,"@quenk/noni/lib/data/record":22,"@quenk/noni/lib/data/string":24}],6:[function(require,module,exports){
+},{"../callback":3,"@quenk/jhr/lib/request":9,"@quenk/noni/lib/control/monad/future":26,"@quenk/noni/lib/data/maybe":32,"@quenk/noni/lib/data/record":33,"@quenk/noni/lib/data/string":35}],6:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.RemoteObserver = exports.BatchResponse = exports.SeqSend = exports.ParSend = exports.Send = exports.TransportErr = void 0;
@@ -694,7 +706,7 @@ class RemoteObserver extends actor_1.Mutable {
 }
 exports.RemoteObserver = RemoteObserver;
 
-},{"../":4,"../../../actor":1,"@quenk/jhr/lib/response":11,"@quenk/noni/lib/control/match":14,"@quenk/potoo/lib/actor/resident/case":31}],7:[function(require,module,exports){
+},{"../":4,"../../../actor":1,"@quenk/jhr/lib/response":11,"@quenk/noni/lib/control/match":25,"@quenk/potoo/lib/actor/resident/case":42}],7:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Director = exports.ActorSuspended = exports.RouteChanged = exports.Supervisor = exports.SuspendActor = exports.SuspendTimer = exports.CancelTimer = exports.Suspended = exports.Suspend = exports.Reload = exports.Resume = exports.SuspendCase = exports.DEFAULT_TIMEOUT = void 0;
@@ -966,7 +978,7 @@ class Director extends actor_1.Immutable {
 exports.Director = Director;
 const defaultConfig = (c) => (0, record_1.merge)({ timeout: exports.DEFAULT_TIMEOUT }, c);
 
-},{"../../actor":1,"@quenk/noni/lib/control/monad/future":15,"@quenk/noni/lib/data/record":22,"@quenk/noni/lib/data/type":25,"@quenk/potoo/lib/actor/resident/case":31}],8:[function(require,module,exports){
+},{"../../actor":1,"@quenk/noni/lib/control/monad/future":26,"@quenk/noni/lib/data/record":33,"@quenk/noni/lib/data/type":36,"@quenk/potoo/lib/actor/resident/case":42}],8:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.MockAgent = void 0;
@@ -977,8 +989,7 @@ const response_1 = require("../response");
 const res = (0, future_1.pure)(new response_1.GenericResponse(0, {}, {}, {
     method: method_1.Method.Get,
     path: '/',
-    headers: {},
-    options: { port: 0, ttl: 0, tags: {}, context: {} }
+    options: { port: 0, ttl: 0, tags: {}, context: {}, headers: {} }
 }));
 /**
  * MockAgent is an HTTPAgent that can be used when testing projects that use
@@ -988,23 +999,23 @@ class MockAgent {
     constructor() {
         this.__MOCK__ = new mock_1.Mock();
     }
-    head(path, params = {}, headers = {}) {
-        return this.__MOCK__.invoke('head', [path, params, headers], res);
+    head(path, params = {}, options = {}) {
+        return this.__MOCK__.invoke('head', [path, params, options], res);
     }
-    get(path, params = {}, headers = {}) {
-        return this.__MOCK__.invoke('get', [path, params, headers], res);
+    get(path, params = {}, options = {}) {
+        return this.__MOCK__.invoke('get', [path, params, options], res);
     }
-    post(path, body, headers = {}) {
-        return this.__MOCK__.invoke('post', [path, body, headers], res);
+    post(path, body, options = {}) {
+        return this.__MOCK__.invoke('post', [path, body, options], res);
     }
-    put(path, body, headers = {}) {
-        return this.__MOCK__.invoke('put', [path, body, headers], res);
+    put(path, body, options = {}) {
+        return this.__MOCK__.invoke('put', [path, body, options], res);
     }
-    patch(path, body, headers = {}) {
-        return this.__MOCK__.invoke('patch', [path, body, headers], res);
+    patch(path, body, options = {}) {
+        return this.__MOCK__.invoke('patch', [path, body, options], res);
     }
-    delete(path, body, headers) {
-        return this.__MOCK__.invoke('delete', [path, body, headers], res);
+    delete(path, body, options = {}) {
+        return this.__MOCK__.invoke('delete', [path, body, options], res);
     }
     send(req) {
         return this.__MOCK__.invoke('send', [req], res);
@@ -1012,109 +1023,75 @@ class MockAgent {
 }
 exports.MockAgent = MockAgent;
 
-},{"../request/method":10,"../response":11,"@quenk/noni/lib/control/monad/future":15,"@quenk/test/lib/mock":61}],9:[function(require,module,exports){
+},{"../request/method":10,"../response":11,"@quenk/noni/lib/control/monad/future":14,"@quenk/test/lib/mock":72}],9:[function(require,module,exports){
 "use strict";
-var __extends = (this && this.__extends) || (function () {
-    var extendStatics = function (d, b) {
-        extendStatics = Object.setPrototypeOf ||
-            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
-        return extendStatics(d, b);
-    };
-    return function (d, b) {
-        if (typeof b !== "function" && b !== null)
-            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Delete = exports.Patch = exports.Put = exports.Post = exports.Get = exports.Head = void 0;
-var method_1 = require("./method");
+const method_1 = require("./method");
+const defaultOptions = { ttl: 0, tags: {}, context: {}, headers: {} };
 /**
  * Head request.
  */
-var Head = /** @class */ (function () {
-    function Head(path, params, headers, options) {
-        if (headers === void 0) { headers = {}; }
-        if (options === void 0) { options = { ttl: 0, tags: {}, context: {} }; }
+class Head {
+    constructor(path, params, options = defaultOptions) {
         this.path = path;
         this.params = params;
-        this.headers = headers;
         this.options = options;
         this.method = method_1.Method.Head;
     }
-    return Head;
-}());
+}
 exports.Head = Head;
 /**
  * Get request.
  */
-var Get = /** @class */ (function (_super) {
-    __extends(Get, _super);
-    function Get() {
-        var _this = _super !== null && _super.apply(this, arguments) || this;
-        _this.method = method_1.Method.Get;
-        return _this;
+class Get extends Head {
+    constructor() {
+        super(...arguments);
+        this.method = method_1.Method.Get;
     }
-    return Get;
-}(Head));
+}
 exports.Get = Get;
 /**
  * Post request.
  */
-var Post = /** @class */ (function () {
-    function Post(path, body, headers, options) {
-        if (headers === void 0) { headers = {}; }
-        if (options === void 0) { options = { ttl: 0, tags: {}, context: {} }; }
+class Post {
+    constructor(path, body, options = defaultOptions) {
         this.path = path;
         this.body = body;
-        this.headers = headers;
         this.options = options;
         this.method = method_1.Method.Post;
     }
-    return Post;
-}());
+}
 exports.Post = Post;
 /**
  * Put request.
  */
-var Put = /** @class */ (function (_super) {
-    __extends(Put, _super);
-    function Put() {
-        var _this = _super !== null && _super.apply(this, arguments) || this;
-        _this.method = method_1.Method.Put;
-        return _this;
+class Put extends Post {
+    constructor() {
+        super(...arguments);
+        this.method = method_1.Method.Put;
     }
-    return Put;
-}(Post));
+}
 exports.Put = Put;
 /**
  * Patch request.
  */
-var Patch = /** @class */ (function (_super) {
-    __extends(Patch, _super);
-    function Patch() {
-        var _this = _super !== null && _super.apply(this, arguments) || this;
-        _this.method = method_1.Method.Patch;
-        return _this;
+class Patch extends Post {
+    constructor() {
+        super(...arguments);
+        this.method = method_1.Method.Patch;
     }
-    return Patch;
-}(Post));
+}
 exports.Patch = Patch;
 /**
  * Delete request.
  */
-var Delete = /** @class */ (function (_super) {
-    __extends(Delete, _super);
-    function Delete() {
-        var _this = _super !== null && _super.apply(this, arguments) || this;
-        _this.method = method_1.Method.Delete;
-        return _this;
+class Delete extends Post {
+    constructor() {
+        super(...arguments);
+        this.method = method_1.Method.Delete;
     }
-    return Delete;
-}(Post));
+}
 exports.Delete = Delete;
 
 },{"./method":10}],10:[function(require,module,exports){
@@ -1136,232 +1113,171 @@ var Method;
 
 },{}],11:[function(require,module,exports){
 "use strict";
-var __extends = (this && this.__extends) || (function () {
-    var extendStatics = function (d, b) {
-        extendStatics = Object.setPrototypeOf ||
-            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
-        return extendStatics(d, b);
-    };
-    return function (d, b) {
-        if (typeof b !== "function" && b !== null)
-            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.createResponse = exports.InternalServerError = exports.ServerError = exports.Conflict = exports.NotFound = exports.Forbidden = exports.Unauthorized = exports.BadRequest = exports.ClientError = exports.Created = exports.NoContent = exports.Accepted = exports.Ok = exports.Success = exports.GenericResponse = void 0;
-var status = require("./status");
+const status = require("./status");
 /**
  * GenericResponse response refers to response codes we don't have
  * an explicit type for.
  */
-var GenericResponse = /** @class */ (function () {
-    function GenericResponse(code, body, headers, request) {
+class GenericResponse {
+    constructor(code, body, headers, request) {
         this.code = code;
         this.body = body;
         this.headers = headers;
         this.request = request;
     }
-    return GenericResponse;
-}());
+}
 exports.GenericResponse = GenericResponse;
 /**
  * Success
  *
  * See (here)[http://www.iana.org/assignments/http-status-codes/http-status-codes.xhtml].
  */
-var Success = /** @class */ (function (_super) {
-    __extends(Success, _super);
-    function Success() {
-        return _super !== null && _super.apply(this, arguments) || this;
-    }
-    return Success;
-}(GenericResponse));
+class Success extends GenericResponse {
+}
 exports.Success = Success;
 /**
  * Ok response.
  */
-var Ok = /** @class */ (function (_super) {
-    __extends(Ok, _super);
-    function Ok(body, headers, request) {
-        var _this = _super.call(this, status.OK, body, headers, request) || this;
-        _this.body = body;
-        _this.headers = headers;
-        _this.request = request;
-        return _this;
+class Ok extends Success {
+    constructor(body, headers, request) {
+        super(status.OK, body, headers, request);
+        this.body = body;
+        this.headers = headers;
+        this.request = request;
     }
-    return Ok;
-}(Success));
+}
 exports.Ok = Ok;
 /**
  * Accepted response.
  */
-var Accepted = /** @class */ (function (_super) {
-    __extends(Accepted, _super);
-    function Accepted(body, headers, request) {
-        var _this = _super.call(this, status.ACCEPTED, body, headers, request) || this;
-        _this.body = body;
-        _this.headers = headers;
-        _this.request = request;
-        return _this;
+class Accepted extends Success {
+    constructor(body, headers, request) {
+        super(status.ACCEPTED, body, headers, request);
+        this.body = body;
+        this.headers = headers;
+        this.request = request;
     }
-    return Accepted;
-}(Success));
+}
 exports.Accepted = Accepted;
 /**
  * NoContent response.
  *
  * NOTE: In practice, the body here should always be undefined.
  */
-var NoContent = /** @class */ (function (_super) {
-    __extends(NoContent, _super);
-    function NoContent(body, headers, request) {
-        var _this = _super.call(this, status.NO_CONTENT, body, headers, request) || this;
-        _this.body = body;
-        _this.headers = headers;
-        _this.request = request;
-        return _this;
+class NoContent extends Success {
+    constructor(body, headers, request) {
+        super(status.NO_CONTENT, body, headers, request);
+        this.body = body;
+        this.headers = headers;
+        this.request = request;
     }
-    return NoContent;
-}(Success));
+}
 exports.NoContent = NoContent;
 /**
  * Created response.
  */
-var Created = /** @class */ (function (_super) {
-    __extends(Created, _super);
-    function Created(body, headers, request) {
-        var _this = _super.call(this, status.CREATED, body, headers, request) || this;
-        _this.body = body;
-        _this.headers = headers;
-        _this.request = request;
-        return _this;
+class Created extends Success {
+    constructor(body, headers, request) {
+        super(status.CREATED, body, headers, request);
+        this.body = body;
+        this.headers = headers;
+        this.request = request;
     }
-    return Created;
-}(Success));
+}
 exports.Created = Created;
 /**
  * ClientError
  * See (here)[http://www.iana.org/assignments/http-status-codes/http-status-codes.xhtml].
  */
-var ClientError = /** @class */ (function (_super) {
-    __extends(ClientError, _super);
-    function ClientError() {
-        return _super !== null && _super.apply(this, arguments) || this;
-    }
-    return ClientError;
-}(GenericResponse));
+class ClientError extends GenericResponse {
+}
 exports.ClientError = ClientError;
 /**
  * BadRequest response.
  */
-var BadRequest = /** @class */ (function (_super) {
-    __extends(BadRequest, _super);
-    function BadRequest(body, headers, request) {
-        var _this = _super.call(this, status.BAD_REQUEST, body, headers, request) || this;
-        _this.body = body;
-        _this.headers = headers;
-        _this.request = request;
-        return _this;
+class BadRequest extends ClientError {
+    constructor(body, headers, request) {
+        super(status.BAD_REQUEST, body, headers, request);
+        this.body = body;
+        this.headers = headers;
+        this.request = request;
     }
-    return BadRequest;
-}(ClientError));
+}
 exports.BadRequest = BadRequest;
 /**
  * Unauthorized response.
  */
-var Unauthorized = /** @class */ (function (_super) {
-    __extends(Unauthorized, _super);
-    function Unauthorized(body, headers, request) {
-        var _this = _super.call(this, status.UNAUTHORIZED, body, headers, request) || this;
-        _this.body = body;
-        _this.headers = headers;
-        _this.request = request;
-        return _this;
+class Unauthorized extends ClientError {
+    constructor(body, headers, request) {
+        super(status.UNAUTHORIZED, body, headers, request);
+        this.body = body;
+        this.headers = headers;
+        this.request = request;
     }
-    return Unauthorized;
-}(ClientError));
+}
 exports.Unauthorized = Unauthorized;
 /**
  * Forbidden response.
  */
-var Forbidden = /** @class */ (function (_super) {
-    __extends(Forbidden, _super);
-    function Forbidden(body, headers, request) {
-        var _this = _super.call(this, status.FORBIDDEN, body, headers, request) || this;
-        _this.body = body;
-        _this.headers = headers;
-        _this.request = request;
-        return _this;
+class Forbidden extends ClientError {
+    constructor(body, headers, request) {
+        super(status.FORBIDDEN, body, headers, request);
+        this.body = body;
+        this.headers = headers;
+        this.request = request;
     }
-    return Forbidden;
-}(ClientError));
+}
 exports.Forbidden = Forbidden;
 /**
  * NotFound response.
  */
-var NotFound = /** @class */ (function (_super) {
-    __extends(NotFound, _super);
-    function NotFound(body, headers, request) {
-        var _this = _super.call(this, status.NOT_FOUND, body, headers, request) || this;
-        _this.body = body;
-        _this.headers = headers;
-        _this.request = request;
-        return _this;
+class NotFound extends ClientError {
+    constructor(body, headers, request) {
+        super(status.NOT_FOUND, body, headers, request);
+        this.body = body;
+        this.headers = headers;
+        this.request = request;
     }
-    return NotFound;
-}(ClientError));
+}
 exports.NotFound = NotFound;
 /**
  * Conflict response.
  */
-var Conflict = /** @class */ (function (_super) {
-    __extends(Conflict, _super);
-    function Conflict(body, headers, request) {
-        var _this = _super.call(this, status.CONFLICT, body, headers, request) || this;
-        _this.body = body;
-        _this.headers = headers;
-        _this.request = request;
-        return _this;
+class Conflict extends ClientError {
+    constructor(body, headers, request) {
+        super(status.CONFLICT, body, headers, request);
+        this.body = body;
+        this.headers = headers;
+        this.request = request;
     }
-    return Conflict;
-}(ClientError));
+}
 exports.Conflict = Conflict;
 /**
  * ServerError
  */
-var ServerError = /** @class */ (function (_super) {
-    __extends(ServerError, _super);
-    function ServerError() {
-        return _super !== null && _super.apply(this, arguments) || this;
-    }
-    return ServerError;
-}(GenericResponse));
+class ServerError extends GenericResponse {
+}
 exports.ServerError = ServerError;
 /**
  * InternalServerError response.
  */
-var InternalServerError = /** @class */ (function (_super) {
-    __extends(InternalServerError, _super);
-    function InternalServerError(body, headers, request) {
-        var _this = _super.call(this, status.INTERNAL_SERVER_ERROR, body, headers, request) || this;
-        _this.body = body;
-        _this.headers = headers;
-        _this.request = request;
-        _this.status = status.INTERNAL_SERVER_ERROR;
-        return _this;
+class InternalServerError extends ServerError {
+    constructor(body, headers, request) {
+        super(status.INTERNAL_SERVER_ERROR, body, headers, request);
+        this.body = body;
+        this.headers = headers;
+        this.request = request;
+        this.status = status.INTERNAL_SERVER_ERROR;
     }
-    return InternalServerError;
-}(ServerError));
+}
 exports.InternalServerError = InternalServerError;
 /**
  * createResponse creates a new typed Response or a GenericResponse if
  * unsupported.
  */
-var createResponse = function (code, body, headers, request) {
+const createResponse = (code, body, headers, request) => {
     switch (code) {
         case status.OK:
             return new Ok(body, headers, request);
@@ -1470,6 +1386,1810 @@ exports.NETWORK_AUTHENTICATION_REQUIRED = 511;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.attempt = exports.raise = exports.convert = void 0;
 /** imports */
+const either_1 = require("../data/either");
+/**
+ * convert an Err to an Error.
+ */
+const convert = (e) => (e instanceof Error) ?
+    e :
+    new Error(e ? e.message ? e.message : undefined : undefined);
+exports.convert = convert;
+/**
+ * raise the supplied Error.
+ *
+ * This function exists to maintain a functional style in situations where
+ * you may actually want to throw an error.
+ */
+const raise = (e) => {
+    if (e instanceof Error) {
+        throw e;
+    }
+    else {
+        throw new Error(e.message);
+    }
+};
+exports.raise = raise;
+/**
+ * attempt a synchronous computation that may throw an exception.
+ */
+const attempt = (f) => {
+    try {
+        return (0, either_1.right)(f());
+    }
+    catch (e) {
+        return (0, either_1.left)(e);
+    }
+};
+exports.attempt = attempt;
+
+},{"../data/either":18}],14:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.doFuture = exports.liftP = exports.fromExcept = exports.toPromise = exports.some = exports.race = exports.reduce = exports.sequential = exports.parallel = exports.batch = exports.fromCallback = exports.fromAbortable = exports.wait = exports.delay = exports.attempt = exports.raise = exports.run = exports.wrap = exports.voidPure = exports.pure = exports.Run = exports.Raise = exports.Trap = exports.Finally = exports.Catch = exports.Call = exports.Bind = exports.Pure = exports.Future = void 0;
+const function_1 = require("../../data/function");
+const timer_1 = require("../timer");
+const error_1 = require("../error");
+const _1 = require("./");
+const array_1 = require("../../data/array");
+/**
+ * Future represents an asynchronous task or sequence of asynchronous tasks that
+ * have not yet happened.
+ *
+ * Use the fork() or then() methods to trigger computation or via the await
+ * keyword.
+ *
+ * Note: Multiple chains of Futures should not be executed via await, instead
+ * use the doFuture() function or chain them together manually to retain
+ * control over execution.
+ */
+class Future {
+    constructor() {
+        /**
+         * tag identifies each Future subclass.
+         */
+        this.tag = 'Future';
+    }
+    get [Symbol.toStringTag]() {
+        return 'Future';
+    }
+    of(a) {
+        return new Pure(a);
+    }
+    map(f) {
+        return new Bind(this, (value) => new Pure(f(value)));
+    }
+    ap(ft) {
+        return new Bind(this, (value) => ft.map(f => f(value)));
+    }
+    chain(f) {
+        return new Bind(this, f);
+    }
+    trap(f) {
+        return new Catch(this, f);
+    }
+    catch(f) {
+        // XXX: any used here because catch() previously expected the resulting
+        // Future to be of the same type. This is not the case with promises.
+        return new Catch(this, (e) => (0, exports.run)((onError, onSuccess) => {
+            if (f) {
+                let result = f(e);
+                switch (Object.prototype.toString.call(result)) {
+                    case '[object Future]':
+                        let asFuture = result;
+                        asFuture.fork(e => onError(e), v => onSuccess(v));
+                        break;
+                    case '[object Promise]':
+                        let asPromise = result;
+                        asPromise.then(v => onSuccess(v), e => onError(e));
+                        break;
+                    default:
+                        onSuccess(result);
+                        break;
+                }
+            }
+            else {
+                //XXX: This should be an error but not much we can do with the
+                // type signature for a Promise. We do not want to throw at 
+                // runtime.
+                onSuccess(undefined);
+            }
+            return function_1.noop;
+        }));
+    }
+    finally(f) {
+        return new Finally(this, f);
+    }
+    then(onResolve, onReject) {
+        return new Promise((resolve, reject) => {
+            this.fork(reject, resolve);
+        }).then(onResolve, onReject);
+    }
+    _fork(value, stack, onError, onSuccess) {
+        let pending = true;
+        let failure = (e) => {
+            if (pending) {
+                stack.push(new Raise(e));
+                pending = false;
+                this._fork(value, stack, onError, onSuccess);
+            }
+            else {
+                console.warn(`${this.tag}: onError called after task completed`);
+                console.warn(e);
+            }
+        };
+        let success = (val) => {
+            if (pending) {
+                pending = false;
+                if ((0, array_1.empty)(stack))
+                    onSuccess(val);
+                else
+                    this._fork(val, stack, onError, onSuccess);
+            }
+            else {
+                console.warn(`${this.tag}: onSuccess called after task completed`);
+                console.trace();
+            }
+        };
+        while (!(0, array_1.empty)(stack)) {
+            let next = stack.pop();
+            if (next.tag === 'Pure') {
+                (0, timer_1.tick)(() => success(next.value));
+                return function_1.noop;
+            }
+            else if (next.tag === 'Bind') {
+                let future = next;
+                stack.push(new Call(future.func));
+                stack.push(future.target);
+            }
+            else if (next.tag === 'Call') {
+                let future = next;
+                stack.push(future.target(value));
+            }
+            else if (next.tag === 'Catch') {
+                let future = next;
+                stack.push(new Trap(future.func));
+                stack.push(future.target);
+            }
+            else if (next.tag === 'Finally') {
+                let future = next;
+                stack.push(new Trap(future.func));
+                stack.push(new Call(future.func));
+                stack.push(future.target);
+            }
+            else if (next.tag === 'Trap') {
+                // Avoid hanging when catch().catch().catch() etc. is done.
+                if ((0, array_1.empty)(stack))
+                    onSuccess(value);
+            }
+            else if (next.tag === 'Raise') {
+                let future = next;
+                let err = (0, error_1.convert)(future.value);
+                // Clear the stack until we encounter a Trap instance.
+                while (!(0, array_1.empty)(stack) && (0, array_1.tail)(stack).tag !== 'Trap')
+                    stack.pop();
+                if ((0, array_1.empty)(stack)) {
+                    // No handlers detected, finish with an error.
+                    onError(err);
+                    return function_1.noop;
+                }
+                else {
+                    stack.push(stack.pop().func(err));
+                }
+            }
+            else if (next.tag === 'Run') {
+                return next.task(failure, success);
+            }
+        }
+        return function_1.noop;
+    }
+    /**
+     * fork this Future causing its side-effects to take place.
+     */
+    fork(onError = function_1.noop, onSuccess = function_1.noop) {
+        // XXX: There is no value until async computation begins.
+        return this._fork(undefined, [this], onError, onSuccess);
+    }
+}
+exports.Future = Future;
+/**
+ * Pure constructor.
+ */
+class Pure extends Future {
+    constructor(value) {
+        super();
+        this.value = value;
+        this.tag = 'Pure';
+    }
+    map(f) {
+        return new Pure(f(this.value));
+    }
+    ap(ft) {
+        return ft.map(f => f(this.value));
+    }
+}
+exports.Pure = Pure;
+/**
+ * Bind constructor.
+ * @private
+ */
+class Bind extends Future {
+    constructor(target, func) {
+        super();
+        this.target = target;
+        this.func = func;
+        this.tag = 'Bind';
+    }
+}
+exports.Bind = Bind;
+/**
+ * Call constructor.
+ * @private
+ */
+class Call extends Future {
+    constructor(target) {
+        super();
+        this.target = target;
+        this.tag = 'Call';
+    }
+}
+exports.Call = Call;
+/**
+ * Catch constructor.
+ * @private
+ */
+class Catch extends Future {
+    constructor(target, func) {
+        super();
+        this.target = target;
+        this.func = func;
+        this.tag = 'Catch';
+    }
+}
+exports.Catch = Catch;
+/**
+ * Finally constructor.
+ * @private
+ */
+class Finally extends Future {
+    constructor(target, func) {
+        super();
+        this.target = target;
+        this.func = func;
+        this.tag = 'Finally';
+    }
+}
+exports.Finally = Finally;
+/**
+ * Trap constructor.
+ * @private
+ */
+class Trap extends Future {
+    constructor(func) {
+        super();
+        this.func = func;
+        this.tag = 'Trap';
+    }
+}
+exports.Trap = Trap;
+/**
+ * Raise constructor.
+ */
+class Raise extends Future {
+    constructor(value) {
+        super();
+        this.value = value;
+        this.tag = 'Raise';
+    }
+    map(_) {
+        return new Raise(this.value);
+    }
+    ap(_) {
+        return new Raise(this.value);
+    }
+    chain(_) {
+        return new Raise(this.value);
+    }
+}
+exports.Raise = Raise;
+/**
+ * Run constructor.
+ * @private
+ */
+class Run extends Future {
+    constructor(task) {
+        super();
+        this.task = task;
+        this.tag = 'Run';
+    }
+}
+exports.Run = Run;
+/**
+ * pure wraps a synchronous value in a Future.
+ */
+const pure = (a) => new Pure(a);
+exports.pure = pure;
+/**
+ * voidPure is a Future that provides the absence of a value for your
+ * convenience.
+ */
+exports.voidPure = new Pure(undefined);
+/**
+ * wrap a value in a Future returning the value if the value is itself a Future.
+ */
+const wrap = (a) => (String(a) === '[object Future]') ? a : (0, exports.pure)(a);
+exports.wrap = wrap;
+/**
+ * run sets up an async task to be executed at a later point.
+ */
+const run = (task) => new Run(task);
+exports.run = run;
+/**
+ * raise wraps an Error in a Future.
+ *
+ * This future will be considered a failure.
+ */
+const raise = (e) => new Raise(e);
+exports.raise = raise;
+/**
+ * attempt a synchronous task, trapping any thrown errors in the Future.
+ */
+const attempt = (f) => (0, exports.run)((onError, onSuccess) => {
+    (0, timer_1.tick)(() => {
+        try {
+            onSuccess(f());
+        }
+        catch (e) {
+            onError(e);
+        }
+    });
+    return function_1.noop;
+});
+exports.attempt = attempt;
+/**
+ * delay execution of a function f after n milliseconds have passed.
+ *
+ * Any errors thrown are caught and processed in the Future chain.
+ */
+const delay = (f, n = 0) => (0, exports.run)((onError, onSuccess) => {
+    setTimeout(() => {
+        try {
+            onSuccess(f());
+        }
+        catch (e) {
+            onError(e);
+        }
+    }, n);
+    return function_1.noop;
+});
+exports.delay = delay;
+/**
+ * wait n milliseconds before continuing the Future chain.
+ */
+const wait = (n) => (0, exports.run)((_, onSuccess) => {
+    setTimeout(() => { onSuccess(undefined); }, n);
+    return function_1.noop;
+});
+exports.wait = wait;
+/**
+ * fromAbortable takes an Aborter and a node style async function and
+ * produces a Future.
+ *
+ * Note: The function used here is not called in the "next tick".
+ */
+const fromAbortable = (abort) => (f) => (0, exports.run)((onError, onSuccess) => {
+    f((err, a) => (err != null) ? onError(err) : onSuccess(a));
+    return abort;
+});
+exports.fromAbortable = fromAbortable;
+/**
+ * fromCallback produces a Future from a node style async function.
+ *
+ * Note: The function used here is not called in the "next tick".
+ */
+const fromCallback = (f) => (0, exports.fromAbortable)(function_1.noop)(f);
+exports.fromCallback = fromCallback;
+class Tag {
+    constructor(index, value) {
+        this.index = index;
+        this.value = value;
+    }
+}
+/**
+ * batch runs a list of batched Futures one batch at a time.
+ */
+const batch = (list) => (0, exports.sequential)(list.map(w => (0, exports.parallel)(w)));
+exports.batch = batch;
+/**
+ * parallel runs a list of Futures in parallel failing if any
+ * fail and succeeding with a list of successful values.
+ */
+const parallel = (list) => (0, exports.run)((onError, onSuccess) => {
+    let completed = [];
+    let finished = false;
+    let aborters = [];
+    let indexCmp = (a, b) => a.index - b.index;
+    let abortAll = () => {
+        finished = true;
+        aborters.map(f => f());
+    };
+    let onErr = (e) => {
+        if (!finished) {
+            abortAll();
+            onError(e);
+        }
+    };
+    let reconcile = () => completed.sort(indexCmp).map(t => t.value);
+    let onSucc = (t) => {
+        if (!finished) {
+            completed.push(t);
+            if (completed.length === list.length)
+                onSuccess(reconcile());
+        }
+    };
+    aborters.push.apply(aborters, list.map((f, i) => f.map((value) => new Tag(i, value)).fork(onErr, onSucc)));
+    if ((0, array_1.empty)(aborters))
+        onSuccess([]);
+    return () => abortAll();
+});
+exports.parallel = parallel;
+/**
+ * sequential execution of a list of futures.
+ *
+ * This function succeeds with a list of all results or fails on the first
+ * error.
+ */
+const sequential = (list) => (0, exports.run)((onError, onSuccess) => {
+    let i = 0;
+    let r = [];
+    let onErr = (e) => onError(e);
+    let success = (a) => { r.push(a); next(); };
+    let abort;
+    let next = () => {
+        if (i < list.length)
+            abort = list[i].fork(onErr, success);
+        else
+            onSuccess(r);
+        i++;
+    };
+    next();
+    return () => { if (abort)
+        abort(); };
+});
+exports.sequential = sequential;
+/**
+ * reduce a list of values into a single value using a reducer function that
+ * produces a Future.
+ */
+const reduce = (list, initValue, f) => (0, exports.doFuture)(function* () {
+    let accumValue = initValue;
+    for (let i = 0; i < list.length; i++)
+        accumValue = yield f(accumValue, list[i], i);
+    return (0, exports.pure)(accumValue);
+});
+exports.reduce = reduce;
+/**
+ * race given a list of Futures, will return a Future that is settled by
+ * the first error or success to occur.
+ */
+const race = (list) => (0, exports.run)((onError, onSuccess) => {
+    let aborters = [];
+    let finished = false;
+    let abortAll = () => {
+        finished = true;
+        aborters.map(f => f());
+    };
+    let onErr = (e) => {
+        if (!finished) {
+            finished = true;
+            abortAll();
+            onError(e);
+        }
+    };
+    let onSucc = (t) => {
+        if (!finished) {
+            finished = true;
+            aborters.map((f, i) => (i !== t.index) ? f() : undefined);
+            onSuccess(t.value);
+        }
+    };
+    aborters.push.apply(aborters, list.map((f, i) => f.map((value) => new Tag(i, value)).fork(onErr, onSucc)));
+    if (aborters.length === 0)
+        onError(new Error(`race(): Cannot race an empty list!`));
+    return () => abortAll();
+});
+exports.race = race;
+/**
+ * some executes a list of Futures sequentially until one resolves with a
+ * successful value.
+ *
+ * If none resolve successfully, the final error is raised.
+ */
+const some = (list) => (0, exports.doFuture)(function* () {
+    let result = undefined;
+    for (let [index, future] of list.entries()) {
+        let keepGoing = false;
+        result = yield (future.catch(e => {
+            if (index === (list.length - 1)) {
+                return (0, exports.raise)(e);
+            }
+            else {
+                keepGoing = true;
+                return exports.voidPure;
+            }
+        }));
+        if (!keepGoing)
+            break;
+    }
+    return (0, exports.pure)(result);
+});
+exports.some = some;
+/**
+ * toPromise transforms a Future into a Promise.
+ *
+ * This function depends on the global promise constructor and
+ * will fail if the environment does not provide one.
+ *
+ * @deprecated
+ */
+const toPromise = (ft) => new Promise((yes, no) => ft.fork(no, yes));
+exports.toPromise = toPromise;
+/**
+ * fromExcept converts an Except to a Future.
+ */
+const fromExcept = (e) => e.fold(e => (0, exports.raise)(e), a => (0, exports.pure)(a));
+exports.fromExcept = fromExcept;
+/**
+ * liftP turns a function that produces a Promise into a Future.
+ */
+const liftP = (f) => (0, exports.run)((onError, onSuccess) => {
+    f()
+        .then(a => onSuccess(a))
+        .catch(e => onError(e));
+    return function_1.noop;
+});
+exports.liftP = liftP;
+/**
+ * doFuture provides a do notation function specialized to Futures.
+ *
+ * Use this function to avoid explicit type assertions with control/monad#doN.
+ */
+const doFuture = (f) => (0, _1.doN)(f);
+exports.doFuture = doFuture;
+
+},{"../../data/array":17,"../../data/function":19,"../error":13,"../timer":16,"./":15}],15:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.doMonad = exports.doN = exports.pipeN = exports.pipe = exports.compose = exports.join = void 0;
+/**
+ * join flattens a Monad that contains another Monad.
+ */
+const join = (outer) => outer.chain((x) => x);
+exports.join = join;
+/**
+ * compose right composes functions that produce Monads so that the output
+ * of the second is the input of the first.
+ */
+const compose = (g, f) => (0, exports.pipe)(f, g);
+exports.compose = compose;
+/**
+ * pipe left composes functions that produce Monads so that the output of the
+ * first is the input of the second.
+ */
+const pipe = (f, g) => (value) => f(value).chain(b => g(b));
+exports.pipe = pipe;
+/**
+ * pipeN is like pipe but takes variadic parameters.
+ *
+ * Because of this, the resulting function only maps from A -> B.
+ */
+const pipeN = (f, ...list) => (value) => list.reduce((p, c) => p.chain(v => c(v)), f(value));
+exports.pipeN = pipeN;
+/**
+ * doN simulates haskell's do notation using ES6's generator syntax.
+ *
+ * Example:
+ *
+ * ```typescript
+ * doN(function*() {
+ *
+ *   const a = yield pure(1);
+ *   const b = yield pure(a+2);
+ *   const c = yield pure(b+1);
+ *
+ *   return c;
+ *
+ * })
+ * ```
+ * Each yield is results in a level of nesting added to the chain. The above
+ * could be re-written as:
+ *
+ * ```typescript
+ *
+ * pure(1)
+ *  .chain(a =>
+ *   pure(a + 2)
+ *    .chain(b =>
+ *       pure(b + 1)));
+ *
+ * ```
+ *
+ * NOTE: You MUST wrap your return values manually, this function
+ *       will not do it for you.
+ *
+ * NOTE1: Errors thrown in the body of a generator function simply
+ * bring the generator to an end. According to MDN:
+ *
+ * "Much like a return statement, an error thrown inside the generator will
+ * make the generator finished -- unless caught within the generator's body."
+ *
+ * Source: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Generator.
+ *
+ * Beware of uncaught errors being swallowed in the function body.
+ */
+const doN = (f) => {
+    let gen = f();
+    let next = (val) => {
+        let r = gen.next(val);
+        if (r.done)
+            return r.value;
+        else
+            return r.value.chain(next);
+    };
+    return next();
+};
+exports.doN = doN;
+exports.doMonad = exports.doN;
+
+},{}],16:[function(require,module,exports){
+(function (process){(function (){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.throttle = exports.debounce = exports.tick = void 0;
+/**
+ * tick runs a function in the "next tick" using process.nextTick in node
+ * or setTimeout(f, 0) elsewhere.
+ */
+const tick = (f) => (typeof window == 'undefined') ?
+    setTimeout(f, 0) :
+    process.nextTick(f);
+exports.tick = tick;
+/**
+ * debounce delays the application of a function until the specified time
+ * has passed.
+ *
+ * If multiple attempts to apply the function have occured, then each attempt
+ * will restart the delay process. The function will only ever be applied once
+ * after the delay, using the value of the final attempt for application.
+ */
+const debounce = (f, delay) => {
+    let id = -1;
+    return (a) => {
+        if (id === -1) {
+            id = setTimeout(() => f(a), delay);
+        }
+        else {
+            clearTimeout(id);
+            id = setTimeout(() => f(a), delay);
+        }
+    };
+};
+exports.debounce = debounce;
+/**
+ * throttle limits the application of a function to occur only one within the
+ * specified duration.
+ *
+ * The first application will execute immediately subsequent applications
+ * will be ignored until the duration has passed.
+ */
+const throttle = (f, duration) => {
+    let wait = false;
+    return (a) => {
+        if (wait === false) {
+            f(a);
+            wait = true;
+            setTimeout(() => wait = false, duration);
+        }
+    };
+};
+exports.throttle = throttle;
+
+}).call(this)}).call(this,require('_process'))
+},{"_process":96}],17:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.compact = exports.flatten = exports.combine = exports.make = exports.removeAt = exports.remove = exports.dedupe = exports.distribute = exports.group = exports.partition = exports.concat = exports.flatMap = exports.map = exports.contains = exports.empty = exports.tail = exports.head = void 0;
+/**
+ * The array module provides helper functions
+ * for working with JS arrays.
+ */
+const record_1 = require("../record");
+const math_1 = require("../../math");
+/**
+ * head returns the item at index 0 of an array
+ */
+const head = (list) => list[0];
+exports.head = head;
+/**
+ * tail returns the last item in an array
+ */
+const tail = (list) => list[list.length - 1];
+exports.tail = tail;
+/**
+ * empty indicates whether an array is empty or not.
+ */
+const empty = (list) => (list.length === 0);
+exports.empty = empty;
+/**
+ * contains indicates whether an element exists in an array.
+ */
+const contains = (list, a) => (list.indexOf(a) > -1);
+exports.contains = contains;
+/**
+ * map is a curried version of the Array#map method.
+ */
+const map = (list) => (f) => list.map(f);
+exports.map = map;
+/**
+ * flatMap allows a function to produce a combined set of arrays from a map
+ * operation over each member of a list.
+ */
+const flatMap = (list, f) => list.reduce((p, c, i) => p.concat(f(c, i, list)), []);
+exports.flatMap = flatMap;
+/**
+ * concat concatenates elements to the end of an array without flattening
+ * if any of the elements are an array.
+ *
+ * This function also ignores null and undefined.
+ */
+const concat = (list, ...items) => [...list, ...items.filter(item => item != null)];
+exports.concat = concat;
+/**
+ * partition an array into two using a partitioning function.
+ *
+ * The first array contains values that return true and the second false.
+ */
+const partition = (list, f) => (0, exports.empty)(list) ?
+    [[], []] :
+    list.reduce(([yes, no], c, i) => (f(c, i, list) ?
+        [(0, exports.concat)(yes, c), no] :
+        [yes, (0, exports.concat)(no, c)]), [[], []]);
+exports.partition = partition;
+/**
+ * group the elements of an array into a Record where each property
+ * is an array of elements assigned to it's property name.
+ */
+const group = (list, f) => list.reduce((p, c, i) => {
+    let g = f(c, i, list);
+    return (0, record_1.merge)(p, {
+        [g]: Array.isArray(p[g]) ?
+            (0, exports.concat)(p[g], c) : [c]
+    });
+}, {});
+exports.group = group;
+/**
+ * distribute breaks an array into an array of equally (approximate) sized
+ * smaller arrays.
+ */
+const distribute = (list, size) => {
+    let r = list.reduce((p, c, i) => (0, math_1.isMultipleOf)(size, i + 1) ?
+        [(0, exports.concat)(p[0], (0, exports.concat)(p[1], c)), []] :
+        [p[0], (0, exports.concat)(p[1], c)], [[], []]);
+    return (r[1].length === 0) ? r[0] : (0, exports.concat)(r[0], r[1]);
+};
+exports.distribute = distribute;
+/**
+ * dedupe an array by filtering out elements
+ * that appear twice.
+ */
+const dedupe = (list) => list.filter((e, i, l) => l.indexOf(e) === i);
+exports.dedupe = dedupe;
+/**
+ * remove an element from an array returning a new copy with the element
+ * removed.
+ */
+const remove = (list, target) => {
+    let idx = list.indexOf(target);
+    if (idx === -1) {
+        return list.slice();
+    }
+    else {
+        let a = list.slice();
+        a.splice(idx, 1);
+        return a;
+    }
+};
+exports.remove = remove;
+/**
+ * removeAt removes an element at the specified index returning a copy
+ * of the original array with the element removed.
+ */
+const removeAt = (list, idx) => {
+    if ((list.length > idx) && (idx > -1)) {
+        let a = list.slice();
+        a.splice(idx, 1);
+        return a;
+    }
+    else {
+        return list.slice();
+    }
+};
+exports.removeAt = removeAt;
+/**
+ * make an array of elements of a given size using a function to provide
+ * each element.
+ *
+ * The function receives the index number for each step.
+ */
+const make = (size, f) => {
+    let a = new Array(size);
+    for (let i = 0; i < size; i++)
+        a[i] = f(i);
+    return a;
+};
+exports.make = make;
+/**
+ * combine a list of of lists into one list.
+ */
+const combine = (list) => list.reduce((p, c) => p.concat(c), []);
+exports.combine = combine;
+/**
+ * flatten a list of items that may be multi-dimensional.
+ *
+ * This function may not be stack safe.
+ */
+const flatten = (list) => list.reduce((p, c) => p.concat(Array.isArray(c) ? (0, exports.flatten)(c) : c), []);
+exports.flatten = flatten;
+/**
+ * compact removes any occurences of null or undefined in the list.
+ */
+const compact = (list) => list.filter(v => (v != null));
+exports.compact = compact;
+
+},{"../../math":23,"../record":21}],18:[function(require,module,exports){
+"use strict";
+/**
+ * Either represents a value that may be one of two types.
+ *
+ * An Either is either a Left or Right. Mapping and related functions over the
+ * Left side returns the value unchanged. When the value is Right
+ * functions are applied as normal.
+ *
+ * The Either concept is often used to accomodate error handling but there
+ * are other places it may come in handy.
+ *
+ * An important point to note when using this type is that the left side
+ * remains the same while chaining. That means, the types Either<number, string>
+ * and Either<boolean, string> are two different types that can not be sequenced
+ * together via map,chain etc.
+ *
+ * This turns up compiler errors in unexpected places and is sometimes rectified
+ * by extracting the values out of the Either type completley and constructing
+ * a fresh one.
+ */
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.either = exports.fromBoolean = exports.right = exports.left = exports.Right = exports.Left = exports.Either = void 0;
+const maybe_1 = require("./maybe");
+/**
+ * The abstract Either class.
+ *
+ * This is the type that will be used in signatures.
+ */
+class Either {
+    of(value) {
+        return new Right(value);
+    }
+}
+exports.Either = Either;
+/**
+ * Left side of the Either implementation.
+ */
+class Left extends Either {
+    constructor(value) {
+        super();
+        this.value = value;
+    }
+    map(_) {
+        return new Left(this.value);
+    }
+    lmap(f) {
+        return new Left(f(this.value));
+    }
+    bimap(f, _) {
+        return new Left(f(this.value));
+    }
+    alt(a) {
+        return a;
+    }
+    chain(_) {
+        return new Left(this.value);
+    }
+    ap(_) {
+        return new Left(this.value);
+    }
+    extend(_) {
+        return new Left(this.value);
+    }
+    fold(f, _) {
+        return f(this.value);
+    }
+    eq(m) {
+        return ((m instanceof Left) && (m.value === this.value));
+    }
+    orElse(f) {
+        return f(this.value);
+    }
+    orRight(f) {
+        return new Right(f(this.value));
+    }
+    isLeft() {
+        return true;
+    }
+    isRight() {
+        return false;
+    }
+    takeLeft() {
+        return this.value;
+    }
+    takeRight() {
+        throw new TypeError(`Not right!`);
+    }
+    toMaybe() {
+        return (0, maybe_1.nothing)();
+    }
+}
+exports.Left = Left;
+/**
+ * Right side implementation.
+ */
+class Right extends Either {
+    constructor(value) {
+        super();
+        this.value = value;
+    }
+    map(f) {
+        return new Right(f(this.value));
+    }
+    lmap(_) {
+        return new Right(this.value);
+    }
+    bimap(_, g) {
+        return new Right(g(this.value));
+    }
+    alt(_) {
+        return this;
+    }
+    chain(f) {
+        return f(this.value);
+    }
+    ap(e) {
+        return e.map(f => f(this.value));
+    }
+    extend(f) {
+        return new Right(f(this));
+    }
+    eq(m) {
+        return ((m instanceof Right) && (m.value === this.value));
+    }
+    fold(_, g) {
+        return g(this.value);
+    }
+    orElse(_) {
+        return this;
+    }
+    orRight(_) {
+        return this;
+    }
+    isLeft() {
+        return false;
+    }
+    isRight() {
+        return true;
+    }
+    takeLeft() {
+        throw new TypeError(`Not left!`);
+    }
+    takeRight() {
+        return this.value;
+    }
+    toMaybe() {
+        return (0, maybe_1.just)(this.value);
+    }
+}
+exports.Right = Right;
+/**
+ * left constructor helper.
+ */
+const left = (a) => new Left(a);
+exports.left = left;
+/**
+ * right constructor helper.
+ */
+const right = (b) => new Right(b);
+exports.right = right;
+/**
+ * fromBoolean constructs an Either using a boolean value.
+ */
+const fromBoolean = (b) => b ? (0, exports.right)(true) : (0, exports.left)(false);
+exports.fromBoolean = fromBoolean;
+/**
+ * either given two functions, first for Left, second for Right, will return
+ * the result of applying the appropriate function to an Either's internal value.
+ */
+const either = (f) => (g) => (e) => (e instanceof Right) ? g(e.takeRight()) : f(e.takeLeft());
+exports.either = either;
+
+},{"./maybe":20}],19:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.noop = exports.curry5 = exports.curry4 = exports.curry3 = exports.curry = exports.id = exports.identity = exports.flip = exports.cons = exports.compose5 = exports.compose4 = exports.compose3 = exports.compose = void 0;
+/**
+ * compose two functions into one.
+ */
+const compose = (f, g) => (a) => g(f(a));
+exports.compose = compose;
+/**
+ * compose3 functions into one.
+ */
+const compose3 = (f, g, h) => (a) => h(g(f(a)));
+exports.compose3 = compose3;
+/**
+ * compose4 functions into one.
+ */
+const compose4 = (f, g, h, i) => (a) => i(h(g(f(a))));
+exports.compose4 = compose4;
+/**
+ * compose5 functions into one.
+ */
+const compose5 = (f, g, h, i, j) => (a) => j(i(h(g(f(a)))));
+exports.compose5 = compose5;
+/**
+ * cons given two values, ignore the second and always return the first.
+ */
+const cons = (a) => (_) => a;
+exports.cons = cons;
+/**
+ * flip the order of arguments to a curried function that takes 2 arguments.
+ */
+const flip = (f) => (b) => (a) => (f(a)(b));
+exports.flip = flip;
+/**
+ * identity function.
+ */
+const identity = (a) => a;
+exports.identity = identity;
+exports.id = exports.identity;
+/**
+ * curry an ES function that accepts 2 parameters.
+ */
+const curry = (f) => (a) => (b) => f(a, b);
+exports.curry = curry;
+/**
+ * curry3 curries an ES function that accepts 3 parameters.
+ */
+const curry3 = (f) => (a) => (b) => (c) => f(a, b, c);
+exports.curry3 = curry3;
+/**
+ * curry4 curries an ES function that accepts 4 parameters.
+ */
+const curry4 = (f) => (a) => (b) => (c) => (d) => f(a, b, c, d);
+exports.curry4 = curry4;
+/**
+ * curry5 curries an ES function that accepts 5 parameters.
+ */
+const curry5 = (f) => (a) => (b) => (c) => (d) => (e) => f(a, b, c, d, e);
+exports.curry5 = curry5;
+/**
+ * noop function
+ */
+const noop = () => { };
+exports.noop = noop;
+
+},{}],20:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.fromNaN = exports.fromNumber = exports.fromBoolean = exports.fromString = exports.fromObject = exports.fromArray = exports.fromNullable = exports.just = exports.nothing = exports.of = exports.Just = exports.Nothing = void 0;
+/**
+ * Nothing represents the absence of a usable value.
+ */
+class Nothing {
+    /**
+     * map simply returns a Nothing<A>
+     */
+    map(_) {
+        return new Nothing();
+    }
+    /**
+     * ap allows for a function wrapped in a Just to apply
+     * to value present in this Just.
+     */
+    ap(_) {
+        return new Nothing();
+    }
+    /**
+     * of wraps a value in a Just.
+     */
+    of(a) {
+        return new Just(a);
+    }
+    /**
+     * chain simply returns a Nothing<A>.
+     */
+    chain(_) {
+        return new Nothing();
+    }
+    /**
+     * alt will prefer whatever Maybe instance provided.
+     */
+    alt(a) {
+        return a;
+    }
+    /**
+     * empty provides a default Maybe.
+     * Maybe.empty() = new Nothing()
+     */
+    empty() {
+        return new Nothing();
+    }
+    /**
+     * extend returns a Nothing<A>.
+     */
+    extend(_) {
+        return new Nothing();
+    }
+    /**
+     * eq returns true if compared to another Nothing instance.
+     */
+    eq(m) {
+        return m instanceof Nothing;
+    }
+    /**
+     * orJust converts a Nothing<A> to a Just
+     * using the value from the provided function.
+     */
+    orJust(f) {
+        return new Just(f());
+    }
+    /**
+     * orElse allows an alternative Maybe value
+     * to be provided since this one is Nothing<A>.
+     */
+    orElse(f) {
+        return f();
+    }
+    isNothing() {
+        return true;
+    }
+    isJust() {
+        return false;
+    }
+    /**
+     * get throws an error because there
+     * is nothing here to get.
+     */
+    get() {
+        throw new TypeError('Cannot get a value from Nothing!');
+    }
+}
+exports.Nothing = Nothing;
+/**
+ * Just represents the presence of a usable value.
+ */
+class Just {
+    constructor(value) {
+        this.value = value;
+    }
+    /**
+     * map over the value present in the Just.
+     */
+    map(f) {
+        return new Just(f(this.value));
+    }
+    /**
+     * ap allows for a function wrapped in a Just to apply
+     * to value present in this Just.
+     */
+    ap(mb) {
+        return mb.map(f => f(this.value));
+    }
+    /**
+     * of wraps a value in a Just.
+     */
+    of(a) {
+        return new Just(a);
+    }
+    /**
+     * chain allows the sequencing of functions that return a Maybe.
+     */
+    chain(f) {
+        return f(this.value);
+    }
+    /**
+     * alt will prefer the first Just encountered (this).
+     */
+    alt(_) {
+        return this;
+    }
+    /**
+     * empty provides a default Maybe.
+     * Maybe.empty() = new Nothing()
+     */
+    empty() {
+        return new Nothing();
+    }
+    /**
+     * extend allows sequencing of Maybes with
+     * functions that unwrap into non Maybe types.
+     */
+    extend(f) {
+        return new Just(f(this));
+    }
+    /**
+     * eq tests the value of two Justs.
+     */
+    eq(m) {
+        return ((m instanceof Just) && (m.value === this.value));
+    }
+    /**
+     * orJust returns this Just.
+     */
+    orJust(_) {
+        return this;
+    }
+    /**
+     * orElse returns this Just
+     */
+    orElse(_) {
+        return this;
+    }
+    isNothing() {
+        return false;
+    }
+    isJust() {
+        return true;
+    }
+    /**
+     * get the value of this Just.
+     */
+    get() {
+        return this.value;
+    }
+}
+exports.Just = Just;
+/**
+ * of
+ */
+const of = (a) => new Just(a);
+exports.of = of;
+/**
+ * nothing convenience constructor
+ */
+const nothing = () => new Nothing();
+exports.nothing = nothing;
+/**
+ * just convenience constructor
+ */
+const just = (a) => new Just(a);
+exports.just = just;
+/**
+ * fromNullable constructs a Maybe from a value that may be null.
+ */
+const fromNullable = (a) => a == null ?
+    new Nothing() : new Just(a);
+exports.fromNullable = fromNullable;
+/**
+ * fromArray checks an array to see if it's empty
+ *
+ * Returns [[Nothing]] if it is, [[Just]] otherwise.
+ */
+const fromArray = (a) => (a.length === 0) ? new Nothing() : new Just(a);
+exports.fromArray = fromArray;
+/**
+ * fromObject uses Object.keys to turn see if an object
+ * has any own properties.
+ */
+const fromObject = (o) => Object.keys(o).length === 0 ? new Nothing() : new Just(o);
+exports.fromObject = fromObject;
+/**
+ * fromString constructs Nothing<A> if the string is empty or Just<A> otherwise.
+ */
+const fromString = (s) => (s === '') ? new Nothing() : new Just(s);
+exports.fromString = fromString;
+/**
+ * fromBoolean constructs Nothing if b is false, Just<A> otherwise
+ */
+const fromBoolean = (b) => (b === false) ? new Nothing() : new Just(b);
+exports.fromBoolean = fromBoolean;
+/**
+ * fromNumber constructs Nothing if n is 0 Just<A> otherwise.
+ */
+const fromNumber = (n) => (n === 0) ? new Nothing() : new Just(n);
+exports.fromNumber = fromNumber;
+/**
+ * fromNaN constructs Nothing if a value is not a number or
+ * Just<A> otherwise.
+ */
+const fromNaN = (n) => isNaN(n) ? new Nothing() : new Just(n);
+exports.fromNaN = fromNaN;
+
+},{}],21:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.pickValue = exports.pickKey = exports.make = exports.rcompact = exports.compact = exports.isBadKey = exports.set = exports.every = exports.some = exports.empty = exports.count = exports.clone = exports.hasKey = exports.values = exports.group = exports.partition = exports.exclude = exports.rmerge5 = exports.rmerge4 = exports.rmerge3 = exports.rmerge = exports.merge5 = exports.merge4 = exports.merge3 = exports.merge = exports.filter = exports.reduce = exports.forEach = exports.mapTo = exports.map = exports.keys = exports.isRecord = exports.assign = exports.badKeys = void 0;
+/**
+ * The record module provides functions for treating ES objects as records.
+ *
+ * Some of the functions provided here are not type safe and may result in
+ * runtime errors if not used carefully.
+ */
+const array_1 = require("../array");
+const type_1 = require("../type");
+const maybe_1 = require("../maybe");
+/**
+ * badKeys is a list of keys we don't want to copy around between objects.
+ *
+ * Mostly due to prototype pollution but who knows what other keys may become
+ * a problem as the language matures.
+ */
+exports.badKeys = ['__proto__'];
+/**
+ * assign is an Object.assign polyfill.
+ *
+ * It is used internally and should probably not be used directly elsewhere.
+ */
+function assign(target, ..._varArgs) {
+    let to = Object(target);
+    for (let index = 1; index < arguments.length; index++) {
+        let nextSource = arguments[index];
+        if (nextSource != null)
+            for (let nextKey in nextSource)
+                // Avoid bugs when hasOwnProperty is shadowed
+                if (Object.prototype.hasOwnProperty.call(nextSource, nextKey))
+                    (0, exports.set)(to, nextKey, nextSource[nextKey]);
+    }
+    return to;
+}
+exports.assign = assign;
+/**
+ * isRecord tests whether a value is a record.
+ *
+ * To be a Record, a value must be an object and:
+ * 1. must not be null
+ * 2. must not be an Array
+ * 2. must not be an instance of Date
+ * 3. must not be an instance of RegExp
+ */
+const isRecord = (value) => (typeof value === 'object') &&
+    (value != null) &&
+    (!Array.isArray(value)) &&
+    (!(value instanceof Date)) &&
+    (!(value instanceof RegExp));
+exports.isRecord = isRecord;
+/**
+ * keys is an Object.keys shortcut.
+ */
+const keys = (obj) => Object.keys(obj);
+exports.keys = keys;
+/**
+ * map over a Record's properties producing a new record.
+ *
+ * The order of keys processed is not guaranteed.
+ */
+const map = (rec, f) => (0, exports.keys)(rec)
+    .reduce((p, k) => (0, exports.merge)(p, (0, exports.set)({}, k, f(rec[k], k, rec))), {});
+exports.map = map;
+/**
+ * mapTo an array the properties of the provided Record.
+ *
+ * The elements of the array are the result of applying the function provided
+ * to each property. The order of elements is not guaranteed.
+ */
+const mapTo = (rec, f) => (0, exports.keys)(rec).map(k => f(rec[k], k, rec));
+exports.mapTo = mapTo;
+/**
+ * forEach is similar to map only the result of each function call is not kept.
+ *
+ * The order of keys processed is not guaranteed.
+ */
+const forEach = (rec, f) => (0, exports.keys)(rec).forEach(k => f(rec[k], k, rec));
+exports.forEach = forEach;
+/**
+ * reduce a Record's keys to a single value.
+ *
+ * The initial value (accum) must be supplied to avoid errors when
+ * there are no properties on the Record. The order of keys processed is
+ * not guaranteed.
+ */
+const reduce = (rec, accum, f) => (0, exports.keys)(rec).reduce((p, k) => f(p, rec[k], k), accum);
+exports.reduce = reduce;
+/**
+ * filter the keys of a Record using a filter function.
+ */
+const filter = (rec, f) => (0, exports.keys)(rec)
+    .reduce((p, k) => f(rec[k], k, rec) ?
+    (0, exports.merge)(p, (0, exports.set)({}, k, rec[k])) : p, {});
+exports.filter = filter;
+/**
+ * merge two objects (shallow) into one new object.
+ *
+ * The return value's type is the product of the two objects provided.
+ */
+const merge = (left, right) => assign({}, left, right);
+exports.merge = merge;
+/**
+ * merge3
+ */
+const merge3 = (a, b, c) => assign({}, a, b, c);
+exports.merge3 = merge3;
+/**
+ * merge4
+ */
+const merge4 = (a, b, c, d) => assign({}, a, b, c, d);
+exports.merge4 = merge4;
+/**
+ * merge5
+ */
+const merge5 = (a, b, c, d, e) => assign({}, a, b, c, d, e);
+exports.merge5 = merge5;
+/**
+ * rmerge merges 2 records recursively.
+ *
+ * This function may violate type safety.
+ */
+const rmerge = (left, right) => (0, exports.reduce)(right, left, deepMerge);
+exports.rmerge = rmerge;
+/**
+ * rmerge3
+ */
+const rmerge3 = (r, s, t) => [s, t]
+    .reduce((p, c) => (0, exports.reduce)(c, (p), deepMerge), r);
+exports.rmerge3 = rmerge3;
+/**
+ * rmerge4
+ */
+const rmerge4 = (r, s, t, u) => [s, t, u]
+    .reduce((p, c) => (0, exports.reduce)(c, (p), deepMerge), r);
+exports.rmerge4 = rmerge4;
+/**
+ * rmerge5
+ */
+const rmerge5 = (r, s, t, u, v) => [s, t, u, v]
+    .reduce((p, c) => (0, exports.reduce)(c, (p), deepMerge), r);
+exports.rmerge5 = rmerge5;
+const deepMerge = (pre, curr, key) => (0, exports.isRecord)(curr) ?
+    (0, exports.merge)(pre, (0, exports.set)({}, key, (0, exports.isRecord)(pre[key]) ?
+        (0, exports.rmerge)(pre[key], curr) :
+        (0, exports.merge)({}, curr))) :
+    (0, exports.merge)(pre, (0, exports.set)({}, key, curr));
+/**
+ * exclude removes the specified properties from a Record.
+ */
+const exclude = (rec, keys) => {
+    let list = Array.isArray(keys) ? keys : [keys];
+    return (0, exports.reduce)(rec, {}, (p, c, k) => list.indexOf(k) > -1 ? p : (0, exports.merge)(p, (0, exports.set)({}, k, c)));
+};
+exports.exclude = exclude;
+/**
+ * partition a Record into two sub-records using a PartitionFunc function.
+ *
+ * This function produces an array where the first element is a Record
+ * of values that return true and the second, false.
+ */
+const partition = (r, f) => (0, exports.reduce)(r, [{}, {}], ([yes, no], c, k) => f(c, k, r) ?
+    [(0, exports.merge)(yes, (0, exports.set)({}, k, c)), no] :
+    [yes, (0, exports.merge)(no, (0, exports.set)({}, k, c))]);
+exports.partition = partition;
+/**
+ * group the properties of a Record into another Record using a GroupFunc
+ * function.
+ */
+const group = (rec, f) => (0, exports.reduce)(rec, {}, (prev, curr, key) => {
+    let category = f(curr, key, rec);
+    let value = (0, exports.isRecord)(prev[category]) ?
+        (0, exports.merge)(prev[category], (0, exports.set)({}, key, curr)) :
+        (0, exports.set)({}, key, curr);
+    return (0, exports.merge)(prev, (0, exports.set)({}, category, value));
+});
+exports.group = group;
+/**
+ * values returns a shallow array of the values of a record.
+ */
+const values = (r) => (0, exports.reduce)(r, [], (p, c) => (0, array_1.concat)(p, c));
+exports.values = values;
+/**
+ * hasKey indicates whether a Record has a given key.
+ */
+const hasKey = (r, key) => Object.hasOwnProperty.call(r, key);
+exports.hasKey = hasKey;
+/**
+ * clone a Record.
+ *
+ * Breaks references and deep clones arrays.
+ * This function should only be used on Records or objects that
+ * are not class instances. This function may violate type safety.
+ */
+const clone = (r) => (0, exports.reduce)(r, {}, (p, c, k) => { (0, exports.set)(p, k, _clone(c)); return p; });
+exports.clone = clone;
+const _clone = (a) => {
+    if ((0, type_1.isArray)(a))
+        return a.map(_clone);
+    else if ((0, exports.isRecord)(a))
+        return (0, exports.clone)(a);
+    else
+        return a;
+};
+/**
+ * count how many properties exist on the record.
+ */
+const count = (r) => (0, exports.keys)(r).length;
+exports.count = count;
+/**
+ * empty tests whether the object has any properties or not.
+ */
+const empty = (r) => (0, exports.count)(r) === 0;
+exports.empty = empty;
+/**
+ * some tests whether at least one property of a Record passes the
+ * test implemented by the provided function.
+ */
+const some = (o, f) => (0, exports.keys)(o).some(k => f(o[k], k, o));
+exports.some = some;
+/**
+ * every tests whether each property of a Record passes the
+ * test implemented by the provided function.
+ */
+const every = (o, f) => (0, exports.keys)(o).every(k => f(o[k], k, o));
+exports.every = every;
+/**
+ * set the value of a key on a Record ignoring problematic keys.
+ *
+ * This function exists to avoid unintentionally setting problem keys such
+ * as __proto__ on an object.
+ *
+ * Even though this function mutates the provided record, it should be used
+ * as though it does not.
+ *
+ * Don't:
+ * set(obj, key, value);
+ *
+ * Do:
+ * obj = set(obj, key, value);
+ */
+const set = (r, k, value) => {
+    if (!(0, exports.isBadKey)(k))
+        r[k] = value;
+    return r;
+};
+exports.set = set;
+/**
+ * isBadKey tests whether a key is problematic (Like __proto__).
+ */
+const isBadKey = (key) => exports.badKeys.indexOf(key) !== -1;
+exports.isBadKey = isBadKey;
+/**
+ * compact a Record by removing any properties that == null.
+ */
+const compact = (rec) => {
+    let result = {};
+    for (let key in rec)
+        if (rec.hasOwnProperty(key))
+            if (rec[key] != null)
+                result = (0, exports.set)(result, key, rec[key]);
+    return result;
+};
+exports.compact = compact;
+/**
+ * rcompact recursively compacts a Record.
+ */
+const rcompact = (rec) => (0, exports.compact)((0, exports.map)(rec, val => (0, exports.isRecord)(val) ? (0, exports.rcompact)(val) : val));
+exports.rcompact = rcompact;
+/**
+ * make creates a new instance of a Record optionally using the provided
+ * value as an initializer.
+ *
+ * This function is intended to assist with curbing prototype pollution by
+ * configuring a setter for __proto__ that ignores changes.
+ */
+const make = (init = {}) => {
+    let rec = {};
+    Object.defineProperty(rec, '__proto__', {
+        configurable: false,
+        enumerable: false,
+        set() { }
+    });
+    for (let key in init)
+        if (init.hasOwnProperty(key))
+            rec[key] = init[key];
+    return rec;
+};
+exports.make = make;
+/**
+ * pickKey selects the value of the first property in a Record that passes the
+ * provided test.
+ */
+const pickKey = (rec, test) => (0, exports.reduce)(rec, (0, maybe_1.nothing)(), (p, c, k) => p.isJust() ? p : test(c, k, rec) ? (0, maybe_1.just)(k) : p);
+exports.pickKey = pickKey;
+/**
+ * pickValue selects the value of the first property in a Record that passes the
+ * provided test.
+ */
+const pickValue = (rec, test) => (0, exports.reduce)(rec, (0, maybe_1.nothing)(), (p, c, k) => p.isJust() ? p : test(c, k, rec) ? (0, maybe_1.just)(c) : p);
+exports.pickValue = pickValue;
+
+},{"../array":17,"../maybe":20,"../type":22}],22:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.toString = exports.show = exports.test = exports.is = exports.isPrim = exports.isFunction = exports.isBoolean = exports.isNumber = exports.isString = exports.isArray = exports.isObject = exports.Any = void 0;
+const prims = ['string', 'number', 'boolean'];
+/**
+ * Any is a class used to represent typescript's "any" type.
+ */
+class Any {
+}
+exports.Any = Any;
+/**
+ * isObject test.
+ *
+ * Does not consider an Array an object.
+ */
+const isObject = (value) => (typeof value === 'object') && (!(0, exports.isArray)(value));
+exports.isObject = isObject;
+/**
+ * isArray test.
+ */
+exports.isArray = Array.isArray;
+/**
+ * isString test.
+ */
+const isString = (value) => typeof value === 'string';
+exports.isString = isString;
+/**
+ * isNumber test.
+ */
+const isNumber = (value) => (typeof value === 'number') && (!isNaN(value));
+exports.isNumber = isNumber;
+/**
+ * isBoolean test.
+ */
+const isBoolean = (value) => typeof value === 'boolean';
+exports.isBoolean = isBoolean;
+/**
+ * isFunction test.
+ */
+const isFunction = (value) => typeof value === 'function';
+exports.isFunction = isFunction;
+/**
+ * isPrim test.
+ */
+const isPrim = (value) => !((0, exports.isObject)(value) ||
+    (0, exports.isArray)(value) ||
+    (0, exports.isFunction)(value));
+exports.isPrim = isPrim;
+/**
+ * is performs a typeof of check on a type.
+ */
+const is = (expected) => (value) => typeof (value) === expected;
+exports.is = is;
+/**
+ * test whether a value conforms to some pattern.
+ *
+ * This function is made available mainly for a crude pattern matching
+ * machinery that works as followss:
+ * string   -> Matches on the value of the string.
+ * number   -> Matches on the value of the number.
+ * boolean  -> Matches on the value of the boolean.
+ * object   -> Each key of the object is matched on the value, all must match.
+ * function -> Treated as a constructor and results in an instanceof check or
+ *             for String,Number and Boolean, this uses the typeof check. If
+ *             the function is RegExp then we uses the RegExp.test function
+ *             instead.
+ */
+const test = (value, t) => {
+    if ((prims.indexOf(typeof t) > -1) && (value === t))
+        return true;
+    else if ((typeof t === 'function') &&
+        (((t === String) && (typeof value === 'string')) ||
+            ((t === Number) && (typeof value === 'number')) ||
+            ((t === Boolean) && (typeof value === 'boolean')) ||
+            ((t === Array) && (Array.isArray(value))) ||
+            (t === Any) ||
+            (value instanceof t)))
+        return true;
+    else if ((t instanceof RegExp) &&
+        ((typeof value === 'string') &&
+            t.test(value)))
+        return true;
+    else if ((typeof t === 'object') && (typeof value === 'object'))
+        return Object
+            .keys(t)
+            .every(k => Object.hasOwnProperty.call(value, k) ?
+            (0, exports.test)(value[k], t[k]) : false);
+    return false;
+};
+exports.test = test;
+/**
+ * show the type of a value.
+ *
+ * Note: This may crash if the value is an
+ * object literal with recursive references.
+ */
+const show = (value) => {
+    if (typeof value === 'object') {
+        if (Array.isArray(value))
+            return `[${value.map(exports.show)}];`;
+        else if (value.constructor !== Object)
+            return (value.constructor.name ||
+                value.constructor);
+        else
+            return JSON.stringify(value);
+    }
+    else {
+        return '' + value;
+    }
+};
+exports.show = show;
+/**
+ * toString casts a value to a string.
+ *
+ * If the value is null or undefined an empty string is returned instead of
+ * the default.
+ */
+const toString = (val) => (val == null) ? '' : String(val);
+exports.toString = toString;
+
+},{}],23:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.round = exports.isMultipleOf = void 0;
+/**
+ * isMultipleOf tests whether the Integer 'y' is a multiple of x.
+ */
+const isMultipleOf = (x, y) => ((y % x) === 0);
+exports.isMultipleOf = isMultipleOf;
+/**
+ * round a number "x" to "n" places (n defaults to 0 places).
+ *
+ * This uses the Math.round(x * n) / n method however we take into
+ * consideration the Math.round(1.005 * 100) / 100 === 1 issue by use of an
+ * offset:
+ *
+ * sign * (round((abs(x) * 10^n) + (1 / 10^n+1)) / 10^n)
+ *
+ * Where:
+ *
+ * sign is the sign of x
+ * round is Math.round
+ * abs is Math.abs
+ * (1 / 10^n+1) is the offset.
+ *
+ * The offset is only used if n is more than zero. The absolute value of x
+ * is used in the calculation to avoid JavaScript idiosyncracies when rounding
+ * 0.5:
+ * (Math.round((1.005 * 100)+0.001) / 100) === 1.01
+ *
+ * whereas
+ * (Math.round((-1.005 * 100)+0.001) / 100) === -1
+ *
+ * See the description [here]( https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Math/round)
+ * for more details.
+ *
+ */
+const round = (x, n = 0) => {
+    let exp = Math.pow(10, n);
+    let sign = x >= 0 ? 1 : -1;
+    let offset = (n > 0) ? (1 / (Math.pow(10, n + 1))) : 0;
+    return sign * (Math.round((Math.abs(x) * exp) + offset) / exp);
+};
+exports.round = round;
+
+},{}],24:[function(require,module,exports){
+"use strict";
+/**
+ * This module provides functions and types to make dealing with ES errors
+ * easier.
+ */
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.attempt = exports.raise = exports.convert = void 0;
+/** imports */
 var either_1 = require("../data/either");
 /**
  * convert an Err to an Error.
@@ -1506,7 +3226,7 @@ var attempt = function (f) {
 };
 exports.attempt = attempt;
 
-},{"../data/either":19}],14:[function(require,module,exports){
+},{"../data/either":30}],25:[function(require,module,exports){
 "use strict";
 /**
  * The match module provides a best effort pattern runtime pattern matching
@@ -1594,7 +3314,7 @@ exports.Matched = Matched;
 var match = function (value) { return new UnMatched(value); };
 exports.match = match;
 
-},{"../data/type":25}],15:[function(require,module,exports){
+},{"../data/type":36}],26:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -2229,7 +3949,7 @@ exports.liftP = liftP;
 var doFuture = function (f) { return (0, _1.doN)(f); };
 exports.doFuture = doFuture;
 
-},{"../../data/array":18,"../../data/function":20,"../error":13,"../timer":17,"./":16}],16:[function(require,module,exports){
+},{"../../data/array":29,"../../data/function":31,"../error":24,"../timer":28,"./":27}],27:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.doMonad = exports.doN = exports.pipeN = exports.pipe = exports.compose = exports.join = void 0;
@@ -2323,7 +4043,7 @@ var doN = function (f) {
 exports.doN = doN;
 exports.doMonad = exports.doN;
 
-},{}],17:[function(require,module,exports){
+},{}],28:[function(require,module,exports){
 (function (process){(function (){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
@@ -2377,7 +4097,7 @@ var throttle = function (f, duration) {
 exports.throttle = throttle;
 
 }).call(this)}).call(this,require('_process'))
-},{"_process":85}],18:[function(require,module,exports){
+},{"_process":96}],29:[function(require,module,exports){
 "use strict";
 var __spreadArray = (this && this.__spreadArray) || function (to, from, pack) {
     if (pack || arguments.length === 2) for (var i = 0, l = from.length, ar; i < l; i++) {
@@ -2563,7 +4283,7 @@ var compact = function (list) {
 };
 exports.compact = compact;
 
-},{"../../math":26,"../record":22}],19:[function(require,module,exports){
+},{"../../math":37,"../record":33}],30:[function(require,module,exports){
 "use strict";
 /**
  * Either represents a value that may be one of two types.
@@ -2765,7 +4485,7 @@ var either = function (f) { return function (g) { return function (e) {
 }; }; };
 exports.either = either;
 
-},{"./maybe":21}],20:[function(require,module,exports){
+},{"./maybe":32}],31:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.noop = exports.curry5 = exports.curry4 = exports.curry3 = exports.curry = exports.id = exports.identity = exports.flip = exports.cons = exports.compose5 = exports.compose4 = exports.compose3 = exports.compose = void 0;
@@ -2837,7 +4557,7 @@ exports.curry5 = curry5;
 var noop = function () { };
 exports.noop = noop;
 
-},{}],21:[function(require,module,exports){
+},{}],32:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.fromNaN = exports.fromNumber = exports.fromBoolean = exports.fromString = exports.fromObject = exports.fromArray = exports.fromNullable = exports.just = exports.nothing = exports.of = exports.Just = exports.Nothing = void 0;
@@ -3081,7 +4801,7 @@ var fromNaN = function (n) {
 };
 exports.fromNaN = fromNaN;
 
-},{}],22:[function(require,module,exports){
+},{}],33:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.pickValue = exports.pickKey = exports.make = exports.rcompact = exports.compact = exports.isBadKey = exports.set = exports.every = exports.some = exports.empty = exports.count = exports.clone = exports.hasKey = exports.values = exports.group = exports.partition = exports.exclude = exports.rmerge5 = exports.rmerge4 = exports.rmerge3 = exports.rmerge = exports.merge5 = exports.merge4 = exports.merge3 = exports.merge = exports.filter = exports.reduce = exports.forEach = exports.mapTo = exports.map = exports.keys = exports.isRecord = exports.assign = exports.badKeys = void 0;
@@ -3453,7 +5173,7 @@ var pickValue = function (rec, test) {
 };
 exports.pickValue = pickValue;
 
-},{"../array":18,"../maybe":21,"../type":25}],23:[function(require,module,exports){
+},{"../array":29,"../maybe":32,"../type":36}],34:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.project = exports.unflatten = exports.flatten = exports.unescapeRecord = exports.escapeRecord = exports.unescape = exports.escape = exports.set = exports.getString = exports.getDefault = exports.get = exports.unsafeGet = exports.tokenize = void 0;
@@ -3733,7 +5453,7 @@ var project = function (spec, rec) {
 };
 exports.project = project;
 
-},{"../maybe":21,"./":22}],24:[function(require,module,exports){
+},{"../maybe":32,"./":33}],35:[function(require,module,exports){
 "use strict";
 /**
  *  Common functions used to manipulate strings.
@@ -3928,7 +5648,7 @@ var alphanumeric = function (str) {
 };
 exports.alphanumeric = alphanumeric;
 
-},{"../function":20,"../record":22,"../record/path":23}],25:[function(require,module,exports){
+},{"../function":31,"../record":33,"../record/path":34}],36:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.toString = exports.show = exports.test = exports.is = exports.isPrim = exports.isFunction = exports.isBoolean = exports.isNumber = exports.isString = exports.isArray = exports.isObject = exports.Any = void 0;
@@ -4068,7 +5788,7 @@ var toString = function (val) {
 };
 exports.toString = toString;
 
-},{}],26:[function(require,module,exports){
+},{}],37:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.round = exports.isMultipleOf = void 0;
@@ -4114,7 +5834,7 @@ var round = function (x, n) {
 };
 exports.round = round;
 
-},{}],27:[function(require,module,exports){
+},{}],38:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.isGroup = exports.isChild = exports.getId = exports.getParent = exports.make = exports.isRestricted = exports.ADDRESS_RESTRICTED = exports.ADDRESS_EMPTY = exports.ADDRESS_SYSTEM = exports.ADDRESS_DISCARD = exports.SEPERATOR = void 0;
@@ -4189,7 +5909,7 @@ exports.isChild = isChild;
 const isGroup = (addr) => ((addr[0] === '$') && (addr !== '$'));
 exports.isGroup = isGroup;
 
-},{"@quenk/noni/lib/data/array":18,"@quenk/noni/lib/data/string":24}],28:[function(require,module,exports){
+},{"@quenk/noni/lib/data/array":29,"@quenk/noni/lib/data/string":35}],39:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.isResident = exports.isRouter = exports.isBuffered = exports.isImmutable = exports.FLAG_EXIT_AFTER_RUN = exports.FLAG_RESIDENT = exports.FLAG_ROUTER = exports.FLAG_EXIT_AFTER_RECEIVE = exports.FLAG_BUFFERED = exports.FLAG_IMMUTABLE = void 0;
@@ -4220,7 +5940,7 @@ exports.isRouter = isRouter;
 const isResident = (f) => (f & exports.FLAG_RESIDENT) === exports.FLAG_RESIDENT;
 exports.isResident = isResident;
 
-},{}],29:[function(require,module,exports){
+},{}],40:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Envelope = void 0;
@@ -4238,7 +5958,7 @@ class Envelope {
 }
 exports.Envelope = Envelope;
 
-},{}],30:[function(require,module,exports){
+},{}],41:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CaseFunction = void 0;
@@ -4273,7 +5993,7 @@ class CaseFunction {
 }
 exports.CaseFunction = CaseFunction;
 
-},{}],31:[function(require,module,exports){
+},{}],42:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Default = exports.caseOf = exports.Case = void 0;
@@ -4322,7 +6042,7 @@ class Default extends Case {
 }
 exports.Default = Default;
 
-},{"@quenk/noni/lib/data/type":25}],32:[function(require,module,exports){
+},{"@quenk/noni/lib/data/type":36}],43:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Callback = void 0;
@@ -4337,7 +6057,7 @@ class Callback extends _1.Immutable {
 }
 exports.Callback = Callback;
 
-},{"./":33}],33:[function(require,module,exports){
+},{"./":44}],44:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Immutable = void 0;
@@ -4366,7 +6086,7 @@ class Immutable extends __1.AbstractResident {
 }
 exports.Immutable = Immutable;
 
-},{"../":34,"../../flags":28,"../case/function":30}],34:[function(require,module,exports){
+},{"../":45,"../../flags":39,"../case/function":41}],45:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ref = exports.AbstractResident = void 0;
@@ -4451,7 +6171,7 @@ const getSelf = (actor) => {
     };
 };
 
-},{"../system/vm/runtime/error":42,"@quenk/noni/lib/data/record":22,"@quenk/noni/lib/data/type":25}],35:[function(require,module,exports){
+},{"../system/vm/runtime/error":53,"@quenk/noni/lib/data/record":33,"@quenk/noni/lib/data/type":36}],46:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Mutable = void 0;
@@ -4483,7 +6203,7 @@ class Mutable extends __1.AbstractResident {
 }
 exports.Mutable = Mutable;
 
-},{"../":34,"../../flags":28,"../case/function":30}],36:[function(require,module,exports){
+},{"../":45,"../../flags":39,"../case/function":41}],47:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.TaskActorScript = exports.MutableActorScript = exports.CallbackActorScript = exports.ImmutableActorScript = exports.GenericResidentScript = void 0;
@@ -4621,7 +6341,7 @@ const immutableExec = (actor, thr, msg) => {
     }
 };
 
-},{"../system/vm/event":38,"../system/vm/runtime/error":42,"../system/vm/runtime/op":47,"../system/vm/script/info":51,"../system/vm/scripts":53,"@quenk/noni/lib/data/array":18}],37:[function(require,module,exports){
+},{"../system/vm/event":49,"../system/vm/runtime/error":53,"../system/vm/runtime/op":58,"../system/vm/script/info":62,"../system/vm/scripts":64,"@quenk/noni/lib/data/array":29}],48:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.defaults = void 0;
@@ -4639,7 +6359,7 @@ const defaults = () => ({
 });
 exports.defaults = defaults;
 
-},{"./log":40}],38:[function(require,module,exports){
+},{"./log":51}],49:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getLevel = exports.events = exports.EVENT_ACTOR_STOPPED = exports.EVENT_ACTOR_STARTED = exports.EVENT_ACTOR_CREATED = exports.EVENT_MESSAGE_DROPPED = exports.EVENT_MESSAGE_READ = exports.EVENT_EXEC_ACTOR_CHANGED = exports.EVENT_EXEC_ACTOR_GONE = exports.EVENT_EXEC_INSTANCE_STALE = exports.EVENT_SEND_FAILED = exports.EVENT_SEND_OK = void 0;
@@ -4698,7 +6418,7 @@ const getLevel = (e) => exports.events.hasOwnProperty(e) ?
     exports.events[e].level : log_1.LOG_LEVEL_DEBUG;
 exports.getLevel = getLevel;
 
-},{"./log":40}],39:[function(require,module,exports){
+},{"./log":51}],50:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.PVM = exports.MAX_WORK_LOAD = void 0;
@@ -5066,7 +6786,7 @@ const normalize = (spawnable) => {
     });
 };
 
-},{"../../address":27,"../../flags":28,"../../message":29,"../../template":59,"./conf":37,"./event":38,"./log":40,"./runtime/context":41,"./runtime/error":42,"./runtime/heap/ledger":43,"./runtime/op":47,"./scripts/factory":52,"./state":54,"./thread":55,"./thread/shared":56,"./thread/shared/scheduler":57,"@quenk/noni/lib/control/monad/future":15,"@quenk/noni/lib/data/array":18,"@quenk/noni/lib/data/either":19,"@quenk/noni/lib/data/maybe":21,"@quenk/noni/lib/data/record":22,"@quenk/noni/lib/data/type":25}],40:[function(require,module,exports){
+},{"../../address":38,"../../flags":39,"../../message":40,"../../template":70,"./conf":48,"./event":49,"./log":51,"./runtime/context":52,"./runtime/error":53,"./runtime/heap/ledger":54,"./runtime/op":58,"./scripts/factory":63,"./state":65,"./thread":66,"./thread/shared":67,"./thread/shared/scheduler":68,"@quenk/noni/lib/control/monad/future":26,"@quenk/noni/lib/data/array":29,"@quenk/noni/lib/data/either":30,"@quenk/noni/lib/data/maybe":32,"@quenk/noni/lib/data/record":33,"@quenk/noni/lib/data/type":36}],51:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.LOG_LEVEL_ERROR = exports.LOG_LEVEL_WARN = exports.LOG_LEVEL_NOTICE = exports.LOG_LEVEL_INFO = exports.LOG_LEVEL_DEBUG = void 0;
@@ -5076,7 +6796,7 @@ exports.LOG_LEVEL_NOTICE = 5;
 exports.LOG_LEVEL_WARN = 4;
 exports.LOG_LEVEL_ERROR = 3;
 
-},{}],41:[function(require,module,exports){
+},{}],52:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.newContext = void 0;
@@ -5094,7 +6814,7 @@ const newContext = (aid, actor, address, template) => ({
 });
 exports.newContext = newContext;
 
-},{}],42:[function(require,module,exports){
+},{}],53:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.UnknownFunErr = exports.UnknownInstanceErr = exports.InvalidFunctionErr = exports.InvalidConstructorErr = exports.MissingInfoErr = exports.InvalidPropertyIndex = exports.StackEmptyErr = exports.IntegerOverflowErr = exports.MissingSymbolErr = exports.UnknownAddressErr = exports.EmptyMailboxErr = exports.NoMailboxErr = exports.NoReceiverErr = exports.IllegalStopErr = exports.UnexpectedDataType = exports.NullPointerErr = exports.JumpOutOfBoundsErr = exports.NullFunctionPointerErr = exports.NullTemplatePointerErr = exports.DuplicateAddressErr = exports.UnknownParentAddressErr = exports.InvalidIdErr = exports.Error = void 0;
@@ -5335,7 +7055,7 @@ class UnknownFunErr extends Error {
 }
 exports.UnknownFunErr = UnknownFunErr;
 
-},{"../../../address":27,"./stack/frame":49}],43:[function(require,module,exports){
+},{"../../../address":38,"./stack/frame":60}],54:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.isHeapAddress = exports.DefaultHeapLedger = void 0;
@@ -5435,7 +7155,7 @@ const isHeapAddress = (ref) => {
 exports.isHeapAddress = isHeapAddress;
 const threadId = (name) => Number((name.split('@')[1]).split('#')[0]);
 
-},{"../../script/info":51,"../stack/frame":49,"@quenk/noni/lib/data/maybe":21,"@quenk/noni/lib/data/record":22,"@quenk/noni/lib/data/type":25}],44:[function(require,module,exports){
+},{"../../script/info":62,"../stack/frame":60,"@quenk/noni/lib/data/maybe":32,"@quenk/noni/lib/data/record":33,"@quenk/noni/lib/data/type":36}],55:[function(require,module,exports){
 "use strict";
 //TODO: Relocate some of these types.
 Object.defineProperty(exports, "__esModule", { value: true });
@@ -5448,7 +7168,7 @@ exports.OPERAND_RANGE_START = 0x0;
 exports.OPERAND_RANGE_END = 0xffffff;
 exports.MAX_INSTRUCTION = 0xffffffff;
 
-},{}],45:[function(require,module,exports){
+},{}],56:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.stop = exports.maildq = exports.mailcount = exports.recvcount = exports.recv = exports.send = exports.self = exports.alloc = void 0;
@@ -5573,7 +7293,7 @@ const stop = (r, f, _) => {
 };
 exports.stop = stop;
 
-},{}],46:[function(require,module,exports){
+},{}],57:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ifneqjmp = exports.ifeqjmp = exports.ifnzjmp = exports.ifzjmp = exports.jmp = exports.raise = exports.call = exports.addui32 = exports.ceq = exports.load = exports.store = exports.dup = exports.ldn = exports.lds = exports.pushui32 = exports.pushui16 = exports.pushui8 = exports.nop = void 0;
@@ -5817,7 +7537,7 @@ const ifneqjmp = (r, f, oper) => {
 };
 exports.ifneqjmp = ifneqjmp;
 
-},{"../error":42,"../stack/frame":49,"@quenk/noni/lib/data/array":18}],47:[function(require,module,exports){
+},{"../error":53,"../stack/frame":60,"@quenk/noni/lib/data/array":29}],58:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.toLog = exports.toName = exports.handlers = exports.opcodes = exports.ARELM = exports.ARLENGTH = exports.GETPROP = exports.STOP = exports.SELF = exports.MAILDQ = exports.MAILCOUNT = exports.RECVCOUNT = exports.RECV = exports.SEND = exports.ALLOC = exports.IFNEQJMP = exports.IFEQJMP = exports.IFNZJMP = exports.IFZJMP = exports.JMP = exports.RAISE = exports.CALL = exports.ADDUI32 = exports.CEQ = exports.LOAD = exports.STORE = exports.DUP = exports.LDN = exports.LDS = exports.PUSHUI32 = exports.PUSHUI16 = exports.PUSHUI8 = exports.NOP = exports.OP_CODE_RANGE_STEP = exports.OP_CODE_RANGE_HIGH = exports.OP_CODE_RANGE_LOW = void 0;
@@ -6029,7 +7749,7 @@ exports.toName = toName;
 const toLog = (op, r, f, oper) => exports.opcodes.hasOwnProperty(op) ? exports.opcodes[op].log(r, f, oper) : [];
 exports.toLog = toLog;
 
-},{"../stack/frame":49,"./actor":45,"./base":46,"./object":48,"@quenk/noni/lib/data/record":22}],48:[function(require,module,exports){
+},{"../stack/frame":60,"./actor":56,"./base":57,"./object":59,"@quenk/noni/lib/data/record":33}],59:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.arelm = exports.arlength = exports.getprop = void 0;
@@ -6096,7 +7816,7 @@ const arelm = (r, f, _) => {
 };
 exports.arelm = arelm;
 
-},{}],49:[function(require,module,exports){
+},{}],60:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.StackFrame = exports.BYTE_CONSTANT_INFO = exports.BYTE_CONSTANT_STR = exports.BYTE_CONSTANT_NUM = exports.DATA_TYPE_SELF = exports.DATA_TYPE_MAILBOX = exports.DATA_TYPE_LOCAL = exports.DATA_TYPE_HEAP_FUN = exports.DATA_TYPE_HEAP_FOREIGN = exports.DATA_TYPE_HEAP_OBJECT = exports.DATA_TYPE_HEAP_STRING = exports.DATA_TYPE_INFO = exports.DATA_TYPE_STRING = exports.DATA_MAX_SAFE_UINT32 = exports.DATA_MAX_SIZE = exports.DATA_MASK_VALUE32 = exports.DATA_MASK_VALUE24 = exports.DATA_MASK_VALUE16 = exports.DATA_MASK_VALUE8 = exports.DATA_MASK_TYPE = exports.DATA_RANGE_TYPE_STEP = exports.DATA_RANGE_TYPE_LOW = exports.DATA_RANGE_TYPE_HIGH = void 0;
@@ -6329,7 +8049,7 @@ const notAFunction = (name) => (0, either_1.left)(new error.InvalidFunctionErr(n
 const nullFunPtr = (addr) => (0, either_1.left)(new error.NullFunctionPointerErr(addr));
 const missingSymbol = (data) => (0, either_1.left)(new error.MissingSymbolErr(data));
 
-},{"../../script":50,"../../type":58,"../error":42,"@quenk/noni/lib/data/either":19,"@quenk/noni/lib/data/maybe":21}],50:[function(require,module,exports){
+},{"../../script":61,"../../type":69,"../error":53,"@quenk/noni/lib/data/either":30,"@quenk/noni/lib/data/maybe":32}],61:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getInfo = exports.PScript = exports.CONSTANTS_INDEX_STRING = exports.CONSTANTS_INDEX_NUMBER = void 0;
@@ -6359,7 +8079,7 @@ const getInfo = (s, idx) => {
 };
 exports.getInfo = getInfo;
 
-},{"../runtime/error":42,"@quenk/noni/lib/data/either":19}],51:[function(require,module,exports){
+},{"../runtime/error":53,"@quenk/noni/lib/data/either":30}],62:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.funType = exports.objectType = exports.arrayType = exports.stringType = exports.booleanType = exports.uint32Type = exports.uint16Type = exports.uint8Type = exports.int32Type = exports.int16Type = exports.int8Type = exports.voidType = exports.NewPropInfo = exports.NewArrayTypeInfo = exports.NewTypeInfo = exports.NewForeignFunInfo = exports.NewFunInfo = exports.NewArrayInfo = exports.NewObjectInfo = exports.NewStringInfo = exports.NewBooleanInfo = exports.NewInt32Info = exports.NewInt16Info = exports.NewInt8Info = exports.NewUInt32Info = exports.NewUInt16Info = exports.NewUInt8Info = exports.VoidInfo = exports.NewInfo = void 0;
@@ -6616,7 +8336,7 @@ exports.objectType = new NewTypeInfo('object', 0, [], types.TYPE_OBJECT);
  */
 exports.funType = new NewTypeInfo('function', 0, [], types.TYPE_FUN);
 
-},{"../type":58}],52:[function(require,module,exports){
+},{"../type":69}],63:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ScriptFactory = void 0;
@@ -6657,7 +8377,7 @@ class ScriptFactory {
 }
 exports.ScriptFactory = ScriptFactory;
 
-},{"..":39,"../../../resident":34,"../../../resident/immutable":33,"../../../resident/immutable/callback":32,"../../../resident/mutable":35,"../../../resident/scripts":36,"../scripts":53}],53:[function(require,module,exports){
+},{"..":50,"../../../resident":45,"../../../resident/immutable":44,"../../../resident/immutable/callback":43,"../../../resident/mutable":46,"../../../resident/scripts":47,"../scripts":64}],64:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.VMActorScript = exports.NoScript = exports.BaseScript = exports.commonFunctions = void 0;
@@ -6705,7 +8425,7 @@ class VMActorScript extends BaseScript {
 }
 exports.VMActorScript = VMActorScript;
 
-},{"../runtime/op":47,"../script/info":51}],54:[function(require,module,exports){
+},{"../runtime/op":58,"../script/info":62}],65:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.destroyMessageBuffer = exports.createMessageBuffer = exports.removeMember = exports.putMember = exports.getGroup = exports.removeGroup = exports.removeRoute = exports.putRoute = exports.getRouter = exports.getParent = exports.getChildren = exports.getAddress = exports.remove = exports.put = exports.get = exports.exists = void 0;
@@ -6837,7 +8557,7 @@ const destroyMessageBuffer = (s, addr) => {
 };
 exports.destroyMessageBuffer = destroyMessageBuffer;
 
-},{"../../address":27,"@quenk/noni/lib/data/maybe":21,"@quenk/noni/lib/data/record":22,"@quenk/noni/lib/data/string":24}],55:[function(require,module,exports){
+},{"../../address":38,"@quenk/noni/lib/data/maybe":32,"@quenk/noni/lib/data/record":33,"@quenk/noni/lib/data/string":35}],66:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.THREAD_STATE_INVALID = exports.THREAD_STATE_ERROR = exports.THREAD_STATE_WAIT = exports.THREAD_STATE_RUN = exports.THREAD_STATE_IDLE = void 0;
@@ -6847,7 +8567,7 @@ exports.THREAD_STATE_WAIT = 2;
 exports.THREAD_STATE_ERROR = 3;
 exports.THREAD_STATE_INVALID = 4;
 
-},{}],56:[function(require,module,exports){
+},{}],67:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.makeFrameName = exports.SharedThread = exports.Job = void 0;
@@ -7012,7 +8732,7 @@ const makeFrameName = (thread, funName) => (0, array_1.empty)(thread.fstack) ?
     `${(0, array_1.tail)(thread.fstack).name}/${funName}`;
 exports.makeFrameName = makeFrameName;
 
-},{"../":55,"../../runtime":44,"../../runtime/error":42,"../../runtime/heap/ledger":43,"../../runtime/op":47,"../../runtime/stack/frame":49,"../../type":58,"@quenk/noni/lib/control/monad/future":15,"@quenk/noni/lib/data/array":18,"@quenk/noni/lib/data/maybe":21}],57:[function(require,module,exports){
+},{"../":66,"../../runtime":55,"../../runtime/error":53,"../../runtime/heap/ledger":54,"../../runtime/op":58,"../../runtime/stack/frame":60,"../../type":69,"@quenk/noni/lib/control/monad/future":26,"@quenk/noni/lib/data/array":29,"@quenk/noni/lib/data/maybe":32}],68:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.SharedScheduler = void 0;
@@ -7075,7 +8795,7 @@ class SharedScheduler {
 }
 exports.SharedScheduler = SharedScheduler;
 
-},{"../":55,"@quenk/noni/lib/data/array":18}],58:[function(require,module,exports){
+},{"../":66,"@quenk/noni/lib/data/array":29}],69:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getType = exports.TYPE_CONS = exports.TYPE_FUN = exports.TYPE_ARRAY = exports.TYPE_OBJECT = exports.TYPE_STRING = exports.TYPE_BOOLEAN = exports.TYPE_INT32 = exports.TYPE_INT16 = exports.TYPE_INT8 = exports.TYPE_UINT32 = exports.TYPE_UINT16 = exports.TYPE_UINT8 = exports.TYPE_VOID = exports.BYTE_INDEX = exports.BYTE_TYPE = exports.TYPE_STEP = void 0;
@@ -7103,7 +8823,7 @@ exports.TYPE_CONS = exports.TYPE_STEP * 12;
 const getType = (d) => d & exports.BYTE_TYPE;
 exports.getType = getType;
 
-},{}],59:[function(require,module,exports){
+},{}],70:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ACTION_STOP = exports.ACTION_RESTART = exports.ACTION_IGNORE = exports.ACTION_RAISE = void 0;
@@ -7112,7 +8832,7 @@ exports.ACTION_IGNORE = 0x0;
 exports.ACTION_RESTART = 0x1;
 exports.ACTION_STOP = 0x2;
 
-},{}],60:[function(require,module,exports){
+},{}],71:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -7308,7 +9028,7 @@ var assert = function (value, name) {
 };
 exports.assert = assert;
 
-},{"deep-equal":65,"json-stringify-safe":77}],61:[function(require,module,exports){
+},{"deep-equal":76,"json-stringify-safe":88}],72:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Invocation = exports.Mock = void 0;
@@ -7328,7 +9048,7 @@ var Invocation = /** @class */ (function () {
 }());
 exports.Invocation = Invocation;
 
-},{"./object":62}],62:[function(require,module,exports){
+},{"./object":73}],73:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.MockObject = exports.ReturnCallback = exports.ReturnValue = void 0;
@@ -7475,7 +9195,7 @@ var MockObject = /** @class */ (function () {
 }());
 exports.MockObject = MockObject;
 
-},{"./":61,"deep-equal":65}],63:[function(require,module,exports){
+},{"./":72,"deep-equal":76}],74:[function(require,module,exports){
 'use strict';
 
 var GetIntrinsic = require('get-intrinsic');
@@ -7492,7 +9212,7 @@ module.exports = function callBoundIntrinsic(name, allowMissing) {
 	return intrinsic;
 };
 
-},{"./":64,"get-intrinsic":69}],64:[function(require,module,exports){
+},{"./":75,"get-intrinsic":80}],75:[function(require,module,exports){
 'use strict';
 
 var bind = require('function-bind');
@@ -7541,7 +9261,7 @@ if ($defineProperty) {
 	module.exports.apply = applyBind;
 }
 
-},{"function-bind":68,"get-intrinsic":69}],65:[function(require,module,exports){
+},{"function-bind":79,"get-intrinsic":80}],76:[function(require,module,exports){
 var objectKeys = require('object-keys');
 var isArguments = require('is-arguments');
 var is = require('object-is');
@@ -7655,7 +9375,7 @@ function objEquiv(a, b, opts) {
 
 module.exports = deepEqual;
 
-},{"is-arguments":74,"is-date-object":75,"is-regex":76,"object-is":79,"object-keys":83,"regexp.prototype.flags":87}],66:[function(require,module,exports){
+},{"is-arguments":85,"is-date-object":86,"is-regex":87,"object-is":90,"object-keys":94,"regexp.prototype.flags":98}],77:[function(require,module,exports){
 'use strict';
 
 var keys = require('object-keys');
@@ -7715,7 +9435,7 @@ defineProperties.supportsDescriptors = !!supportsDescriptors;
 
 module.exports = defineProperties;
 
-},{"object-keys":83}],67:[function(require,module,exports){
+},{"object-keys":94}],78:[function(require,module,exports){
 'use strict';
 
 /* eslint no-invalid-this: 1 */
@@ -7769,14 +9489,14 @@ module.exports = function bind(that) {
     return bound;
 };
 
-},{}],68:[function(require,module,exports){
+},{}],79:[function(require,module,exports){
 'use strict';
 
 var implementation = require('./implementation');
 
 module.exports = Function.prototype.bind || implementation;
 
-},{"./implementation":67}],69:[function(require,module,exports){
+},{"./implementation":78}],80:[function(require,module,exports){
 'use strict';
 
 var undefined;
@@ -8108,7 +9828,7 @@ module.exports = function GetIntrinsic(name, allowMissing) {
 	return value;
 };
 
-},{"function-bind":68,"has":73,"has-symbols":70}],70:[function(require,module,exports){
+},{"function-bind":79,"has":84,"has-symbols":81}],81:[function(require,module,exports){
 'use strict';
 
 var origSymbol = typeof Symbol !== 'undefined' && Symbol;
@@ -8123,7 +9843,7 @@ module.exports = function hasNativeSymbols() {
 	return hasSymbolSham();
 };
 
-},{"./shams":71}],71:[function(require,module,exports){
+},{"./shams":82}],82:[function(require,module,exports){
 'use strict';
 
 /* eslint complexity: [2, 18], max-statements: [2, 33] */
@@ -8167,7 +9887,7 @@ module.exports = function hasSymbols() {
 	return true;
 };
 
-},{}],72:[function(require,module,exports){
+},{}],83:[function(require,module,exports){
 'use strict';
 
 var hasSymbols = require('has-symbols/shams');
@@ -8176,14 +9896,14 @@ module.exports = function hasToStringTagShams() {
 	return hasSymbols() && !!Symbol.toStringTag;
 };
 
-},{"has-symbols/shams":71}],73:[function(require,module,exports){
+},{"has-symbols/shams":82}],84:[function(require,module,exports){
 'use strict';
 
 var bind = require('function-bind');
 
 module.exports = bind.call(Function.call, Object.prototype.hasOwnProperty);
 
-},{"function-bind":68}],74:[function(require,module,exports){
+},{"function-bind":79}],85:[function(require,module,exports){
 'use strict';
 
 var hasToStringTag = require('has-tostringtag/shams')();
@@ -8218,7 +9938,7 @@ isStandardArguments.isLegacyArguments = isLegacyArguments; // for tests
 
 module.exports = supportsStandardArguments ? isStandardArguments : isLegacyArguments;
 
-},{"call-bind/callBound":63,"has-tostringtag/shams":72}],75:[function(require,module,exports){
+},{"call-bind/callBound":74,"has-tostringtag/shams":83}],86:[function(require,module,exports){
 'use strict';
 
 var getDay = Date.prototype.getDay;
@@ -8242,7 +9962,7 @@ module.exports = function isDateObject(value) {
 	return hasToStringTag ? tryDateObject(value) : toStr.call(value) === dateClass;
 };
 
-},{"has-tostringtag/shams":72}],76:[function(require,module,exports){
+},{"has-tostringtag/shams":83}],87:[function(require,module,exports){
 'use strict';
 
 var callBound = require('call-bind/callBound');
@@ -8302,7 +10022,7 @@ module.exports = hasToStringTag
 		return $toString(value) === regexClass;
 	};
 
-},{"call-bind/callBound":63,"has-tostringtag/shams":72}],77:[function(require,module,exports){
+},{"call-bind/callBound":74,"has-tostringtag/shams":83}],88:[function(require,module,exports){
 exports = module.exports = stringify
 exports.getSerialize = serializer
 
@@ -8331,7 +10051,7 @@ function serializer(replacer, cycleReplacer) {
   }
 }
 
-},{}],78:[function(require,module,exports){
+},{}],89:[function(require,module,exports){
 'use strict';
 
 var numberIsNaN = function (value) {
@@ -8352,7 +10072,7 @@ module.exports = function is(a, b) {
 };
 
 
-},{}],79:[function(require,module,exports){
+},{}],90:[function(require,module,exports){
 'use strict';
 
 var define = require('define-properties');
@@ -8372,7 +10092,7 @@ define(polyfill, {
 
 module.exports = polyfill;
 
-},{"./implementation":78,"./polyfill":80,"./shim":81,"call-bind":64,"define-properties":66}],80:[function(require,module,exports){
+},{"./implementation":89,"./polyfill":91,"./shim":92,"call-bind":75,"define-properties":77}],91:[function(require,module,exports){
 'use strict';
 
 var implementation = require('./implementation');
@@ -8381,7 +10101,7 @@ module.exports = function getPolyfill() {
 	return typeof Object.is === 'function' ? Object.is : implementation;
 };
 
-},{"./implementation":78}],81:[function(require,module,exports){
+},{"./implementation":89}],92:[function(require,module,exports){
 'use strict';
 
 var getPolyfill = require('./polyfill');
@@ -8397,7 +10117,7 @@ module.exports = function shimObjectIs() {
 	return polyfill;
 };
 
-},{"./polyfill":80,"define-properties":66}],82:[function(require,module,exports){
+},{"./polyfill":91,"define-properties":77}],93:[function(require,module,exports){
 'use strict';
 
 var keysShim;
@@ -8521,7 +10241,7 @@ if (!Object.keys) {
 }
 module.exports = keysShim;
 
-},{"./isArguments":84}],83:[function(require,module,exports){
+},{"./isArguments":95}],94:[function(require,module,exports){
 'use strict';
 
 var slice = Array.prototype.slice;
@@ -8555,7 +10275,7 @@ keysShim.shim = function shimObjectKeys() {
 
 module.exports = keysShim;
 
-},{"./implementation":82,"./isArguments":84}],84:[function(require,module,exports){
+},{"./implementation":93,"./isArguments":95}],95:[function(require,module,exports){
 'use strict';
 
 var toStr = Object.prototype.toString;
@@ -8574,7 +10294,7 @@ module.exports = function isArguments(value) {
 	return isArgs;
 };
 
-},{}],85:[function(require,module,exports){
+},{}],96:[function(require,module,exports){
 // shim for using process in browser
 var process = module.exports = {};
 
@@ -8760,7 +10480,7 @@ process.chdir = function (dir) {
 };
 process.umask = function() { return 0; };
 
-},{}],86:[function(require,module,exports){
+},{}],97:[function(require,module,exports){
 'use strict';
 
 var $Object = Object;
@@ -8792,7 +10512,7 @@ module.exports = function flags() {
 	return result;
 };
 
-},{}],87:[function(require,module,exports){
+},{}],98:[function(require,module,exports){
 'use strict';
 
 var define = require('define-properties');
@@ -8812,7 +10532,7 @@ define(flagsBound, {
 
 module.exports = flagsBound;
 
-},{"./implementation":86,"./polyfill":88,"./shim":89,"call-bind":64,"define-properties":66}],88:[function(require,module,exports){
+},{"./implementation":97,"./polyfill":99,"./shim":100,"call-bind":75,"define-properties":77}],99:[function(require,module,exports){
 'use strict';
 
 var implementation = require('./implementation');
@@ -8834,7 +10554,7 @@ module.exports = function getPolyfill() {
 	return implementation;
 };
 
-},{"./implementation":86,"define-properties":66}],89:[function(require,module,exports){
+},{"./implementation":97,"define-properties":77}],100:[function(require,module,exports){
 'use strict';
 
 var supportsDescriptors = require('define-properties').supportsDescriptors;
@@ -8862,7 +10582,7 @@ module.exports = function shimFlags() {
 	return polyfill;
 };
 
-},{"./polyfill":88,"define-properties":66}],90:[function(require,module,exports){
+},{"./polyfill":99,"define-properties":77}],101:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.GenericImmutable = void 0;
@@ -8886,7 +10606,7 @@ class GenericImmutable extends actor_1.Immutable {
 }
 exports.GenericImmutable = GenericImmutable;
 
-},{"../../../../lib/actor":1}],91:[function(require,module,exports){
+},{"../../../../lib/actor":1}],102:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.TestApp = void 0;
@@ -8898,7 +10618,7 @@ class TestApp extends app_1.Jouvert {
 }
 exports.TestApp = TestApp;
 
-},{"../../../../lib/app":2}],92:[function(require,module,exports){
+},{"../../../../lib/app":2}],103:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const assert_1 = require("@quenk/test/lib/assert");
@@ -9031,7 +10751,7 @@ describe('remote', () => {
     });
 });
 
-},{"../../../../lib/app/remote":4,"../../app/fixtures/actor":90,"../../app/fixtures/app":91,"@quenk/jhr/lib/agent/mock":8,"@quenk/jhr/lib/request":9,"@quenk/jhr/lib/response":11,"@quenk/noni/lib/control/monad/future":15,"@quenk/potoo/lib/actor/resident/case":31,"@quenk/test/lib/assert":60}],93:[function(require,module,exports){
+},{"../../../../lib/app/remote":4,"../../app/fixtures/actor":101,"../../app/fixtures/app":102,"@quenk/jhr/lib/agent/mock":8,"@quenk/jhr/lib/request":9,"@quenk/jhr/lib/response":11,"@quenk/noni/lib/control/monad/future":26,"@quenk/potoo/lib/actor/resident/case":42,"@quenk/test/lib/assert":71}],104:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const assert_1 = require("@quenk/test/lib/assert");
@@ -9298,7 +11018,7 @@ describe('model', () => {
     });
 });
 
-},{"../../../../lib/app/remote":4,"../../../../lib/app/remote/model":5,"../../app/fixtures/app":91,"@quenk/jhr/lib/request":9,"@quenk/jhr/lib/response":11,"@quenk/noni/lib/control/monad/future":15,"@quenk/noni/lib/data/record":22,"@quenk/potoo/lib/actor/resident/case":31,"@quenk/potoo/lib/actor/resident/immutable":33,"@quenk/test/lib/assert":60,"@quenk/test/lib/mock":61}],94:[function(require,module,exports){
+},{"../../../../lib/app/remote":4,"../../../../lib/app/remote/model":5,"../../app/fixtures/app":102,"@quenk/jhr/lib/request":9,"@quenk/jhr/lib/response":11,"@quenk/noni/lib/control/monad/future":26,"@quenk/noni/lib/data/record":33,"@quenk/potoo/lib/actor/resident/case":42,"@quenk/potoo/lib/actor/resident/immutable":44,"@quenk/test/lib/assert":71,"@quenk/test/lib/mock":72}],105:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const assert_1 = require("@quenk/test/lib/assert");
@@ -9531,7 +11251,7 @@ describe('observable', () => {
     });
 });
 
-},{"../../../../lib/app/remote/observer":6,"../../app/fixtures/actor":90,"../../app/fixtures/app":91,"@quenk/jhr/lib/agent/mock":8,"@quenk/jhr/lib/request":9,"@quenk/jhr/lib/response":11,"@quenk/noni/lib/control/monad/future":15,"@quenk/potoo/lib/actor/resident/case":31,"@quenk/test/lib/assert":60,"@quenk/test/lib/mock":61}],95:[function(require,module,exports){
+},{"../../../../lib/app/remote/observer":6,"../../app/fixtures/actor":101,"../../app/fixtures/app":102,"@quenk/jhr/lib/agent/mock":8,"@quenk/jhr/lib/request":9,"@quenk/jhr/lib/response":11,"@quenk/noni/lib/control/monad/future":26,"@quenk/potoo/lib/actor/resident/case":42,"@quenk/test/lib/assert":71,"@quenk/test/lib/mock":72}],106:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const mock_1 = require("@quenk/test/lib/mock");
@@ -9722,10 +11442,10 @@ describe('director', () => {
     });
 });
 
-},{"../../../../lib/actor":1,"../../../../lib/app/service/director":7,"../../app/fixtures/app":91,"@quenk/noni/lib/control/monad/future":15,"@quenk/noni/lib/data/record":22,"@quenk/noni/lib/data/string":24,"@quenk/potoo/lib/actor/resident/case":31,"@quenk/test/lib/assert":60,"@quenk/test/lib/mock":61}],96:[function(require,module,exports){
+},{"../../../../lib/actor":1,"../../../../lib/app/service/director":7,"../../app/fixtures/app":102,"@quenk/noni/lib/control/monad/future":26,"@quenk/noni/lib/data/record":33,"@quenk/noni/lib/data/string":35,"@quenk/potoo/lib/actor/resident/case":42,"@quenk/test/lib/assert":71,"@quenk/test/lib/mock":72}],107:[function(require,module,exports){
 require("./app/remote/index_test.js");
 require("./app/remote/model_test.js");
 require("./app/remote/observer_test.js");
 require("./app/service/director_test.js");
 
-},{"./app/remote/index_test.js":92,"./app/remote/model_test.js":93,"./app/remote/observer_test.js":94,"./app/service/director_test.js":95}]},{},[96]);
+},{"./app/remote/index_test.js":103,"./app/remote/model_test.js":104,"./app/remote/observer_test.js":105,"./app/service/director_test.js":106}]},{},[107]);

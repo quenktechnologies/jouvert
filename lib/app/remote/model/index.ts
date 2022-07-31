@@ -5,7 +5,15 @@
  */
 
 /** imports */
-import { Future, fromCallback, doFuture, wrap, voidPure } from '@quenk/noni/lib/control/monad/future';
+import {
+    Future,
+    fromCallback,
+    doFuture,
+    wrap,
+    voidPure,
+    pure,
+    raise
+} from '@quenk/noni/lib/control/monad/future';
 import { Maybe, fromNullable, nothing } from '@quenk/noni/lib/data/maybe';
 import { Object } from '@quenk/noni/lib/data/jsonx';
 import { interpolate } from '@quenk/noni/lib/data/string';
@@ -16,6 +24,7 @@ import { Spawnable } from '@quenk/potoo/lib/actor/template';
 import { System } from '@quenk/potoo/lib/actor/system';
 
 import { Response } from '@quenk/jhr/lib/response';
+import { Request } from '@quenk/jhr/lib/request';
 import { Post, Get, Patch, Delete } from '@quenk/jhr/lib/request';
 
 import { Id, Model } from '../../model';
@@ -309,13 +318,57 @@ export class NotFoundHandler<T extends Object> extends FutureHandler<T>{
 }
 
 /**
- * RemoteModel provides a Model implementation that relies on the [[Remote]]
- * actor.
+ * BaseRemoteModel is a [[Model]] implementation that uses the remote actor API
+ * underneath to provide a CSUGR interface.
  *
- * A handler can be provided to observe the result of requests if more data
- * is needed than the Model api provides.
+ * This class serves as a starting point and exists mostly for that generate 
+ * frontend models via Dagen templates. Use the [[RemoteModel]] class to create
+ * RemoteModels manually.
  */
-export class RemoteModel<T extends Object> implements Model<T> {
+export abstract class BaseRemoteModel<T extends Object> implements Model<T> {
+
+    constructor(
+        public remote: Address,
+        public spawn: SpawnFunc,
+        public handler: CompleteHandler<Result<T>> = new DefaultCompleteHandler()
+    ) { }
+
+    /**
+     * send a request to the remote backend.
+     *
+     * Use this method to submit the request to the remote actor using
+     * the optional installed handler(s) to handle the request before completion.
+     */
+    send(req: Request<Object>): Future<Response<Result<T>>> {
+
+        return fromCallback(cb => {
+
+            this.spawn((s: System) => new SendCallback(
+                s,
+                this.remote,
+                req,
+                new FutureHandler(this.handler, cb, r => cb(null, r))));
+
+        });
+
+    }
+
+    abstract create(data: T): Future<Id>
+
+    abstract search(qry: Object): Future<T[]>
+
+    abstract update(id: Id, changes: Partial<T>): Future<boolean>
+
+    abstract get(id: Id): Future<Maybe<T>>
+
+    abstract remove(id: Id): Future<boolean>
+
+}
+
+/**
+ * RemoteModel implementation 
+ */
+export class RemoteModel<T extends Object> extends BaseRemoteModel<T> {
 
     constructor(
         public remote: Address,
@@ -323,126 +376,88 @@ export class RemoteModel<T extends Object> implements Model<T> {
         public spawn: SpawnFunc,
         public context: Object = {},
         public handler: CompleteHandler<Result<T>> = new DefaultCompleteHandler()
-    ) { }
+    ) { super(remote, spawn, handler); }
 
-    /**
-     * create a new entry for the data type.
-     */
     create(data: T): Future<Id> {
 
-        return fromCallback(cb => {
+        let that = this;
 
-            this.spawn((s: System) => new SendCallback(
-                s,
-                this.remote,
-                new Post(interpolate(this.paths.create, this.context), data),
-                new FutureHandler<T>(this.handler, cb, r => {
+        return doFuture(function*() {
 
-                    cb(null, (<CreateResult>r.body).data.id);
+            let r = yield that.send(new Post(
+                interpolate(that.paths.create, that.context), data));
 
-                })));
+            return pure((<CreateResult>r.body).data.id);
 
         });
 
     }
 
-    /**
-     * search for entries that match the provided query.
-     */
     search(qry: Object): Future<T[]> {
 
-        return fromCallback(cb => {
+        let that = this;
 
-            this.spawn((s: System) => new SendCallback(
-                s,
-                this.remote,
-                new Get(interpolate(this.paths.search, this.context), qry),
-                new FutureHandler(this.handler, cb, r => {
+        return doFuture(function*() {
 
-                    cb(null, (r.code === 204) ?
-                        [] : (<SearchResult<T>>r.body).data);
+            let r = yield that.send(new Get(
+                interpolate(that.paths.search, that.context), qry));
 
-                })));
+            return pure((r.code === 204) ?
+                [] : (<SearchResult<T>>r.body).data);
 
         });
 
     }
 
-    /**
-     * update a single entry using its id.
-     */
     update(id: Id, changes: Partial<T>): Future<boolean> {
 
-        return fromCallback(cb => {
+        let that = this;
 
-            this.spawn((s: System) => new SendCallback(
-                s,
-                this.remote,
-                new Patch(interpolate(this.paths.update,
-                    merge({ id }, this.context)), changes),
-                new FutureHandler(
-                    this.handler,
-                    cb,
-                    r => {
+        return doFuture(function*() {
 
-                        cb(null, (r.code === 200) ? true : false);
+            let r = yield that.send(new Patch(interpolate(that.paths.update,
+                merge({ id }, that.context)), changes));
 
-                    })));
+            return pure((r.code === 200) ? true : false);
 
         });
 
     }
 
-    /**
-     * get a single entry by its id.
-     */
     get(id: Id): Future<Maybe<T>> {
 
-        return fromCallback(cb => {
+        let that = this;
 
-            this.spawn((s: System) => new SendCallback(
-                s,
-                this.remote,
-                new Get(interpolate(this.paths.get,
-                    merge({ id }, this.context)), {}),
-                new NotFoundHandler(
-                    this.handler,
-                    cb,
-                    () => {
+        return doFuture(function*() {
 
-                        cb(null, nothing());
+            let req = new Get(interpolate(that.paths.get,
+                merge({ id }, that.context)), {});
 
-                    },
-                    r => {
-
-                        cb(null, fromNullable((<GetResult<T>>r.body).data));
-
-                    })));
+            return that
+                .send(req)
+                .chain(res => pure(fromNullable((<GetResult<T>>res.body).data)))
+                .catch(e => ((e.message == 'ClientError') && (e.code == 404)) ?
+                    pure(nothing()) :
+                    raise(e)
+                );
 
         });
 
     }
 
-    /**
-     * remove a single entry by its id.
-     */
-    remove(id: Id): Future<boolean> {
+remove(id: Id): Future < boolean > {
 
-        return fromCallback(cb => {
+    let that = this;
 
-            this.spawn((s: System) => new SendCallback(
-                s,
-                this.remote,
-                new Delete(interpolate(this.paths.remove,
-                    merge({ id }, this.context)), {}),
-                new FutureHandler(this.handler, cb, r => {
+    return doFuture(function*() {
 
-                    cb(null, (r.code === 200) ? true : false);
+        let r = yield that.send(new Delete(interpolate(that.paths.remove,
+            merge({ id }, that.context)), {}));
 
-                })));
+        return pure((r.code === 200) ? true : false);
 
-        });
+    });
 
-    }
+}
 
 }

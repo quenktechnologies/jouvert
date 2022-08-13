@@ -74,7 +74,14 @@ const vm_1 = require("@quenk/potoo/lib/actor/system/vm");
 class Jouvert {
     constructor(conf = { accept: m => this.onMessage(m) }) {
         this.conf = conf;
+        /**
+         * vm for the actors of the application.
+         */
         this.vm = vm_1.PVM.create(this, this.conf);
+        /**
+         * services contains the addresses of service actors within the system.
+         */
+        this.services = {};
     }
     getPlatform() {
         return this.vm;
@@ -94,8 +101,17 @@ class Jouvert {
     /**
      * spawn a new actor from template using the root actor as parent.
      */
-    spawn(t) {
-        return this.vm.spawn(this.vm, t);
+    spawn(tmpl) {
+        return this.vm.spawn(this.vm, tmpl);
+    }
+    /**
+     * service spawns a new actor storing its address in the record of services
+     * using the specified key.
+     */
+    service(key, tmpl) {
+        let addr = this.spawn(tmpl);
+        this.services[key] = addr;
+        return addr;
     }
 }
 exports.Jouvert = Jouvert;
@@ -11443,9 +11459,9 @@ describe('director', () => {
 });
 
 },{"../../../../lib/actor":1,"../../../../lib/app/service/director":7,"../../app/fixtures/app":102,"@quenk/noni/lib/control/monad/future":26,"@quenk/noni/lib/data/record":33,"@quenk/noni/lib/data/string":35,"@quenk/potoo/lib/actor/resident/case":42,"@quenk/test/lib/assert":71,"@quenk/test/lib/mock":72}],107:[function(require,module,exports){
+require("./app/service/director_test.js");
 require("./app/remote/index_test.js");
 require("./app/remote/model_test.js");
 require("./app/remote/observer_test.js");
-require("./app/service/director_test.js");
 
 },{"./app/remote/index_test.js":103,"./app/remote/model_test.js":104,"./app/remote/observer_test.js":105,"./app/service/director_test.js":106}]},{},[107]);

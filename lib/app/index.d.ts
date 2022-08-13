@@ -1,4 +1,5 @@
-import { Template } from '@quenk/potoo/lib/actor/template';
+import { Record } from '@quenk/noni/lib/data/record';
+import { Spawnable, Template } from '@quenk/potoo/lib/actor/template';
 import { Conf } from '@quenk/potoo/lib/actor/system/vm/conf';
 import { PVM } from '@quenk/potoo/lib/actor/system/vm';
 import { System } from '@quenk/potoo/lib/actor/system';
@@ -7,6 +8,7 @@ import { Message } from '@quenk/potoo/lib/actor/message';
 export { Template };
 /**
  * App is an alias for the potoo System interface.
+ * @deprecated
  */
 export interface App extends System {
 }
@@ -30,7 +32,14 @@ export interface App extends System {
 export declare abstract class Jouvert implements App {
     conf: Partial<Conf>;
     constructor(conf?: Partial<Conf>);
+    /**
+     * vm for the actors of the application.
+     */
     vm: PVM;
+    /**
+     * services contains the addresses of service actors within the system.
+     */
+    services: Record<Address>;
     getPlatform(): PVM;
     /**
      * onMessage handler used to intercept messages sent to the vm via the
@@ -44,5 +53,10 @@ export declare abstract class Jouvert implements App {
     /**
      * spawn a new actor from template using the root actor as parent.
      */
-    spawn(t: Template): Address;
+    spawn(tmpl: Spawnable): Address;
+    /**
+     * service spawns a new actor storing its address in the record of services
+     * using the specified key.
+     */
+    service(key: string, tmpl: Spawnable): Address;
 }

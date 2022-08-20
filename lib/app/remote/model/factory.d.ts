@@ -15,14 +15,14 @@ export declare type CompleteHandlerSpec<D extends Object> = CompleteHandler<Resu
  * RemoteModelFactory is a convenience class for creating RemoteModel instances.
  */
 export declare class RemoteModelFactory<T extends Object> {
-    spawn: SpawnFunc;
     remote: Address;
+    spawn: SpawnFunc;
     /**
-     * @param spawn    A function that will be used to spawn needed actors.
      * @param remote   The address of the actor that will receive the network
      *                 requests.
+     * @param spawn    A function that will be used to spawn needed actors.
      */
-    constructor(spawn: SpawnFunc, remote: Address);
+    constructor(remote: Address, spawn: SpawnFunc);
     /**
      * getInstance provides a new RemoteModelFactory instance.
      */

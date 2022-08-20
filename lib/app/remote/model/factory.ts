@@ -30,11 +30,11 @@ export type CompleteHandlerSpec<D extends Object>
 export class RemoteModelFactory<T extends Object> {
 
     /**
-     * @param spawn    A function that will be used to spawn needed actors.
      * @param remote   The address of the actor that will receive the network 
      *                 requests.
+     * @param spawn    A function that will be used to spawn needed actors.
      */
-    constructor(public spawn: SpawnFunc, public remote: Address) { }
+    constructor(public remote: Address, public spawn: SpawnFunc) { }
 
     /**
      * getInstance provides a new RemoteModelFactory instance.
@@ -42,8 +42,8 @@ export class RemoteModelFactory<T extends Object> {
     static getInstance<T extends Object>(spawn: SpawnSpec, remote: Address)
         : RemoteModelFactory<T> {
 
-        return new RemoteModelFactory(isObject(spawn) ?
-            (<Spawner>spawn).spawn.bind(spawn) : spawn, remote);
+        return new RemoteModelFactory(remote, isObject(spawn) ?
+            (<Spawner>spawn).spawn.bind(spawn) : spawn);
 
     }
 

@@ -241,11 +241,11 @@ export class SendCallback<Req, Res>
 
                 if (r.code > 499) {
 
-                   return  this.handler.onServerError(r);
+                    return this.handler.onServerError(<Response<ErrorBody>>r);
 
                 } else if (r.code > 399) {
 
-                    return this.handler.onClientError(r);
+                    return this.handler.onClientError(<Response<ErrorBody>>r);
 
                 } else {
 
@@ -298,11 +298,13 @@ export class ParSendCallback<Req, Res>
 
                     if (res.code > 499) {
 
-                        return this.handler.onServerError(res);
+                        return this.handler.onServerError(
+                          <Response<ErrorBody>>res);
 
                     } else {
 
-                       return this.handler.onClientError(res);
+                        return this.handler.onClientError(
+                            <Response<ErrorBody>>res);
 
                     }
 

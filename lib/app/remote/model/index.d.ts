@@ -27,18 +27,30 @@ export declare type SpawnFunc = (tmpl: Spawnable) => Address;
 export interface Paths extends Record<Address> {
 }
 /**
- * BaseRemoteModel is a [[Model]] implementation that uses the remote actor API
+ * RemoteModel is a [[Model]] implementation that uses the remote actor API
  * underneath to provide a CSUGR interface.
  *
  * This class serves as a starting point and exists mostly for that generate
  * frontend models via Dagen templates. Use the [[RemoteModel]] class to create
  * RemoteModels manually.
  */
-export declare abstract class BaseRemoteModel<T extends Object> implements Model<T> {
+export declare class RemoteModel<T extends Object> implements Model<T> {
     remote: Address;
+    paths: Paths;
     spawn: SpawnFunc;
+    context: Object;
     handler: CompleteHandler<Result<T>>;
-    constructor(remote: Address, spawn: SpawnFunc, handler?: CompleteHandler<Result<T>>);
+    /**
+     * @param remote  -  The actor to send requests to.
+     * @param paths   -  A map containing the request path to use for
+     *                   each method.
+     * @param spawn   -  The function used to spawn callbacks internally.
+     * @param context -  Object used to expand path string templates via
+     *                   interpolation.
+     * @param handler -  An optional CompleteHandler that can intercept
+     *                   responses.
+     */
+    constructor(remote: Address, paths: Paths, spawn: SpawnFunc, context?: Object, handler?: CompleteHandler<Result<T>>);
     /**
      * send a request to the remote backend.
      *
@@ -46,22 +58,6 @@ export declare abstract class BaseRemoteModel<T extends Object> implements Model
      * the optional installed handler(s) to handle the request before completion.
      */
     send(req: Request<Object>): Future<Response<Result<T>>>;
-    abstract create(data: T): Future<Id>;
-    abstract search(qry: Object): Future<T[]>;
-    abstract update(id: Id, changes: Partial<T>): Future<boolean>;
-    abstract get(id: Id): Future<Maybe<T>>;
-    abstract remove(id: Id): Future<boolean>;
-}
-/**
- * RemoteModel implementation
- */
-export declare class RemoteModel<T extends Object> extends BaseRemoteModel<T> {
-    remote: Address;
-    paths: Paths;
-    spawn: SpawnFunc;
-    context: Object;
-    handler: CompleteHandler<Result<T>>;
-    constructor(remote: Address, paths: Paths, spawn: SpawnFunc, context?: Object, handler?: CompleteHandler<Result<T>>);
     create(data: T): Future<Id>;
     search(qry: Object): Future<T[]>;
     update(id: Id, changes: Partial<T>): Future<boolean>;

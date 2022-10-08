@@ -49,20 +49,31 @@ export type SpawnFunc = (tmpl: Spawnable) => Address;
 export interface Paths extends Record<Address> { }
 
 /**
- * BaseRemoteModel is a [[Model]] implementation that uses the remote actor API
+ * RemoteModel is a [[Model]] implementation that uses the remote actor API
  * underneath to provide a CSUGR interface.
  *
  * This class serves as a starting point and exists mostly for that generate 
  * frontend models via Dagen templates. Use the [[RemoteModel]] class to create
  * RemoteModels manually.
  */
-export abstract class BaseRemoteModel<T extends Object> implements Model<T> {
+export class RemoteModel<T extends Object> implements Model<T> {
 
+    /**
+     * @param remote  -  The actor to send requests to.
+     * @param paths   -  A map containing the request path to use for 
+     *                   each method.
+     * @param spawn   -  The function used to spawn callbacks internally.
+     * @param context -  Object used to expand path string templates via
+     *                   interpolation.
+     * @param handler -  An optional CompleteHandler that can intercept 
+     *                   responses.
+     */
     constructor(
         public remote: Address,
+        public paths: Paths,
         public spawn: SpawnFunc,
-        public handler: CompleteHandler<Result<T>> = new VoidHandler()
-    ) { }
+        public context: Object = {},
+        public handler: CompleteHandler<Result<T>> = new VoidHandler()) { }
 
     /**
      * send a request to the remote backend.
@@ -83,31 +94,6 @@ export abstract class BaseRemoteModel<T extends Object> implements Model<T> {
         });
 
     }
-
-    abstract create(data: T): Future<Id>
-
-    abstract search(qry: Object): Future<T[]>
-
-    abstract update(id: Id, changes: Partial<T>): Future<boolean>
-
-    abstract get(id: Id): Future<Maybe<T>>
-
-    abstract remove(id: Id): Future<boolean>
-
-}
-
-/**
- * RemoteModel implementation 
- */
-export class RemoteModel<T extends Object> extends BaseRemoteModel<T> {
-
-    constructor(
-        public remote: Address,
-        public paths: Paths,
-        public spawn: SpawnFunc,
-        public context: Object = {},
-        public handler: CompleteHandler<Result<T>> = new VoidHandler()
-    ) { super(remote, spawn, handler); }
 
     create(data: T): Future<Id> {
 

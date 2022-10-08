@@ -490,7 +490,7 @@ exports.VoidHandler = VoidHandler;
  * format specified.
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.RemoteModel = exports.BaseRemoteModel = void 0;
+exports.RemoteModel = void 0;
 /** imports */
 const future_1 = require("@quenk/noni/lib/control/monad/future");
 const maybe_1 = require("@quenk/noni/lib/data/maybe");
@@ -502,17 +502,29 @@ const callback_1 = require("../callback");
 const void_1 = require("./handler/void");
 const future_2 = require("./handler/future");
 /**
- * BaseRemoteModel is a [[Model]] implementation that uses the remote actor API
+ * RemoteModel is a [[Model]] implementation that uses the remote actor API
  * underneath to provide a CSUGR interface.
  *
  * This class serves as a starting point and exists mostly for that generate
  * frontend models via Dagen templates. Use the [[RemoteModel]] class to create
  * RemoteModels manually.
  */
-class BaseRemoteModel {
-    constructor(remote, spawn, handler = new void_1.VoidHandler()) {
+class RemoteModel {
+    /**
+     * @param remote  -  The actor to send requests to.
+     * @param paths   -  A map containing the request path to use for
+     *                   each method.
+     * @param spawn   -  The function used to spawn callbacks internally.
+     * @param context -  Object used to expand path string templates via
+     *                   interpolation.
+     * @param handler -  An optional CompleteHandler that can intercept
+     *                   responses.
+     */
+    constructor(remote, paths, spawn, context = {}, handler = new void_1.VoidHandler()) {
         this.remote = remote;
+        this.paths = paths;
         this.spawn = spawn;
+        this.context = context;
         this.handler = handler;
     }
     /**
@@ -525,20 +537,6 @@ class BaseRemoteModel {
         return (0, future_1.fromCallback)(cb => {
             this.spawn((s) => new callback_1.SendCallback(s, this.remote, req, new future_2.FutureHandler(this.handler, cb, r => cb(null, r))));
         });
-    }
-}
-exports.BaseRemoteModel = BaseRemoteModel;
-/**
- * RemoteModel implementation
- */
-class RemoteModel extends BaseRemoteModel {
-    constructor(remote, paths, spawn, context = {}, handler = new void_1.VoidHandler()) {
-        super(remote, spawn, handler);
-        this.remote = remote;
-        this.paths = paths;
-        this.spawn = spawn;
-        this.context = context;
-        this.handler = handler;
     }
     create(data) {
         let that = this;

@@ -36,6 +36,8 @@ import {
 } from '../callback';
 import { TransportErr } from '../';
 
+export { Model }
+
 /**
  * SpawnFunc used by RemoteModels to spawn remote callbacks.
  */

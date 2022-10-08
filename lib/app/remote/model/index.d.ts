@@ -15,6 +15,7 @@ import { Request } from '@quenk/jhr/lib/request';
 import { Id, Model } from '../../model';
 import { ErrorBody, CompleteHandler, AbstractCompleteHandler } from '../callback';
 import { TransportErr } from '../';
+export { Model };
 /**
  * SpawnFunc used by RemoteModels to spawn remote callbacks.
  */

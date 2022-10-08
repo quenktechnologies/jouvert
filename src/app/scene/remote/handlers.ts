@@ -23,12 +23,12 @@ import {
     CompleteHandler
 } from '../../remote/callback';
 import {
-    GetHandler,
+    GetResultHandler,
     GetResponse,
     Pagination,
-    SearchHandler,
+    SearchResultHandler,
     SearchResponse
-} from '../../remote/model';
+} from '../../remote/model/handler/result';
 import { getById } from '@quenk/wml-widgets/lib/util';
 import { FormErrors, SaveFailed, SaveListener } from '../form';
 import { Yield } from '@quenk/noni/lib/control/monad/future';
@@ -101,7 +101,9 @@ export class ShiftingOnClientError<T> extends AbstractCompleteHandler<T> {
  *
  * This handler is intended to be used mostly when loading data for table scenes.
  */
-export class AfterSearchSetData<T extends Object> extends SearchHandler<T> {
+export class AfterSearchSetData<T extends Object>
+    extends
+    SearchResultHandler<T> {
 
     constructor(public setter: (data: T[]) => Yield<void>) { super(); }
 
@@ -120,7 +122,7 @@ export class AfterSearchSetData<T extends Object> extends SearchHandler<T> {
  *
  * This handler is intended to be used mostly when loading data for table scenes.
  */
-export class AfterGetSetData<T extends Object> extends GetHandler<T> {
+export class AfterGetSetData<T extends Object> extends GetResultHandler<T> {
 
     constructor(public setter: (data: T) => void) { super(); }
 
@@ -139,7 +141,7 @@ export class AfterGetSetData<T extends Object> extends GetHandler<T> {
  */
 export class AfterSearchUpdateWidget<T extends Object>
     extends
-    SearchHandler<T> {
+    SearchResultHandler<T> {
 
     constructor(public view: View, public id: string) { super(); }
 
@@ -182,7 +184,7 @@ export class OnCompleteShowData<T>
  */
 export class AfterSearchSetPagination<T extends Object>
     extends
-    SearchHandler<T> {
+    SearchResultHandler<T> {
 
     constructor(public target: { pagination?: Pagination }) { super(); }
 

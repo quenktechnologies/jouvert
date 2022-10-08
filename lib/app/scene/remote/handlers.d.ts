@@ -14,7 +14,7 @@ import { Object } from '@quenk/noni/lib/data/jsonx';
 import { Response } from '@quenk/jhr/lib/response';
 import { View } from '@quenk/wml';
 import { AbstractCompleteHandler, CompleteHandler } from '../../remote/callback';
-import { GetHandler, GetResponse, Pagination, SearchHandler, SearchResponse } from '../../remote/model';
+import { GetResultHandler, GetResponse, Pagination, SearchResultHandler, SearchResponse } from '../../remote/model/handler/result';
 import { FormErrors, SaveListener } from '../form';
 import { Yield } from '@quenk/noni/lib/control/monad/future';
 /**
@@ -58,7 +58,7 @@ export declare class ShiftingOnClientError<T> extends AbstractCompleteHandler<T>
  *
  * This handler is intended to be used mostly when loading data for table scenes.
  */
-export declare class AfterSearchSetData<T extends Object> extends SearchHandler<T> {
+export declare class AfterSearchSetData<T extends Object> extends SearchResultHandler<T> {
     setter: (data: T[]) => Yield<void>;
     constructor(setter: (data: T[]) => Yield<void>);
     onComplete(res: SearchResponse<T>): Yield<void>;
@@ -69,7 +69,7 @@ export declare class AfterSearchSetData<T extends Object> extends SearchHandler<
  *
  * This handler is intended to be used mostly when loading data for table scenes.
  */
-export declare class AfterGetSetData<T extends Object> extends GetHandler<T> {
+export declare class AfterGetSetData<T extends Object> extends GetResultHandler<T> {
     setter: (data: T) => void;
     constructor(setter: (data: T) => void);
     onComplete(res: GetResponse<T>): void;
@@ -78,7 +78,7 @@ export declare class AfterGetSetData<T extends Object> extends GetHandler<T> {
  * AfterSearchUpdateWidget calls the update() method of a WML updatable widget
  * after a successful search.
  */
-export declare class AfterSearchUpdateWidget<T extends Object> extends SearchHandler<T> {
+export declare class AfterSearchUpdateWidget<T extends Object> extends SearchResultHandler<T> {
     view: View;
     id: string;
     constructor(view: View, id: string);
@@ -101,7 +101,7 @@ export declare class OnCompleteShowData<T> extends AbstractCompleteHandler<T> {
  * AfterSearchSetPagination sets the pagination property of an object after a
  * successful search.
  */
-export declare class AfterSearchSetPagination<T extends Object> extends SearchHandler<T> {
+export declare class AfterSearchSetPagination<T extends Object> extends SearchResultHandler<T> {
     target: {
         pagination?: Pagination;
     };

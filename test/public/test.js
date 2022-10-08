@@ -49,7 +49,7 @@ class Proxy {
 }
 exports.Proxy = Proxy;
 
-},{"@quenk/potoo/lib/actor/resident/immutable":33,"@quenk/potoo/lib/actor/resident/mutable":35}],2:[function(require,module,exports){
+},{"@quenk/potoo/lib/actor/resident/immutable":35,"@quenk/potoo/lib/actor/resident/mutable":37}],2:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Jouvert = void 0;
@@ -116,7 +116,7 @@ class Jouvert {
 }
 exports.Jouvert = Jouvert;
 
-},{"@quenk/potoo/lib/actor/system/vm":39}],3:[function(require,module,exports){
+},{"@quenk/potoo/lib/actor/system/vm":41}],3:[function(require,module,exports){
 "use strict";
 /**
  * This module provides actors for sending requests to a [[Remote]] and
@@ -288,7 +288,7 @@ class SeqSendCallback extends ParSendCallback {
 }
 exports.SeqSendCallback = SeqSendCallback;
 
-},{"./":4,"@quenk/noni/lib/control/monad/future":15,"@quenk/noni/lib/data/function":20,"@quenk/noni/lib/data/type":25,"@quenk/potoo/lib/actor/resident/case":31,"@quenk/potoo/lib/actor/resident/immutable/callback":32}],4:[function(require,module,exports){
+},{"./":4,"@quenk/noni/lib/control/monad/future":17,"@quenk/noni/lib/data/function":22,"@quenk/noni/lib/data/type":27,"@quenk/potoo/lib/actor/resident/case":33,"@quenk/potoo/lib/actor/resident/immutable/callback":34}],4:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Remote = exports.BatchResponse = exports.TransportErr = exports.ParSend = exports.SeqSend = exports.Send = void 0;
@@ -406,60 +406,19 @@ class Remote extends actor_1.Immutable {
 }
 exports.Remote = Remote;
 
-},{"../../actor":1,"@quenk/noni/lib/control/monad/future":15,"@quenk/potoo/lib/actor/resident/case":31}],5:[function(require,module,exports){
+},{"../../actor":1,"@quenk/noni/lib/control/monad/future":17,"@quenk/potoo/lib/actor/resident/case":33}],5:[function(require,module,exports){
 "use strict";
-/**
- * Provides a base data model implementation based on the remote and callback
- * apis. NOTE: Responses received by this API are expected to be in the result
- * format specified.
- */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.RemoteModel = exports.BaseRemoteModel = exports.TaggedHandler = exports.NotFoundHandler = exports.FutureHandler = exports.VoidHandler = exports.GetHandler = exports.SearchHandler = exports.CreateHandler = void 0;
-/** imports */
+exports.FutureHandler = void 0;
 const future_1 = require("@quenk/noni/lib/control/monad/future");
-const maybe_1 = require("@quenk/noni/lib/data/maybe");
-const string_1 = require("@quenk/noni/lib/data/string");
-const record_1 = require("@quenk/noni/lib/data/record");
-const array_1 = require("@quenk/noni/lib/data/array");
-const type_1 = require("@quenk/noni/lib/data/type");
-const request_1 = require("@quenk/jhr/lib/request");
-const callback_1 = require("../callback");
-class DefaultCompleteHandler extends callback_1.AbstractCompleteHandler {
-}
 /**
- * CreateHandler is a CompleteHandler that expects the body of the
- * result to be a [[CreateResult]].
- */
-class CreateHandler extends callback_1.AbstractCompleteHandler {
-}
-exports.CreateHandler = CreateHandler;
-/**
- * SearchHandler is a CompleteHandler that expects the body of the
- * result to be a [[SearchResult]].
- */
-class SearchHandler extends callback_1.AbstractCompleteHandler {
-}
-exports.SearchHandler = SearchHandler;
-/**
- * GetHandler is a CompleteHandler that expects the body of the
- * result to be a [[GetResult]].
- */
-class GetHandler extends callback_1.AbstractCompleteHandler {
-}
-exports.GetHandler = GetHandler;
-/**
- * VoidHandler is a CompleteHandler that expects the body of the
- * result to be empty.
- */
-class VoidHandler extends callback_1.AbstractCompleteHandler {
-}
-exports.VoidHandler = VoidHandler;
-/**
- * FutureHandler is used to proxy the events of a request's lifecycle to a noni
- * [[Future]].
+ * FutureHandler is used internally to proxy the events of the request's
+ * lifecycle to a noni [[Future]].
  *
- * The [[CompleteHandler]] provided also receives the events as they happen
- * however work is assumed to be handled in the Future.
+ * This handler is what allows requests to be hidden behind the [[Model]]
+ * interface. The [[CompleteHandler]] provided receives response and can
+ * handle the response however the result of the model futures can be used
+ * instead.
  */
 class FutureHandler {
     constructor(handler, onFailure, onSuccess) {
@@ -507,84 +466,41 @@ class FutureHandler {
     }
 }
 exports.FutureHandler = FutureHandler;
+
+},{"@quenk/noni/lib/control/monad/future":17}],6:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.VoidHandler = void 0;
+const callback_1 = require("../../callback");
 /**
- * NotFoundHandler does not treat a 404 as an error.
+ * VoidHandler is a [[CompleteHandler]] that expects the body of the
+ * result to be empty.
  *
- * The onNotFound handler is used instead.
+ * It does nothing.
  */
-class NotFoundHandler extends FutureHandler {
-    constructor(handler, onFailure, onNotFound, onSuccess) {
-        super(handler, onFailure, onSuccess);
-        this.handler = handler;
-        this.onFailure = onFailure;
-        this.onNotFound = onNotFound;
-        this.onSuccess = onSuccess;
-    }
-    onClientError(r) {
-        let that = this;
-        let superOnClientError = () => super.onClientError(r);
-        return (0, future_1.doFuture)(function* () {
-            if (r.code === 404)
-                that.onNotFound();
-            else
-                yield (0, future_1.wrap)(superOnClientError());
-            return future_1.voidPure;
-        });
-    }
+class VoidHandler extends callback_1.AbstractCompleteHandler {
 }
-exports.NotFoundHandler = NotFoundHandler;
-const voidHandler = new VoidHandler();
-const transportErrTag = { '$error': 'TransportErr' };
+exports.VoidHandler = VoidHandler;
+
+},{"../../callback":3}],7:[function(require,module,exports){
+"use strict";
 /**
- * TaggedHandler allows for the selective application of handlers based on tags
- * applied to the initial request.
- *
- * It is up to the model that uses this handler to properly tag requests sent
- * out. The base remote model adds the "path", "verb" and "method" tags by
- * default.
+ * Provides a base data model implementation based on the remote and callback
+ * apis. NOTE: Responses received by this API are expected to be in the result
+ * format specified.
  */
-class TaggedHandler extends callback_1.AbstractCompleteHandler {
-    constructor(handlers) {
-        super();
-        this.handlers = handlers;
-    }
-    /**
-     * create a TaggedHandler instance normalizing the handler part of each
-     * spec.
-     *
-     * Using this method is preferred to the constructor.
-     */
-    static create(specs) {
-        return new TaggedHandler(specs.map(([name, value, handler]) => [
-            name,
-            value,
-            Array.isArray(handler) ?
-                new callback_1.CompositeCompleteHandler(handler) :
-                handler
-        ]));
-    }
-    _getHandler(tags = {}) {
-        if (!(0, record_1.empty)(tags)) {
-            let mspec = (0, array_1.find)(this.handlers, ([name, value]) => (tags[name] === value));
-            if (mspec.isJust())
-                return mspec.get()[2]; //handler
-        }
-        return voidHandler;
-    }
-    onError(e) {
-        return this._getHandler(transportErrTag).onError(e);
-    }
-    onClientError(res) {
-        return this._getHandler(res.request.options.tags).onClientError(res);
-    }
-    onServerError(res) {
-        return this._getHandler(res.request.options.tags).onServerError(res);
-    }
-    onComplete(res) {
-        return this._getHandler(res.request.options.tags).onComplete(res);
-    }
-}
-exports.TaggedHandler = TaggedHandler;
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.RemoteModel = exports.BaseRemoteModel = void 0;
+/** imports */
+const future_1 = require("@quenk/noni/lib/control/monad/future");
+const maybe_1 = require("@quenk/noni/lib/data/maybe");
+const string_1 = require("@quenk/noni/lib/data/string");
+const record_1 = require("@quenk/noni/lib/data/record");
+const type_1 = require("@quenk/noni/lib/data/type");
+const request_1 = require("@quenk/jhr/lib/request");
+const callback_1 = require("../callback");
+const void_1 = require("./handler/void");
+const future_2 = require("./handler/future");
 /**
  * BaseRemoteModel is a [[Model]] implementation that uses the remote actor API
  * underneath to provide a CSUGR interface.
@@ -594,7 +510,7 @@ exports.TaggedHandler = TaggedHandler;
  * RemoteModels manually.
  */
 class BaseRemoteModel {
-    constructor(remote, spawn, handler = new DefaultCompleteHandler()) {
+    constructor(remote, spawn, handler = new void_1.VoidHandler()) {
         this.remote = remote;
         this.spawn = spawn;
         this.handler = handler;
@@ -607,7 +523,7 @@ class BaseRemoteModel {
      */
     send(req) {
         return (0, future_1.fromCallback)(cb => {
-            this.spawn((s) => new callback_1.SendCallback(s, this.remote, req, new FutureHandler(this.handler, cb, r => cb(null, r))));
+            this.spawn((s) => new callback_1.SendCallback(s, this.remote, req, new future_2.FutureHandler(this.handler, cb, r => cb(null, r))));
         });
     }
 }
@@ -616,7 +532,7 @@ exports.BaseRemoteModel = BaseRemoteModel;
  * RemoteModel implementation
  */
 class RemoteModel extends BaseRemoteModel {
-    constructor(remote, paths, spawn, context = {}, handler = new DefaultCompleteHandler()) {
+    constructor(remote, paths, spawn, context = {}, handler = new void_1.VoidHandler()) {
         super(remote, spawn, handler);
         this.remote = remote;
         this.paths = paths;
@@ -698,7 +614,7 @@ class RemoteModel extends BaseRemoteModel {
 }
 exports.RemoteModel = RemoteModel;
 
-},{"../callback":3,"@quenk/jhr/lib/request":9,"@quenk/noni/lib/control/monad/future":15,"@quenk/noni/lib/data/array":18,"@quenk/noni/lib/data/maybe":21,"@quenk/noni/lib/data/record":22,"@quenk/noni/lib/data/string":24,"@quenk/noni/lib/data/type":25}],6:[function(require,module,exports){
+},{"../callback":3,"./handler/future":5,"./handler/void":6,"@quenk/jhr/lib/request":11,"@quenk/noni/lib/control/monad/future":17,"@quenk/noni/lib/data/maybe":23,"@quenk/noni/lib/data/record":24,"@quenk/noni/lib/data/string":26,"@quenk/noni/lib/data/type":27}],8:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.RemoteObserver = exports.BatchResponse = exports.SeqSend = exports.ParSend = exports.Send = exports.TransportErr = void 0;
@@ -806,7 +722,7 @@ class RemoteObserver extends actor_1.Mutable {
 }
 exports.RemoteObserver = RemoteObserver;
 
-},{"../":4,"../../../actor":1,"@quenk/jhr/lib/response":11,"@quenk/noni/lib/control/match":14,"@quenk/potoo/lib/actor/resident/case":31}],7:[function(require,module,exports){
+},{"../":4,"../../../actor":1,"@quenk/jhr/lib/response":13,"@quenk/noni/lib/control/match":16,"@quenk/potoo/lib/actor/resident/case":33}],9:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Director = exports.ActorSuspended = exports.RouteChanged = exports.Supervisor = exports.SuspendActor = exports.SuspendTimer = exports.CancelTimer = exports.Suspended = exports.Suspend = exports.Reload = exports.Resume = exports.SuspendCase = exports.DEFAULT_TIMEOUT = void 0;
@@ -1078,7 +994,7 @@ class Director extends actor_1.Immutable {
 exports.Director = Director;
 const defaultConfig = (c) => (0, record_1.merge)({ timeout: exports.DEFAULT_TIMEOUT }, c);
 
-},{"../../actor":1,"@quenk/noni/lib/control/monad/future":15,"@quenk/noni/lib/data/record":22,"@quenk/noni/lib/data/type":25,"@quenk/potoo/lib/actor/resident/case":31}],8:[function(require,module,exports){
+},{"../../actor":1,"@quenk/noni/lib/control/monad/future":17,"@quenk/noni/lib/data/record":24,"@quenk/noni/lib/data/type":27,"@quenk/potoo/lib/actor/resident/case":33}],10:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.MockAgent = void 0;
@@ -1123,7 +1039,7 @@ class MockAgent {
 }
 exports.MockAgent = MockAgent;
 
-},{"../request/method":10,"../response":11,"@quenk/noni/lib/control/monad/future":15,"@quenk/test/lib/mock":61}],9:[function(require,module,exports){
+},{"../request/method":12,"../response":13,"@quenk/noni/lib/control/monad/future":17,"@quenk/test/lib/mock":63}],11:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Delete = exports.Patch = exports.Put = exports.Post = exports.Get = exports.Head = void 0;
@@ -1194,7 +1110,7 @@ class Delete extends Post {
 }
 exports.Delete = Delete;
 
-},{"./method":10}],10:[function(require,module,exports){
+},{"./method":12}],12:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Method = void 0;
@@ -1211,7 +1127,7 @@ var Method;
     Method["Patch"] = "PATCH";
 })(Method = exports.Method || (exports.Method = {}));
 
-},{}],11:[function(require,module,exports){
+},{}],13:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.createResponse = exports.InternalServerError = exports.ServerError = exports.Conflict = exports.NotFound = exports.Forbidden = exports.Unauthorized = exports.BadRequest = exports.ClientError = exports.Created = exports.NoContent = exports.Accepted = exports.Ok = exports.Success = exports.GenericResponse = void 0;
@@ -1412,7 +1328,7 @@ const createResponse = (code, body, headers, request) => {
 };
 exports.createResponse = createResponse;
 
-},{"./status":12}],12:[function(require,module,exports){
+},{"./status":14}],14:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.NOT_IMPLEMENTED = exports.INTERNAL_SERVER_ERROR = exports.UNAVAILABLE_FOR_LEGAL_RREASONS = exports.REQUEST_HEADER_FIELDS_TOO_LARGE = exports.TOO_MANY_REQUESTS = exports.PRECONDITION_REQUIRED = exports.UPGRADE_REQUIRED = exports.FAILED_DEPENDENCY = exports.LOCKED = exports.UNPROCESSABLE_ENTITY = exports.TEAPOT = exports.EXPECTATION_FAILED = exports.REQUESTED_RANGE_NOT_SATISFIABLE = exports.UNSUPPORTED_MEDIA_TYPE = exports.REQUEST_URI_TOO_LONG = exports.REQUEST_ENTITY_TOO_LARGE = exports.PRECONDITION_FAILED = exports.LENGTH_REQUIRED = exports.GONE = exports.CONFLICT = exports.REQUEST_TIMEOUT = exports.PROXY_AUTH_REQUIRED = exports.NOT_ACCEPTABLE = exports.METHOD_NOT_ALLOWED = exports.NOT_FOUND = exports.FORBIDDEN = exports.PAYMENT_REQUIRED = exports.UNAUTHORIZED = exports.BAD_REQUEST = exports.PERMANENT_REDIRECT = exports.TEMPORARY_REDIRECT = exports.USE_PROXY = exports.NOT_MODIFIED = exports.SEE_OTHER = exports.FOUND = exports.MOVED_PERMANENTLY = exports.MULTIPLE_CHOICES = exports.IM_USED = exports.ALREADY_REPORTED = exports.MULTI_STATUS = exports.PARTIAL_CONTENT = exports.RESET_CONTENT = exports.NO_CONTENT = exports.NON_AUTHORITATIV_INFO = exports.ACCEPTED = exports.CREATED = exports.OK = exports.PROCESSING = exports.SWITCHING_PROTOCOLS = exports.CONTINUE = void 0;
@@ -1477,7 +1393,7 @@ exports.LOOP_DETECTED = 508;
 exports.NOT_EXTENDED = 510;
 exports.NETWORK_AUTHENTICATION_REQUIRED = 511;
 
-},{}],13:[function(require,module,exports){
+},{}],15:[function(require,module,exports){
 "use strict";
 /**
  * This module provides functions and types to make dealing with ES errors
@@ -1522,7 +1438,7 @@ const attempt = (f) => {
 };
 exports.attempt = attempt;
 
-},{"../data/either":19}],14:[function(require,module,exports){
+},{"../data/either":21}],16:[function(require,module,exports){
 "use strict";
 /**
  * The match module provides a best effort pattern runtime pattern matching
@@ -1608,7 +1524,7 @@ exports.Matched = Matched;
 const match = (value) => new UnMatched(value);
 exports.match = match;
 
-},{"../data/type":25}],15:[function(require,module,exports){
+},{"../data/type":27}],17:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.doFuture = exports.liftP = exports.fromExcept = exports.toPromise = exports.some = exports.race = exports.reduce = exports.sequential = exports.parallel = exports.batch = exports.fromCallback = exports.fromAbortable = exports.wait = exports.delay = exports.attempt = exports.raise = exports.run = exports.wrap = exports.voidPure = exports.pure = exports.Run = exports.Raise = exports.Trap = exports.Finally = exports.Catch = exports.Call = exports.Bind = exports.Pure = exports.Future = void 0;
@@ -2142,7 +2058,7 @@ exports.liftP = liftP;
 const doFuture = (f) => (0, _1.doN)(f);
 exports.doFuture = doFuture;
 
-},{"../../data/array":18,"../../data/function":20,"../error":13,"../timer":17,"./":16}],16:[function(require,module,exports){
+},{"../../data/array":20,"../../data/function":22,"../error":15,"../timer":19,"./":18}],18:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.doMonad = exports.doN = exports.pipeN = exports.pipe = exports.compose = exports.join = void 0;
@@ -2226,7 +2142,7 @@ const doN = (f) => {
 exports.doN = doN;
 exports.doMonad = exports.doN;
 
-},{}],17:[function(require,module,exports){
+},{}],19:[function(require,module,exports){
 (function (process){(function (){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
@@ -2280,7 +2196,7 @@ const throttle = (f, duration) => {
 exports.throttle = throttle;
 
 }).call(this)}).call(this,require('_process'))
-},{"_process":87}],18:[function(require,module,exports){
+},{"_process":89}],20:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.find = exports.compact = exports.flatten = exports.combine = exports.make = exports.removeAt = exports.remove = exports.dedupe = exports.distribute = exports.group = exports.partition = exports.concat = exports.flatMap = exports.map = exports.contains = exports.empty = exports.tail = exports.head = void 0;
@@ -2443,7 +2359,7 @@ const find = (list, cb) => {
 };
 exports.find = find;
 
-},{"../../math":26,"../maybe":21,"../record":22}],19:[function(require,module,exports){
+},{"../../math":28,"../maybe":23,"../record":24}],21:[function(require,module,exports){
 "use strict";
 /**
  * Either represents a value that may be one of two types.
@@ -2616,7 +2532,7 @@ exports.fromBoolean = fromBoolean;
 const either = (f) => (g) => (e) => (e instanceof Right) ? g(e.takeRight()) : f(e.takeLeft());
 exports.either = either;
 
-},{"./maybe":21}],20:[function(require,module,exports){
+},{"./maybe":23}],22:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.noop = exports.curry5 = exports.curry4 = exports.curry3 = exports.curry = exports.id = exports.identity = exports.flip = exports.cons = exports.compose5 = exports.compose4 = exports.compose3 = exports.compose = void 0;
@@ -2682,7 +2598,7 @@ exports.curry5 = curry5;
 const noop = () => { };
 exports.noop = noop;
 
-},{}],21:[function(require,module,exports){
+},{}],23:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.fromNaN = exports.fromNumber = exports.fromBoolean = exports.fromString = exports.fromObject = exports.fromArray = exports.fromNullable = exports.just = exports.nothing = exports.of = exports.Just = exports.Nothing = void 0;
@@ -2909,7 +2825,7 @@ exports.fromNumber = fromNumber;
 const fromNaN = (n) => isNaN(n) ? new Nothing() : new Just(n);
 exports.fromNaN = fromNaN;
 
-},{}],22:[function(require,module,exports){
+},{}],24:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.pickValue = exports.pickKey = exports.make = exports.rcompact = exports.compact = exports.isBadKey = exports.set = exports.every = exports.some = exports.empty = exports.count = exports.clone = exports.hasKey = exports.values = exports.group = exports.partition = exports.exclude = exports.rmerge5 = exports.rmerge4 = exports.rmerge3 = exports.rmerge = exports.merge5 = exports.merge4 = exports.merge3 = exports.merge = exports.filter = exports.reduce = exports.forEach = exports.mapTo = exports.map = exports.keys = exports.isRecord = exports.assign = exports.badKeys = void 0;
@@ -3213,7 +3129,7 @@ exports.pickKey = pickKey;
 const pickValue = (rec, test) => (0, exports.reduce)(rec, (0, maybe_1.nothing)(), (p, c, k) => p.isJust() ? p : test(c, k, rec) ? (0, maybe_1.just)(c) : p);
 exports.pickValue = pickValue;
 
-},{"../array":18,"../maybe":21,"../type":25}],23:[function(require,module,exports){
+},{"../array":20,"../maybe":23,"../type":27}],25:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.project = exports.unflatten = exports.flatten = exports.unescapeRecord = exports.escapeRecord = exports.unescape = exports.escape = exports.set = exports.getString = exports.getDefault = exports.get = exports.unsafeGet = exports.tokenize = void 0;
@@ -3471,7 +3387,7 @@ exports.unflatten = unflatten;
 const project = (spec, rec) => (0, _1.reduce)(spec, {}, (p, c, k) => (c === true) ? (0, exports.set)(k, (0, exports.unsafeGet)(k, rec), p) : p);
 exports.project = project;
 
-},{"../maybe":21,"./":22}],24:[function(require,module,exports){
+},{"../maybe":23,"./":24}],26:[function(require,module,exports){
 "use strict";
 /**
  *  Common functions used to manipulate strings.
@@ -3643,7 +3559,7 @@ exports.numeric = numeric;
 const alphanumeric = (str) => str.replace(/[\W]|[_]/g, '');
 exports.alphanumeric = alphanumeric;
 
-},{"../function":20,"../record":22,"../record/path":23}],25:[function(require,module,exports){
+},{"../function":22,"../record":24,"../record/path":25}],27:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.toString = exports.show = exports.test = exports.is = exports.isPrim = exports.isFunction = exports.isBoolean = exports.isNumber = exports.isString = exports.isArray = exports.isObject = exports.Any = void 0;
@@ -3764,7 +3680,7 @@ exports.show = show;
 const toString = (val) => (val == null) ? '' : String(val);
 exports.toString = toString;
 
-},{}],26:[function(require,module,exports){
+},{}],28:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.round = exports.isMultipleOf = void 0;
@@ -3809,7 +3725,7 @@ const round = (x, n = 0) => {
 };
 exports.round = round;
 
-},{}],27:[function(require,module,exports){
+},{}],29:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.isGroup = exports.isChild = exports.getId = exports.getParent = exports.make = exports.isRestricted = exports.ADDRESS_RESTRICTED = exports.ADDRESS_EMPTY = exports.ADDRESS_SYSTEM = exports.ADDRESS_DISCARD = exports.SEPERATOR = void 0;
@@ -3884,7 +3800,7 @@ exports.isChild = isChild;
 const isGroup = (addr) => ((addr[0] === '$') && (addr !== '$'));
 exports.isGroup = isGroup;
 
-},{"@quenk/noni/lib/data/array":18,"@quenk/noni/lib/data/string":24}],28:[function(require,module,exports){
+},{"@quenk/noni/lib/data/array":20,"@quenk/noni/lib/data/string":26}],30:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.isResident = exports.isRouter = exports.isBuffered = exports.isImmutable = exports.FLAG_EXIT_AFTER_RUN = exports.FLAG_RESIDENT = exports.FLAG_ROUTER = exports.FLAG_EXIT_AFTER_RECEIVE = exports.FLAG_BUFFERED = exports.FLAG_IMMUTABLE = void 0;
@@ -3915,7 +3831,7 @@ exports.isRouter = isRouter;
 const isResident = (f) => (f & exports.FLAG_RESIDENT) === exports.FLAG_RESIDENT;
 exports.isResident = isResident;
 
-},{}],29:[function(require,module,exports){
+},{}],31:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Envelope = void 0;
@@ -3933,7 +3849,7 @@ class Envelope {
 }
 exports.Envelope = Envelope;
 
-},{}],30:[function(require,module,exports){
+},{}],32:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CaseFunction = void 0;
@@ -3968,7 +3884,7 @@ class CaseFunction {
 }
 exports.CaseFunction = CaseFunction;
 
-},{}],31:[function(require,module,exports){
+},{}],33:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Default = exports.caseOf = exports.Case = void 0;
@@ -4017,7 +3933,7 @@ class Default extends Case {
 }
 exports.Default = Default;
 
-},{"@quenk/noni/lib/data/type":25}],32:[function(require,module,exports){
+},{"@quenk/noni/lib/data/type":27}],34:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Callback = void 0;
@@ -4032,7 +3948,7 @@ class Callback extends _1.Immutable {
 }
 exports.Callback = Callback;
 
-},{"./":33}],33:[function(require,module,exports){
+},{"./":35}],35:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Immutable = void 0;
@@ -4061,7 +3977,7 @@ class Immutable extends __1.AbstractResident {
 }
 exports.Immutable = Immutable;
 
-},{"../":34,"../../flags":28,"../case/function":30}],34:[function(require,module,exports){
+},{"../":36,"../../flags":30,"../case/function":32}],36:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ref = exports.AbstractResident = void 0;
@@ -4146,7 +4062,7 @@ const getSelf = (actor) => {
     };
 };
 
-},{"../system/vm/runtime/error":42,"@quenk/noni/lib/data/record":22,"@quenk/noni/lib/data/type":25}],35:[function(require,module,exports){
+},{"../system/vm/runtime/error":44,"@quenk/noni/lib/data/record":24,"@quenk/noni/lib/data/type":27}],37:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Mutable = void 0;
@@ -4178,7 +4094,7 @@ class Mutable extends __1.AbstractResident {
 }
 exports.Mutable = Mutable;
 
-},{"../":34,"../../flags":28,"../case/function":30}],36:[function(require,module,exports){
+},{"../":36,"../../flags":30,"../case/function":32}],38:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.TaskActorScript = exports.MutableActorScript = exports.CallbackActorScript = exports.ImmutableActorScript = exports.GenericResidentScript = void 0;
@@ -4316,7 +4232,7 @@ const immutableExec = (actor, thr, msg) => {
     }
 };
 
-},{"../system/vm/event":38,"../system/vm/runtime/error":42,"../system/vm/runtime/op":47,"../system/vm/script/info":51,"../system/vm/scripts":53,"@quenk/noni/lib/data/array":18}],37:[function(require,module,exports){
+},{"../system/vm/event":40,"../system/vm/runtime/error":44,"../system/vm/runtime/op":49,"../system/vm/script/info":53,"../system/vm/scripts":55,"@quenk/noni/lib/data/array":20}],39:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.defaults = void 0;
@@ -4334,7 +4250,7 @@ const defaults = () => ({
 });
 exports.defaults = defaults;
 
-},{"./log":40}],38:[function(require,module,exports){
+},{"./log":42}],40:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getLevel = exports.events = exports.EVENT_ACTOR_STOPPED = exports.EVENT_ACTOR_STARTED = exports.EVENT_ACTOR_CREATED = exports.EVENT_MESSAGE_DROPPED = exports.EVENT_MESSAGE_READ = exports.EVENT_EXEC_ACTOR_CHANGED = exports.EVENT_EXEC_ACTOR_GONE = exports.EVENT_EXEC_INSTANCE_STALE = exports.EVENT_SEND_FAILED = exports.EVENT_SEND_OK = void 0;
@@ -4393,7 +4309,7 @@ const getLevel = (e) => exports.events.hasOwnProperty(e) ?
     exports.events[e].level : log_1.LOG_LEVEL_DEBUG;
 exports.getLevel = getLevel;
 
-},{"./log":40}],39:[function(require,module,exports){
+},{"./log":42}],41:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.PVM = exports.MAX_WORK_LOAD = void 0;
@@ -4761,7 +4677,7 @@ const normalize = (spawnable) => {
     });
 };
 
-},{"../../address":27,"../../flags":28,"../../message":29,"../../template":59,"./conf":37,"./event":38,"./log":40,"./runtime/context":41,"./runtime/error":42,"./runtime/heap/ledger":43,"./runtime/op":47,"./scripts/factory":52,"./state":54,"./thread":55,"./thread/shared":56,"./thread/shared/scheduler":57,"@quenk/noni/lib/control/monad/future":15,"@quenk/noni/lib/data/array":18,"@quenk/noni/lib/data/either":19,"@quenk/noni/lib/data/maybe":21,"@quenk/noni/lib/data/record":22,"@quenk/noni/lib/data/type":25}],40:[function(require,module,exports){
+},{"../../address":29,"../../flags":30,"../../message":31,"../../template":61,"./conf":39,"./event":40,"./log":42,"./runtime/context":43,"./runtime/error":44,"./runtime/heap/ledger":45,"./runtime/op":49,"./scripts/factory":54,"./state":56,"./thread":57,"./thread/shared":58,"./thread/shared/scheduler":59,"@quenk/noni/lib/control/monad/future":17,"@quenk/noni/lib/data/array":20,"@quenk/noni/lib/data/either":21,"@quenk/noni/lib/data/maybe":23,"@quenk/noni/lib/data/record":24,"@quenk/noni/lib/data/type":27}],42:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.LOG_LEVEL_ERROR = exports.LOG_LEVEL_WARN = exports.LOG_LEVEL_NOTICE = exports.LOG_LEVEL_INFO = exports.LOG_LEVEL_DEBUG = void 0;
@@ -4771,7 +4687,7 @@ exports.LOG_LEVEL_NOTICE = 5;
 exports.LOG_LEVEL_WARN = 4;
 exports.LOG_LEVEL_ERROR = 3;
 
-},{}],41:[function(require,module,exports){
+},{}],43:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.newContext = void 0;
@@ -4789,7 +4705,7 @@ const newContext = (aid, actor, address, template) => ({
 });
 exports.newContext = newContext;
 
-},{}],42:[function(require,module,exports){
+},{}],44:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.UnknownFunErr = exports.UnknownInstanceErr = exports.InvalidFunctionErr = exports.InvalidConstructorErr = exports.MissingInfoErr = exports.InvalidPropertyIndex = exports.StackEmptyErr = exports.IntegerOverflowErr = exports.MissingSymbolErr = exports.UnknownAddressErr = exports.EmptyMailboxErr = exports.NoMailboxErr = exports.NoReceiverErr = exports.IllegalStopErr = exports.UnexpectedDataType = exports.NullPointerErr = exports.JumpOutOfBoundsErr = exports.NullFunctionPointerErr = exports.NullTemplatePointerErr = exports.DuplicateAddressErr = exports.UnknownParentAddressErr = exports.InvalidIdErr = exports.Error = void 0;
@@ -5030,7 +4946,7 @@ class UnknownFunErr extends Error {
 }
 exports.UnknownFunErr = UnknownFunErr;
 
-},{"../../../address":27,"./stack/frame":49}],43:[function(require,module,exports){
+},{"../../../address":29,"./stack/frame":51}],45:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.isHeapAddress = exports.DefaultHeapLedger = void 0;
@@ -5130,7 +5046,7 @@ const isHeapAddress = (ref) => {
 exports.isHeapAddress = isHeapAddress;
 const threadId = (name) => Number((name.split('@')[1]).split('#')[0]);
 
-},{"../../script/info":51,"../stack/frame":49,"@quenk/noni/lib/data/maybe":21,"@quenk/noni/lib/data/record":22,"@quenk/noni/lib/data/type":25}],44:[function(require,module,exports){
+},{"../../script/info":53,"../stack/frame":51,"@quenk/noni/lib/data/maybe":23,"@quenk/noni/lib/data/record":24,"@quenk/noni/lib/data/type":27}],46:[function(require,module,exports){
 "use strict";
 //TODO: Relocate some of these types.
 Object.defineProperty(exports, "__esModule", { value: true });
@@ -5143,7 +5059,7 @@ exports.OPERAND_RANGE_START = 0x0;
 exports.OPERAND_RANGE_END = 0xffffff;
 exports.MAX_INSTRUCTION = 0xffffffff;
 
-},{}],45:[function(require,module,exports){
+},{}],47:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.stop = exports.maildq = exports.mailcount = exports.recvcount = exports.recv = exports.send = exports.self = exports.alloc = void 0;
@@ -5268,7 +5184,7 @@ const stop = (r, f, _) => {
 };
 exports.stop = stop;
 
-},{}],46:[function(require,module,exports){
+},{}],48:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ifneqjmp = exports.ifeqjmp = exports.ifnzjmp = exports.ifzjmp = exports.jmp = exports.raise = exports.call = exports.addui32 = exports.ceq = exports.load = exports.store = exports.dup = exports.ldn = exports.lds = exports.pushui32 = exports.pushui16 = exports.pushui8 = exports.nop = void 0;
@@ -5512,7 +5428,7 @@ const ifneqjmp = (r, f, oper) => {
 };
 exports.ifneqjmp = ifneqjmp;
 
-},{"../error":42,"../stack/frame":49,"@quenk/noni/lib/data/array":18}],47:[function(require,module,exports){
+},{"../error":44,"../stack/frame":51,"@quenk/noni/lib/data/array":20}],49:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.toLog = exports.toName = exports.handlers = exports.opcodes = exports.ARELM = exports.ARLENGTH = exports.GETPROP = exports.STOP = exports.SELF = exports.MAILDQ = exports.MAILCOUNT = exports.RECVCOUNT = exports.RECV = exports.SEND = exports.ALLOC = exports.IFNEQJMP = exports.IFEQJMP = exports.IFNZJMP = exports.IFZJMP = exports.JMP = exports.RAISE = exports.CALL = exports.ADDUI32 = exports.CEQ = exports.LOAD = exports.STORE = exports.DUP = exports.LDN = exports.LDS = exports.PUSHUI32 = exports.PUSHUI16 = exports.PUSHUI8 = exports.NOP = exports.OP_CODE_RANGE_STEP = exports.OP_CODE_RANGE_HIGH = exports.OP_CODE_RANGE_LOW = void 0;
@@ -5724,7 +5640,7 @@ exports.toName = toName;
 const toLog = (op, r, f, oper) => exports.opcodes.hasOwnProperty(op) ? exports.opcodes[op].log(r, f, oper) : [];
 exports.toLog = toLog;
 
-},{"../stack/frame":49,"./actor":45,"./base":46,"./object":48,"@quenk/noni/lib/data/record":22}],48:[function(require,module,exports){
+},{"../stack/frame":51,"./actor":47,"./base":48,"./object":50,"@quenk/noni/lib/data/record":24}],50:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.arelm = exports.arlength = exports.getprop = void 0;
@@ -5791,7 +5707,7 @@ const arelm = (r, f, _) => {
 };
 exports.arelm = arelm;
 
-},{}],49:[function(require,module,exports){
+},{}],51:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.StackFrame = exports.BYTE_CONSTANT_INFO = exports.BYTE_CONSTANT_STR = exports.BYTE_CONSTANT_NUM = exports.DATA_TYPE_SELF = exports.DATA_TYPE_MAILBOX = exports.DATA_TYPE_LOCAL = exports.DATA_TYPE_HEAP_FUN = exports.DATA_TYPE_HEAP_FOREIGN = exports.DATA_TYPE_HEAP_OBJECT = exports.DATA_TYPE_HEAP_STRING = exports.DATA_TYPE_INFO = exports.DATA_TYPE_STRING = exports.DATA_MAX_SAFE_UINT32 = exports.DATA_MAX_SIZE = exports.DATA_MASK_VALUE32 = exports.DATA_MASK_VALUE24 = exports.DATA_MASK_VALUE16 = exports.DATA_MASK_VALUE8 = exports.DATA_MASK_TYPE = exports.DATA_RANGE_TYPE_STEP = exports.DATA_RANGE_TYPE_LOW = exports.DATA_RANGE_TYPE_HIGH = void 0;
@@ -6024,7 +5940,7 @@ const notAFunction = (name) => (0, either_1.left)(new error.InvalidFunctionErr(n
 const nullFunPtr = (addr) => (0, either_1.left)(new error.NullFunctionPointerErr(addr));
 const missingSymbol = (data) => (0, either_1.left)(new error.MissingSymbolErr(data));
 
-},{"../../script":50,"../../type":58,"../error":42,"@quenk/noni/lib/data/either":19,"@quenk/noni/lib/data/maybe":21}],50:[function(require,module,exports){
+},{"../../script":52,"../../type":60,"../error":44,"@quenk/noni/lib/data/either":21,"@quenk/noni/lib/data/maybe":23}],52:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getInfo = exports.PScript = exports.CONSTANTS_INDEX_STRING = exports.CONSTANTS_INDEX_NUMBER = void 0;
@@ -6054,7 +5970,7 @@ const getInfo = (s, idx) => {
 };
 exports.getInfo = getInfo;
 
-},{"../runtime/error":42,"@quenk/noni/lib/data/either":19}],51:[function(require,module,exports){
+},{"../runtime/error":44,"@quenk/noni/lib/data/either":21}],53:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.funType = exports.objectType = exports.arrayType = exports.stringType = exports.booleanType = exports.uint32Type = exports.uint16Type = exports.uint8Type = exports.int32Type = exports.int16Type = exports.int8Type = exports.voidType = exports.NewPropInfo = exports.NewArrayTypeInfo = exports.NewTypeInfo = exports.NewForeignFunInfo = exports.NewFunInfo = exports.NewArrayInfo = exports.NewObjectInfo = exports.NewStringInfo = exports.NewBooleanInfo = exports.NewInt32Info = exports.NewInt16Info = exports.NewInt8Info = exports.NewUInt32Info = exports.NewUInt16Info = exports.NewUInt8Info = exports.VoidInfo = exports.NewInfo = void 0;
@@ -6311,7 +6227,7 @@ exports.objectType = new NewTypeInfo('object', 0, [], types.TYPE_OBJECT);
  */
 exports.funType = new NewTypeInfo('function', 0, [], types.TYPE_FUN);
 
-},{"../type":58}],52:[function(require,module,exports){
+},{"../type":60}],54:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ScriptFactory = void 0;
@@ -6352,7 +6268,7 @@ class ScriptFactory {
 }
 exports.ScriptFactory = ScriptFactory;
 
-},{"..":39,"../../../resident":34,"../../../resident/immutable":33,"../../../resident/immutable/callback":32,"../../../resident/mutable":35,"../../../resident/scripts":36,"../scripts":53}],53:[function(require,module,exports){
+},{"..":41,"../../../resident":36,"../../../resident/immutable":35,"../../../resident/immutable/callback":34,"../../../resident/mutable":37,"../../../resident/scripts":38,"../scripts":55}],55:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.VMActorScript = exports.NoScript = exports.BaseScript = exports.commonFunctions = void 0;
@@ -6400,7 +6316,7 @@ class VMActorScript extends BaseScript {
 }
 exports.VMActorScript = VMActorScript;
 
-},{"../runtime/op":47,"../script/info":51}],54:[function(require,module,exports){
+},{"../runtime/op":49,"../script/info":53}],56:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.destroyMessageBuffer = exports.createMessageBuffer = exports.removeMember = exports.putMember = exports.getGroup = exports.removeGroup = exports.removeRoute = exports.putRoute = exports.getRouter = exports.getParent = exports.getChildren = exports.getAddress = exports.remove = exports.put = exports.get = exports.exists = void 0;
@@ -6532,7 +6448,7 @@ const destroyMessageBuffer = (s, addr) => {
 };
 exports.destroyMessageBuffer = destroyMessageBuffer;
 
-},{"../../address":27,"@quenk/noni/lib/data/maybe":21,"@quenk/noni/lib/data/record":22,"@quenk/noni/lib/data/string":24}],55:[function(require,module,exports){
+},{"../../address":29,"@quenk/noni/lib/data/maybe":23,"@quenk/noni/lib/data/record":24,"@quenk/noni/lib/data/string":26}],57:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.THREAD_STATE_INVALID = exports.THREAD_STATE_ERROR = exports.THREAD_STATE_WAIT = exports.THREAD_STATE_RUN = exports.THREAD_STATE_IDLE = void 0;
@@ -6542,7 +6458,7 @@ exports.THREAD_STATE_WAIT = 2;
 exports.THREAD_STATE_ERROR = 3;
 exports.THREAD_STATE_INVALID = 4;
 
-},{}],56:[function(require,module,exports){
+},{}],58:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.makeFrameName = exports.SharedThread = exports.Job = void 0;
@@ -6707,7 +6623,7 @@ const makeFrameName = (thread, funName) => (0, array_1.empty)(thread.fstack) ?
     `${(0, array_1.tail)(thread.fstack).name}/${funName}`;
 exports.makeFrameName = makeFrameName;
 
-},{"../":55,"../../runtime":44,"../../runtime/error":42,"../../runtime/heap/ledger":43,"../../runtime/op":47,"../../runtime/stack/frame":49,"../../type":58,"@quenk/noni/lib/control/monad/future":15,"@quenk/noni/lib/data/array":18,"@quenk/noni/lib/data/maybe":21}],57:[function(require,module,exports){
+},{"../":57,"../../runtime":46,"../../runtime/error":44,"../../runtime/heap/ledger":45,"../../runtime/op":49,"../../runtime/stack/frame":51,"../../type":60,"@quenk/noni/lib/control/monad/future":17,"@quenk/noni/lib/data/array":20,"@quenk/noni/lib/data/maybe":23}],59:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.SharedScheduler = void 0;
@@ -6770,7 +6686,7 @@ class SharedScheduler {
 }
 exports.SharedScheduler = SharedScheduler;
 
-},{"../":55,"@quenk/noni/lib/data/array":18}],58:[function(require,module,exports){
+},{"../":57,"@quenk/noni/lib/data/array":20}],60:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getType = exports.TYPE_CONS = exports.TYPE_FUN = exports.TYPE_ARRAY = exports.TYPE_OBJECT = exports.TYPE_STRING = exports.TYPE_BOOLEAN = exports.TYPE_INT32 = exports.TYPE_INT16 = exports.TYPE_INT8 = exports.TYPE_UINT32 = exports.TYPE_UINT16 = exports.TYPE_UINT8 = exports.TYPE_VOID = exports.BYTE_INDEX = exports.BYTE_TYPE = exports.TYPE_STEP = void 0;
@@ -6798,7 +6714,7 @@ exports.TYPE_CONS = exports.TYPE_STEP * 12;
 const getType = (d) => d & exports.BYTE_TYPE;
 exports.getType = getType;
 
-},{}],59:[function(require,module,exports){
+},{}],61:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ACTION_STOP = exports.ACTION_RESTART = exports.ACTION_IGNORE = exports.ACTION_RAISE = void 0;
@@ -6807,7 +6723,7 @@ exports.ACTION_IGNORE = 0x0;
 exports.ACTION_RESTART = 0x1;
 exports.ACTION_STOP = 0x2;
 
-},{}],60:[function(require,module,exports){
+},{}],62:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -7003,7 +6919,7 @@ var assert = function (value, name) {
 };
 exports.assert = assert;
 
-},{"deep-equal":65,"json-stringify-safe":79}],61:[function(require,module,exports){
+},{"deep-equal":67,"json-stringify-safe":81}],63:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Invocation = exports.Mock = void 0;
@@ -7023,7 +6939,7 @@ var Invocation = /** @class */ (function () {
 }());
 exports.Invocation = Invocation;
 
-},{"./object":62}],62:[function(require,module,exports){
+},{"./object":64}],64:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.MockObject = exports.ReturnCallback = exports.ReturnValue = void 0;
@@ -7170,7 +7086,7 @@ var MockObject = /** @class */ (function () {
 }());
 exports.MockObject = MockObject;
 
-},{"./":61,"deep-equal":65}],63:[function(require,module,exports){
+},{"./":63,"deep-equal":67}],65:[function(require,module,exports){
 'use strict';
 
 var GetIntrinsic = require('get-intrinsic');
@@ -7187,7 +7103,7 @@ module.exports = function callBoundIntrinsic(name, allowMissing) {
 	return intrinsic;
 };
 
-},{"./":64,"get-intrinsic":70}],64:[function(require,module,exports){
+},{"./":66,"get-intrinsic":72}],66:[function(require,module,exports){
 'use strict';
 
 var bind = require('function-bind');
@@ -7236,7 +7152,7 @@ if ($defineProperty) {
 	module.exports.apply = applyBind;
 }
 
-},{"function-bind":68,"get-intrinsic":70}],65:[function(require,module,exports){
+},{"function-bind":70,"get-intrinsic":72}],67:[function(require,module,exports){
 var objectKeys = require('object-keys');
 var isArguments = require('is-arguments');
 var is = require('object-is');
@@ -7350,7 +7266,7 @@ function objEquiv(a, b, opts) {
 
 module.exports = deepEqual;
 
-},{"is-arguments":76,"is-date-object":77,"is-regex":78,"object-is":81,"object-keys":85,"regexp.prototype.flags":89}],66:[function(require,module,exports){
+},{"is-arguments":78,"is-date-object":79,"is-regex":80,"object-is":83,"object-keys":87,"regexp.prototype.flags":91}],68:[function(require,module,exports){
 'use strict';
 
 var keys = require('object-keys');
@@ -7399,7 +7315,7 @@ defineProperties.supportsDescriptors = !!supportsDescriptors;
 
 module.exports = defineProperties;
 
-},{"has-property-descriptors":71,"object-keys":85}],67:[function(require,module,exports){
+},{"has-property-descriptors":73,"object-keys":87}],69:[function(require,module,exports){
 'use strict';
 
 /* eslint no-invalid-this: 1 */
@@ -7453,14 +7369,14 @@ module.exports = function bind(that) {
     return bound;
 };
 
-},{}],68:[function(require,module,exports){
+},{}],70:[function(require,module,exports){
 'use strict';
 
 var implementation = require('./implementation');
 
 module.exports = Function.prototype.bind || implementation;
 
-},{"./implementation":67}],69:[function(require,module,exports){
+},{"./implementation":69}],71:[function(require,module,exports){
 'use strict';
 
 var functionsHaveNames = function functionsHaveNames() {
@@ -7493,7 +7409,7 @@ functionsHaveNames.boundFunctionsHaveNames = function boundFunctionsHaveNames() 
 
 module.exports = functionsHaveNames;
 
-},{}],70:[function(require,module,exports){
+},{}],72:[function(require,module,exports){
 'use strict';
 
 var undefined;
@@ -7829,7 +7745,7 @@ module.exports = function GetIntrinsic(name, allowMissing) {
 	return value;
 };
 
-},{"function-bind":68,"has":75,"has-symbols":72}],71:[function(require,module,exports){
+},{"function-bind":70,"has":77,"has-symbols":74}],73:[function(require,module,exports){
 'use strict';
 
 var GetIntrinsic = require('get-intrinsic');
@@ -7864,7 +7780,7 @@ hasPropertyDescriptors.hasArrayLengthDefineBug = function hasArrayLengthDefineBu
 
 module.exports = hasPropertyDescriptors;
 
-},{"get-intrinsic":70}],72:[function(require,module,exports){
+},{"get-intrinsic":72}],74:[function(require,module,exports){
 'use strict';
 
 var origSymbol = typeof Symbol !== 'undefined' && Symbol;
@@ -7879,7 +7795,7 @@ module.exports = function hasNativeSymbols() {
 	return hasSymbolSham();
 };
 
-},{"./shams":73}],73:[function(require,module,exports){
+},{"./shams":75}],75:[function(require,module,exports){
 'use strict';
 
 /* eslint complexity: [2, 18], max-statements: [2, 33] */
@@ -7923,7 +7839,7 @@ module.exports = function hasSymbols() {
 	return true;
 };
 
-},{}],74:[function(require,module,exports){
+},{}],76:[function(require,module,exports){
 'use strict';
 
 var hasSymbols = require('has-symbols/shams');
@@ -7932,14 +7848,14 @@ module.exports = function hasToStringTagShams() {
 	return hasSymbols() && !!Symbol.toStringTag;
 };
 
-},{"has-symbols/shams":73}],75:[function(require,module,exports){
+},{"has-symbols/shams":75}],77:[function(require,module,exports){
 'use strict';
 
 var bind = require('function-bind');
 
 module.exports = bind.call(Function.call, Object.prototype.hasOwnProperty);
 
-},{"function-bind":68}],76:[function(require,module,exports){
+},{"function-bind":70}],78:[function(require,module,exports){
 'use strict';
 
 var hasToStringTag = require('has-tostringtag/shams')();
@@ -7974,7 +7890,7 @@ isStandardArguments.isLegacyArguments = isLegacyArguments; // for tests
 
 module.exports = supportsStandardArguments ? isStandardArguments : isLegacyArguments;
 
-},{"call-bind/callBound":63,"has-tostringtag/shams":74}],77:[function(require,module,exports){
+},{"call-bind/callBound":65,"has-tostringtag/shams":76}],79:[function(require,module,exports){
 'use strict';
 
 var getDay = Date.prototype.getDay;
@@ -7998,7 +7914,7 @@ module.exports = function isDateObject(value) {
 	return hasToStringTag ? tryDateObject(value) : toStr.call(value) === dateClass;
 };
 
-},{"has-tostringtag/shams":74}],78:[function(require,module,exports){
+},{"has-tostringtag/shams":76}],80:[function(require,module,exports){
 'use strict';
 
 var callBound = require('call-bind/callBound');
@@ -8058,7 +7974,7 @@ module.exports = hasToStringTag
 		return $toString(value) === regexClass;
 	};
 
-},{"call-bind/callBound":63,"has-tostringtag/shams":74}],79:[function(require,module,exports){
+},{"call-bind/callBound":65,"has-tostringtag/shams":76}],81:[function(require,module,exports){
 exports = module.exports = stringify
 exports.getSerialize = serializer
 
@@ -8087,7 +8003,7 @@ function serializer(replacer, cycleReplacer) {
   }
 }
 
-},{}],80:[function(require,module,exports){
+},{}],82:[function(require,module,exports){
 'use strict';
 
 var numberIsNaN = function (value) {
@@ -8108,7 +8024,7 @@ module.exports = function is(a, b) {
 };
 
 
-},{}],81:[function(require,module,exports){
+},{}],83:[function(require,module,exports){
 'use strict';
 
 var define = require('define-properties');
@@ -8128,7 +8044,7 @@ define(polyfill, {
 
 module.exports = polyfill;
 
-},{"./implementation":80,"./polyfill":82,"./shim":83,"call-bind":64,"define-properties":66}],82:[function(require,module,exports){
+},{"./implementation":82,"./polyfill":84,"./shim":85,"call-bind":66,"define-properties":68}],84:[function(require,module,exports){
 'use strict';
 
 var implementation = require('./implementation');
@@ -8137,7 +8053,7 @@ module.exports = function getPolyfill() {
 	return typeof Object.is === 'function' ? Object.is : implementation;
 };
 
-},{"./implementation":80}],83:[function(require,module,exports){
+},{"./implementation":82}],85:[function(require,module,exports){
 'use strict';
 
 var getPolyfill = require('./polyfill');
@@ -8153,7 +8069,7 @@ module.exports = function shimObjectIs() {
 	return polyfill;
 };
 
-},{"./polyfill":82,"define-properties":66}],84:[function(require,module,exports){
+},{"./polyfill":84,"define-properties":68}],86:[function(require,module,exports){
 'use strict';
 
 var keysShim;
@@ -8277,7 +8193,7 @@ if (!Object.keys) {
 }
 module.exports = keysShim;
 
-},{"./isArguments":86}],85:[function(require,module,exports){
+},{"./isArguments":88}],87:[function(require,module,exports){
 'use strict';
 
 var slice = Array.prototype.slice;
@@ -8311,7 +8227,7 @@ keysShim.shim = function shimObjectKeys() {
 
 module.exports = keysShim;
 
-},{"./implementation":84,"./isArguments":86}],86:[function(require,module,exports){
+},{"./implementation":86,"./isArguments":88}],88:[function(require,module,exports){
 'use strict';
 
 var toStr = Object.prototype.toString;
@@ -8330,7 +8246,7 @@ module.exports = function isArguments(value) {
 	return isArgs;
 };
 
-},{}],87:[function(require,module,exports){
+},{}],89:[function(require,module,exports){
 // shim for using process in browser
 var process = module.exports = {};
 
@@ -8516,7 +8432,7 @@ process.chdir = function (dir) {
 };
 process.umask = function() { return 0; };
 
-},{}],88:[function(require,module,exports){
+},{}],90:[function(require,module,exports){
 'use strict';
 
 var functionsHaveConfigurableNames = require('functions-have-names').functionsHaveConfigurableNames();
@@ -8557,7 +8473,7 @@ if (functionsHaveConfigurableNames && Object.defineProperty) {
 	Object.defineProperty(module.exports, 'name', { value: 'get flags' });
 }
 
-},{"functions-have-names":69}],89:[function(require,module,exports){
+},{"functions-have-names":71}],91:[function(require,module,exports){
 'use strict';
 
 var define = require('define-properties');
@@ -8577,7 +8493,7 @@ define(flagsBound, {
 
 module.exports = flagsBound;
 
-},{"./implementation":88,"./polyfill":90,"./shim":91,"call-bind":64,"define-properties":66}],90:[function(require,module,exports){
+},{"./implementation":90,"./polyfill":92,"./shim":93,"call-bind":66,"define-properties":68}],92:[function(require,module,exports){
 'use strict';
 
 var implementation = require('./implementation');
@@ -8615,7 +8531,7 @@ module.exports = function getPolyfill() {
 	return implementation;
 };
 
-},{"./implementation":88,"define-properties":66}],91:[function(require,module,exports){
+},{"./implementation":90,"define-properties":68}],93:[function(require,module,exports){
 'use strict';
 
 var supportsDescriptors = require('define-properties').supportsDescriptors;
@@ -8643,7 +8559,7 @@ module.exports = function shimFlags() {
 	return polyfill;
 };
 
-},{"./polyfill":90,"define-properties":66}],92:[function(require,module,exports){
+},{"./polyfill":92,"define-properties":68}],94:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.GenericImmutable = void 0;
@@ -8667,7 +8583,7 @@ class GenericImmutable extends actor_1.Immutable {
 }
 exports.GenericImmutable = GenericImmutable;
 
-},{"../../../../lib/actor":1}],93:[function(require,module,exports){
+},{"../../../../lib/actor":1}],95:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.TestApp = void 0;
@@ -8679,7 +8595,7 @@ class TestApp extends app_1.Jouvert {
 }
 exports.TestApp = TestApp;
 
-},{"../../../../lib/app":2}],94:[function(require,module,exports){
+},{"../../../../lib/app":2}],96:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const assert_1 = require("@quenk/test/lib/assert");
@@ -8812,7 +8728,7 @@ describe('remote', () => {
     });
 });
 
-},{"../../../../lib/app/remote":4,"../../app/fixtures/actor":92,"../../app/fixtures/app":93,"@quenk/jhr/lib/agent/mock":8,"@quenk/jhr/lib/request":9,"@quenk/jhr/lib/response":11,"@quenk/noni/lib/control/monad/future":15,"@quenk/potoo/lib/actor/resident/case":31,"@quenk/test/lib/assert":60}],95:[function(require,module,exports){
+},{"../../../../lib/app/remote":4,"../../app/fixtures/actor":94,"../../app/fixtures/app":95,"@quenk/jhr/lib/agent/mock":10,"@quenk/jhr/lib/request":11,"@quenk/jhr/lib/response":13,"@quenk/noni/lib/control/monad/future":17,"@quenk/potoo/lib/actor/resident/case":33,"@quenk/test/lib/assert":62}],97:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const assert_1 = require("@quenk/test/lib/assert");
@@ -9079,7 +8995,7 @@ describe('model', () => {
     });
 });
 
-},{"../../../../lib/app/remote":4,"../../../../lib/app/remote/model":5,"../../app/fixtures/app":93,"@quenk/jhr/lib/request":9,"@quenk/jhr/lib/response":11,"@quenk/noni/lib/control/monad/future":15,"@quenk/noni/lib/data/record":22,"@quenk/potoo/lib/actor/resident/case":31,"@quenk/potoo/lib/actor/resident/immutable":33,"@quenk/test/lib/assert":60,"@quenk/test/lib/mock":61}],96:[function(require,module,exports){
+},{"../../../../lib/app/remote":4,"../../../../lib/app/remote/model":7,"../../app/fixtures/app":95,"@quenk/jhr/lib/request":11,"@quenk/jhr/lib/response":13,"@quenk/noni/lib/control/monad/future":17,"@quenk/noni/lib/data/record":24,"@quenk/potoo/lib/actor/resident/case":33,"@quenk/potoo/lib/actor/resident/immutable":35,"@quenk/test/lib/assert":62,"@quenk/test/lib/mock":63}],98:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const assert_1 = require("@quenk/test/lib/assert");
@@ -9312,7 +9228,7 @@ describe('observable', () => {
     });
 });
 
-},{"../../../../lib/app/remote/observer":6,"../../app/fixtures/actor":92,"../../app/fixtures/app":93,"@quenk/jhr/lib/agent/mock":8,"@quenk/jhr/lib/request":9,"@quenk/jhr/lib/response":11,"@quenk/noni/lib/control/monad/future":15,"@quenk/potoo/lib/actor/resident/case":31,"@quenk/test/lib/assert":60,"@quenk/test/lib/mock":61}],97:[function(require,module,exports){
+},{"../../../../lib/app/remote/observer":8,"../../app/fixtures/actor":94,"../../app/fixtures/app":95,"@quenk/jhr/lib/agent/mock":10,"@quenk/jhr/lib/request":11,"@quenk/jhr/lib/response":13,"@quenk/noni/lib/control/monad/future":17,"@quenk/potoo/lib/actor/resident/case":33,"@quenk/test/lib/assert":62,"@quenk/test/lib/mock":63}],99:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const mock_1 = require("@quenk/test/lib/mock");
@@ -9503,10 +9419,10 @@ describe('director', () => {
     });
 });
 
-},{"../../../../lib/actor":1,"../../../../lib/app/service/director":7,"../../app/fixtures/app":93,"@quenk/noni/lib/control/monad/future":15,"@quenk/noni/lib/data/record":22,"@quenk/noni/lib/data/string":24,"@quenk/potoo/lib/actor/resident/case":31,"@quenk/test/lib/assert":60,"@quenk/test/lib/mock":61}],98:[function(require,module,exports){
+},{"../../../../lib/actor":1,"../../../../lib/app/service/director":9,"../../app/fixtures/app":95,"@quenk/noni/lib/control/monad/future":17,"@quenk/noni/lib/data/record":24,"@quenk/noni/lib/data/string":26,"@quenk/potoo/lib/actor/resident/case":33,"@quenk/test/lib/assert":62,"@quenk/test/lib/mock":63}],100:[function(require,module,exports){
 require("./app/service/director_test.js");
 require("./app/remote/index_test.js");
 require("./app/remote/model_test.js");
 require("./app/remote/observer_test.js");
 
-},{"./app/remote/index_test.js":94,"./app/remote/model_test.js":95,"./app/remote/observer_test.js":96,"./app/service/director_test.js":97}]},{},[98]);
+},{"./app/remote/index_test.js":96,"./app/remote/model_test.js":97,"./app/remote/observer_test.js":98,"./app/service/director_test.js":99}]},{},[100]);

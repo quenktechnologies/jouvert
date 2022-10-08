@@ -17,7 +17,9 @@ import {
 import { Maybe, fromNullable, nothing } from '@quenk/noni/lib/data/maybe';
 import { Object } from '@quenk/noni/lib/data/jsonx';
 import { interpolate } from '@quenk/noni/lib/data/string';
-import { merge, Record } from '@quenk/noni/lib/data/record';
+import { empty, merge, Record } from '@quenk/noni/lib/data/record';
+import { find } from '@quenk/noni/lib/data/array';
+import { Type, isObject } from '@quenk/noni/lib/data/type';
 
 import { Address } from '@quenk/potoo/lib/actor/address';
 import { Spawnable } from '@quenk/potoo/lib/actor/template';
@@ -26,13 +28,15 @@ import { System } from '@quenk/potoo/lib/actor/system';
 import { Response } from '@quenk/jhr/lib/response';
 import { Request } from '@quenk/jhr/lib/request';
 import { Post, Get, Patch, Delete } from '@quenk/jhr/lib/request';
+import { Tag } from '@quenk/jhr/lib/request/options';
 
 import { Id, Model } from '../../model';
 import {
     ErrorBody,
     SendCallback,
     CompleteHandler,
-    AbstractCompleteHandler
+    AbstractCompleteHandler,
+    CompositeCompleteHandler
 } from '../callback';
 import { TransportErr } from '../';
 
@@ -185,9 +189,9 @@ export class GetHandler<T extends Object>
  * VoidHandler is a CompleteHandler that expects the body of the
  * result to be empty.
  */
-export class VoidHandler
+export class VoidHandler<T = void>
     extends
-    AbstractCompleteHandler<void>{ }
+    AbstractCompleteHandler<T>{ }
 
 /**
  * FutureHandler is used to proxy the events of a request's lifecycle to a noni
@@ -320,6 +324,109 @@ export class NotFoundHandler<T extends Object> extends FutureHandler<T>{
 }
 
 /**
+ * TagName is the name of a tag as it appears in the request.options.tags object.
+ */
+export type TagName = string;
+
+/**
+ * TagValue TODO: Rename in upstream.
+ */
+export type TagValue = Tag;
+
+/**
+ * TagHandlerSpec indicates what [[CompleteHandler]] to use when specific tags
+ * are encournted.
+ */
+export type TagHandlerSpec<B>
+    = [TagName, TagValue, CompleteHandler<B> | CompleteHandler<B>[]]
+    ;
+
+/**
+ * ExpandedTagHandlerSpec where the handlers specified as an array have been
+ * convereted to [[CompositeHandler]]s
+ */
+export type ExpandedTagHandlerSpec<B>
+    = [TagName, TagValue, CompleteHandler<B>]
+    ;
+
+const voidHandler = new VoidHandler<Type>();
+
+const transportErrTag = { '$error': 'TransportErr' };
+
+/**
+ * TaggedHandler allows for the selective application of handlers based on tags
+ * applied to the initial request.
+ *
+ * It is up to the model that uses this handler to properly tag requests sent
+ * out. The base remote model adds the "path", "verb" and "method" tags by 
+ * default.
+ */
+export class TaggedHandler<B>
+    extends
+    AbstractCompleteHandler<B> {
+
+    constructor(public handlers: ExpandedTagHandlerSpec<B>[]) { super(); }
+
+    /**
+     * create a TaggedHandler instance normalizing the handler part of each
+     * spec.
+     *
+     * Using this method is preferred to the constructor.
+     */
+    static create<B>(specs: TagHandlerSpec<B>[]) {
+
+        return new TaggedHandler(specs.map(([name, value, handler]) => [
+            name,
+            value,
+            Array.isArray(handler) ?
+                new CompositeCompleteHandler(handler) :
+                handler
+        ]));
+
+    }
+
+    _getHandler(tags: { [key: string]: TagValue } = {}): CompleteHandler<B> {
+
+        if (!empty(tags)) {
+
+            let mspec = find(this.handlers, ([name, value]) =>
+                (tags[name] === value));
+
+            if (mspec.isJust()) return mspec.get()[2]; //handler
+
+        }
+
+        return voidHandler;
+
+    }
+
+    onError(e: TransportErr) {
+
+        return this._getHandler(transportErrTag).onError(e);
+
+    }
+
+    onClientError(res: Response<ErrorBody>) {
+
+        return this._getHandler(res.request.options.tags).onClientError(res);
+
+    }
+
+    onServerError(res: Response<ErrorBody>) {
+
+        return this._getHandler(res.request.options.tags).onServerError(res);
+
+    }
+
+    onComplete(res: Response<B>) {
+
+        return this._getHandler(res.request.options.tags).onComplete(res);
+
+    }
+
+}
+
+/**
  * BaseRemoteModel is a [[Model]] implementation that uses the remote actor API
  * underneath to provide a CSUGR interface.
  *
@@ -386,8 +493,18 @@ export class RemoteModel<T extends Object> extends BaseRemoteModel<T> {
 
         return doFuture(function*() {
 
-            let r = yield that.send(new Post(
-                interpolate(that.paths.create, that.context), data));
+            let r = yield that.send(
+                new Post(
+                    interpolate(that.paths.create, that.context),
+                    data,
+                    {
+                        tags: {
+                            path: that.paths.create,
+                            verb: 'post',
+                            method: 'create'
+                        }
+                    }
+                ));
 
             return pure((<CreateResult>r.body).data.id);
 
@@ -401,8 +518,19 @@ export class RemoteModel<T extends Object> extends BaseRemoteModel<T> {
 
         return doFuture(function*() {
 
-            let r = yield that.send(new Get(
-                interpolate(that.paths.search, that.context), qry));
+            let r = yield that.send(
+                new Get(
+                    interpolate(that.paths.search, that.context),
+                    qry,
+                    {
+                        tags: merge(
+                          isObject(qry.$tags) ? <object>qry.$tags : {}, {
+                            path: that.paths.search,
+                            verb: 'get',
+                            method: 'search'
+                        })
+                    }
+                ));
 
             return pure((r.code === 204) ?
                 [] : (<SearchResult<T>>r.body).data);
@@ -417,8 +545,18 @@ export class RemoteModel<T extends Object> extends BaseRemoteModel<T> {
 
         return doFuture(function*() {
 
-            let r = yield that.send(new Patch(interpolate(that.paths.update,
-                merge({ id }, that.context)), changes));
+            let r = yield that.send(
+                new Patch(
+                    interpolate(that.paths.update, merge({ id }, that.context)),
+                    changes,
+                    {
+                        tags: {
+                            path: that.paths.update,
+                            verb: 'patch',
+                            method: 'update'
+                        }
+                    }
+                ));
 
             return pure((r.code === 200) ? true : false);
 
@@ -432,8 +570,17 @@ export class RemoteModel<T extends Object> extends BaseRemoteModel<T> {
 
         return doFuture(function*() {
 
-            let req = new Get(interpolate(that.paths.get,
-                merge({ id }, that.context)), {});
+            let req = new Get(
+                interpolate(that.paths.get, merge({ id }, that.context)),
+                {},
+                {
+                    tags: {
+                        path: that.paths.get,
+                        verb: 'get',
+                        method: 'get'
+                    }
+                }
+            );
 
             return that
                 .send(req)
@@ -447,19 +594,29 @@ export class RemoteModel<T extends Object> extends BaseRemoteModel<T> {
 
     }
 
-remove(id: Id): Future < boolean > {
+    remove(id: Id): Future<boolean> {
 
-    let that = this;
+        let that = this;
 
-    return doFuture(function*() {
+        return doFuture(function*() {
 
-        let r = yield that.send(new Delete(interpolate(that.paths.remove,
-            merge({ id }, that.context)), {}));
+            let r = yield that.send(
+                new Delete(
+                    interpolate(that.paths.remove, merge({ id }, that.context)),
+                    {},
+                    {
+                        tags: {
+                            path: that.paths.remove,
+                            verb: 'delete',
+                            method: 'remove'
+                        }
+                    }
+                ));
 
-        return pure((r.code === 200) ? true : false);
+            return pure((r.code === 200) ? true : false);
 
-    });
+        });
 
-}
+    }
 
 }

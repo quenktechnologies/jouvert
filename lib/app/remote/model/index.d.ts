@@ -12,6 +12,7 @@ import { Address } from '@quenk/potoo/lib/actor/address';
 import { Spawnable } from '@quenk/potoo/lib/actor/template';
 import { Response } from '@quenk/jhr/lib/response';
 import { Request } from '@quenk/jhr/lib/request';
+import { Tag } from '@quenk/jhr/lib/request/options';
 import { Id, Model } from '../../model';
 import { ErrorBody, CompleteHandler, AbstractCompleteHandler } from '../callback';
 import { TransportErr } from '../';
@@ -120,7 +121,7 @@ export declare class GetHandler<T extends Object> extends AbstractCompleteHandle
  * VoidHandler is a CompleteHandler that expects the body of the
  * result to be empty.
  */
-export declare class VoidHandler extends AbstractCompleteHandler<void> {
+export declare class VoidHandler<T = void> extends AbstractCompleteHandler<T> {
 }
 /**
  * FutureHandler is used to proxy the events of a request's lifecycle to a noni
@@ -151,6 +152,50 @@ export declare class NotFoundHandler<T extends Object> extends FutureHandler<T> 
     onSuccess: (r: Response<Result<T>>) => void;
     constructor(handler: CompleteHandler<Result<T>>, onFailure: (err?: Error) => void, onNotFound: () => void, onSuccess: (r: Response<Result<T>>) => void);
     onClientError(r: Response<ErrorBody>): Future<void>;
+}
+/**
+ * TagName is the name of a tag as it appears in the request.options.tags object.
+ */
+export declare type TagName = string;
+/**
+ * TagValue TODO: Rename in upstream.
+ */
+export declare type TagValue = Tag;
+/**
+ * TagHandlerSpec indicates what [[CompleteHandler]] to use when specific tags
+ * are encournted.
+ */
+export declare type TagHandlerSpec<B> = [TagName, TagValue, CompleteHandler<B> | CompleteHandler<B>[]];
+/**
+ * ExpandedTagHandlerSpec where the handlers specified as an array have been
+ * convereted to [[CompositeHandler]]s
+ */
+export declare type ExpandedTagHandlerSpec<B> = [TagName, TagValue, CompleteHandler<B>];
+/**
+ * TaggedHandler allows for the selective application of handlers based on tags
+ * applied to the initial request.
+ *
+ * It is up to the model that uses this handler to properly tag requests sent
+ * out. The base remote model adds the "path", "verb" and "method" tags by
+ * default.
+ */
+export declare class TaggedHandler<B> extends AbstractCompleteHandler<B> {
+    handlers: ExpandedTagHandlerSpec<B>[];
+    constructor(handlers: ExpandedTagHandlerSpec<B>[]);
+    /**
+     * create a TaggedHandler instance normalizing the handler part of each
+     * spec.
+     *
+     * Using this method is preferred to the constructor.
+     */
+    static create<B>(specs: TagHandlerSpec<B>[]): TaggedHandler<B>;
+    _getHandler(tags?: {
+        [key: string]: TagValue;
+    }): CompleteHandler<B>;
+    onError(e: TransportErr): import("@quenk/noni/lib/control/monad/future").Yield<void>;
+    onClientError(res: Response<ErrorBody>): import("@quenk/noni/lib/control/monad/future").Yield<void>;
+    onServerError(res: Response<ErrorBody>): import("@quenk/noni/lib/control/monad/future").Yield<void>;
+    onComplete(res: Response<B>): import("@quenk/noni/lib/control/monad/future").Yield<void>;
 }
 /**
  * BaseRemoteModel is a [[Model]] implementation that uses the remote actor API

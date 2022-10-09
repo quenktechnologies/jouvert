@@ -28,7 +28,7 @@ import {
     Pagination,
     SearchResultHandler,
     SearchResponse
-} from '../../remote/model/handler/result';
+} from '../../remote/model/handlers/result';
 import { getById } from '@quenk/wml-widgets/lib/util';
 import { FormErrors, SaveFailed, SaveListener } from '../form';
 import { Yield } from '@quenk/noni/lib/control/monad/future';

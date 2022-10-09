@@ -7,6 +7,7 @@ import { Address } from '@quenk/potoo/lib/actor/address';
 
 import { CompleteHandler, CompositeCompleteHandler } from '../callback';
 import { Result } from './handlers/result';
+import { RequestDecorator, RequestPassthrough } from '../request/decorators';
 import { SpawnFunc, RemoteModel, Paths } from './';
 
 /**
@@ -66,12 +67,12 @@ export class RemoteModelFactory<T extends Object> {
     create(
         paths: Paths,
         handlers: CompleteHandlerSpec<T> = [],
-        context: Object = {}
+        decorator: RequestDecorator<T> = new RequestPassthrough()
     ): RemoteModel<T> {
 
         return new RemoteModel(this.remote, normalize(paths),
-            this.spawn, context, Array.isArray(handlers) ?
-            new CompositeCompleteHandler(handlers) : handlers);
+            this.spawn,  Array.isArray(handlers) ?
+            new CompositeCompleteHandler(handlers) : handlers, decorator);
 
     }
 

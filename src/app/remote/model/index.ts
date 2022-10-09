@@ -39,6 +39,7 @@ import {
 } from './handlers/result';
 import { VoidHandler } from './handlers/void';
 import { FutureHandler } from './handlers/future';
+import { RequestDecorator, RequestPassthrough } from '../request/decorators';
 
 export { Model }
 
@@ -66,6 +67,8 @@ export interface RequestAdaptable<B> {
 
 }
 
+export const NO_PATH = 'invalid';
+
 /**
  * RemoteModel is a [[Model]] implementation that uses the remote actor API
  * underneath to provide a CSUGR interface.
@@ -77,21 +80,20 @@ export interface RequestAdaptable<B> {
 export class RemoteModel<T extends Object> implements Model<T> {
 
     /**
-     * @param remote  -  The actor to send requests to.
-     * @param paths   -  A map containing the request path to use for 
-     *                   each method.
-     * @param spawn   -  The function used to spawn callbacks internally.
-     * @param context -  Object used to expand path string templates via
-     *                   interpolation.
-     * @param handler -  An optional CompleteHandler that can intercept 
-     *                   responses.
+     * @param remote    - The actor to send requests to.
+     * @param paths     - A map containing the request path to use for 
+     *                    each method.
+     * @param spawn     - The function used to spawn callbacks internally.
+     * @param handler   - An optional CompleteHandler that can intercept 
+     *                    responses.
+     * @param decorator - If supplied, can modify requests before sending.
      */
     constructor(
         public remote: Address,
         public paths: Paths,
         public spawn: SpawnFunc,
-        public context: Object = {},
-        public handler: CompleteHandler<Result<T>> = new VoidHandler()) { }
+        public handler: CompleteHandler<Result<T>> = new VoidHandler(),
+        public decorator: RequestDecorator<T> = new RequestPassthrough()) { }
 
     /**
      * send a request to the remote backend.
@@ -106,7 +108,7 @@ export class RemoteModel<T extends Object> implements Model<T> {
             this.spawn((s: System) => new SendCallback(
                 s,
                 this.remote,
-                req,
+                this.decorator.decorate(<Request<T>>req),
                 new FutureHandler(this.handler, cb, r => cb(null, r))));
 
         });
@@ -121,11 +123,11 @@ export class RemoteModel<T extends Object> implements Model<T> {
 
             let r = yield that.send(
                 new Post(
-                    interpolate(that.paths.create, that.context),
+                    that.paths.create || NO_PATH,
                     data,
                     {
                         tags: {
-                            path: that.paths.create,
+                            path: that.paths.create || that.paths.get || NO_PATH,
                             verb: 'post',
                             method: 'create'
                         }
@@ -146,7 +148,7 @@ export class RemoteModel<T extends Object> implements Model<T> {
 
             let r = yield that.send(
                 new Get(
-                    interpolate(that.paths.search, that.context),
+                    that.paths.search || NO_PATH,
                     qry,
                     {
                         tags: merge(
@@ -173,7 +175,11 @@ export class RemoteModel<T extends Object> implements Model<T> {
 
             let r = yield that.send(
                 new Patch(
-                    interpolate(that.paths.update, merge({ id }, that.context)),
+                    interpolate(
+                      that.paths.update||
+                      that.paths.get || 
+                      NO_PATH, { id }
+                    ),
                     changes,
                     {
                         tags: {
@@ -197,7 +203,7 @@ export class RemoteModel<T extends Object> implements Model<T> {
         return doFuture(function*() {
 
             let req = new Get(
-                interpolate(that.paths.get, merge({ id }, that.context)),
+                interpolate(that.paths.get || NO_PATH, { id }),
                 {},
                 {
                     tags: {
@@ -228,7 +234,11 @@ export class RemoteModel<T extends Object> implements Model<T> {
 
             let r = yield that.send(
                 new Delete(
-                    interpolate(that.paths.remove, merge({ id }, that.context)),
+                    interpolate(
+                      that.paths.remove || 
+                      that.paths.get ||
+                      NO_PATH, { id }
+                    ),
                     {},
                     {
                         tags: {

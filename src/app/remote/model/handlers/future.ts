@@ -11,7 +11,7 @@ import {
     ErrorBody,
     CompleteHandler,
 } from '../../callback';
-import {Result} from './result';
+import {Result} from '../response';
 import { TransportErr } from '../../';
 
 /**

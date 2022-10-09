@@ -5,8 +5,8 @@ import { Spawner } from '@quenk/potoo/lib/actor/resident/api';
 import { Address } from '@quenk/potoo/lib/actor/address';
 
 import { CompleteHandler, CompositeCompleteHandler } from '../callback';
-import { Result } from './handlers/result';
 import { RequestDecorator, RequestPassthrough } from '../request/decorators';
+import { Result } from './response';
 import { RemoteModel, Paths, GenericRemoteModel } from './';
 
 /**

@@ -31,9 +31,14 @@ import {
     SendCallback,
     CompleteHandler,
 } from '../callback';
-import { CreateResult, GetResult, Result, SearchResult } from './handler/result';
-import { VoidHandler } from './handler/void';
-import { FutureHandler } from './handler/future';
+import {
+    CreateResult,
+    GetResult,
+    Result,
+    SearchResult
+} from './handlers/result';
+import { VoidHandler } from './handlers/void';
+import { FutureHandler } from './handlers/future';
 
 export { Model }
 
@@ -47,6 +52,19 @@ export type SpawnFunc = (tmpl: Spawnable) => Address;
  * operations of a RemoteModel.
  */
 export interface Paths extends Record<Address> { }
+
+/**
+ * RequestAdaptable is an interface for modifying the [[Request]] object a
+ * RemoteModel generates before it is sent.
+ */
+export interface RequestAdaptable<B> {
+
+    /**
+     * onRequest callback.
+     */
+    onRequest(rq: Request<B>): Request<B>
+
+}
 
 /**
  * RemoteModel is a [[Model]] implementation that uses the remote actor API

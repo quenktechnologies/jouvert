@@ -6,8 +6,8 @@ import { Spawner } from '@quenk/potoo/lib/actor/resident/api';
 import { Address } from '@quenk/potoo/lib/actor/address';
 
 import { CompleteHandler, CompositeCompleteHandler } from '../callback';
-import {Result } from './handler/result';
-import { SpawnFunc, RemoteModel,  Paths } from './';
+import { Result } from './handlers/result';
+import { SpawnFunc, RemoteModel, Paths } from './';
 
 /**
  * SpawnSpec is a type providing a way to spawn a new actor.

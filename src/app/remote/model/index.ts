@@ -33,15 +33,15 @@ import {
     CompleteHandler,
 } from '../callback';
 import {
+    Result,
     CreateResult,
     GetResult,
-    Result,
     SearchResult
 } from './handlers/result';
 import { VoidHandler } from './handlers/void';
 import { FutureHandler } from './handlers/future';
 
-export { Model }
+export { Id, Model, CreateResult, GetResult, SearchResult, Result }
 
 /**
  * Paths is a record of actor addresses to use for each of the CSUGR

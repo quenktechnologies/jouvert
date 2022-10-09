@@ -8,7 +8,7 @@ import { Address } from '@quenk/potoo/lib/actor/address';
 import { CompleteHandler, CompositeCompleteHandler } from '../callback';
 import { Result } from './handlers/result';
 import { RequestDecorator, RequestPassthrough } from '../request/decorators';
-import { SpawnFunc, RemoteModel, Paths } from './';
+import { SpawnFunc, RemoteModel, Paths, GenericRemoteModel } from './';
 
 /**
  * SpawnSpec is a type providing a way to spawn a new actor.
@@ -70,8 +70,8 @@ export class RemoteModelFactory<T extends Object> {
         decorator: RequestDecorator<T> = new RequestPassthrough()
     ): RemoteModel<T> {
 
-        return new RemoteModel(this.remote, normalize(paths),
-            this.spawn,  Array.isArray(handlers) ?
+        return new GenericRemoteModel(this.remote, this.spawn, 
+          normalize(paths), Array.isArray(handlers) ?
             new CompositeCompleteHandler(handlers) : handlers, decorator);
 
     }

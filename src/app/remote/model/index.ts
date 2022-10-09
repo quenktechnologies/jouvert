@@ -1,6 +1,6 @@
 /**
  * Provides a base data model implementation based on the remote and callback
- * apis. NOTE: Responses received by this API are expected to be in the result
+ * APIs. NOTE: Responses received by this API are expected to be in the result
  * format specified.
  */
 
@@ -77,12 +77,10 @@ export const NO_PATH = 'invalid';
  * frontend models via Dagen templates. Use the [[RemoteModel]] class to create
  * RemoteModels manually.
  */
-export class RemoteModel<T extends Object> implements Model<T> {
+export abstract class RemoteModel<T extends Object> implements Model<T> {
 
     /**
      * @param remote    - The actor to send requests to.
-     * @param paths     - A map containing the request path to use for 
-     *                    each method.
      * @param spawn     - The function used to spawn callbacks internally.
      * @param handler   - An optional CompleteHandler that can intercept 
      *                    responses.
@@ -90,13 +88,20 @@ export class RemoteModel<T extends Object> implements Model<T> {
      */
     constructor(
         public remote: Address,
-        public paths: Paths,
         public spawn: SpawnFunc,
         public handler: CompleteHandler<Result<T>> = new VoidHandler(),
         public decorator: RequestDecorator<T> = new RequestPassthrough()) { }
 
     /**
-     * send a request to the remote backend.
+     * path is a map containing the request path to use for each method.
+     *
+     * This property is meant to be implemented by child classes.
+     */
+    abstract paths: Paths;
+
+
+    /**
+     * send a request to the remote back-end.
      *
      * Use this method to submit the request to the remote actor using
      * the optional installed handler(s) to handle the request before completion.
@@ -176,9 +181,9 @@ export class RemoteModel<T extends Object> implements Model<T> {
             let r = yield that.send(
                 new Patch(
                     interpolate(
-                      that.paths.update||
-                      that.paths.get || 
-                      NO_PATH, { id }
+                        that.paths.update ||
+                        that.paths.get ||
+                        NO_PATH, { id }
                     ),
                     changes,
                     {
@@ -235,9 +240,9 @@ export class RemoteModel<T extends Object> implements Model<T> {
             let r = yield that.send(
                 new Delete(
                     interpolate(
-                      that.paths.remove || 
-                      that.paths.get ||
-                      NO_PATH, { id }
+                        that.paths.remove ||
+                        that.paths.get ||
+                        NO_PATH, { id }
                     ),
                     {},
                     {
@@ -252,6 +257,34 @@ export class RemoteModel<T extends Object> implements Model<T> {
             return pure((r.code === 200) ? true : false);
 
         });
+
+    }
+
+}
+
+/** 
+ * GenericRemoteModel allows for the paths property to be specified in the
+ * constructor.
+ *
+ * This is not the case in RemoteModel to allow auto generated code to implement
+ * more easily.
+ */
+export class GenericRemoteModel<T extends Object> extends RemoteModel<T> {
+    /**
+     * @param remote    - The actor to send requests to.
+     * @param spawn     - The function used to spawn callbacks internally.
+     * @param handler   - An optional CompleteHandler that can intercept 
+     *                    responses.
+     * @param decorator - If supplied, can modify requests before sending.
+     */
+    constructor(
+        public remote: Address,
+        public spawn: SpawnFunc,
+        public paths: Paths = {},
+        public handler: CompleteHandler<Result<T>> = new VoidHandler(),
+        public decorator: RequestDecorator<T> = new RequestPassthrough()) {
+
+        super(remote, spawn, handler, decorator);
 
     }
 

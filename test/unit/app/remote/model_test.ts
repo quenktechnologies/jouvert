@@ -100,12 +100,13 @@ describe('model', () => {
 
                     let model = new GenericRemoteModel(
                         'remote',
-                        (create: Type) => {
+                        {
+                            spawn(create: Type) {
 
-                            let id = 'callback';
-                            app.spawn({ id, create });
-                            return id;
-
+                                let id = 'callback';
+                                app.spawn({ id, create });
+                                return id;
+                            }
                         },
                         { create: '/' },
                         handler
@@ -160,14 +161,15 @@ describe('model', () => {
                     let handler = new MockHandler();
 
                     let model = new GenericRemoteModel(
-                        'remote',
-                        (create: Type) => {
+                        'remote', {
+                        spawn(create: Type) {
 
                             let id = 'callback';
                             app.spawn({ id, create });
                             return id;
 
-                        },
+                        }
+                    },
                         { search: '/' },
                         handler
                     );
@@ -230,14 +232,14 @@ describe('model', () => {
                     let handler = new MockHandler();
 
                     let model = new GenericRemoteModel(
-                        'remote',
-                        (create: Type) => {
+                        'remote', {
+                        spawn(create: Type) {
 
                             let id = 'callback';
                             app.spawn({ id, create });
                             return id;
-
-                        },
+                        }
+                    },
                         { update: '/{id}' },
                         handler
                     );
@@ -294,14 +296,14 @@ describe('model', () => {
                     let handler = new MockHandler();
 
                     let model = new GenericRemoteModel(
-                        'remote',
-                        (create: Type) => {
+                        'remote', {
+                        spawn(create: Type) {
 
                             let id = 'callback';
                             app.spawn({ id, create });
                             return id;
-
-                        },
+                        }
+                    },
                         { get: '/{id}' },
                         handler
                     );
@@ -353,14 +355,14 @@ describe('model', () => {
                     let handler = new MockHandler();
 
                     let model = new GenericRemoteModel(
-                        'remote',
-                        (create: Type) => {
+                        'remote', {
+                        spawn(create: Type) {
 
                             let id = 'callback';
                             app.spawn({ id, create });
                             return id;
-
-                        },
+                        }
+                    },
                         { get: '/{id}' },
                         handler
                     );
@@ -403,14 +405,14 @@ describe('model', () => {
                     let handler = new MockHandler();
 
                     let model = new GenericRemoteModel(
-                        'remote',
-                        (create: Type) => {
+                        'remote', {
+                        spawn(create: Type) {
 
                             let id = 'callback';
                             app.spawn({ id, create });
                             return id;
-
-                        },
+                        }
+                    },
                         { remove: '/{id}' },
                         handler
                     );
@@ -484,13 +486,13 @@ describe('model', () => {
                         let handler = new MockHandler();
 
                         let model = new GenericRemoteModel(
-                            'remote',
-                            (create: Type) => {
+                            'remote',{
+                            spawn(create: Type) {
 
                                 let id = 'callback';
                                 app.spawn({ id, create });
                                 return id;
-
+                            }
                             },
                             { create: '/' },
                             handler

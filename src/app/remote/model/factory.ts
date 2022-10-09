@@ -1,5 +1,4 @@
 import { Object } from '@quenk/noni/lib/data/jsonx';
-import { isObject } from '@quenk/noni/lib/data/type';
 
 import { merge } from '@quenk/noni/lib/data/record';
 import { Spawner } from '@quenk/potoo/lib/actor/resident/api';
@@ -8,15 +7,7 @@ import { Address } from '@quenk/potoo/lib/actor/address';
 import { CompleteHandler, CompositeCompleteHandler } from '../callback';
 import { Result } from './handlers/result';
 import { RequestDecorator, RequestPassthrough } from '../request/decorators';
-import { SpawnFunc, RemoteModel, Paths, GenericRemoteModel } from './';
-
-/**
- * SpawnSpec is a type providing a way to spawn a new actor.
- */
-export type SpawnSpec
-    = SpawnFunc
-    | Spawner
-    ;
+import { RemoteModel, Paths, GenericRemoteModel } from './';
 
 /**
  * CompleteHandlerSpec type allows one or more CompletHandlers to be specified.
@@ -34,18 +25,17 @@ export class RemoteModelFactory<T extends Object> {
     /**
      * @param remote   The address of the actor that will receive the network 
      *                 requests.
-     * @param spawn    A function that will be used to spawn needed actors.
+     * @param actor    The actor to be used to spawn callbacks.
      */
-    constructor(public remote: Address, public spawn: SpawnFunc) { }
+    constructor(public remote: Address, public actor: Spawner) { }
 
     /**
      * getInstance provides a new RemoteModelFactory instance.
      */
-    static getInstance<T extends Object>(spawn: SpawnSpec, remote: Address)
+    static getInstance<T extends Object>(actor: Spawner, remote: Address)
         : RemoteModelFactory<T> {
 
-        return new RemoteModelFactory(remote, isObject(spawn) ?
-            (<Spawner>spawn).spawn.bind(spawn) : spawn);
+        return new RemoteModelFactory(remote, actor);
 
     }
 
@@ -70,14 +60,13 @@ export class RemoteModelFactory<T extends Object> {
         decorator: RequestDecorator<T> = new RequestPassthrough()
     ): RemoteModel<T> {
 
-        return new GenericRemoteModel(this.remote, this.spawn, 
-          normalize(paths), Array.isArray(handlers) ?
+        return new GenericRemoteModel(this.remote, this.actor,
+            normalize(paths), Array.isArray(handlers) ?
             new CompositeCompleteHandler(handlers) : handlers, decorator);
 
     }
 
 }
-
 
 const normalize = (paths: Paths) =>
     merge(paths, {

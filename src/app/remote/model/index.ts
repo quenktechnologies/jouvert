@@ -19,13 +19,14 @@ import { merge, Record } from '@quenk/noni/lib/data/record';
 import { isObject } from '@quenk/noni/lib/data/type';
 
 import { Address } from '@quenk/potoo/lib/actor/address';
-import { Spawnable } from '@quenk/potoo/lib/actor/template';
 import { System } from '@quenk/potoo/lib/actor/system';
+import { Spawner } from '@quenk/potoo/lib/actor/resident/api';
 
 import { Response } from '@quenk/jhr/lib/response';
 import { Request } from '@quenk/jhr/lib/request';
 import { Post, Get, Patch, Delete } from '@quenk/jhr/lib/request';
 
+import { RequestDecorator, RequestPassthrough } from '../request/decorators';
 import { Id, Model } from '../../model';
 import {
     SendCallback,
@@ -39,14 +40,8 @@ import {
 } from './handlers/result';
 import { VoidHandler } from './handlers/void';
 import { FutureHandler } from './handlers/future';
-import { RequestDecorator, RequestPassthrough } from '../request/decorators';
 
 export { Model }
-
-/**
- * SpawnFunc used by RemoteModels to spawn remote callbacks.
- */
-export type SpawnFunc = (tmpl: Spawnable) => Address;
 
 /**
  * Paths is a record of actor addresses to use for each of the CSUGR
@@ -81,14 +76,14 @@ export abstract class RemoteModel<T extends Object> implements Model<T> {
 
     /**
      * @param remote    - The actor to send requests to.
-     * @param spawn     - The function used to spawn callbacks internally.
+     * @param actor     - The function used to spawn callbacks internally.
      * @param handler   - An optional CompleteHandler that can intercept 
      *                    responses.
      * @param decorator - If supplied, can modify requests before sending.
      */
     constructor(
         public remote: Address,
-        public spawn: SpawnFunc,
+        public actor: Spawner,
         public handler: CompleteHandler<Result<T>> = new VoidHandler(),
         public decorator: RequestDecorator<T> = new RequestPassthrough()) { }
 
@@ -98,7 +93,6 @@ export abstract class RemoteModel<T extends Object> implements Model<T> {
      * This property is meant to be implemented by child classes.
      */
     abstract paths: Paths;
-
 
     /**
      * send a request to the remote back-end.
@@ -110,7 +104,7 @@ export abstract class RemoteModel<T extends Object> implements Model<T> {
 
         return fromCallback(cb => {
 
-            this.spawn((s: System) => new SendCallback(
+            this.actor.spawn((s: System) => new SendCallback(
                 s,
                 this.remote,
                 this.decorator.decorate(<Request<T>>req),
@@ -272,19 +266,19 @@ export abstract class RemoteModel<T extends Object> implements Model<T> {
 export class GenericRemoteModel<T extends Object> extends RemoteModel<T> {
     /**
      * @param remote    - The actor to send requests to.
-     * @param spawn     - The function used to spawn callbacks internally.
+     * @param actor     - The actor used to spawn callbacks internally.
      * @param handler   - An optional CompleteHandler that can intercept 
      *                    responses.
      * @param decorator - If supplied, can modify requests before sending.
      */
     constructor(
         public remote: Address,
-        public spawn: SpawnFunc,
+        public actor: Spawner,
         public paths: Paths = {},
         public handler: CompleteHandler<Result<T>> = new VoidHandler(),
         public decorator: RequestDecorator<T> = new RequestPassthrough()) {
 
-        super(remote, spawn, handler, decorator);
+        super(remote, actor, handler, decorator);
 
     }
 

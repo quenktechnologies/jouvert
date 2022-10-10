@@ -29,7 +29,7 @@ import {
     Delete
 } from '@quenk/jhr/lib/request';
 
-import { RemoteModel } from '../../../../lib/app/remote/model';
+import { GenericRemoteModel } from '../../../../lib/app/remote/model';
 import {
     Send,
     TransportErr
@@ -98,17 +98,17 @@ describe('model', () => {
 
                     let handler = new MockHandler();
 
-                    let model = new RemoteModel(
+                    let model = new GenericRemoteModel(
                         'remote',
-                        { create: '/' },
-                        (create: Type) => {
+                        {
+                            spawn(create: Type) {
 
-                            let id = 'callback';
-                            app.spawn({ id, create });
-                            return id;
-
+                                let id = 'callback';
+                                app.spawn({ id, create });
+                                return id;
+                            }
                         },
-                        {},
+                        { create: '/' },
                         handler
                     );
 
@@ -160,17 +160,17 @@ describe('model', () => {
 
                     let handler = new MockHandler();
 
-                    let model = new RemoteModel(
-                        'remote',
-                        { search: '/' },
-                        (create: Type) => {
+                    let model = new GenericRemoteModel(
+                        'remote', {
+                        spawn(create: Type) {
 
                             let id = 'callback';
                             app.spawn({ id, create });
                             return id;
 
-                        },
-                        {},
+                        }
+                    },
+                        { search: '/' },
                         handler
                     );
 
@@ -231,17 +231,16 @@ describe('model', () => {
 
                     let handler = new MockHandler();
 
-                    let model = new RemoteModel(
-                        'remote',
-                        { update: '/{id}' },
-                        (create: Type) => {
+                    let model = new GenericRemoteModel(
+                        'remote', {
+                        spawn(create: Type) {
 
                             let id = 'callback';
                             app.spawn({ id, create });
                             return id;
-
-                        },
-                        {},
+                        }
+                    },
+                        { update: '/{id}' },
                         handler
                     );
 
@@ -296,17 +295,16 @@ describe('model', () => {
 
                     let handler = new MockHandler();
 
-                    let model = new RemoteModel(
-                        'remote',
-                        { get: '/{id}' },
-                        (create: Type) => {
+                    let model = new GenericRemoteModel(
+                        'remote', {
+                        spawn(create: Type) {
 
                             let id = 'callback';
                             app.spawn({ id, create });
                             return id;
-
-                        },
-                        {},
+                        }
+                    },
+                        { get: '/{id}' },
                         handler
                     );
 
@@ -356,17 +354,16 @@ describe('model', () => {
 
                     let handler = new MockHandler();
 
-                    let model = new RemoteModel(
-                        'remote',
-                        { get: '/{id}' },
-                        (create: Type) => {
+                    let model = new GenericRemoteModel(
+                        'remote', {
+                        spawn(create: Type) {
 
                             let id = 'callback';
                             app.spawn({ id, create });
                             return id;
-
-                        },
-                        {},
+                        }
+                    },
+                        { get: '/{id}' },
                         handler
                     );
 
@@ -407,17 +404,16 @@ describe('model', () => {
 
                     let handler = new MockHandler();
 
-                    let model = new RemoteModel(
-                        'remote',
-                        { remove: '/{id}' },
-                        (create: Type) => {
+                    let model = new GenericRemoteModel(
+                        'remote', {
+                        spawn(create: Type) {
 
                             let id = 'callback';
                             app.spawn({ id, create });
                             return id;
-
-                        },
-                        {},
+                        }
+                    },
+                        { remove: '/{id}' },
                         handler
                     );
 
@@ -489,17 +485,16 @@ describe('model', () => {
 
                         let handler = new MockHandler();
 
-                        let model = new RemoteModel(
-                            'remote',
-                          {create:'/'},
-                            (create: Type) => {
+                        let model = new GenericRemoteModel(
+                            'remote',{
+                            spawn(create: Type) {
 
                                 let id = 'callback';
                                 app.spawn({ id, create });
                                 return id;
-
+                            }
                             },
-                          {},
+                            { create: '/' },
                             handler
                         );
 

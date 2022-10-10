@@ -1,6 +1,6 @@
 /**
  * Provides a base data model implementation based on the remote and callback
- * apis. NOTE: Responses received by this API are expected to be in the result
+ * APIs. NOTE: Responses received by this API are expected to be in the result
  * format specified.
  */
 /** imports */
@@ -9,23 +9,31 @@ import { Maybe } from '@quenk/noni/lib/data/maybe';
 import { Object } from '@quenk/noni/lib/data/jsonx';
 import { Record } from '@quenk/noni/lib/data/record';
 import { Address } from '@quenk/potoo/lib/actor/address';
-import { Spawnable } from '@quenk/potoo/lib/actor/template';
+import { Spawner } from '@quenk/potoo/lib/actor/resident/api';
 import { Response } from '@quenk/jhr/lib/response';
 import { Request } from '@quenk/jhr/lib/request';
+import { RequestDecorator } from '../request/decorators';
 import { Id, Model } from '../../model';
 import { CompleteHandler } from '../callback';
-import { Result } from './handler/result';
-export { Model };
-/**
- * SpawnFunc used by RemoteModels to spawn remote callbacks.
- */
-export declare type SpawnFunc = (tmpl: Spawnable) => Address;
+import { Result } from './response';
+export { Id, Model };
 /**
  * Paths is a record of actor addresses to use for each of the CSUGR
  * operations of a RemoteModel.
  */
 export interface Paths extends Record<Address> {
 }
+/**
+ * RequestAdaptable is an interface for modifying the [[Request]] object a
+ * RemoteModel generates before it is sent.
+ */
+export interface RequestAdaptable<B> {
+    /**
+     * onRequest callback.
+     */
+    onRequest(rq: Request<B>): Request<B>;
+}
+export declare const NO_PATH = "invalid";
 /**
  * RemoteModel is a [[Model]] implementation that uses the remote actor API
  * underneath to provide a CSUGR interface.
@@ -34,25 +42,27 @@ export interface Paths extends Record<Address> {
  * frontend models via Dagen templates. Use the [[RemoteModel]] class to create
  * RemoteModels manually.
  */
-export declare class RemoteModel<T extends Object> implements Model<T> {
+export declare abstract class RemoteModel<T extends Object> implements Model<T> {
     remote: Address;
-    paths: Paths;
-    spawn: SpawnFunc;
-    context: Object;
+    actor: Spawner;
     handler: CompleteHandler<Result<T>>;
+    decorator: RequestDecorator<T>;
     /**
-     * @param remote  -  The actor to send requests to.
-     * @param paths   -  A map containing the request path to use for
-     *                   each method.
-     * @param spawn   -  The function used to spawn callbacks internally.
-     * @param context -  Object used to expand path string templates via
-     *                   interpolation.
-     * @param handler -  An optional CompleteHandler that can intercept
-     *                   responses.
+     * @param remote    - The actor to send requests to.
+     * @param actor     - The function used to spawn callbacks internally.
+     * @param handler   - An optional CompleteHandler that can intercept
+     *                    responses.
+     * @param decorator - If supplied, can modify requests before sending.
      */
-    constructor(remote: Address, paths: Paths, spawn: SpawnFunc, context?: Object, handler?: CompleteHandler<Result<T>>);
+    constructor(remote: Address, actor: Spawner, handler?: CompleteHandler<Result<T>>, decorator?: RequestDecorator<T>);
     /**
-     * send a request to the remote backend.
+     * path is a map containing the request path to use for each method.
+     *
+     * This property is meant to be implemented by child classes.
+     */
+    abstract paths: Paths;
+    /**
+     * send a request to the remote back-end.
      *
      * Use this method to submit the request to the remote actor using
      * the optional installed handler(s) to handle the request before completion.
@@ -63,4 +73,26 @@ export declare class RemoteModel<T extends Object> implements Model<T> {
     update(id: Id, changes: Partial<T>): Future<boolean>;
     get(id: Id): Future<Maybe<T>>;
     remove(id: Id): Future<boolean>;
+}
+/**
+ * GenericRemoteModel allows for the paths property to be specified in the
+ * constructor.
+ *
+ * This is not the case in RemoteModel to allow auto generated code to implement
+ * more easily.
+ */
+export declare class GenericRemoteModel<T extends Object> extends RemoteModel<T> {
+    remote: Address;
+    actor: Spawner;
+    paths: Paths;
+    handler: CompleteHandler<Result<T>>;
+    decorator: RequestDecorator<T>;
+    /**
+     * @param remote    - The actor to send requests to.
+     * @param actor     - The actor used to spawn callbacks internally.
+     * @param handler   - An optional CompleteHandler that can intercept
+     *                    responses.
+     * @param decorator - If supplied, can modify requests before sending.
+     */
+    constructor(remote: Address, actor: Spawner, paths?: Paths, handler?: CompleteHandler<Result<T>>, decorator?: RequestDecorator<T>);
 }

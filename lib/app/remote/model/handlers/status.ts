@@ -11,8 +11,8 @@ import {
     ErrorBody,
     CompleteHandler,
 } from '../../callback';
+import { Result } from '../response';
 import { FutureHandler } from './future';
-import { Result } from './result';
 
 /**
  * NotFoundHandler does not treat a 404 as an error.

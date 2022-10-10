@@ -2,12 +2,9 @@ import { Object } from '@quenk/noni/lib/data/jsonx';
 import { Spawner } from '@quenk/potoo/lib/actor/resident/api';
 import { Address } from '@quenk/potoo/lib/actor/address';
 import { CompleteHandler } from '../callback';
-import { Result } from './handler/result';
-import { SpawnFunc, RemoteModel, Paths } from './';
-/**
- * SpawnSpec is a type providing a way to spawn a new actor.
- */
-export declare type SpawnSpec = SpawnFunc | Spawner;
+import { RequestDecorator } from '../request/decorators';
+import { Result } from './response';
+import { RemoteModel, Paths } from './';
 /**
  * CompleteHandlerSpec type allows one or more CompletHandlers to be specified.
  */
@@ -17,17 +14,17 @@ export declare type CompleteHandlerSpec<D extends Object> = CompleteHandler<Resu
  */
 export declare class RemoteModelFactory<T extends Object> {
     remote: Address;
-    spawn: SpawnFunc;
+    actor: Spawner;
     /**
      * @param remote   The address of the actor that will receive the network
      *                 requests.
-     * @param spawn    A function that will be used to spawn needed actors.
+     * @param actor    The actor to be used to spawn callbacks.
      */
-    constructor(remote: Address, spawn: SpawnFunc);
+    constructor(remote: Address, actor: Spawner);
     /**
      * getInstance provides a new RemoteModelFactory instance.
      */
-    static getInstance<T extends Object>(spawn: SpawnSpec, remote: Address): RemoteModelFactory<T>;
+    static getInstance<T extends Object>(actor: Spawner, remote: Address): RemoteModelFactory<T>;
     /**
      * create a new RemoteModel using the internal configuration.
      *
@@ -43,5 +40,5 @@ export declare class RemoteModelFactory<T extends Object> {
      * @param context  An object that will be used to expand encountered URL
      *                 templates.
      */
-    create(paths: Paths, handlers?: CompleteHandlerSpec<T>, context?: Object): RemoteModel<T>;
+    create(paths: Paths, handlers?: CompleteHandlerSpec<T>, decorator?: RequestDecorator<T>): RemoteModel<T>;
 }

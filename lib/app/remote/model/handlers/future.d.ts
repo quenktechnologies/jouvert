@@ -1,7 +1,7 @@
 import { Object } from '@quenk/noni/lib/data/jsonx';
 import { Response } from '@quenk/jhr/lib/response';
 import { ErrorBody, CompleteHandler } from '../../callback';
-import { Result } from './result';
+import { Result } from '../response';
 import { TransportErr } from '../../';
 /**
  * FutureHandler is used internally to proxy the events of the request's

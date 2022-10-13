@@ -123,7 +123,7 @@ export abstract class RemoteModel<T extends Object> implements Model<T> {
 
             let r = yield that.send(
                 new Post(
-                    that.paths.create || NO_PATH,
+                    that.paths.create || that.paths.search || NO_PATH,
                     data,
                     {
                         tags: {

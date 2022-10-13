@@ -539,7 +539,7 @@ class RemoteModel {
     create(data) {
         let that = this;
         return (0, future_1.doFuture)(function* () {
-            let r = yield that.send(new request_1.Post(that.paths.create || exports.NO_PATH, data, {
+            let r = yield that.send(new request_1.Post(that.paths.create || that.paths.search || exports.NO_PATH, data, {
                 tags: {
                     path: that.paths.create || that.paths.get || exports.NO_PATH,
                     verb: 'post',

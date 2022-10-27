@@ -86,6 +86,16 @@ export declare class AfterSearchUpdateWidget<T extends Object> extends SearchRes
     onComplete(res: SearchResponse<T>): void;
 }
 /**
+ * AfterSearchUpdateWidgets calls the update() of each element found in the
+ * provided group id with the data property of a successful search request.
+ */
+export declare class AfterSearchUpdateWidgets<T extends Object> extends SearchResultHandler<T> {
+    view: View;
+    id: string;
+    constructor(view: View, id: string);
+    onComplete(res: SearchResponse<T>): void;
+}
+/**
  * OnCompleteShowData calls the show() method of the provided scene on
  * successful completion of a request.
  */

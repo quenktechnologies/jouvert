@@ -164,6 +164,29 @@ export class AfterSearchUpdateWidget<T extends Object>
 }
 
 /**
+ * AfterSearchUpdateWidgets calls the update() of each element found in the
+ * provided group id with the data property of a successful search request.
+ */
+export class AfterSearchUpdateWidgets<T extends Object>
+    extends
+    SearchResultHandler<T> {
+
+    constructor(public view: View, public id: string) { super(); }
+
+    onComplete(res: SearchResponse<T>) {
+
+        if ((res.code === 200) && res.request.method === 'GET') {
+
+            this.view.findGroupById<Updatable<T>>(this.id).forEach(hit =>
+                hit.update(res.body.data || []));
+
+        }
+
+    }
+
+}
+
+/**
  * OnCompleteShowData calls the show() method of the provided scene on 
  * successful completion of a request.
  */

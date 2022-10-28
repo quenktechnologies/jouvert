@@ -244,19 +244,61 @@ export class OnSaveFailed<T> extends AbstractCompleteHandler<T> {
 }
 
 /**
- * OnNotFound executes the provided handler when a 404 error is encountered.
+ * AfterConflict executes the provided handler when a 409 client status is
+ * encountered.
  */
-export class OnNotFound<T> extends AbstractCompleteHandler<T> {
+export class AfterConflict<T> extends AbstractCompleteHandler<T> {
 
-    constructor(public handler: () => void) { super(); }
+    constructor(public handler: () => Yield<void>) { super(); }
 
     onClientError<B>(res: Response<B>) {
 
-        if (res.code === 404) {
+        if (res.code === 409)             return this.handler();
 
-            this.handler();
+    }
 
-        }
+}
+
+/**
+ * AfterNotFound executes the provided handler when a 404 status is encountered.
+ */
+export class AfterNotFound<T> extends AbstractCompleteHandler<T> {
+
+    constructor(public handler: () => Yield<void>) { super(); }
+
+    onClientError<B>(res: Response<B>) {
+
+        if (res.code === 404)             return this.handler();
+
+    }
+
+}
+
+/**
+ * AfterOk invokes a handler if the response has status 200.
+ */
+export class AfterOk<T> extends AbstractCompleteHandler<T> {
+
+    constructor(public handler: (res:Response<T>) => Yield<void>) { super(); }
+
+    onComplete(res: Response<T>) {
+
+        if (res.code === 200)  return this.handler(res);
+
+    }
+
+}
+
+/**
+ * AfterCreated invokes a handler if the response has status 201.
+ */
+export class AfterCreated<T> extends AbstractCompleteHandler<T> {
+
+    constructor(public handler: (res:Response<T>) => Yield<void>) { super(); }
+
+    onComplete(res: Response<T>) {
+
+        if (res.code === 201)  return this.handler(res);
 
     }
 

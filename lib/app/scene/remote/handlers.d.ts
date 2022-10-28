@@ -131,10 +131,35 @@ export declare class OnSaveFailed<T> extends AbstractCompleteHandler<T> {
     onClientError(res: Response<ClientErrorBody>): void;
 }
 /**
- * OnNotFound executes the provided handler when a 404 error is encountered.
+ * AfterConflict executes the provided handler when a 409 client status is
+ * encountered.
  */
-export declare class OnNotFound<T> extends AbstractCompleteHandler<T> {
-    handler: () => void;
-    constructor(handler: () => void);
-    onClientError<B>(res: Response<B>): void;
+export declare class AfterConflict<T> extends AbstractCompleteHandler<T> {
+    handler: () => Yield<void>;
+    constructor(handler: () => Yield<void>);
+    onClientError<B>(res: Response<B>): Yield<void>;
+}
+/**
+ * AfterNotFound executes the provided handler when a 404 status is encountered.
+ */
+export declare class AfterNotFound<T> extends AbstractCompleteHandler<T> {
+    handler: () => Yield<void>;
+    constructor(handler: () => Yield<void>);
+    onClientError<B>(res: Response<B>): Yield<void>;
+}
+/**
+ * AfterOk invokes a handler if the response has status 200.
+ */
+export declare class AfterOk<T> extends AbstractCompleteHandler<T> {
+    handler: (res: Response<T>) => Yield<void>;
+    constructor(handler: (res: Response<T>) => Yield<void>);
+    onComplete(res: Response<T>): Yield<void>;
+}
+/**
+ * AfterCreated invokes a handler if the response has status 201.
+ */
+export declare class AfterCreated<T> extends AbstractCompleteHandler<T> {
+    handler: (res: Response<T>) => Yield<void>;
+    constructor(handler: (res: Response<T>) => Yield<void>);
+    onComplete(res: Response<T>): Yield<void>;
 }

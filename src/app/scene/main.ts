@@ -1,4 +1,4 @@
-import { Future } from '@quenk/noni/lib/control/monad/future';
+import { Yield } from '@quenk/noni/lib/control/monad/future';
 import { Case } from '@quenk/potoo/lib/actor/resident/case';
 import { System } from '@quenk/potoo/lib/actor/system';
 
@@ -9,13 +9,21 @@ import {
     SuspendCase,
     SuspendListener
 } from '../service/director';
-import { Pop, Push, Show, Close } from '../service/display';
 import {
-  FormAborted, 
-  FormSaved,
-  FormListener, 
-  FormAbortedCase,
-  FormSavedCase 
+    Pop,
+    Push,
+    Show,
+    Close,
+    ViewRemoved,
+    ViewShown,
+    DisplayListener
+} from '../service/display';
+import {
+    FormAborted,
+    FormSaved,
+    FormListener,
+    FormAbortedCase,
+    FormSavedCase
 } from './form';
 import { BaseAppScene } from './';
 
@@ -29,6 +37,8 @@ export type MainSceneMessage<M>
     | Pop
     | FormAborted
     | FormSaved
+    | ViewShown
+    | ViewRemoved
     | M
     ;
 
@@ -56,8 +66,9 @@ export abstract class MainScene<T, M>
     extends
     BaseAppScene<MainSceneMessage<M>>
     implements
-    SuspendListener,
-    FormListener {
+    DisplayListener,
+    FormListener,
+    SuspendListener {
 
     constructor(public system: System, public resume: Resume<T>) {
 
@@ -65,15 +76,19 @@ export abstract class MainScene<T, M>
 
     }
 
-    afterFormAborted(_: FormAborted): void | Future<void> { 
+    afterViewShown(_: ViewShown): Yield<void> { }
 
-      return this.show();
+    afterViewRemoved(_: ViewRemoved): Yield<void> { }
+
+    afterFormAborted(_: FormAborted): Yield<void> {
+
+        return this.show();
 
     }
 
-    afterFormSaved(_: FormSaved): void | Future<void> {
+    afterFormSaved(_: FormSaved): Yield<void> {
 
-      return this.reload();
+        return this.reload();
 
     }
 
@@ -87,13 +102,17 @@ export abstract class MainScene<T, M>
 
         return <Case<MainSceneMessage<M>>[]>[
 
-            new SuspendCase(this, this.resume.director),
+            new Case(ViewShown, (msg: ViewShown) =>
+              this.afterViewShown(msg)),
+
+            new Case(ViewRemoved, (msg: ViewRemoved) =>
+              this.afterViewRemoved(msg)),
 
             new FormAbortedCase(this),
 
             new FormSavedCase(this),
 
-           new Case(Show, (msg: Show) => void this.tell(this.display, msg)),
+            new Case(Show, (msg: Show) => void this.tell(this.display, msg)),
 
             new Case(Push, (msg: Push) => void this.tell(this.display, msg)),
 
@@ -101,6 +120,7 @@ export abstract class MainScene<T, M>
 
             new Case(Close, (msg: Close) => void this.tell(this.display, msg)),
 
+            new SuspendCase(this, this.resume.director)
         ];
 
     }

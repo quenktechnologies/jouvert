@@ -1,4 +1,5 @@
 import { View } from '@quenk/wml';
+import { Yield } from '@quenk/noni/lib/control/monad/future';
 import { Immutable } from '@quenk/potoo/lib/actor/resident/immutable';
 import { System } from '@quenk/potoo/lib/actor/system';
 import { Address } from '@quenk/potoo/lib/actor/address';
@@ -95,6 +96,22 @@ export declare class ViewStackEmpty {
 export declare class ViewRemoved {
     name: ViewName;
     constructor(name: ViewName);
+}
+/**
+ * DisplayListener is an interface for actors interested in receiving event
+ * messages related to the display.
+ */
+export interface DisplayListener {
+    /**
+     * afterViewShown is called when the listener receives a ViewShown
+     * message.
+     */
+    afterViewShown(msg: ViewShown): Yield<void>;
+    /**
+     * afterViewRemoved is called when the listener receives a ViewRemoved
+     * message.
+     */
+    afterViewRemoved(msg: ViewRemoved): Yield<void>;
 }
 /**
  * Display serves as the "display" for Jouvert applications that utilize

@@ -1661,8 +1661,14 @@ class Future {
             return function_1.noop;
         }));
     }
-    finally(f) {
+    finialize(f) {
         return new Finally(this, f);
+    }
+    finally(f) {
+        return this.finialize(() => {
+            f();
+            return this;
+        });
     }
     then(onResolve, onReject) {
         return new Promise((resolve, reject) => {

@@ -39,7 +39,7 @@ export declare class ShiftingOnComplete<T> extends AbstractCompleteHandler<T> {
     handlers: CompleteHandler<T>[];
     constructor(handlers: CompleteHandler<T>[]);
     _handlers: CompleteHandler<T>[];
-    onComplete(r: Response<T>): void;
+    onComplete(r: Response<T>): Yield<void>;
 }
 /**
  * ShiftingOnClientError uses the next [[CompleteHandler]] from the list

@@ -62,7 +62,7 @@ export class ShiftingOnComplete<T> extends AbstractCompleteHandler<T> {
 
     _handlers: CompleteHandler<T>[] = this.handlers.slice();
 
-    onComplete(r: Response<T>) {
+    onComplete(r: Response<T>) : Yield<void> {
 
         let handler = this._handlers.length === 1 ?
             this._handlers[0] :

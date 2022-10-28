@@ -1,14 +1,14 @@
-import { Future } from '@quenk/noni/lib/control/monad/future';
+import { Yield } from '@quenk/noni/lib/control/monad/future';
 import { Case } from '@quenk/potoo/lib/actor/resident/case';
 import { System } from '@quenk/potoo/lib/actor/system';
 import { Resume, Suspend, SuspendListener } from '../service/director';
-import { Pop, Push, Show } from '../service/display';
+import { Pop, Push, Show, ViewRemoved, ViewShown, DisplayListener } from '../service/display';
 import { FormAborted, FormSaved, FormListener } from './form';
 import { BaseAppScene } from './';
 /**
  * MainSceneMessage type.
  */
-export declare type MainSceneMessage<M> = Suspend | Show | Push | Pop | FormAborted | FormSaved | M;
+export declare type MainSceneMessage<M> = Suspend | Show | Push | Pop | FormAborted | FormSaved | ViewShown | ViewRemoved | M;
 /**
  * MainScene is an actor used to provide one of the primary activity views of an
  * application.
@@ -29,12 +29,14 @@ export declare type MainSceneMessage<M> = Suspend | Show | Push | Pop | FormAbor
  * make working with [[FormScene]]s and [[Dialog]]s easier, it contains Case
  * classes for redirecting content received to the Director.
  */
-export declare abstract class MainScene<T, M> extends BaseAppScene<MainSceneMessage<M>> implements SuspendListener, FormListener {
+export declare abstract class MainScene<T, M> extends BaseAppScene<MainSceneMessage<M>> implements DisplayListener, FormListener, SuspendListener {
     system: System;
     resume: Resume<T>;
     constructor(system: System, resume: Resume<T>);
-    afterFormAborted(_: FormAborted): void | Future<void>;
-    afterFormSaved(_: FormSaved): void | Future<void>;
+    afterViewShown(_: ViewShown): Yield<void>;
+    afterViewRemoved(_: ViewRemoved): Yield<void>;
+    afterFormAborted(_: FormAborted): Yield<void>;
+    afterFormSaved(_: FormSaved): Yield<void>;
     get display(): string;
     receive(): Case<MainSceneMessage<M>>[];
     beforeSuspended(_: Suspend): void;

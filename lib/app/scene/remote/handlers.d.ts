@@ -156,6 +156,27 @@ export declare class AfterOk<T> extends AbstractCompleteHandler<T> {
     onComplete(res: Response<T>): Yield<void>;
 }
 /**
+ * AfterGetOk invokes a handler if the request was a Get and the response
+ * has status 200.
+ */
+export declare class AfterGetOk<T> extends AfterOk<T> {
+    onComplete(res: Response<T>): Yield<void>;
+}
+/**
+ * AfterPatchOk invokes a handler if the request was a Patch and the response
+ * has status 200.
+ */
+export declare class AfterPatchOk<T> extends AfterOk<T> {
+    onComplete(res: Response<T>): Yield<void>;
+}
+/**
+ * AfterDeleteOk invokes a handler if the request was a Delete and the response
+ * has status 200.
+ */
+export declare class AfterDeleteOk<T> extends AfterOk<T> {
+    onComplete(res: Response<T>): Yield<void>;
+}
+/**
  * AfterCreated invokes a handler if the response has status 201.
  */
 export declare class AfterCreated<T> extends AbstractCompleteHandler<T> {

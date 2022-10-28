@@ -13,6 +13,7 @@
 import { Object } from '@quenk/noni/lib/data/jsonx';
 
 import { Response } from '@quenk/jhr/lib/response';
+import {Method} from '@quenk/jhr/lib/request/method';
 
 import { View } from '@quenk/wml';
 
@@ -62,7 +63,7 @@ export class ShiftingOnComplete<T> extends AbstractCompleteHandler<T> {
 
     _handlers: CompleteHandler<T>[] = this.handlers.slice();
 
-    onComplete(r: Response<T>) : Yield<void> {
+    onComplete(r: Response<T>): Yield<void> {
 
         let handler = this._handlers.length === 1 ?
             this._handlers[0] :
@@ -253,7 +254,7 @@ export class AfterConflict<T> extends AbstractCompleteHandler<T> {
 
     onClientError<B>(res: Response<B>) {
 
-        if (res.code === 409)             return this.handler();
+        if (res.code === 409) return this.handler();
 
     }
 
@@ -268,7 +269,7 @@ export class AfterNotFound<T> extends AbstractCompleteHandler<T> {
 
     onClientError<B>(res: Response<B>) {
 
-        if (res.code === 404)             return this.handler();
+        if (res.code === 404) return this.handler();
 
     }
 
@@ -279,11 +280,56 @@ export class AfterNotFound<T> extends AbstractCompleteHandler<T> {
  */
 export class AfterOk<T> extends AbstractCompleteHandler<T> {
 
-    constructor(public handler: (res:Response<T>) => Yield<void>) { super(); }
+    constructor(public handler: (res: Response<T>) => Yield<void>) { super(); }
 
     onComplete(res: Response<T>) {
 
-        if (res.code === 200)  return this.handler(res);
+        if (res.code === 200) return this.handler(res);
+
+    }
+
+}
+
+/**
+ * AfterGetOk invokes a handler if the request was a Get and the response 
+ * has status 200.
+ */
+export class AfterGetOk<T> extends AfterOk<T> {
+
+    onComplete(res: Response<T>) {
+
+        if ((res.code === 200) && res.request.method === Method.Get)
+            return this.handler(res);
+
+    }
+
+}
+
+/**
+ * AfterPatchOk invokes a handler if the request was a Patch and the response
+ * has status 200.
+ */
+export class AfterPatchOk<T> extends AfterOk<T> {
+
+    onComplete(res: Response<T>) {
+
+        if ((res.code === 200) && res.request.method === Method.Patch)
+            return this.handler(res);
+
+    }
+
+}
+
+/**
+ * AfterDeleteOk invokes a handler if the request was a Delete and the response
+ * has status 200.
+ */
+export class AfterDeleteOk<T> extends AfterOk<T> {
+
+    onComplete(res: Response<T>) {
+
+        if ((res.code === 200) && res.request.method === Method.Delete)
+            return this.handler(res);
 
     }
 
@@ -294,11 +340,11 @@ export class AfterOk<T> extends AbstractCompleteHandler<T> {
  */
 export class AfterCreated<T> extends AbstractCompleteHandler<T> {
 
-    constructor(public handler: (res:Response<T>) => Yield<void>) { super(); }
+    constructor(public handler: (res: Response<T>) => Yield<void>) { super(); }
 
     onComplete(res: Response<T>) {
 
-        if (res.code === 201)  return this.handler(res);
+        if (res.code === 201) return this.handler(res);
 
     }
 

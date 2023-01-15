@@ -5,7 +5,7 @@ import { Dialog, DialogEventFunc, DialogEventHandler, DialogEvent } from './';
  * ConfirmDialogEventHandler is the allowed types for confirm dialog event
  * targets.
  */
-export declare type ConfirmDialogEventTarget = DialogEventFunc | Address | DialogEventHandler;
+export type ConfirmDialogEventTarget = DialogEventFunc | Address | DialogEventHandler;
 /**
  * ConfirmDialogEventHandler is an object that can receive confirm dialog events.
  */

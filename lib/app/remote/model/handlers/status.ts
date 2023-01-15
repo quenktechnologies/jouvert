@@ -11,7 +11,7 @@ import {
     ErrorBody,
     CompleteHandler,
 } from '../../callback';
-import { Result } from '../response';
+import { Result } from '../../../model/http';
 import { FutureHandler } from './future';
 
 /**

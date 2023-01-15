@@ -8,15 +8,15 @@ import { AppScene, BaseAppScene } from '../';
 /**
  * FieldName type.
  */
-export declare type FieldName = string;
+export type FieldName = string;
 /**
  * FieldValue type.
  */
-export declare type FieldValue = Value;
+export type FieldValue = Value;
 /**
  * FieldError type.
  */
-export declare type FieldError = string;
+export type FieldError = string;
 /**
  * FormAbortedListener is implemented by actors interested in the FormAborted
  * message.
@@ -120,7 +120,7 @@ export declare class FormSaved {
 /**
  * FormSceneMessage type.
  */
-export declare type FormSceneMessage<M> = Abort | Save | SaveFailed | SaveOk | InputEvent | M;
+export type FormSceneMessage<M> = Abort | Save | SaveFailed | SaveOk | InputEvent | M;
 /**
  * SaveListener indicates an actor has support for reacting to the saving
  * process of form data.

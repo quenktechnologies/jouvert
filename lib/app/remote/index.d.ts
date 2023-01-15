@@ -16,13 +16,13 @@ export { HTTPRequest, HTTPResponse };
  * 2. SeqSend - Issues multiple requests sequentially.
  * 3. ParSend - Issues multiple requests in parallel.
  */
-export declare type Request<B> = Send<B> | ParSend<B> | SeqSend<B>;
+export type Request<B> = Send<B> | ParSend<B> | SeqSend<B>;
 /**
  * Response the Remote received from the remote server.
  *
  * This is either a single HTTPResponse or a wrapper for batch results.
  */
-export declare type Response<T> = GenericResponse<T> | BatchResponse<T>;
+export type Response<T> = GenericResponse<T> | BatchResponse<T>;
 /**
  * Send a single request to the remote host, forwarding the response to the
  * specified address.

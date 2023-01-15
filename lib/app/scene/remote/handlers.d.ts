@@ -15,7 +15,7 @@ import { Response } from '@quenk/jhr/lib/response';
 import { View } from '@quenk/wml';
 import { Yield } from '@quenk/noni/lib/control/monad/future';
 import { AbstractCompleteHandler, CompleteHandler } from '../../remote/callback';
-import { GetResponse, Pagination, SearchResponse } from '../../remote/model/response';
+import { GetResponse, Pagination, SearchResponse } from '../../model/http';
 import { GetResultHandler, SearchResultHandler } from '../../remote/model/handlers/result';
 import { FormErrors, SaveListener } from '../form';
 /**

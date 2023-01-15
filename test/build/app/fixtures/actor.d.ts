@@ -5,7 +5,7 @@ import { TestApp } from './app';
 /**
  * GenericImmutableRunFunc type.
  */
-export declare type GenericImmutableRunFunc = (actor: GenericImmutable) => void;
+export type GenericImmutableRunFunc = (actor: GenericImmutable) => void;
 /**
  * GenericImmutable is an Immutable that accepts its cases in the constructor.
  */

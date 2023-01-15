@@ -14,9 +14,7 @@ import {
 } from '@quenk/noni/lib/control/monad/future';
 import { Maybe, fromNullable, nothing } from '@quenk/noni/lib/data/maybe';
 import { Object } from '@quenk/noni/lib/data/jsonx';
-import { interpolate } from '@quenk/noni/lib/data/string';
-import { merge, Record } from '@quenk/noni/lib/data/record';
-import { isObject } from '@quenk/noni/lib/data/type';
+import {  Record } from '@quenk/noni/lib/data/record';
 
 import { Address } from '@quenk/potoo/lib/actor/address';
 import { System } from '@quenk/potoo/lib/actor/system';
@@ -24,7 +22,6 @@ import { Spawner } from '@quenk/potoo/lib/actor/resident/api';
 
 import { Response } from '@quenk/jhr/lib/response';
 import { Request } from '@quenk/jhr/lib/request';
-import { Post, Get, Patch, Delete } from '@quenk/jhr/lib/request';
 
 import { RequestDecorator, RequestPassthrough } from '../request/decorators';
 import { Id, Model } from '../../model';
@@ -39,8 +36,9 @@ import {
     Result,
     CreateResult,
     GetResult,
-    SearchResult
-} from './response';
+    SearchResult,
+    RequestFactory
+} from '../../model/http';
 
 export { Id, Model }
 
@@ -89,11 +87,10 @@ export abstract class RemoteModel<T extends Object> implements Model<T> {
         public decorator: RequestDecorator<T> = new RequestPassthrough()) { }
 
     /**
-     * path is a map containing the request path to use for each method.
-     *
-     * This property is meant to be implemented by child classes.
+     * requests is a factory object that generates the requests sent by this
+     * actor.
      */
-    abstract paths: Paths;
+    abstract requests: RequestFactory;
 
     /**
      * send a request to the remote back-end.
@@ -121,19 +118,7 @@ export abstract class RemoteModel<T extends Object> implements Model<T> {
 
         return doFuture(function*() {
 
-            let r = yield that.send(
-                new Post(
-                    that.paths.create || that.paths.search || NO_PATH,
-                    data,
-                    {
-                        tags: {
-                            path: that.paths.create || that.paths.get || NO_PATH,
-                            verb: 'post',
-                            method: 'create'
-                        }
-                    }
-                ));
-
+            let r = yield that.send(that.requests.create(data));
             return pure((<CreateResult>r.body).data.id);
 
         });
@@ -146,22 +131,8 @@ export abstract class RemoteModel<T extends Object> implements Model<T> {
 
         return doFuture(function*() {
 
-            let r = yield that.send(
-                new Get(
-                    that.paths.search || NO_PATH,
-                    qry,
-                    {
-                        tags: merge(
-                            isObject(qry.$tags) ? <object>qry.$tags : {}, {
-                            path: that.paths.search,
-                            verb: 'get',
-                            method: 'search'
-                        })
-                    }
-                ));
-
-            return pure((r.code === 204) ?
-                [] : (<SearchResult<T>>r.body).data);
+            let r = yield that.send(that.requests.search(qry));
+            return pure((r.code === 204) ? [] : (<SearchResult<T>>r.body).data);
 
         });
 
@@ -173,23 +144,7 @@ export abstract class RemoteModel<T extends Object> implements Model<T> {
 
         return doFuture(function*() {
 
-            let r = yield that.send(
-                new Patch(
-                    interpolate(
-                        that.paths.update ||
-                        that.paths.get ||
-                        NO_PATH, { id }
-                    ),
-                    changes,
-                    {
-                        tags: {
-                            path: that.paths.update,
-                            verb: 'patch',
-                            method: 'update'
-                        }
-                    }
-                ));
-
+            let r = yield that.send(that.requests.update(id, changes));
             return pure((r.code === 200) ? true : false);
 
         });
@@ -202,17 +157,7 @@ export abstract class RemoteModel<T extends Object> implements Model<T> {
 
         return doFuture(function*() {
 
-            let req = new Get(
-                interpolate(that.paths.get || NO_PATH, { id }),
-                {},
-                {
-                    tags: {
-                        path: that.paths.get,
-                        verb: 'get',
-                        method: 'get'
-                    }
-                }
-            );
+            let req = that.requests.get(id);
 
             return that
                 .send(req)
@@ -232,23 +177,7 @@ export abstract class RemoteModel<T extends Object> implements Model<T> {
 
         return doFuture(function*() {
 
-            let r = yield that.send(
-                new Delete(
-                    interpolate(
-                        that.paths.remove ||
-                        that.paths.get ||
-                        NO_PATH, { id }
-                    ),
-                    {},
-                    {
-                        tags: {
-                            path: that.paths.remove,
-                            verb: 'delete',
-                            method: 'remove'
-                        }
-                    }
-                ));
-
+            let r = yield that.send(that.requests.remove(id));
             return pure((r.code === 200) ? true : false);
 
         });
@@ -282,5 +211,7 @@ export class GenericRemoteModel<T extends Object> extends RemoteModel<T> {
         super(remote, actor, handler, decorator);
 
     }
+
+    requests: RequestFactory = new RequestFactory(this.paths);
 
 }

@@ -10,7 +10,7 @@ export { TransportErr, Response, Request, Send, ParSend, SeqSend, BatchResponse 
 /**
  * RemoteObserverMessage type.
  */
-export declare type RemoteObserverMessage<Req, Res> = Send<Req> | ParSend<Req> | SeqSend<Req> | TransportErr | GenericResponse<Res> | BatchResponse<Res>;
+export type RemoteObserverMessage<Req, Res> = Send<Req> | ParSend<Req> | SeqSend<Req> | TransportErr | GenericResponse<Res> | BatchResponse<Res>;
 /**
  * RemoteObserver is a bridge to a [[Remote]] (the Remote is spawned internally)
  * that allows requests and responses to be observed.

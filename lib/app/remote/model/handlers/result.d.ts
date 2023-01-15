@@ -1,6 +1,6 @@
 import { Object } from '@quenk/noni/lib/data/jsonx';
 import { AbstractCompleteHandler } from '../../callback';
-import { CreateResult, GetResult, SearchResult } from '../response';
+import { CreateResult, GetResult, SearchResult } from '../../../model/http';
 /**
  * CreateResultHandler is a CompleteHandler that expects the body of the
  * result to be a [[CreateResult]].

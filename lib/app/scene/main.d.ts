@@ -8,7 +8,7 @@ import { BaseAppScene } from './';
 /**
  * MainSceneMessage type.
  */
-export declare type MainSceneMessage<M> = Suspend | Show | Push | Pop | FormAborted | FormSaved | ViewShown | ViewRemoved | M;
+export type MainSceneMessage<M> = Suspend | Show | Push | Pop | FormAborted | FormSaved | ViewShown | ViewRemoved | M;
 /**
  * MainScene is an actor used to provide one of the primary activity views of an
  * application.

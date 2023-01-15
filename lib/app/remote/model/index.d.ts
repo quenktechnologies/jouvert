@@ -15,7 +15,7 @@ import { Request } from '@quenk/jhr/lib/request';
 import { RequestDecorator } from '../request/decorators';
 import { Id, Model } from '../../model';
 import { CompleteHandler } from '../callback';
-import { Result } from './response';
+import { Result, RequestFactory } from '../../model/http';
 export { Id, Model };
 /**
  * Paths is a record of actor addresses to use for each of the CSUGR
@@ -56,11 +56,10 @@ export declare abstract class RemoteModel<T extends Object> implements Model<T> 
      */
     constructor(remote: Address, actor: Spawner, handler?: CompleteHandler<Result<T>>, decorator?: RequestDecorator<T>);
     /**
-     * path is a map containing the request path to use for each method.
-     *
-     * This property is meant to be implemented by child classes.
+     * requests is a factory object that generates the requests sent by this
+     * actor.
      */
-    abstract paths: Paths;
+    abstract requests: RequestFactory;
     /**
      * send a request to the remote back-end.
      *
@@ -95,4 +94,5 @@ export declare class GenericRemoteModel<T extends Object> extends RemoteModel<T>
      * @param decorator - If supplied, can modify requests before sending.
      */
     constructor(remote: Address, actor: Spawner, paths?: Paths, handler?: CompleteHandler<Result<T>>, decorator?: RequestDecorator<T>);
+    requests: RequestFactory;
 }

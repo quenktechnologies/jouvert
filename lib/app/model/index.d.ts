@@ -4,7 +4,7 @@ import { Future } from '@quenk/noni/lib/control/monad/future';
 /**
  * Id is a valid unique identifier for a single record.
  */
-export declare type Id = string | number;
+export type Id = string | number;
 /**
  * Model is an interface for preforming CSUGR operations on a data
  * type found in the application we are interested in persisting.

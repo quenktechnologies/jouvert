@@ -6,7 +6,7 @@ import { Address } from '@quenk/potoo/lib/actor/address';
 
 import { CompleteHandler, CompositeCompleteHandler } from '../callback';
 import { RequestDecorator, RequestPassthrough } from '../request/decorators';
-import { Result } from './response';
+import { Result } from '../../model/http';
 import { RemoteModel, Paths, GenericRemoteModel } from './';
 
 /**

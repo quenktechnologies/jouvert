@@ -4,15 +4,15 @@ import { BaseAppScene } from '../';
 /**
  * DialogName indicates the name of a dialog.
  */
-export declare type DialogName = string;
+export type DialogName = string;
 /**
  * DialogEventTarget is the allowed types for dialog event targets.
  */
-export declare type DialogEventTarget = DialogEventFunc | Address | DialogEventHandler;
+export type DialogEventTarget = DialogEventFunc | Address | DialogEventHandler;
 /**
  * DialogEventFunc can be invoked to receive dialog events.
  */
-export declare type DialogEventFunc = (e: DialogEvent) => void;
+export type DialogEventFunc = (e: DialogEvent) => void;
 /**
  * DialogEventHandler is an object that can receive dialog events.
  */

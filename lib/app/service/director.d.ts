@@ -11,20 +11,20 @@ export declare const DEFAULT_TIMEOUT = 1000;
  * RouteString is the identifier used by the RoutingLogic to determine which
  * route to execute.
  */
-export declare type RouteString = string;
+export type RouteString = string;
 /**
  * SupervisorAddress is the address of the current actor's supervising actor.
  */
-export declare type SupervisorAddress = Address;
+export type SupervisorAddress = Address;
 /**
  * SuspendTimerAddress is the address of the timer for a current actor
  * that is being suspended.
  */
-export declare type SuspendTimerAddress = Address;
+export type SuspendTimerAddress = Address;
 /**
  * CurrentInfo is a tuple containing information about the current actor.
  */
-export declare type CurrentInfo = [
+export type CurrentInfo = [
     RouteString,
     SupervisorAddress,
     SuspendTimerAddress
@@ -32,15 +32,15 @@ export declare type CurrentInfo = [
 /**
  * SupervisorMessage type.
  */
-export declare type SupervisorMessage = SuspendActor | Suspended;
+export type SupervisorMessage = SuspendActor | Suspended;
 /**
  * SuspendTimerMessage type.
  */
-export declare type SuspendTimerMessage = CancelTimer;
+export type SuspendTimerMessage = CancelTimer;
 /**
  * DirectorMessage type.
  */
-export declare type DirectorMessage<T> = RouteChanged<T> | ActorSuspended;
+export type DirectorMessage<T> = RouteChanged<T> | ActorSuspended;
 /**
  * RouteTarget is the address (or template) of the target actor that will be
  * sent the Resume message when its route is selected.
@@ -48,7 +48,7 @@ export declare type DirectorMessage<T> = RouteChanged<T> | ActorSuspended;
  * Values of this type can be an Address of an existing actor, a template for
  * spawning a new actor or a function that provides one of the former.
  */
-export declare type RouteTarget<A> = Address | Template | ((r: Resume<A>) => Address | Template);
+export type RouteTarget<A> = Address | Template | ((r: Resume<A>) => Address | Template);
 /**
  * RoutingTable is a map of routes to CandidateTargets.
  */

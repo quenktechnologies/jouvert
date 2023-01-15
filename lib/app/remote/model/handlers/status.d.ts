@@ -1,7 +1,7 @@
 import { Object } from '@quenk/noni/lib/data/jsonx';
 import { Response } from '@quenk/jhr/lib/response';
 import { ErrorBody, CompleteHandler } from '../../callback';
-import { Result } from '../response';
+import { Result } from '../../../model/http';
 import { FutureHandler } from './future';
 /**
  * NotFoundHandler does not treat a 404 as an error.

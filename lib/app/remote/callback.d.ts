@@ -17,11 +17,11 @@ export { Send, ParSend, SeqSend };
 /**
  * SendCallbackMessage type.
  */
-export declare type SendCallbackMessage<B> = Response<B> | TransportErr;
+export type SendCallbackMessage<B> = Response<B> | TransportErr;
 /**
  * BatchCallbackMessage type.
  */
-export declare type BatchCallbackMessage<B> = BatchResponse<B> | TransportErr;
+export type BatchCallbackMessage<B> = BatchResponse<B> | TransportErr;
 /**
  * ErrorBody provides details about why a request failed.
  */

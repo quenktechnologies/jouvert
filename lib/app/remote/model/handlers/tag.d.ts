@@ -5,21 +5,21 @@ import { TransportErr } from '../../';
 /**
  * TagName is the name of a tag as it appears in the request.options.tags object.
  */
-export declare type TagName = string;
+export type TagName = string;
 /**
  * TagValue TODO: Rename in upstream.
  */
-export declare type TagValue = Tag;
+export type TagValue = Tag;
 /**
  * TagHandlerSpec indicates what [[CompleteHandler]] to use when specific tags
  * are encountered.
  */
-export declare type TagHandlerSpec<B> = [TagName, TagValue, CompleteHandler<B> | CompleteHandler<B>[]];
+export type TagHandlerSpec<B> = [TagName, TagValue, CompleteHandler<B> | CompleteHandler<B>[]];
 /**
  * ExpandedTagHandlerSpec where the handlers specified as an array have been
  * converted to [[CompositeHandler]]s
  */
-export declare type ExpandedTagHandlerSpec<B> = [TagName, TagValue, CompleteHandler<B>];
+export type ExpandedTagHandlerSpec<B> = [TagName, TagValue, CompleteHandler<B>];
 /**
  * TaggedHandler allows for the selective application of handlers based on tags
  * applied to the initial request.

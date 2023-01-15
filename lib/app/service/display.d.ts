@@ -8,11 +8,11 @@ import { Layout } from '@quenk/wml-widgets/lib/layout';
 /**
  * ViewName is used to identify views.
  */
-export declare type ViewName = string;
+export type ViewName = string;
 /**
  * DisplayMessage is the type of messages the Display handles.
  */
-export declare type DisplayMessage = Show | Push | Pop | Close;
+export type DisplayMessage = Show | Push | Pop | Close;
 /**
  * ViewDelegate is the object the Display delegates actual handling of the
  * view to.

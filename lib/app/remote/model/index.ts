@@ -40,7 +40,15 @@ import {
     RequestFactory
 } from '../../model/http';
 
-export { Id, Model }
+export {
+  Id,
+  Model,
+  Result, 
+  CreateResult, 
+  GetResult,
+  SearchResult,
+  RequestFactory 
+}
 
 /**
  * Paths is a record of actor addresses to use for each of the CSUGR

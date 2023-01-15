@@ -641,7 +641,7 @@ exports.VoidHandler = VoidHandler;
  * format specified.
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.GenericRemoteModel = exports.RemoteModel = exports.NO_PATH = void 0;
+exports.GenericRemoteModel = exports.RemoteModel = exports.NO_PATH = exports.RequestFactory = void 0;
 /** imports */
 const future_1 = require("@quenk/noni/lib/control/monad/future");
 const maybe_1 = require("@quenk/noni/lib/data/maybe");
@@ -650,6 +650,7 @@ const callback_1 = require("../callback");
 const void_1 = require("./handlers/void");
 const future_2 = require("./handlers/future");
 const http_1 = require("../../model/http");
+Object.defineProperty(exports, "RequestFactory", { enumerable: true, get: function () { return http_1.RequestFactory; } });
 exports.NO_PATH = 'invalid';
 /**
  * RemoteModel is a [[Model]] implementation that uses the remote actor API

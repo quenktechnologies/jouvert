@@ -29,7 +29,7 @@ import {
     GetResponse,
     Pagination,
     SearchResponse
-} from '../../remote/model/response';
+} from '../../model/http';
 import {
     GetResultHandler,
     SearchResultHandler,

@@ -1,3 +1,5 @@
+import * as status from '@quenk/jhr/lib/status';
+
 import {
     Future,
     doFuture,
@@ -16,7 +18,9 @@ import { Request } from '@quenk/jhr/lib/request';
 import { Post, Get, Patch, Delete } from '@quenk/jhr/lib/request';
 
 import { Id, Model } from './';
+
 export { Id, Model }
+
 /**
  * Result is the structure of the response body expected after a successful
  * CSUGR operation.
@@ -238,25 +242,35 @@ export class RequestFactory {
     }
 }
 
+const errors: Record<string> = {
+    [status.BAD_REQUEST]: 'BADREQUEST',
+    [status.UNAUTHORIZED]: 'UNAUTHORIZED',
+    [status.FORBIDDEN]: 'FORBIDDEN',
+    [status.CONFLICT]: 'CONFLICT',
+    'other': 'UNEXPECTED_STATUS'
+}
+
+const response2Error = <T>(r: Response<T>) =>
+    new Error(errors[r.code] || errors.other);
+
 /**
- * HttpModel is a Model implementation that uses @quenk/jhr directly to send 
- * data.
+ * HttpModel is an abstract implementation of a Model class that uses http
+ * for CSUGR operations.
  *
- * Use this in smaller less complicated apps or apps where the abstraction
- * RemoteModel provides is not desirable.
+ * To use send requests via jhr directly, use the child class in this module,
+ * to utilize a Remote actor, see the RemoteModel implementation elsewhere.
  */
-export class HttpModel<T extends Object> implements Model<T> {
+export abstract class HttpModel<T extends Object> implements Model<T> {
 
-    constructor(
-        public agent: Agent<Object, Object>,
-        public requests: RequestFactory) { }
+    /**
+     * requests factory used to create Request objects.
+     */
+    abstract requests: RequestFactory;
 
-  /**
-   * fromPaths generates a new HttpModel using Paths object.
-   */
-  static fromPaths(agent: Agent<Object,Object>, paths:Paths) {
-    return new HttpModel(agent, new RequestFactory(paths));
-  }
+    /**
+     * send is left abstract for child classes to implement.
+     */
+    abstract send(req: Request<Object>): Future<Response<Result<T>>>
 
     create(data: T): Future<Id> {
 
@@ -264,8 +278,12 @@ export class HttpModel<T extends Object> implements Model<T> {
 
         return doFuture(function*() {
 
-            let r = yield that.agent.send(that.requests.create(data));
-            return pure((<CreateResult>r.body).data.id);
+            let res: Response<object> =
+                yield that.send(that.requests.create(data));
+
+            if (res.code !== status.OK) return raise(response2Error(res));
+
+            return pure((<CreateResult>res.body).data.id);
 
         });
 
@@ -277,8 +295,15 @@ export class HttpModel<T extends Object> implements Model<T> {
 
         return doFuture(function*() {
 
-            let r = yield that.agent.send(that.requests.search(qry));
-            return pure((r.code === 204) ? [] : (<SearchResult<T>>r.body).data);
+            let res: Response<object> =
+                yield that.send(that.requests.search(qry));
+
+            if ((res.code !== status.OK) && (res.code !== status.NO_CONTENT))
+                return raise(response2Error(res));
+
+            return pure((res.code === status.NO_CONTENT) ?
+                []
+                : (<SearchResult<T>>res.body).data);
 
         });
 
@@ -290,8 +315,13 @@ export class HttpModel<T extends Object> implements Model<T> {
 
         return doFuture(function*() {
 
-            let r = yield that.agent.send(that.requests.update(id, changes));
-            return pure((r.code === 200) ? true : false);
+            let res = yield that.send(that.requests.update(id, changes));
+
+            if (res.code === status.NOT_FOUND) return pure(false);
+
+            if (res.code !== status.OK) return raise(response2Error(res));
+
+            return pure(true);
 
         });
 
@@ -303,17 +333,13 @@ export class HttpModel<T extends Object> implements Model<T> {
 
         return doFuture(function*() {
 
-            let req = that.requests.get(id);
+            let res = yield that.send(that.requests.get(id));
 
-            return that
-                .agent
-                .send(req)
-                .chain(res =>
-                    pure(fromNullable((<GetResult<T>><object>res.body).data)))
-                .catch(e => ((e.message == 'ClientError') && (e.code == 404)) ?
-                    pure(nothing()) :
-                    raise(e)
-                );
+            if (res.code === status.NOT_FOUND) return pure(nothing());
+
+            if (res.code !== status.OK) return raise(response2Error(res));
+
+            return pure(fromNullable((<GetResult<T>><object>res.body).data));
 
         });
 
@@ -325,10 +351,44 @@ export class HttpModel<T extends Object> implements Model<T> {
 
         return doFuture(function*() {
 
-            let r = yield that.agent.send(that.requests.remove(id))
-            return pure((r.code === 200) ? true : false);
+            let res = yield that.send(that.requests.remove(id))
+
+            if (res.code !== status.OK) return raise(response2Error(res));
+
+            return pure(true);
 
         });
+
+    }
+
+}
+
+/**
+ * SimpleHttpModel is an HttpModel that uses the JHR lib directly.
+ *
+ * There is no intermediate transformations or interception other than what
+ * the jhr agent is configured for. Use this in smaller, less complicated apps
+ * where these abstraction are not needed. See the RemoteModel class if you 
+ * need something more complicated.
+ */
+export class SimpleHttpModel<T extends Object> extends HttpModel<T> {
+
+    constructor(
+        public agent: Agent<Object, Object>,
+        public requests: RequestFactory) { super(); }
+
+    /**
+     * fromPaths generates a new HttpModel using Paths object.
+     */
+    static fromPaths(agent: Agent<Object, Object>, paths: Paths) {
+
+        return new SimpleHttpModel(agent, new RequestFactory(paths));
+
+    }
+
+    send(req: Request<Object>): Future<Response<Result<T>>> {
+
+        return <Future<Response<Result<T>>>><object>this.agent.send(req);
 
     }
 

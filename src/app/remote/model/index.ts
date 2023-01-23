@@ -8,13 +8,9 @@
 import {
     Future,
     fromCallback,
-    doFuture,
-    pure,
-    raise
 } from '@quenk/noni/lib/control/monad/future';
-import { Maybe, fromNullable, nothing } from '@quenk/noni/lib/data/maybe';
 import { Object } from '@quenk/noni/lib/data/jsonx';
-import {  Record } from '@quenk/noni/lib/data/record';
+import { Record } from '@quenk/noni/lib/data/record';
 
 import { Address } from '@quenk/potoo/lib/actor/address';
 import { System } from '@quenk/potoo/lib/actor/system';
@@ -37,17 +33,18 @@ import {
     CreateResult,
     GetResult,
     SearchResult,
-    RequestFactory
+    RequestFactory,
+    HttpModel
 } from '../../model/http';
 
 export {
-  Id,
-  Model,
-  Result, 
-  CreateResult, 
-  GetResult,
-  SearchResult,
-  RequestFactory 
+    Id,
+    Model,
+    Result,
+    CreateResult,
+    GetResult,
+    SearchResult,
+    RequestFactory
 }
 
 /**
@@ -72,18 +69,17 @@ export interface RequestAdaptable<B> {
 export const NO_PATH = 'invalid';
 
 /**
- * RemoteModel is a [[Model]] implementation that uses the remote actor API
- * underneath to provide a CSUGR interface.
+ * RemoteModel is an HttpModel implementation that relies on the remote actor 
+ * API.
  *
- * This class serves as a starting point and exists mostly for that generate 
- * frontend models via Dagen templates. Use the [[RemoteModel]] class to create
- * RemoteModels manually.
+ * Use this class when requests become complicated requiring UI widgets to be
+ * updated, authentication errors to be intercepted etc. at scale.
  */
-export abstract class RemoteModel<T extends Object> implements Model<T> {
+export class RemoteModel<T extends Object> extends HttpModel<T> {
 
     /**
      * @param remote    - The actor to send requests to.
-     * @param actor     - The function used to spawn callbacks internally.
+     * @param actor     - The actor used to spawn callbacks internally.
      * @param handler   - An optional CompleteHandler that can intercept 
      *                    responses.
      * @param decorator - If supplied, can modify requests before sending.
@@ -91,14 +87,19 @@ export abstract class RemoteModel<T extends Object> implements Model<T> {
     constructor(
         public remote: Address,
         public actor: Spawner,
+        public paths: Paths = {},
         public handler: CompleteHandler<Result<T>> = new VoidHandler(),
-        public decorator: RequestDecorator<T> = new RequestPassthrough()) { }
+        public decorator: RequestDecorator<T> = new RequestPassthrough()) {
+
+        super();
+
+    }
 
     /**
      * requests is a factory object that generates the requests sent by this
      * actor.
      */
-    abstract requests: RequestFactory;
+    requests: RequestFactory = new RequestFactory(this.paths);
 
     /**
      * send a request to the remote back-end.
@@ -119,107 +120,5 @@ export abstract class RemoteModel<T extends Object> implements Model<T> {
         });
 
     }
-
-    create(data: T): Future<Id> {
-
-        let that = this;
-
-        return doFuture(function*() {
-
-            let r = yield that.send(that.requests.create(data));
-            return pure((<CreateResult>r.body).data.id);
-
-        });
-
-    }
-
-    search(qry: Object): Future<T[]> {
-
-        let that = this;
-
-        return doFuture(function*() {
-
-            let r = yield that.send(that.requests.search(qry));
-            return pure((r.code === 204) ? [] : (<SearchResult<T>>r.body).data);
-
-        });
-
-    }
-
-    update(id: Id, changes: Partial<T>): Future<boolean> {
-
-        let that = this;
-
-        return doFuture(function*() {
-
-            let r = yield that.send(that.requests.update(id, changes));
-            return pure((r.code === 200) ? true : false);
-
-        });
-
-    }
-
-    get(id: Id): Future<Maybe<T>> {
-
-        let that = this;
-
-        return doFuture(function*() {
-
-            let req = that.requests.get(id);
-
-            return that
-                .send(req)
-                .chain(res => pure(fromNullable((<GetResult<T>>res.body).data)))
-                .catch(e => ((e.message == 'ClientError') && (e.code == 404)) ?
-                    pure(nothing()) :
-                    raise(e)
-                );
-
-        });
-
-    }
-
-    remove(id: Id): Future<boolean> {
-
-        let that = this;
-
-        return doFuture(function*() {
-
-            let r = yield that.send(that.requests.remove(id));
-            return pure((r.code === 200) ? true : false);
-
-        });
-
-    }
-
-}
-
-/** 
- * GenericRemoteModel allows for the paths property to be specified in the
- * constructor.
- *
- * This is not the case in RemoteModel to allow auto generated code to implement
- * more easily.
- */
-export class GenericRemoteModel<T extends Object> extends RemoteModel<T> {
-    /**
-     * @param remote    - The actor to send requests to.
-     * @param actor     - The actor used to spawn callbacks internally.
-     * @param handler   - An optional CompleteHandler that can intercept 
-     *                    responses.
-     * @param decorator - If supplied, can modify requests before sending.
-     */
-    constructor(
-        public remote: Address,
-        public actor: Spawner,
-        public paths: Paths = {},
-        public handler: CompleteHandler<Result<T>> = new VoidHandler(),
-        public decorator: RequestDecorator<T> = new RequestPassthrough()) {
-
-        super(remote, actor, handler, decorator);
-
-    }
-
-    requests: RequestFactory = new RequestFactory(this.paths);
 
 }

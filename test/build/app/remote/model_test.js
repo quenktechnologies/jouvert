@@ -45,7 +45,7 @@ describe('model', () => {
             it('should provide the created id', () => (0, future_1.toPromise)((0, future_1.doFuture)(function* () {
                 let app = new app_1.TestApp();
                 let handler = new MockHandler();
-                let model = new model_1.GenericRemoteModel('remote', {
+                let model = new model_1.RemoteModel('remote', {
                     spawn(create) {
                         let id = 'callback';
                         app.spawn({ id, create });
@@ -76,7 +76,7 @@ describe('model', () => {
             it('should provide the list of results', () => (0, future_1.toPromise)((0, future_1.doFuture)(function* () {
                 let app = new app_1.TestApp();
                 let handler = new MockHandler();
-                let model = new model_1.GenericRemoteModel('remote', {
+                let model = new model_1.RemoteModel('remote', {
                     spawn(create) {
                         let id = 'callback';
                         app.spawn({ id, create });
@@ -114,7 +114,7 @@ describe('model', () => {
             it('should work', () => (0, future_1.toPromise)((0, future_1.doFuture)(function* () {
                 let app = new app_1.TestApp();
                 let handler = new MockHandler();
-                let model = new model_1.GenericRemoteModel('remote', {
+                let model = new model_1.RemoteModel('remote', {
                     spawn(create) {
                         let id = 'callback';
                         app.spawn({ id, create });
@@ -146,7 +146,7 @@ describe('model', () => {
             it('should provide the target record', () => (0, future_1.toPromise)((0, future_1.doFuture)(function* () {
                 let app = new app_1.TestApp();
                 let handler = new MockHandler();
-                let model = new model_1.GenericRemoteModel('remote', {
+                let model = new model_1.RemoteModel('remote', {
                     spawn(create) {
                         let id = 'callback';
                         app.spawn({ id, create });
@@ -175,7 +175,7 @@ describe('model', () => {
             it('should return Nothing if not found', () => (0, future_1.toPromise)((0, future_1.doFuture)(function* () {
                 let app = new app_1.TestApp();
                 let handler = new MockHandler();
-                let model = new model_1.GenericRemoteModel('remote', {
+                let model = new model_1.RemoteModel('remote', {
                     spawn(create) {
                         let id = 'callback';
                         app.spawn({ id, create });
@@ -201,7 +201,7 @@ describe('model', () => {
             it('should remove the target record', () => (0, future_1.toPromise)((0, future_1.doFuture)(function* () {
                 let app = new app_1.TestApp();
                 let handler = new MockHandler();
-                let model = new model_1.GenericRemoteModel('remote', {
+                let model = new model_1.RemoteModel('remote', {
                     spawn(create) {
                         let id = 'callback';
                         app.spawn({ id, create });
@@ -247,7 +247,7 @@ describe('model', () => {
                 let work = methods.map(method => (0, record_1.mapTo)(codes, (expected, code) => (0, future_1.doFuture)(function* () {
                     let app = new app_1.TestApp();
                     let handler = new MockHandler();
-                    let model = new model_1.GenericRemoteModel('remote', {
+                    let model = new model_1.RemoteModel('remote', {
                         spawn(create) {
                             let id = 'callback';
                             app.spawn({ id, create });

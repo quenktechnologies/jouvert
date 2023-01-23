@@ -120,6 +120,7 @@ exports.Jouvert = Jouvert;
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.HttpModel = exports.RequestFactory = exports.NO_PATH = void 0;
+const status = require("@quenk/jhr/lib/status");
 const future_1 = require("@quenk/noni/lib/control/monad/future");
 const maybe_1 = require("@quenk/noni/lib/data/maybe");
 const string_1 = require("@quenk/noni/lib/data/string");
@@ -205,6 +206,14 @@ class RequestFactory {
     }
 }
 exports.RequestFactory = RequestFactory;
+const errors = {
+    [status.BAD_REQUEST]: 'BADREQUEST',
+    [status.UNAUTHORIZED]: 'UNAUTHORIZED',
+    [status.FORBIDDEN]: 'FORBIDDEN',
+    [status.CONFLICT]: 'CONFLICT',
+    'other': 'UNEXPECTED_STATUS'
+};
+const response2Error = (r) => new Error(errors[r.code] || errors.other);
 /**
  * HttpModel is a Model implementation that uses @quenk/jhr directly to send
  * data.
@@ -227,6 +236,8 @@ class HttpModel {
         let that = this;
         return (0, future_1.doFuture)(function* () {
             let r = yield that.agent.send(that.requests.create(data));
+            if (r.code !== status.OK)
+                return (0, future_1.raise)(response2Error(r));
             return (0, future_1.pure)(r.body.data.id);
         });
     }
@@ -234,14 +245,22 @@ class HttpModel {
         let that = this;
         return (0, future_1.doFuture)(function* () {
             let r = yield that.agent.send(that.requests.search(qry));
-            return (0, future_1.pure)((r.code === 204) ? [] : r.body.data);
+            if ((r.code !== status.OK) && (r.code !== status.NO_CONTENT))
+                return (0, future_1.raise)(response2Error(r));
+            return (0, future_1.pure)((r.code === status.NO_CONTENT) ?
+                []
+                : r.body.data);
         });
     }
     update(id, changes) {
         let that = this;
         return (0, future_1.doFuture)(function* () {
             let r = yield that.agent.send(that.requests.update(id, changes));
-            return (0, future_1.pure)((r.code === 200) ? true : false);
+            if (r.code === status.NOT_FOUND)
+                return (0, future_1.pure)(false);
+            if (r.code !== status.OK)
+                return (0, future_1.raise)(response2Error(r));
+            return (0, future_1.pure)(true);
         });
     }
     get(id) {
@@ -267,7 +286,7 @@ class HttpModel {
 }
 exports.HttpModel = HttpModel;
 
-},{"@quenk/jhr/lib/request":13,"@quenk/noni/lib/control/monad/future":19,"@quenk/noni/lib/data/maybe":25,"@quenk/noni/lib/data/record":26,"@quenk/noni/lib/data/string":28,"@quenk/noni/lib/data/type":29}],4:[function(require,module,exports){
+},{"@quenk/jhr/lib/request":13,"@quenk/jhr/lib/status":16,"@quenk/noni/lib/control/monad/future":19,"@quenk/noni/lib/data/maybe":25,"@quenk/noni/lib/data/record":26,"@quenk/noni/lib/data/string":28,"@quenk/noni/lib/data/type":29}],4:[function(require,module,exports){
 "use strict";
 /**
  * This module provides actors for sending requests to a [[Remote]] and
@@ -703,6 +722,8 @@ class RemoteModel {
         let that = this;
         return (0, future_1.doFuture)(function* () {
             let r = yield that.send(that.requests.update(id, changes));
+            if (r.code === 400)
+                return (0, future_1.pure)(false);
             return (0, future_1.pure)((r.code === 200) ? true : false);
         });
     }

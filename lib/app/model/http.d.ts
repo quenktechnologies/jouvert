@@ -119,23 +119,42 @@ export declare class RequestFactory {
     remove(id: Id): Request<Object>;
 }
 /**
- * HttpModel is a Model implementation that uses @quenk/jhr directly to send
- * data.
+ * HttpModel is an abstract implementation of a Model class that uses http
+ * for CSUGR operations.
  *
- * Use this in smaller less complicated apps or apps where the abstraction
- * RemoteModel provides is not desirable.
+ * To use send requests via jhr directly, use the child class in this module,
+ * to utilize a Remote actor, see the RemoteModel implementation elsewhere.
  */
-export declare class HttpModel<T extends Object> implements Model<T> {
+export declare abstract class HttpModel<T extends Object> implements Model<T> {
+    /**
+     * requests factory used to create Request objects.
+     */
+    abstract requests: RequestFactory;
+    /**
+     * send is left abstract for child classes to implement.
+     */
+    abstract send(req: Request<Object>): Future<Response<Result<T>>>;
+    create(data: T): Future<Id>;
+    search(qry: Object): Future<T[]>;
+    update(id: Id, changes: Partial<T>): Future<boolean>;
+    get(id: Id): Future<Maybe<T>>;
+    remove(id: Id): Future<boolean>;
+}
+/**
+ * SimpleHttpModel is an HttpModel that uses the JHR lib directly.
+ *
+ * There is no intermediate transformations or interception other than what
+ * the jhr agent is configured for. Use this in smaller, less complicated apps
+ * where these abstraction are not needed. See the RemoteModel class if you
+ * need something more complicated.
+ */
+export declare class SimpleHttpModel<T extends Object> extends HttpModel<T> {
     agent: Agent<Object, Object>;
     requests: RequestFactory;
     constructor(agent: Agent<Object, Object>, requests: RequestFactory);
     /**
      * fromPaths generates a new HttpModel using Paths object.
      */
-    static fromPaths(agent: Agent<Object, Object>, paths: Paths): HttpModel<Object>;
-    create(data: T): Future<Id>;
-    search(qry: Object): Future<T[]>;
-    update(id: Id, changes: Partial<T>): Future<boolean>;
-    get(id: Id): Future<Maybe<T>>;
-    remove(id: Id): Future<boolean>;
+    static fromPaths(agent: Agent<Object, Object>, paths: Paths): SimpleHttpModel<Object>;
+    send(req: Request<Object>): Future<Response<Result<T>>>;
 }

@@ -29,7 +29,7 @@ import {
     Delete
 } from '@quenk/jhr/lib/request';
 
-import { GenericRemoteModel } from '../../../../lib/app/remote/model';
+import { RemoteModel } from '../../../../lib/app/remote/model';
 import {
     Send,
     TransportErr
@@ -98,7 +98,7 @@ describe('model', () => {
 
                     let handler = new MockHandler();
 
-                    let model = new GenericRemoteModel(
+                    let model = new RemoteModel(
                         'remote',
                         {
                             spawn(create: Type) {
@@ -160,7 +160,7 @@ describe('model', () => {
 
                     let handler = new MockHandler();
 
-                    let model = new GenericRemoteModel(
+                    let model = new RemoteModel(
                         'remote', {
                         spawn(create: Type) {
 
@@ -231,7 +231,7 @@ describe('model', () => {
 
                     let handler = new MockHandler();
 
-                    let model = new GenericRemoteModel(
+                    let model = new RemoteModel(
                         'remote', {
                         spawn(create: Type) {
 
@@ -295,7 +295,7 @@ describe('model', () => {
 
                     let handler = new MockHandler();
 
-                    let model = new GenericRemoteModel(
+                    let model = new RemoteModel(
                         'remote', {
                         spawn(create: Type) {
 
@@ -354,7 +354,7 @@ describe('model', () => {
 
                     let handler = new MockHandler();
 
-                    let model = new GenericRemoteModel(
+                    let model = new RemoteModel(
                         'remote', {
                         spawn(create: Type) {
 
@@ -404,7 +404,7 @@ describe('model', () => {
 
                     let handler = new MockHandler();
 
-                    let model = new GenericRemoteModel(
+                    let model = new RemoteModel(
                         'remote', {
                         spawn(create: Type) {
 
@@ -485,7 +485,7 @@ describe('model', () => {
 
                         let handler = new MockHandler();
 
-                        let model = new GenericRemoteModel(
+                        let model = new RemoteModel(
                             'remote',{
                             spawn(create: Type) {
 

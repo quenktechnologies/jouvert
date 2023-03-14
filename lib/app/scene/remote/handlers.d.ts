@@ -15,7 +15,7 @@ import { Response } from '@quenk/jhr/lib/response';
 import { View } from '@quenk/wml';
 import { Yield } from '@quenk/noni/lib/control/monad/future';
 import { AbstractCompleteHandler, CompleteHandler } from '../../remote/callback';
-import { GetResponse, Pagination, SearchResponse } from '../../model/http';
+import { GetResponse, PageData, SearchResponse } from '../../model/http';
 import { GetResultHandler, SearchResultHandler } from '../../remote/model/handlers/result';
 import { FormErrors, SaveListener } from '../form';
 /**
@@ -114,10 +114,10 @@ export declare class OnCompleteShowData<T> extends AbstractCompleteHandler<T> {
  */
 export declare class AfterSearchSetPagination<T extends Object> extends SearchResultHandler<T> {
     target: {
-        pagination?: Pagination;
+        pages?: PageData;
     };
     constructor(target: {
-        pagination?: Pagination;
+        pages?: PageData;
     });
     onComplete(res: SearchResponse<T>): void;
 }

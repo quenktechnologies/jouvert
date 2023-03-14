@@ -142,7 +142,7 @@ export class Remote<Req, Res> extends Immutable<Request<Req>> {
                 .map((r: HTTPRequest<Req>) =>
                     agent
                         .send(r)
-                        .catch(e => raise(new TransportErr(client, e))));
+                        .trap(e => raise(new TransportErr(client, e))));
 
         parallel(rs).fork(onErr, onSucc);
 
@@ -162,7 +162,7 @@ export class Remote<Req, Res> extends Immutable<Request<Req>> {
                 .map((r: HTTPRequest<Req>) =>
                     agent
                         .send(r)
-                        .catch(e => raise(new TransportErr(client, e))));
+                        .trap(e => raise(new TransportErr(client, e))));
 
         sequential(rs).fork(onErr, onSucc);
 

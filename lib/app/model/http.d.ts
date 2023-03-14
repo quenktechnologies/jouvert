@@ -39,38 +39,32 @@ export interface CreateResult {
  */
 export interface SearchResult<T extends Object> {
     data: T[];
-    meta: {
-        pagination: Pagination;
-    };
+    pages: PageData;
 }
 /**
- * Pagination details of a successful search.
+ * PageData contains the pagination details of a successful search.
  */
-export interface Pagination {
-    current: {
-        /**
-         * count of the current set.
-         */
-        count: number;
-        /**
-         * page number of the current set in the total result.
-         */
-        page: number;
-        /**
-         * limit indicates how many rows are allowed per page.
-         */
-        limit: number;
-    };
-    total: {
-        /**
-         * count of the entire result set.
-         */
-        count: number;
-        /**
-         * pages available for the entire result.
-         */
-        pages: number;
-    };
+export interface PageData {
+    /**
+     * current page the returned results are from.
+     */
+    current: number;
+    /**
+     * currentCount of the current page
+     */
+    currentCount: number;
+    /**
+     * maxPerPage indicates how many rows are allowed per page.
+     */
+    maxPerPage: number;
+    /**
+     * totalPages available for the entire result.
+     */
+    totalPage: number;
+    /**
+     * totalCount of the entire result set.
+     */
+    totalCount: number;
 }
 /**
  * GetResult is the response body expected after a successful get()

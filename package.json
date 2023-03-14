@@ -24,6 +24,7 @@
     "@quenk/noni": "^1.46.1",
     "@quenk/potoo": "^3.1.4-0",
     "@quenk/preconditions": "^5.5.0",
-    "@quenk/wml-widgets": "^1.29.4"
+    "@quenk/wml-widgets": "^1.29.4",
+    "@types/json-stringify-safe": "^5.0.0"
   }
 }

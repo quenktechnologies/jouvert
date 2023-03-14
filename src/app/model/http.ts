@@ -69,51 +69,39 @@ export interface SearchResult<T extends Object> {
 
     data: T[],
 
-    meta: {
-
-        pagination: Pagination
-
-    }
+    pages: PageData
 
 }
 
 /**
- * Pagination details of a successful search.
+ * PageData contains the pagination details of a successful search.
  */
-export interface Pagination {
+export interface PageData {
 
-    current: {
+    /**
+     * current page the returned results are from.
+     */
+    current: number,
 
-        /**
-         * count of the current set.
-         */
-        count: number,
+    /**
+     * currentCount of the current page
+     */
+    currentCount: number,
 
-        /**
-         * page number of the current set in the total result.
-         */
-        page: number,
+    /**
+     * maxPerPage indicates how many rows are allowed per page.
+     */
+    maxPerPage: number,
 
-        /**
-         * limit indicates how many rows are allowed per page.
-         */
-        limit: number
+    /**
+     * totalPages available for the entire result.
+     */
+    totalPage: number,
 
-    },
-
-    total: {
-
-        /**
-         * count of the entire result set.
-         */
-        count: number,
-
-        /**
-         * pages available for the entire result.
-         */
-        pages: number
-
-    }
+    /**
+     * totalCount of the entire result set.
+     */
+    totalCount: number,
 
 }
 

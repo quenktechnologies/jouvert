@@ -27,7 +27,7 @@ import {
 } from '../../remote/callback';
 import {
     GetResponse,
-    Pagination,
+    PageData,
     SearchResponse
 } from '../../model/http';
 import {
@@ -213,12 +213,12 @@ export class AfterSearchSetPagination<T extends Object>
     extends
     SearchResultHandler<T> {
 
-    constructor(public target: { pagination?: Pagination }) { super(); }
+    constructor(public target: { pages?: PageData }) { super(); }
 
     onComplete(res: SearchResponse<T>) {
 
         if ((res.code === 200) && res.request.method === 'GET')
-            this.target.pagination = res.body.meta.pagination;
+            this.target.pages = res.body.pages;
 
     }
 

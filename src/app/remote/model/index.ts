@@ -31,7 +31,6 @@ import { FutureHandler } from './handlers/future';
 import {
     Result,
     CreateResult,
-    GetResult,
     SearchResult,
     RequestFactory,
     HttpModel
@@ -42,7 +41,6 @@ export {
     Model,
     Result,
     CreateResult,
-    GetResult,
     SearchResult,
     RequestFactory
 }

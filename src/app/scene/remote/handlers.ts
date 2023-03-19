@@ -133,7 +133,7 @@ export class AfterGetSetData<T extends Object> extends GetResultHandler<T> {
     onComplete(res: GetResponse<T>) {
 
         if ((res.code === 200) && res.request.method === 'GET')
-            return this.setter(res.body.data);
+            return this.setter(res.body);
 
     }
 

@@ -269,7 +269,7 @@ export abstract class HttpModel<T extends Object> implements Model<T> {
             let res: Response<object> =
                 yield that.send(that.requests.create(data));
 
-            if (res.code !== status.OK) return raise(response2Error(res));
+            if (res.code !== status.CREATED) return raise(response2Error(res));
 
             return pure((<CreateResult>res.body).data.id);
 

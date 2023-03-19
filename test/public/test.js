@@ -226,7 +226,7 @@ class HttpModel {
         let that = this;
         return (0, future_1.doFuture)(function* () {
             let res = yield that.send(that.requests.create(data));
-            if (res.code !== status.OK)
+            if (res.code !== status.CREATED)
                 return (0, future_1.raise)(response2Error(res));
             return (0, future_1.pure)(res.body.data.id);
         });

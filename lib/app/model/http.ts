@@ -28,7 +28,7 @@ export { Id, Model }
 export type Result<T extends Object>
     = CreateResult
     | SearchResult<T>
-    | GetResult<T>
+    | T
     | void
     ;
 
@@ -45,7 +45,7 @@ export type SearchResponse<T extends Object> = Response<SearchResult<T>>;
 /**
  * GetResult is a Response with a [[GetResult]] body.
  */
-export type GetResponse<T extends Object> = Response<GetResult<T>>;
+export type GetResponse<T extends Object> = Response<T>;
 
 /**
  * CreateResult is the response body expected after a successful create()
@@ -102,16 +102,6 @@ export interface PageData {
      * totalCount of the entire result set.
      */
     totalCount: number,
-
-}
-
-/**
- * GetResult is the response body expected after a successful get()
- * operation.
- */
-export interface GetResult<T extends Object> {
-
-    data: T
 
 }
 
@@ -327,7 +317,7 @@ export abstract class HttpModel<T extends Object> implements Model<T> {
 
             if (res.code !== status.OK) return raise(response2Error(res));
 
-            return pure(fromNullable((<GetResult<T>><object>res.body).data));
+            return pure(fromNullable((<T><object>res.body)));
 
         });
 

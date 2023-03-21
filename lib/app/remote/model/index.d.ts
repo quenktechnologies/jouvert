@@ -14,8 +14,8 @@ import { Request } from '@quenk/jhr/lib/request';
 import { RequestDecorator } from '../request/decorators';
 import { Id, Model } from '../../model';
 import { CompleteHandler } from '../callback';
-import { Result, CreateResult, GetResult, SearchResult, RequestFactory, HttpModel } from '../../model/http';
-export { Id, Model, Result, CreateResult, GetResult, SearchResult, RequestFactory };
+import { Result, CreateResult, SearchResult, RequestFactory, HttpModel } from '../../model/http';
+export { Id, Model, Result, CreateResult, SearchResult, RequestFactory };
 /**
  * Paths is a record of actor addresses to use for each of the CSUGR
  * operations of a RemoteModel.

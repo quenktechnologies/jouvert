@@ -16,6 +16,7 @@
     "@quenk/wml": "^2.13.2",
     "@types/mocha": "^10.0.0",
     "@types/node": "^18.11.7",
+    "@types/qs": "^6.9.7",
     "browserify": "^17.0.0",
     "typescript": "^4.6.3"
   },
@@ -24,7 +25,10 @@
     "@quenk/noni": "^1.46.1",
     "@quenk/potoo": "^3.1.4-0",
     "@quenk/preconditions": "^5.5.0",
+    "@quenk/search-filters": "^2.8.0",
     "@quenk/wml-widgets": "^1.29.4",
-    "@types/json-stringify-safe": "^5.0.0"
+    "@types/json-stringify-safe": "^5.0.0",
+    "path-to-regexp": "^6.2.1",
+    "qs": "^6.11.1"
   }
 }

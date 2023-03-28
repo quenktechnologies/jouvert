@@ -23,7 +23,7 @@
   "dependencies": {
     "@quenk/jhr": "^2.6.26",
     "@quenk/noni": "^1.46.1",
-    "@quenk/potoo": "^3.1.4-0",
+    "@quenk/potoo": "^3.1.6-0",
     "@quenk/preconditions": "^5.5.0",
     "@quenk/search-filters": "^2.8.0",
     "@quenk/wml-widgets": "^1.29.4",

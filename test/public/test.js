@@ -2251,6 +2251,29 @@ class Future {
     constructor(tag = 'Future') {
         this.tag = tag;
     }
+    /**
+     * do notation for Futures using async functions.
+     *
+     * An async function executes its body sequentially, pausing at each 'await'
+     * statement preventing asynchronous tasks from pre-empting each other. This
+     * is in line with how Futures are meant to work and could be seen as the
+     * Promise equivalent of:
+     *
+     * ```
+     *  pure().chain(task1).chain(task2).chain(task3);
+     * ```
+     * The difference between Futures and promises of course, is that Futures do
+     * not execute their tasks until fork() is called whereas Promises are
+     * immediate. Nonetheless, an async function can be treated as a Future
+     * because it does not execute any code until it is called.
+     *
+     * This static method may therfore be more desirable than doFuture() as it
+     * allows for the use of arrow functions doing await with the need to set
+     * `this` to a variable.
+     */
+    static do(fun) {
+        return new Run(fun);
+    }
     get [Symbol.toStringTag]() {
         return 'Future';
     }
@@ -2295,6 +2318,8 @@ class Future {
         return __awaiter(this, void 0, void 0, function* () {
             let stack = new stack_1.UnsafeStack([this]);
             let value = undefined;
+            // Ensure this always finishes asynchronously.
+            yield new Promise(resolve => queueMicrotask(resolve));
             while (!stack.isEmpty()) {
                 let next = stack.pop();
                 switch (next.tag) {

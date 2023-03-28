@@ -4,18 +4,9 @@ import { merge } from '@quenk/noni/lib/data/record';
 import { Spawner } from '@quenk/potoo/lib/actor/resident/api';
 import { Address } from '@quenk/potoo/lib/actor/address';
 
-import { CompleteHandler, CompositeCompleteHandler } from '../callback';
+import {  CompositeCompleteHandler } from '../callback';
 import { RequestDecorator, RequestPassthrough } from '../request/decorators';
-import { Result } from '../../model/http';
-import { RemoteModel, Paths, GenericRemoteModel  } from './';
-
-/**
- * CompleteHandlerSpec type allows one or more CompletHandlers to be specified.
- */
-export type CompleteHandlerSpec<D extends Object>
-    = CompleteHandler<Result<D>>
-    | CompleteHandler<Result<D>>[]
-    ;
+import { RemoteModel, Paths, GenericRemoteModel, CompleteHandlerSpec  } from './';
 
 /**
  * RemoteModelFactory is a convenience class for creating RemoteModel instances.

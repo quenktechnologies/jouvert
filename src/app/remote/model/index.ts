@@ -24,6 +24,7 @@ import { Id, Model } from '../../model';
 import {
     SendCallback,
     CompleteHandler,
+    CompositeCompleteHandler,
 } from '../callback';
 
 import { VoidHandler } from './handlers/void';
@@ -44,6 +45,14 @@ export {
     SearchResult,
     RequestFactory
 }
+
+/**
+ * CompleteHandlerSpec type allows one or more CompletHandlers to be specified.
+ */
+export type CompleteHandlerSpec<D extends Object>
+    = CompleteHandler<Result<D>>
+    | CompleteHandler<Result<D>>[]
+    ;
 
 /**
  * Paths is a record of actor addresses to use for each of the CSUGR
@@ -85,7 +94,7 @@ export abstract class RemoteModel<T extends Object> extends HttpModel<T> {
     constructor(
         public remote: Address,
         public actor: Spawner,
-        public handler: CompleteHandler<Result<T>> = new VoidHandler(),
+        public handler: CompleteHandlerSpec<T> = new VoidHandler(),
         public decorator: RequestDecorator<T> = new RequestPassthrough()) {
 
         super();
@@ -112,7 +121,9 @@ export abstract class RemoteModel<T extends Object> extends HttpModel<T> {
                 s,
                 this.remote,
                 this.decorator.decorate(<Request<T>>req),
-                new FutureHandler(this.handler, cb, r => cb(null, r))));
+                new FutureHandler(Array.isArray(this.handler) ?
+                  new CompositeCompleteHandler(this.handler) :
+                  this.handler, cb, r => cb(null, r))));
 
         });
 

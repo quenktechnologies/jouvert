@@ -4,15 +4,13 @@ import { Object, Value } from '@quenk/noni/lib/data/jsonx';
 import { Any } from '@quenk/noni/lib/data/type';
 import {
     Future,
-    doFuture,
     voidPure,
-    wrap
 } from '@quenk/noni/lib/control/monad/future';
 
 import { Address } from '@quenk/potoo/lib/actor/address';
 import { Case } from '@quenk/potoo/lib/actor/resident/case';
 
-import { Api } from '../../../actor';
+import { Close } from '../../service/display';
 import { App } from '../..';
 import { AppScene, BaseAppScene } from '../';
 
@@ -32,74 +30,24 @@ export type FieldValue = Value;
 export type FieldError = string;
 
 /**
- * FormAbortedListener is implemented by actors interested in the FormAborted
- * message.
+ * FormLifeCycle is the type of a message that indicates the form has reached
+ * the end of its life cycle.
  */
-export interface FormAbortedListener extends Api {
-
-    /**
-     * afterFormAborted handler.
-     */
-    afterFormAborted(m: FormAborted): void | Future<void>
-
-}
+export type FormLifeCycle = FormSaved | FormAborted;
 
 /**
- * FormAbortedCase invokes the afterFormAborted() handler.
+ * FormCallback is a function invoked when the form has reached the end of its
+ * life cycle.
  */
-export class FormAbortedCase extends Case<FormAborted> {
-
-    constructor(public listener: FormAbortedListener) {
-
-        super(FormAborted, msg => doFuture(function*() {
-
-            yield wrap(listener.afterFormAborted(msg));
-
-            return voidPure;
-
-        }));
-
-    }
-
-}
+export type FormCallback = (msg: FormLifeCycle) => void;
 
 /**
- * FormSavedListener is implemented by actors interested in the FormSaved
- * message.
+ * FormSaveResult is a value representing a successfully saved form.
+ *
+ * This could be an id for the record, the saved data or simply a flag 
+ * indicating success etc.
  */
-export interface FormSavedListener extends Api {
-
-    /**
-     * afterFormSaved handler.
-     */
-    afterFormSaved(m: FormSaved): void | Future<void>
-
-}
-
-/**
- * FormSavedCase invokes the afterFormSaved() handler.
- */
-export class FormSavedCase extends Case<FormSaved> {
-
-    constructor(public listener: FormSavedListener) {
-
-        super(FormSaved, msg => doFuture(function*() {
-
-            yield wrap(listener.afterFormSaved(msg));
-
-            return voidPure;
-
-        }));
-
-    }
-
-}
-
-/**
- * FormListener combines FormAbortedListener and FormSavedListener into one for
- * convenience.
- */
-export interface FormListener extends FormAbortedListener, FormSavedListener { }
+export type FormSaveResult = Value | void;
 
 /**
  * FormErrors is a map of FieldNames to FieldErrors representing all the errors
@@ -141,36 +89,27 @@ export class Abort { }
 export class Save { }
 
 /**
- * SaveOk signals to a FormScene that its "save" operation was successful.
+ * FormAborted indicates the FormScene has been aborted due to an internal or
+ * external message.
+ *
+ * An aborted form exits itself.
  */
-export class SaveOk { }
+export class FormAborted extends Close {
 
-/**
- * SaveFailed signals to a FormScene that its "save" operation failed.
- */
-export class SaveFailed {
-
-    constructor(public errors: FormErrors = {}) { }
+    constructor(public form: Address) { super(form); }
 
 }
 
 /**
- * FormAborted is sent by a FormScene to its target when the form has been
- * aborted.
+ * FormSaved indicates a FormScene has been saved successfully.
+ *
+ * A saved form exits itself.
  */
-export class FormAborted {
+export class FormSaved extends Close {
 
-    constructor(public form: Address) { }
-
-}
-
-/**
- * FormSaved is sent by a FormScene to its target when it has been successfully
- * saved its data.
- */
-export class FormSaved {
-
-    constructor(public form: Address) { }
+    constructor(public form: Address, public result: FormSaveResult) {
+        super(form);
+    }
 
 }
 
@@ -180,66 +119,26 @@ export class FormSaved {
 export type FormSceneMessage<M>
     = Abort
     | Save
-    | SaveFailed
-    | SaveOk
     | InputEvent
     | M
     ;
 
 /**
- * SaveListener indicates an actor has support for reacting to the saving 
- * process of form data.
- *
- * These methods are used by the SaveOkCase and SaveFailedCase to allow the 
- * actor to hook into the configured behaviour of these Cases. Use them to
- * do cleanup work or execute any additional steps not covered by the default
- * behaviours.
- */
-export interface SaveListener {
-
-    /**
-     * onSaveFailed handler.
-     *
-     * This is invoked when the FormScene receives a SaveFailed message 
-     * indicating the save operation was a failure.
-     */
-    onSaveFailed(failure: SaveFailed): void | Future<void>
-
-    /**
-     * onSaveOk handler.
-     *
-     * This is invoked when the FormScene receives a SaveOk message indicating
-     * the save operation was a success.
-     */
-    onSaveOk(ok: SaveOk): void | Future<void>
-
-    /**
-     * onSaveFinished handler.
-     *
-     * This is invoked when the saving operation is complete whether successful
-     * or not.
-     */
-    onSaveFinished(): void | Future<void>
-
-}
-
-/**
  * FormScene is the interface implemented by actors serving as the "controller"
- * for HTML form views. FormScene's have a concept of an "target" actor which
- * life cycle messages (abort/save) are sent to.
+ * for HTML form views. FormScene's send their views to a display like any other
+ * AppScene however they may send additional messages as well to indicate
+ * the end of their life cycle (FormAborted,FormSaved).
  *
  * Note: This actor provides no methods for direct validation, if that is needed
  * use a CheckedFormScene instead.
  */
-export interface FormScene<T extends Object> extends AppScene, SaveListener {
+export interface FormScene<T extends Object> extends AppScene {
 
     /**
-     * target is the address of the actor the FormScene sends its life cycle
+     * display is the address of the actor the FormScene sends its life cycle
      * messages to.
-     *
-     * Usually its parent actor.
      */
-    target: Address;
+    display: Address;
 
     /**
      * set changes the stored value of a field captured by the FormScene.
@@ -259,113 +158,21 @@ export interface FormScene<T extends Object> extends AppScene, SaveListener {
     getModifiedValues(): Partial<T>
 
     /**
-     * abort collecting values from the form, returning control to the parent.
+     * abort the form bringing its life cycle to an end.
      */
     abort(): void
 
     /**
      * save the captured form data.
+     *
+     * Success should result in the form exiting.
      */
-    save(): void | Future<void>
+    save(): void
 
 }
 
 /**
- * InputEventCase sets a value on the FormScene when invoked.
- */
-export class InputEventCase<T extends Object>
-    extends
-    Case<InputEvent> {
-
-    constructor(public form: FormScene<T>) {
-
-        super({ name: String, value: Any }, (e: InputEvent) => {
-
-            form.set(e.name, e.value);
-
-        });
-    }
-}
-
-/**
- * AbortCase informs the FormScene's target, then terminates the FormScene.
- */
-export class AbortCase<T extends Object> extends Case<Abort> {
-
-    constructor(public scene: FormScene<T>) {
-
-        super(Abort, (_: Abort) => {
-
-            scene.tell(scene.target, new FormAborted(scene.self()));
-
-            scene.exit();
-
-        });
-    }
-}
-
-/**
- * SaveCase instructs the [[FormScene]] to invoke its save() method causing
- * form data to be persisted.
- */
-export class SaveCase<T extends Object> extends Case<Save> {
-
-    constructor(public form: FormScene<T>) {
-
-        super(Save, (_: Save) => wrap(form.save()))
-
-    }
-}
-
-/**
- * SaveFailedCase simply invokes the onSaveFailed() and onSaveFinished() 
- * handlers.
- *
- * The actor is left as is so the user can edit the form and retry the save
- * operation.
- */
-export class SaveFailedCase extends Case<SaveFailed> {
-
-    constructor(public listener: SaveListener) {
-
-        super(SaveFailed, fail => doFuture(function*() {
-
-            yield wrap(listener.onSaveFailed(fail));
-
-            yield wrap(listener.onSaveFinished());
-
-            return voidPure;
-
-        }));
-    }
-}
-
-/**
- * SaveOkCase 
- */
-export class SaveOkCase<T extends Object> extends Case<SaveOk> {
-
-    constructor(public form: FormScene<T>) {
-
-        super(SaveOk, (ok: SaveOk) => doFuture(function*() {
-
-            yield wrap(form.onSaveOk(ok));
-
-            yield wrap(form.onSaveFinished());
-
-            form.tell(form.target, new FormSaved(form.self()));
-
-            form.exit();
-
-            return voidPure;
-
-        }));
-    }
-}
-
-/**
- * BaseFormScene provides an abstract implementation of the FormScene 
- * interface.
+ * BaseFormScene provides an abstract implementation of the FormScene interface.
  *
  * Child classes provide a save() implementation to provide the logic of saving
  * data. This actor is configured to process [[FormSceneMessage]]s including
@@ -375,10 +182,11 @@ export class SaveOkCase<T extends Object> extends Case<SaveOk> {
  * Alternatively, values can be set directly via set() bypassing the actor 
  * system.
  *
- * @param system  The potoo System this actor belongs to.
- * @param target   The address of the class that owns this actor.
- * @param value   Value of the BaseFormScene tracked by the APIs of this 
- *                class. This should not be modified outside of this actor.
+ * @param system   - The potoo System this actor belongs to.
+ * @param display  - The address of the display to send the form's view to.
+ * @param value    - Value of the BaseFormScene tracked by the APIs of this 
+ *                   class. This should not be modified outside of this actor.
+ * @param callback - Callback invoked before after the form is saved or aborted.
  */
 export abstract class BaseFormScene<T extends Object, M>
     extends
@@ -388,34 +196,26 @@ export abstract class BaseFormScene<T extends Object, M>
 
     constructor(
         public system: App,
-        public target: Address,
-        public value: Partial<T> = {}) { super(system); }
-
-    get display() {
-
-        return this.target;
-
-    }
+        public display: Address,
+        public value: Partial<T> = {},
+        public callback: FormCallback = () => { }) { super(system); }
 
     /**
      * fieldsModified tracks the names of those fields whose values have been
      * modified via this class's APIs.
      */
-    fieldsModifed: string[] = [];
+    fieldsModifed: FieldName[] = [];
 
     receive() {
 
         return <Case<FormSceneMessage<M>>[]>[
 
-            new AbortCase(this),
+            new Case(Abort, () => this.abort()),
 
-            new SaveCase(this),
+            new Case(Save, () => this.save()),
 
-            new SaveFailedCase(this),
-
-            new SaveOkCase(this),
-
-            new InputEventCase(this)
+            new Case({ name: String, value: Any }, (e: InputEvent) =>
+                this.set(e.name, e.value))
 
         ];
 
@@ -445,18 +245,58 @@ export abstract class BaseFormScene<T extends Object, M>
 
     }
 
-    onSaveFailed(_: SaveFailed) { }
-
-    onSaveOk(_: SaveOk) { }
-
-    onSaveFinished() { }
-
+    /**
+     * abort by default invokes the callback and exits.
+     *
+     * The message is also sent to the display which should result in the view
+     * being removed.
+     */
     abort() {
 
-        this.tell(this.self(), new Abort());
+        let msg = new FormAborted(this.self());
+
+        this.tell(this.display, msg);
+
+        this.callback(msg);
+
+        this.exit();
 
     }
 
-    save() { }
+    /**
+     * execute the form saving logic.
+     */
+    execute(): Future<FormSaveResult> {
+
+        return voidPure;
+
+    }
+
+    /**
+     * save executes the form saving operation and takes care of invoking the
+     * callback.
+     *
+     * Execution takes place by submitting a future to the form's actor thread.
+     * The life cycle message is also sent to the display which should trigger
+     * the removal of the view. Note: instead of overriding this method,
+     * override execute instead unless you want to change its behaviour.
+     */
+    save() {
+
+        this.wait(Future.do(async () => {
+
+            let result = await this.execute();
+
+            let msg = new FormSaved(this.self(), result);
+
+            this.tell(this.display, msg);
+
+            this.callback(msg);
+
+            this.exit();
+
+        }));
+
+    }
 
 }

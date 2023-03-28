@@ -12,7 +12,7 @@ import {
     BaseFormScene
 } from '../';
 import { ValidationStrategy, NoStrategy } from './strategy';
-import {    InputEvent} from '../'
+import { InputEvent } from '../'
 
 /**
  * ValidatorFormScene is the interface implemented by actors serving as the 
@@ -80,24 +80,6 @@ export interface FormStateListener<T extends Object>
 }
 
 /**
- * InputEventCase validates the value provided in the InputEvent when
- * matched.
- */
-export class InputEventCase<T extends Object>
-    extends
-    Case<InputEvent> {
-
-    constructor(public form: ValidatorFormScene<T>) {
-
-        super({ name: String, value: Any }, (e: InputEvent) => {
-
-            return form.strategy.validate(e);
-
-        });
-    }
-}
-
-/**
  * BaseValidatorFormScene is an abstract extension to the BaseFormScene
  * class to add validation and feedback features.
  */
@@ -113,7 +95,11 @@ export abstract class BaseValidatorFormScene<T extends Object, M>
 
         return <Case<FormSceneMessage<M>>[]>[
 
-            new InputEventCase(this),
+        new Case({ name: String, value: Any }, (e: InputEvent) => {
+
+            return this.strategy.validate(e);
+
+        }),
 
             ...super.receive()
 

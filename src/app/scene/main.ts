@@ -20,10 +20,7 @@ import {
 } from '../service/display';
 import {
     FormAborted,
-    FormSaved,
-    FormListener,
-    FormAbortedCase,
-    FormSavedCase
+    FormSaved
 } from './form';
 import { BaseAppScene } from './';
 
@@ -67,7 +64,6 @@ export abstract class MainScene<T, M>
     BaseAppScene<MainSceneMessage<M>>
     implements
     DisplayListener,
-    FormListener,
     SuspendListener {
 
     constructor(public system: System, public resume: Resume<T>) {
@@ -107,10 +103,6 @@ export abstract class MainScene<T, M>
 
             new Case(ViewRemoved, (msg: ViewRemoved) =>
               this.afterViewRemoved(msg)),
-
-            new FormAbortedCase(this),
-
-            new FormSavedCase(this),
 
             new Case(Show, (msg: Show) => void this.tell(this.display, msg)),
 

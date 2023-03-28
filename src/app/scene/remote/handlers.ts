@@ -35,7 +35,7 @@ import {
     SearchResultHandler,
 } from '../../remote/model/handlers/result';
 
-import { FormErrors, SaveFailed, SaveListener } from '../form';
+import { FormErrors  } from '../form';
 
 /**
  * ClientErrorBody is the expected shape of the response body when the server
@@ -225,20 +225,16 @@ export class AfterSearchSetPagination<T extends Object>
 }
 
 /**
- * OnSaveFailed notifies the target SaveListener of the failure of an attempt to
- * save form data.
+ * OnSaveFailed invokes the target callback with the error part of the response
  */
 export class OnSaveFailed<T> extends AbstractCompleteHandler<T> {
 
-    constructor(public form: SaveListener) { super(); }
+    constructor(public callback: (errors:FormErrors)=> Yield<void> ) { super(); }
 
     onClientError(res: Response<ClientErrorBody>) {
 
-        if (res.code === 409) {
-
-            this.form.onSaveFailed(new SaveFailed(res.body.errors));
-
-        }
+        if (res.code === 409) 
+            return this.callback(res.body.errors);
 
     }
 

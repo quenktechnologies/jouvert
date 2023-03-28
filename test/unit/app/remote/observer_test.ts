@@ -80,7 +80,7 @@ describe('observable', () => {
 
             it('should handle Send', () => toPromise(doFuture(function*() {
 
-                let s = new TestApp({ log: { logger: console, level: 8 } });
+                let s = new TestApp({ long_sink: console, log_level: 8 });
                 let agent = new MockAgent();
                 let observer = new MockRemoteObserver();
                 let res = new Ok('text', {}, <Type>{});

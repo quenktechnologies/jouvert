@@ -71,7 +71,7 @@ describe('director', () => {
             yield router.handlers['/bar']('/bar');
             yield (0, future_1.fromCallback)(cb => setTimeout(cb, 100));
             return (0, future_1.attempt)(() => {
-                let runtime = app.vm.state.threads['director'];
+                let runtime = app.vm.actors.items['director'];
                 let dir = runtime.context.actor;
                 (0, assert_1.assert)(dir.routes['/foo']).not.undefined();
                 (0, assert_1.assert)(dir.routes['/bar']).not.undefined();
@@ -92,7 +92,7 @@ describe('director', () => {
             yield router.handlers['/bar']('/bar');
             yield (0, future_1.fromCallback)(cb => setTimeout(cb, 500));
             return (0, future_1.attempt)(() => {
-                let runtime = app.vm.state.threads['director'];
+                let runtime = app.vm.actors.items['director'];
                 let dir = runtime.context.actor;
                 (0, assert_1.assert)(dir.routes['/foo']).undefined();
                 (0, assert_1.assert)(dir.routes['/bar']).not.undefined();
@@ -141,7 +141,7 @@ describe('director', () => {
             yield router.handlers['/bar']('/bar');
             yield (0, future_1.fromCallback)(cb => setTimeout(cb, 100));
             return (0, future_1.attempt)(() => {
-                let threads = app.vm.state.threads;
+                let threads = app.vm.actors.items;
                 let matches = (0, record_1.reduce)(threads, 0, (p, _, k) => (0, string_1.startsWith)(String(k), 'director/') ? p + 1 : p);
                 (0, assert_1.assert)(spawned).true();
                 (0, assert_1.assert)(matches).equal(2);

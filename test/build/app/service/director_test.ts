@@ -143,7 +143,7 @@ describe('director', () => {
 
                 return attempt(() => {
 
-                    let runtime = app.vm.state.threads['director'];
+                    let runtime = app.vm.actors.items['director'];
                     let dir = <Director<string>>runtime.context.actor;
 
                     assert(dir.routes['/foo']).not.undefined();
@@ -178,7 +178,7 @@ describe('director', () => {
 
                 return attempt(() => {
 
-                    let runtime = app.vm.state.threads['director'];
+                    let runtime = app.vm.actors.items['director'];
                     let dir = <Director<string>>runtime.context.actor;
 
                     assert(dir.routes['/foo']).undefined();
@@ -259,7 +259,7 @@ describe('director', () => {
 
                 return attempt(() => {
 
-                    let threads = app.vm.state.threads;
+                    let threads = app.vm.actors.items;
 
                     let matches = reduce(threads, 0, (p, _, k) =>
                         startsWith(String(k), 'director/') ? p + 1 : p);

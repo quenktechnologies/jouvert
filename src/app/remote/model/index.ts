@@ -73,7 +73,7 @@ export const NO_PATH = 'invalid';
  * Use this class when requests become complicated requiring UI widgets to be
  * updated, authentication errors to be intercepted etc. at scale.
  */
-export class RemoteModel<T extends Object> extends HttpModel<T> {
+export abstract class RemoteModel<T extends Object> extends HttpModel<T> {
 
     /**
      * @param remote    - The actor to send requests to.
@@ -85,7 +85,6 @@ export class RemoteModel<T extends Object> extends HttpModel<T> {
     constructor(
         public remote: Address,
         public actor: Spawner,
-        public paths: Paths = {},
         public handler: CompleteHandler<Result<T>> = new VoidHandler(),
         public decorator: RequestDecorator<T> = new RequestPassthrough()) {
 
@@ -95,9 +94,9 @@ export class RemoteModel<T extends Object> extends HttpModel<T> {
 
     /**
      * requests is a factory object that generates the requests sent by this
-     * actor.
+     * class.
      */
-    requests: RequestFactory = new RequestFactory(this.paths);
+    abstract requests: RequestFactory;
 
     /**
      * send a request to the remote back-end.
@@ -119,4 +118,33 @@ export class RemoteModel<T extends Object> extends HttpModel<T> {
 
     }
 
+}
+
+/**
+ * GenericRemoteModel serves as an implementation that gets its paths from the
+ * constructor.
+ */
+export class GenericRemoteModel<T extends Object> extends RemoteModel<T> {
+
+    /**
+     * @param remote    - The actor to send requests to.
+     * @param actor     - The actor used to spawn callbacks internally.
+     * @param paths     - An object used to look up the CSUGR paths of the
+     *                    resource.
+     * @param handler   - An optional CompleteHandler that can intercept 
+     *                    responses.
+     * @param decorator - If supplied, can modify requests before sending.
+     */
+    constructor(
+        remote: Address,
+        actor: Spawner,
+        public paths: Paths = {},
+        handler?: CompleteHandler<Result<T>>,
+        decorator?: RequestDecorator<T>) {
+
+        super(remote, actor, handler, decorator);
+
+    }
+
+    requests: RequestFactory = new RequestFactory(this.paths);
 }

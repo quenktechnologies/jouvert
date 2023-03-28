@@ -7,7 +7,7 @@ import { Address } from '@quenk/potoo/lib/actor/address';
 import { CompleteHandler, CompositeCompleteHandler } from '../callback';
 import { RequestDecorator, RequestPassthrough } from '../request/decorators';
 import { Result } from '../../model/http';
-import { RemoteModel, Paths  } from './';
+import { RemoteModel, Paths, GenericRemoteModel  } from './';
 
 /**
  * CompleteHandlerSpec type allows one or more CompletHandlers to be specified.
@@ -60,7 +60,7 @@ export class RemoteModelFactory<T extends Object> {
         decorator: RequestDecorator<T> = new RequestPassthrough()
     ): RemoteModel<T> {
 
-        return new RemoteModel(this.remote, this.actor,
+        return new GenericRemoteModel(this.remote, this.actor,
             normalize(paths), Array.isArray(handlers) ?
             new CompositeCompleteHandler(handlers) : handlers, decorator);
 

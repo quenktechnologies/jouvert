@@ -17,3 +17,5 @@ node_modules
 .dest
 tmp
 lib
+test/build
+test/public/test.js

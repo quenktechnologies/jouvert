@@ -30,16 +30,10 @@ export type FieldValue = Value;
 export type FieldError = string;
 
 /**
- * FormLifeCycle is the type of a message that indicates the form has reached
- * the end of its life cycle.
- */
-export type FormLifeCycle = FormSaved | FormAborted;
-
-/**
  * FormCallback is a function invoked when the form has reached the end of its
  * life cycle.
  */
-export type FormCallback = (msg: FormLifeCycle) => void;
+export type FormCallback = (msg: FormState) => void;
 
 /**
  * FormSaveResult is a value representing a successfully saved form.
@@ -89,25 +83,25 @@ export class Abort { }
 export class Save { }
 
 /**
- * FormAborted indicates the FormScene has been aborted due to an internal or
- * external message.
+ * FormState indicates the state of the form when its lifecycle comes to an end.
  *
- * An aborted form exits itself.
+ * This message is used to indicate the form has either been saved or aborted
+ * and contains additional details of the form data up to that point.
  */
-export class FormAborted extends Close {
+export class FormState extends Close {
 
-    constructor(public form: Address) { super(form); }
-
-}
-
-/**
- * FormSaved indicates a FormScene has been saved successfully.
- *
- * A saved form exits itself.
- */
-export class FormSaved extends Close {
-
-    constructor(public form: Address, public result: FormSaveResult) {
+    /**
+     * @param form   - The actor address of the form.
+     * @param ok     - Indicates whether the form was saved (true) or aborted 
+     *                (false).
+     * @param data   - The form data.
+     * @param result - The result received from saving the form. 
+     */
+    constructor(
+        public form: Address,
+        public ok: boolean,
+        public data: Object = {},
+        public result: Value | void) {
         super(form);
     }
 
@@ -210,12 +204,13 @@ export abstract class BaseFormScene<T extends Object, M>
 
         return <Case<FormSceneMessage<M>>[]>[
 
-            new Case(Abort, () => this.abort()),
+            new Case(Abort, () => { this.abort() }),
 
-            new Case(Save, () => this.save()),
+            new Case(Save, () => { this.save() }),
 
-            new Case({ name: String, value: Any }, (e: InputEvent) =>
-                this.set(e.name, e.value))
+            new Case({ name: String, value: Any }, (e: InputEvent) => {
+                this.set(e.name, e.value)
+            })
 
         ];
 
@@ -253,7 +248,7 @@ export abstract class BaseFormScene<T extends Object, M>
      */
     abort() {
 
-        let msg = new FormAborted(this.self());
+        let msg = new FormState(this.self(), false,  this.getValues());
 
         this.tell(this.display, msg);
 
@@ -287,7 +282,7 @@ export abstract class BaseFormScene<T extends Object, M>
 
             let result = await this.execute();
 
-            let msg = new FormSaved(this.self(), result);
+            let msg = new FormState(this.self(), true, this.getValues(), result);
 
             this.tell(this.display, msg);
 

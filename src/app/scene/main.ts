@@ -18,10 +18,6 @@ import {
     ViewShown,
     DisplayListener
 } from '../service/display';
-import {
-    FormAborted,
-    FormSaved
-} from './form';
 import { BaseAppScene } from './';
 
 /**
@@ -32,8 +28,6 @@ export type MainSceneMessage<M>
     | Show
     | Push
     | Pop
-    | FormAborted
-    | FormSaved
     | ViewShown
     | ViewRemoved
     | M
@@ -76,18 +70,6 @@ export abstract class MainScene<T, M>
 
     afterViewRemoved(_: ViewRemoved): Yield<void> { }
 
-    afterFormAborted(_: FormAborted): Yield<void> {
-
-        return this.show();
-
-    }
-
-    afterFormSaved(_: FormSaved): Yield<void> {
-
-        return this.reload();
-
-    }
-
     get display() {
 
         return this.resume.director;
@@ -99,10 +81,10 @@ export abstract class MainScene<T, M>
         return <Case<MainSceneMessage<M>>[]>[
 
             new Case(ViewShown, (msg: ViewShown) =>
-              this.afterViewShown(msg)),
+                this.afterViewShown(msg)),
 
             new Case(ViewRemoved, (msg: ViewRemoved) =>
-              this.afterViewRemoved(msg)),
+                this.afterViewRemoved(msg)),
 
             new Case(Show, (msg: Show) => void this.tell(this.display, msg)),
 

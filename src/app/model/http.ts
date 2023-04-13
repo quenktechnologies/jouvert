@@ -96,7 +96,7 @@ export interface PageData {
     /**
      * totalPages available for the entire result.
      */
-    totalPage: number,
+    totalPages: number,
 
     /**
      * totalCount of the entire result set.

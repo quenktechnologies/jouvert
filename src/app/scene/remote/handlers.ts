@@ -13,7 +13,7 @@
 import { Object } from '@quenk/noni/lib/data/jsonx';
 
 import { Response } from '@quenk/jhr/lib/response';
-import {Method} from '@quenk/jhr/lib/request/method';
+import { Method } from '@quenk/jhr/lib/request/method';
 
 import { View } from '@quenk/wml';
 
@@ -35,7 +35,7 @@ import {
     SearchResultHandler,
 } from '../../remote/model/handlers/result';
 
-import { FormErrors  } from '../form';
+import { FormErrors } from '../form';
 
 /**
  * ClientErrorBody is the expected shape of the response body when the server
@@ -100,6 +100,23 @@ export class ShiftingOnClientError<T> extends AbstractCompleteHandler<T> {
 }
 
 /**
+ * AfterSearch invokes a handler after a successful search.
+ */
+export class AfterSearch<T extends Object>
+    extends
+    SearchResultHandler<T> {
+
+    constructor(public handler: (res: SearchResponse<T>) => Yield<void>) { super(); }
+
+    onComplete(res: SearchResponse<T>) {
+
+        return this.handler(res);
+
+    }
+
+}
+
+/**
  * AfterSearchSetData calls the supplied callback with the data property of the
  * body of a successful search request.
  *
@@ -107,14 +124,28 @@ export class ShiftingOnClientError<T> extends AbstractCompleteHandler<T> {
  */
 export class AfterSearchSetData<T extends Object>
     extends
-    SearchResultHandler<T> {
+    AfterSearch<T> {
 
-    constructor(public setter: (data: T[]) => Yield<void>) { super(); }
+    constructor(public setter: (data: T[]) => Yield<void>) {
 
-    onComplete(res: SearchResponse<T>) {
+        super(res => this.setter(((res.code === 200) &&
+            res.request.method === 'GET') ? res.body.data : []));
 
-        return this.setter(((res.code === 200) &&
-            res.request.method === 'GET') ? res.body.data : []);
+    }
+
+}
+
+/**
+ * AfterGet invokes a handler after a succesful Get
+ */
+export class AfterGet<T extends Object> extends GetResultHandler<T> {
+
+    constructor(public handler: (res: GetResponse<T>) => void) { super(); }
+
+    onComplete(res: GetResponse<T>) {
+
+        if ((res.code === 200) && res.request.method === 'GET')
+            return this.handler(res);
 
     }
 
@@ -126,14 +157,16 @@ export class AfterSearchSetData<T extends Object>
  *
  * This handler is intended to be used mostly when loading data for table scenes.
  */
-export class AfterGetSetData<T extends Object> extends GetResultHandler<T> {
+export class AfterGetSetData<T extends Object> extends AfterGet<T> {
 
-    constructor(public setter: (data: T) => void) { super(); }
+    constructor(public setter: (data: T) => void) {
 
-    onComplete(res: GetResponse<T>) {
+        super(res => {
 
-        if ((res.code === 200) && res.request.method === 'GET')
-            return this.setter(res.body);
+            if ((res.code === 200) && res.request.method === 'GET')
+                return this.setter(res.body);
+
+        });
 
     }
 
@@ -224,17 +257,34 @@ export class AfterSearchSetPagination<T extends Object>
 
 }
 
+/** 
+ * OnClientError is invoked when a client error occurs.
+ */
+export class OnClientError<B> extends AbstractCompleteHandler<B> {
+
+    constructor(public handler: (res: Response<object>) => void) { super(); }
+
+    onClientError(res: Response<object>) {
+
+        this.handler(res);
+
+    }
+
+}
+
 /**
  * OnSaveFailed invokes the target callback with the error part of the response
  */
-export class OnSaveFailed<T> extends AbstractCompleteHandler<T> {
+export class OnSaveFailed<B> extends OnClientError<B> {
 
-    constructor(public callback: (errors:FormErrors)=> Yield<void> ) { super(); }
+    constructor(public callback: (errors: FormErrors) => void) {
 
-    onClientError(res: Response<ClientErrorBody>) {
+        super((res: Response<object>) => {
 
-        if (res.code === 409) 
-            return this.callback(res.body.errors);
+            if (res.code === 409)
+                return this.callback((<ClientErrorBody>res.body).errors);
+
+        });
 
     }
 

@@ -1,6 +1,6 @@
 import * as types from '@quenk/search-filters/lib/compile/policy';
 
-import { Value } from '@quenk/noni/lib/data/json';
+import { Value } from '@quenk/noni/lib/data/jsonx';
 import { empty, map, merge3, Record } from '@quenk/noni/lib/data/record';
 import { Maybe, just, nothing } from '@quenk/noni/lib/data/maybe';
 import { isString } from '@quenk/noni/lib/data/type';

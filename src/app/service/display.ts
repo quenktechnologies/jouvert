@@ -1,7 +1,8 @@
 import { View } from '@quenk/wml';
 
-import { empty } from '@quenk/noni/lib/data/array';
 import { Yield } from '@quenk/noni/lib/control/monad/future';
+import { evaluate, Lazy } from '@quenk/noni/lib/data/lazy';
+import { empty } from '@quenk/noni/lib/data/array';
 
 import { Immutable } from '@quenk/potoo/lib/actor/resident/immutable';
 import { System } from '@quenk/potoo/lib/actor/system';
@@ -49,19 +50,19 @@ export interface ViewDelegate {
  */
 export class HTMLElementViewDelegate implements ViewDelegate {
 
-    constructor(public node: HTMLElement) { }
+    constructor(public node: Lazy<HTMLElement>) { }
 
     set(view: View) {
 
         this.unset();
 
-        this.node.appendChild(<HTMLElement>view.render());
+        evaluate(this.node).appendChild(<HTMLElement>view.render());
 
     }
 
     unset() {
 
-        let { node } = this;
+        let node = evaluate(this.node);
 
         while (node.firstChild != null)
             node.removeChild(node.firstChild);
@@ -76,19 +77,19 @@ export class HTMLElementViewDelegate implements ViewDelegate {
  */
 export class WMLLayoutViewDelegate implements ViewDelegate {
 
-    constructor(public layout: Layout) { }
+    constructor(public layout: Lazy<Layout>) { }
 
     set(view: View) {
 
         this.unset();
 
-        this.layout.setContent((<HTMLElement>view.render()));
+       evaluate( this.layout).setContent((<HTMLElement>view.render()));
 
     }
 
     unset() {
 
-        this.layout.removeContent();
+        evaluate(this.layout).removeContent();
 
     }
 

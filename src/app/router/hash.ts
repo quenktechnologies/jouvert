@@ -257,6 +257,25 @@ export class HashRouter extends AbstractHashRouter<DefaultRequest> {
 
     }
 
+    /**
+     * navigate to a new path without user interaction.
+     *
+     * Use this method to change application routes on behalf of the user or 
+     * automatically.
+     *
+     * @param path - The path to navigate to; should not include '#'.
+     */
+    navigate(path: Path) {
+
+        path = `#${path}`;
+
+        if (window.location.hash === path)
+            this.handleEvent(new Event('hashchanged'));
+
+        window.location.hash = path;
+
+    }
+
     onError(e: Error): Future<void> {
 
         return this.error(e);

@@ -267,6 +267,8 @@ export class HashRouter extends AbstractHashRouter<DefaultRequest> {
      */
     navigate(path: Path) {
 
+      path = path.split('#').join('');
+
         path = `#${path}`;
 
         if (window.location.hash === path)

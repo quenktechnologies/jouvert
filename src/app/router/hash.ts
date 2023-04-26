@@ -6,7 +6,7 @@ import { Key } from 'path-to-regexp';
 
 import { Value, Object as JObject } from '@quenk/noni/lib/data/json';
 import { noop } from '@quenk/noni/lib/data/function';
-import { Future, pure, raise } from '@quenk/noni/lib/control/monad/future';
+import { Future, pure, voidPure } from '@quenk/noni/lib/control/monad/future';
 import { reduce } from '@quenk/noni/lib/data/record';
 
 const EVENT_HASH_CHANGED = 'hashchange';
@@ -246,7 +246,10 @@ export class HashRouter extends AbstractHashRouter<DefaultRequest> {
     constructor(
         public window: Window,
         public routes: Routes<DefaultRequest> = {},
-        public error: OnError = (e: Error) => raise(e),
+        public error: OnError = (e: Error) => {
+            console.error(e);
+            return voidPure;
+        },
         public notFound: OnNotFound = () => pure(noop())) {
         super(window, routes);
     }
@@ -267,7 +270,7 @@ export class HashRouter extends AbstractHashRouter<DefaultRequest> {
      */
     navigate(path: Path) {
 
-      path = path.split('#').join('');
+        path = path.split('#').join('');
 
         path = `#${path}`;
 

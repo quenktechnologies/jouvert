@@ -1,5 +1,5 @@
 import { Milliseconds } from '@quenk/noni/lib/control/time';
-import { exclude, merge, forEach } from '@quenk/noni/lib/data/record';
+import {  merge, forEach } from '@quenk/noni/lib/data/record';
 import { isFunction, isObject } from '@quenk/noni/lib/data/type';
 import {
     Future,
@@ -8,6 +8,7 @@ import {
     wrap,
     voidPure
 } from '@quenk/noni/lib/control/monad/future';
+
 import { Case, Default } from '@quenk/potoo/lib/actor/resident/case';
 import { Address } from '@quenk/potoo/lib/actor/address';
 import { Template } from '@quenk/potoo/lib/actor/template';
@@ -255,9 +256,6 @@ export class SuspendActor { }
  * Supervisor is used to contain communication between the actor in control
  * and the director.
  *
- * By treating the Supervisor as the Director instead of the actual Director,
- * we can prevent actors that have been blacklisted from communicating.
- *
  * Once a Supervisor has exited, messages sent to that address are dropped.
  * Routes that require a spawned actor are also done here having the side-effect
  * of killing them once the Supervisor exits.
@@ -382,7 +380,7 @@ export class Director<T> extends Immutable<DirectorMessage<T>> {
     onRouteChanged = (msg: RouteChanged<T>) => {
 
         let self = this.self();
-        let { display, routes, current, config } = this;
+        let { display, current, config } = this;
         let [route, supervisor] = current;
 
         let onFinish = () => {
@@ -404,7 +402,7 @@ export class Director<T> extends Immutable<DirectorMessage<T>> {
 
             let onExpire = () => {
 
-                this.routes = exclude(routes, route);
+                console.warn(`actor for route "${route}" did not respond to suspend!`);
                 onFinish();
 
             };
@@ -451,16 +449,8 @@ export class Director<T> extends Immutable<DirectorMessage<T>> {
 
             this.router.add(route, (r: T) => fromCallback(cb => {
 
-                if (!this.routes.hasOwnProperty(route)) {
-
-                    return cb(new Error(`${route}: not responding!`));
-
-                } else {
-
-                    this.tell(this.self(), new RouteChanged(route, spec, r));
-                    cb(null);
-
-                }
+                this.tell(this.self(), new RouteChanged(route, spec, r));
+                cb(null);
 
             }));
 
